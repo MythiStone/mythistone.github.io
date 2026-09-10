@@ -29,7 +29,7 @@
   --bs-gray-700: #404040;
   --bs-gray-800: #262626;
   --bs-gray-900: #171717;
-  --bs-primary: #e91e63;
+  --bs-primary: #f59e0b;
   --bs-secondary: #737373;
   --bs-success: #4CAF50;
   --bs-info: #1A73E8;
@@ -39,7 +39,7 @@
   --bs-dark: #262626;
   --bs-white: #fff;
   --bs-dark-blue: #1A237E;
-  --bs-primary-rgb: 233, 30, 99;
+  --bs-primary-rgb: 245, 158, 11;
   --bs-secondary-rgb: 115, 115, 115;
   --bs-success-rgb: 76, 175, 80;
   --bs-info-rgb: 26, 115, 232;
@@ -49,7 +49,7 @@
   --bs-dark-rgb: 38, 38, 38;
   --bs-white-rgb: 255, 255, 255;
   --bs-dark-blue-rgb: 26, 35, 126;
-  --bs-primary-text-emphasis: rgb(93.2, 12, 39.6);
+  --bs-primary-text-emphasis: #8a5a06;
   --bs-secondary-text-emphasis: #2e2e2e;
   --bs-success-text-emphasis: rgb(30.4, 70, 32);
   --bs-info-text-emphasis: rgb(10.4, 46, 92.8);
@@ -57,7 +57,7 @@
   --bs-danger-text-emphasis: rgb(97.6, 26.8, 21.2);
   --bs-light-text-emphasis: #404040;
   --bs-dark-text-emphasis: #404040;
-  --bs-primary-bg-subtle: rgb(250.6, 210, 223.8);
+  --bs-primary-bg-subtle: #fdf0d5;
   --bs-secondary-bg-subtle: #e3e3e3;
   --bs-success-bg-subtle: rgb(219.2, 239, 220);
   --bs-info-bg-subtle: rgb(209.2, 227, 250.4);
@@ -65,7 +65,7 @@
   --bs-danger-bg-subtle: rgb(252.8, 217.4, 214.6);
   --bs-light-bg-subtle: #fafafa;
   --bs-dark-bg-subtle: #a3a3a3;
-  --bs-primary-border-subtle: rgb(246.2, 165, 192.6);
+  --bs-primary-border-subtle: #fbde9e;
   --bs-secondary-border-subtle: #c7c7c7;
   --bs-success-border-subtle: rgb(183.4, 223, 185);
   --bs-info-border-subtle: rgb(163.4, 199, 245.8);
@@ -196,7 +196,7 @@
   --mythi-text-danger: #c62828;
   --mythi-text-warning: #b35300;
   --mythi-text-info: #1a73e8;
-  --mythi-text-primary: #c2185b;
+  --mythi-text-primary: #8a5a06;
 }
 
 [data-bs-theme=dark] {
@@ -214,7 +214,7 @@
   --bs-tertiary-color-rgb: 212, 212, 212;
   --bs-tertiary-bg: rgb(30.5, 30.5, 30.5);
   --bs-tertiary-bg-rgb: 31, 31, 31;
-  --bs-primary-text-emphasis: rgb(241.8, 120, 161.4);
+  --bs-primary-text-emphasis: #fbc86a;
   --bs-secondary-text-emphasis: #ababab;
   --bs-success-text-emphasis: rgb(147.6, 207, 150);
   --bs-info-text-emphasis: rgb(117.6, 171, 241.2);
@@ -222,7 +222,7 @@
   --bs-danger-text-emphasis: rgb(248.4, 142.2, 133.8);
   --bs-light-text-emphasis: #f5f5f5;
   --bs-dark-text-emphasis: #d4d4d4;
-  --bs-primary-bg-subtle: rgb(46.6, 6, 19.8);
+  --bs-primary-bg-subtle: #2d1e04;
   --bs-secondary-bg-subtle: #171717;
   --bs-success-bg-subtle: rgb(15.2, 35, 16);
   --bs-info-bg-subtle: rgb(5.2, 23, 46.4);
@@ -230,7 +230,7 @@
   --bs-danger-bg-subtle: rgb(48.8, 13.4, 10.6);
   --bs-light-bg-subtle: #262626;
   --bs-dark-bg-subtle: #181818;
-  --bs-primary-border-subtle: rgb(139.8, 18, 59.4);
+  --bs-primary-border-subtle: #8c5c0c;
   --bs-secondary-border-subtle: #454545;
   --bs-success-border-subtle: rgb(45.6, 105, 48);
   --bs-info-border-subtle: rgb(15.6, 69, 139.2);
@@ -316,7 +316,7 @@
   --mythi-text-danger: #F44335;
   --mythi-text-warning: #fb8c00;
   --mythi-text-info: #4d9bf0;
-  --mythi-text-primary: #f06292;
+  --mythi-text-primary: #fbc86a;
 }
 
 *,
@@ -4006,12 +4006,12 @@ fieldset:disabled .btn {
   --bs-btn-bg: var(--bs-primary);
   --bs-btn-border-color: var(--bs-primary);
   --bs-btn-hover-color: #0a0a0a;
-  --bs-btn-hover-bg: rgb(236.3, 63.75, 122.4);
-  --bs-btn-hover-border-color: rgb(235.2, 52.5, 114.6);
-  --bs-btn-focus-shadow-rgb: 200, 27, 86;
+  --bs-btn-hover-bg: #fbb13c;
+  --bs-btn-hover-border-color: #fbb13c;
+  --bs-btn-focus-shadow-rgb: 245, 158, 11;
   --bs-btn-active-color: #0a0a0a;
-  --bs-btn-active-bg: rgb(237.4, 75, 130.2);
-  --bs-btn-active-border-color: rgb(235.2, 52.5, 114.6);
+  --bs-btn-active-bg: #e08e08;
+  --bs-btn-active-border-color: #d98806;
   --bs-btn-active-shadow: none;
   --bs-btn-disabled-color: #0a0a0a;
   --bs-btn-disabled-bg: var(--bs-primary);
@@ -11490,7 +11490,7 @@ fieldset:disabled .btn {
 }
 
 .bg-primary {
-  background-color: #e91e63 !important;
+  background-color: var(--bs-primary) !important;
 }
 
 .bg-secondary {
@@ -11723,7 +11723,7 @@ fieldset:disabled .btn {
 }
 
 .shadow-primary {
-  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.14), 0 7px 10px -5px rgba(233, 30, 99, 0.4) !important;
+  box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.5), 0 10px 26px -10px rgba(245, 158, 11, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
 }
 
 .shadow-secondary {
@@ -21847,7 +21847,8 @@ fieldset:disabled .btn {
 }
 
 .badge.bg-primary {
-  background: #e91e63;
+  background: var(--bs-primary);
+  color: #241700;
 }
 
 .badge.bg-secondary {
@@ -22002,14 +22003,14 @@ fieldset:disabled .btn {
 
 .btn-primary,
 .btn.bg-gradient-primary {
-  box-shadow: 0 2px 2px 0 rgba(233, 30, 99, 0.1), 0 3px 1px -2px rgba(233, 30, 99, 0.18), 0 1px 5px 0 rgba(233, 30, 99, 0.15);
+  box-shadow: 0 2px 2px 0 rgba(245, 158, 11, 0.15), 0 3px 1px -2px rgba(245, 158, 11, 0.2), 0 1px 5px 0 rgba(245, 158, 11, 0.15);
 }
 
 .btn-primary:hover,
 .btn.bg-gradient-primary:hover {
-  background-color: #e91e63;
-  border-color: #e91e63;
-  box-shadow: 0 8px 14px -8px rgba(233, 30, 99, 0.3), 0 3px 18px 0 rgba(233, 30, 99, 0.1), 0 7px 8px -4px rgba(233, 30, 99, 0.18);
+  background-color: #fbb13c;
+  border-color: #fbb13c;
+  box-shadow: 0 8px 14px -8px rgba(245, 158, 11, 0.4), 0 3px 18px 0 rgba(245, 158, 11, 0.15), 0 7px 8px -4px rgba(245, 158, 11, 0.2);
 }
 
 .btn-primary .btn.bg-outline-primary,
@@ -22023,15 +22024,15 @@ fieldset:disabled .btn {
 .btn.bg-gradient-primary:not(:disabled):not(.disabled).active,
 .btn.bg-gradient-primary:not(:disabled):not(.disabled):active,
 .show>.btn.bg-gradient-primary.dropdown-toggle {
-  color: color-yiq(#e91e63);
-  background-color: #e91e63;
+  color: #241700;
+  background-color: #e08e08;
 }
 
 .btn-primary.focus,
 .btn-primary:focus,
 .btn.bg-gradient-primary.focus,
 .btn.bg-gradient-primary:focus {
-  color: #fff;
+  color: #241700;
 }
 
 .btn-outline-primary {
@@ -22042,7 +22043,7 @@ fieldset:disabled .btn {
   background-color: transparent;
   opacity: 0.75;
   box-shadow: none;
-  color: #e91e63;
+  color: var(--bs-primary);
 }
 
 .btn-secondary,
@@ -22443,12 +22444,12 @@ fieldset:disabled .btn {
 
 .btn-primary,
 .btn.bg-gradient-primary {
-  color: #fff;
+  color: #241700;
 }
 
 .btn-primary:hover,
 .btn.bg-gradient-primary:hover {
-  color: #fff;
+  color: #241700;
 }
 
 .btn-secondary,
@@ -24077,7 +24078,56 @@ label,
 }
 
 .bg-gradient-primary {
-  background-image: linear-gradient(195deg, #EC407A 0%, #D81B60 100%);
+  background-image: linear-gradient(195deg, #fbbf24 0%, #f59e0b 100%);
+}
+
+/* MythiStone gold accent - rules with no stock Material Dashboard equivalent.
+   Gold fills are bright, so ribbon/button content sits in near-black (#241700). */
+.bg-gradient-primary,
+.bg-gradient-primary h6,
+.bg-gradient-primary .text-white,
+.bg-gradient-primary .text-body,
+.bg-gradient-primary .material-symbols-rounded {
+  color: #241700 !important;
+}
+
+.bg-gradient-primary h6 {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Outline-light controls that sit ON the gold ribbon (chart toggles, the Perfect
+   Fit dungeon selectpicker) must be dark-on-gold. .btn-outline-light and
+   bootstrap-select set their colours DIRECTLY (not via --bs-btn-*), so force them:
+   dark text/border at rest, dark fill + gold text when hovered/open/active. The
+   selectpicker's visible label lives in .filter-option-inner-inner. */
+.bg-gradient-primary .btn-outline-light,
+.bg-gradient-primary .bootstrap-select button.dropdown-toggle,
+.bg-gradient-primary .bootstrap-select button.dropdown-toggle .filter-option-inner-inner {
+  color: #241700 !important;
+  border-color: rgba(36, 23, 0, 0.5) !important;
+  background-color: transparent !important;
+}
+
+.bg-gradient-primary .btn-outline-light:hover,
+.bg-gradient-primary .btn-outline-light:focus,
+.bg-gradient-primary .btn-outline-light.active,
+.bg-gradient-primary .bootstrap-select button.dropdown-toggle:hover,
+.bg-gradient-primary .bootstrap-select button.dropdown-toggle:focus,
+.bg-gradient-primary .bootstrap-select.show button.dropdown-toggle,
+.bg-gradient-primary .bootstrap-select.show button.dropdown-toggle .filter-option-inner-inner,
+.bg-gradient-primary .bootstrap-select button.dropdown-toggle:hover .filter-option-inner-inner {
+  color: #fbbf24 !important;
+  background-color: #241700 !important;
+  border-color: #241700 !important;
+}
+
+[data-bs-theme=dark] .card {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+::selection {
+  background: rgba(245, 158, 11, 0.32);
 }
 
 .bg-gradient-secondary {
@@ -24439,7 +24489,7 @@ html {
 }
 
 .blur-section.blur-gradient-primary {
-  background-image: linear-gradient(195deg, rgba(236, 64, 122, 0.95) 0%, rgba(216, 27, 96, 0.95) 100%);
+  background-image: linear-gradient(195deg, rgba(251, 191, 36, 0.95) 0%, rgba(245, 158, 11, 0.95) 100%);
 }
 
 *.move-on-hover {
@@ -27545,7 +27595,7 @@ p {
 }
 
 .text-gradient.text-primary {
-  background-image: linear-gradient(195deg, #EC407A, #D81B60);
+  background-image: linear-gradient(195deg, #fbbf24, #f59e0b);
 }
 
 .text-gradient.text-info {

@@ -303,8 +303,18 @@ bootstrap-select (`.selectpicker`, loaded globally); sortable/searchable tables 
 embeds -> Klaro via `MythiConsent`.
 
 **Design tokens (never hardcode domain hex).** Palette lives in CSS custom properties in
-`material-dashboard.css`, `classes.css`, `stat-colors.css`. Brand `var(--bs-primary)` = `#e91e63`.
-Class colors are dual tokens in `classes.css`: `--class-<Name>` (contrast-tuned for TEXT) and
+`material-dashboard.css`, `classes.css`, `stat-colors.css`. Brand accent is Legendary Gold
+`var(--bs-primary)` = `#f59e0b`, edited directly into `material-dashboard.css` (no separate override
+file): the stock pink was remapped at the source in the token blocks and in the vendor's own
+`.bg-primary`/`.bg-gradient-primary`/`.shadow-primary`/`.btn-primary`/`.badge.bg-primary` rules, plus
+a small "MythiStone gold accent" block after `.bg-gradient-primary`. Gold is bright, so content ON a
+gold fill uses near-black `#241700`. GOTCHA: the vendor sets primary-button and `.btn-outline-light`
+colours DIRECTLY (not via `--bs-btn-*`), and `bootstrap-select.min.css` loads AFTER
+`material-dashboard.css`, so ribbon overrides for the Perfect-Fit selectpicker need real `color`
+`!important` at raised specificity (`button.dropdown-toggle`, and its label is
+`.filter-option-inner-inner`), not just the button vars. Peripheral components (link-hover, focus
+rings, list-group/pagination active, progress bars, range sliders, form-check) still carry stock pink
+literals to convert when those widgets are polished. Class colors are dual tokens in `classes.css`: `--class-<Name>` (contrast-tuned for TEXT) and
 `--class-<Name>-raw` (true Blizzard hex for FILLS), PascalCase, with `.class-<Name>-text` /
 `.class-<Name>-bg` utilities. Item rarity `--quality-0..8` with `.item-quality-N` /
 `.border-quality-N`. Stat tiers `--stat-*` (+`-raw`) with `.stat-<name>` utilities. Scrollbars

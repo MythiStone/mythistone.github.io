@@ -71,26 +71,26 @@
       </div>
       <div class="row">
         <!-- The Perfect Fit Widget -->
-        <div class="col-12 mb-4">
+        <div class="col-12 mt-4 mb-4">
           <div class="card">
-            <div class="card-header pb-0 p-3 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-              <div>
-                <h6 class="mb-0">The Perfect Fit</h6>
-                <p class="text-sm mb-0">Select your current group to find the statistically best specs to fill the
-                  remaining slots.</p>
-              </div>
-              <div class="d-flex align-items-center w-100 w-md-auto">
-                <select id="dungeonFilter" class="selectpicker" data-style="btn-outline-primary"
-                  data-live-search="true" data-width="fit" title="All Dungeons">
-                  <option value="all" selected>All Dungeons</option>
-                  {% for id, details in dungeon_lookup.items() %}
-                  <option value="{{ id }}"
-                    data-content="<span class='dropdown-icon-item'><img src='/data/icons/{{ details.icon }}' class='dropdown-icon' alt='' style='width:20px;height:20px;border-radius:4px;object-fit:cover;flex:0 0 20px;margin-right:8px;'><span class='dropdown-icon-label'>{{ details.name.en_US }}</span></span>">{{ details.name.en_US }}</option>
-                  {% endfor %}
-                </select>
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 px-3 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                <h6 class="text-white text-capitalize mb-0">The Perfect Fit</h6>
+                <div class="d-flex align-items-center w-100 w-md-auto">
+                  <select id="dungeonFilter" class="selectpicker" data-style="btn-outline-light"
+                    data-live-search="true" data-width="fit" title="All Dungeons">
+                    <option value="all" selected>All Dungeons</option>
+                    {% for id, details in dungeon_lookup.items() %}
+                    <option value="{{ id }}"
+                      data-content="<span class='dropdown-icon-item'><img src='/data/icons/{{ details.icon }}' class='dropdown-icon' alt='' style='width:20px;height:20px;border-radius:4px;object-fit:cover;flex:0 0 20px;margin-right:8px;'><span class='dropdown-icon-label'>{{ details.name.en_US }}</span></span>">{{ details.name.en_US }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
               </div>
             </div>
             <div class="card-body p-3">
+              <p class="text-sm mb-3">Select your current group to find the statistically best specs to fill the
+                remaining slots.</p>
               <div class="row">
                 <div class="col-lg-6 col-md-12">
                   <h6 class="text-uppercase text-body-emphasis text-xs font-weight-bolder">Tanks</h6>
@@ -143,16 +143,15 @@
 
       <div class="row mb-3">
         <!-- Top comps: Most Popular & Best High-Key (archetype-grouped) -->
-        <div class="col-lg-6 col-md-12 mb-3">
+        <div class="col-lg-6 col-md-12 mt-4 mb-3">
           <div class="card h-100">
-            <div class="card-header pb-0 d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-0">Most Popular</h6>
-                <p class="text-sm mb-0" id="most-popular-sub">Most-played team comps across all dungeons.</p>
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                <h6 class="text-white text-capitalize ps-3 mb-0">Most Popular</h6>
               </div>
-              <!-- view-all removed per UX request -->
             </div>
             <div class="card-body px-0 pb-2">
+              <p class="text-sm px-3 mb-2" id="most-popular-sub">Most-played team comps across all dungeons.</p>
               <div id="most-popular-list" class="list-group list-group-flush px-3 py-2">
                 {% for arch in archetypes_all.popular %}{{ arch_row(arch, 'popular') }}{% endfor %}
               </div>
@@ -160,16 +159,15 @@
           </div>
         </div>
 
-        <div class="col-lg-6 col-md-12 mb-3">
+        <div class="col-lg-6 col-md-12 mt-4 mb-3">
           <div class="card h-100">
-            <div class="card-header pb-0 d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-0">Best for Highest Keys</h6>
-                <p class="text-sm mb-0" id="best-highkey-sub">Team comps performing best in {{ archetypes_all.hk_label }} across all dungeons.</p>
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                <h6 class="text-white text-capitalize ps-3 mb-0">Best for Highest Keys</h6>
               </div>
-              <!-- view-all removed per UX request -->
             </div>
             <div class="card-body px-0 pb-2">
+              <p class="text-sm px-3 mb-2" id="best-highkey-sub">Team comps performing best in {{ archetypes_all.hk_label }} across all dungeons.</p>
               <div id="best-highkey-list" class="list-group list-group-flush px-3 py-2">
                 {% for arch in archetypes_all.highkey %}{{ arch_row(arch, 'highkey') }}{% endfor %}
               </div>
@@ -180,13 +178,15 @@
 
       <div class="row">
         <!-- Hidden Gems -->
-        <div class="col-lg-6 col-md-12 mb-4">
+        <div class="col-lg-6 col-md-12 mt-4 mb-4">
           <div class="card h-100">
-            <div class="card-header pb-0">
-              <h6>Hidden Gems</h6>
-              <p class="text-sm" id="hidden-gems-sub">Niche team comps with strong success in {{ archetypes_all.gem_label }} across all dungeons.</p>
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                <h6 class="text-white text-capitalize ps-3 mb-0">Hidden Gems</h6>
+              </div>
             </div>
             <div class="card-body px-0 pb-2">
+              <p class="text-sm px-3 mb-2" id="hidden-gems-sub">Niche team comps with strong success in {{ archetypes_all.gem_label }} across all dungeons.</p>
               <div id="hidden-gems-list" class="list-group list-group-flush px-3 py-2">
                 {% for arch in archetypes_all.gems %}{{ arch_row(arch, 'gems') }}{% else %}
                 <p class="text-sm text-secondary px-2">No hidden gems for this dungeon.</p>
@@ -197,14 +197,16 @@
         </div>
 
         <!-- Best Spec Combinations -->
-        <div class="col-lg-6 col-md-12">
+        <div class="col-lg-6 col-md-12 mt-4">
           <div class="card h-100">
-            <div class="card-header pb-0">
-              <h6>Best Spec Combinations</h6>
-              <p class="text-sm" id="best-pairs-sub">The strongest pairs of specs to bring together across all
-                dungeons, ranked by how well they perform in the highest keys.</p>
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                <h6 class="text-white text-capitalize ps-3 mb-0">Best Spec Combinations</h6>
+              </div>
             </div>
             <div class="card-body px-0 pt-0 pb-2">
+              <p class="text-sm px-3 pt-3 mb-2" id="best-pairs-sub">The strongest pairs of specs to bring together across all
+                dungeons, ranked by how well they perform in the highest keys.</p>
               <div class="p-0 custom-scrollbar" style="max-height: 470px; overflow-y: auto; overflow-x: hidden;">
                 {% set role_map = {'0': 'Tank', '1': 'Healer', '2': 'Dps'} %}
                 <div id="best-pairs-list" class="list-group list-group-flush px-3 py-2">
