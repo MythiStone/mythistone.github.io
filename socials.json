@@ -1718,5 +1718,14 @@
         "blog": "The longest Mythic+ run tracked this season is a +11 Altar of Fangs that ground on for 03:09:45.053 on the EU region.\n\nCredit the group that ran it: Brewmaster Monk, Holy Paladin, Arcane Mage, Frost Death Knight, Havoc Demon Hunter. That was 19 days ago. Every record here keeps moving as new keys get pushed.",
         "post": "Altar of Fangs 11 clocked 03:09:45.053 - longest_run this season, 19 days ago EU. Brewmaster Monk, Holy Paladin, Arcane Mage, Frost Death Knight, Havoc Demon Hunter turned a key into a marathon. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
         "timestamp": 1788987128165
+    },
+    "data/social/spec_overview_250_2026-09.png": {
+        "title": "Blood Death Knight Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Tank/Blood_Death%20Knight",
+        "social": "San'layn (89.33%) drinks the blood of 965.1K runs while Deathbringer (11%) just watches. 88% timed, only 4% three-chest talk about a bloody gap #WoW #MythicPlus https://mythistone.com/classes/Tank/Blood_Death%20Knight",
+        "blog": "Blood Death Knight has 965.1 K Mythic+ runs tracked this season. The San'layn hero tree leads at 89% of builds, with Deathbringer (11%) trailing.\n\n88% of tracked runs beat the timer, and 4% earn all three chests. The stat priority skews toward Haste > Crit > Mastery > Versatility. The best key so far: +21 Den of Nalorakk in 29:45.294.",
+        "post": "San'layn (89.33%) drinks the blood of 965.1K runs while Deathbringer (11%) just watches. 88% timed, only 4% three-chest talk about a bloody gap #WoW #MythicPlus https://mythistone.com/classes/Tank/Blood_Death%20Knight",
+        "timestamp": 1789073197140
     }
 }
