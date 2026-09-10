@@ -160,7 +160,8 @@
             <div class="row mb-4">
                 <div class="col-12 px-3 px-md-4">
                     <p class="text-sm mb-2">
-                        Everything below reflects how {{ dungeon.name.en_US }} is actually being played at the top of the
+                        Everything below reflects how {{ dungeon.name.en_US }} is actually being played at the top of
+                        the
                         ladder this season, from the routes the best groups run and where they save Bloodlust, to the
                         specs and comps that stand out here and how often each key level gets timed. It is a snapshot of
                         what is working right now, not a fixed guide, so use it as a starting point for your own runs.
@@ -182,14 +183,16 @@
                 <div class="d-flex justify-content-between">
                     <div>
                         <p class="text-sm mb-0 text-capitalize">{{ run_entry.label }}</p>
-                        {% set info = run_data.duration|upgrade_info(dungeon.keystone_upgrades, run_data.keystone_level) %}
+                        {% set info = run_data.duration|upgrade_info(dungeon.keystone_upgrades, run_data.keystone_level)
+                        %}
                         <div>
                             <span class="font-weight-bolder h4 {{ info.css }}">{{ info.text }}</span>
                             <span class="font-weight-bolder h4">{{dungeon.name.en_US}}</span>
                             <span class="font-weight-bolder h4">{{run_data.region|upper}}</span>
                         </div>
                     </div>
-                    <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
+                    <div
+                        class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
                         <i class="material-symbols-rounded opacity-10">{{run_entry.icon}}</i>
                     </div>
                 </div>
@@ -198,7 +201,8 @@
                 <h4 class="mb-0" id="{{ run_entry.name }}-run-value">Cleared in {{run_data.duration|duration}}</h4>
                 {% if run_entry.show_margin and dungeon.keystone_upgrades %}
                 {% set plus_one_timer = dungeon.keystone_upgrades.values()|map(attribute='qualifying_duration')|max %}
-                <p class="text-sm text-success mb-0 mt-1">Beat the timer by {{ (plus_one_timer - run_data.duration)|duration }}</p>
+                <p class="text-sm text-success mb-0 mt-1">Beat the timer by {{ (plus_one_timer -
+                    run_data.duration)|duration }}</p>
                 {% elif run_entry.subtitle %}
                 <p class="text-sm text-secondary mb-0 mt-1">{{ run_entry.subtitle }}</p>
                 {% else %}
@@ -211,8 +215,9 @@
                     {% for member in run_data.members %}
                     {% set spec = specs[ member.spec_id|string ] %}
                     {% if spec and spec.role|string == role %}
-                    <img src="/data/icons/{{ spec.SpellIconFileId }}.jpg" alt="{{ spec.name }}"
-                        title="{{ spec.name }}" class="rounded-circle border border-dark mb-1" style="width: 18%; max-width: 80px; aspect-ratio: 1; object-fit: cover;" />
+                    <img src="/data/icons/{{ spec.SpellIconFileId }}.jpg" alt="{{ spec.name }}" title="{{ spec.name }}"
+                        class="rounded-circle border border-dark mb-1"
+                        style="width: 18%; max-width: 80px; aspect-ratio: 1; object-fit: cover;" />
                     {% endif %}
                     {% endfor %}
                     {% endfor %}
@@ -246,7 +251,8 @@
                     ">
                         <div class="btn-group btn-group-sm w-100 run-toggle-tabs" role="group">
                             {% for run_entry in available_toggle %}
-                            <button type="button" class="btn btn-outline-light mb-0 run-toggle-btn{% if loop.first %} active{% endif %}"
+                            <button type="button"
+                                class="btn btn-outline-light mb-0 run-toggle-btn{% if loop.first %} active{% endif %}"
                                 data-target="panel-{{ run_entry.name }}">{{ run_entry.tab }}</button>
                             {% endfor %}
                         </div>
@@ -278,8 +284,16 @@
             </div>
 
             <style>
-                .run-panel { display: flex; flex-direction: column; flex: 1 1 auto; }
-                .run-toggle-tabs .run-toggle-btn.active { background-color: var(--bs-emphasis-color); color: var(--bs-emphasis-contrast); }
+                .run-panel {
+                    display: flex;
+                    flex-direction: column;
+                    flex: 1 1 auto;
+                }
+
+                .run-toggle-tabs .run-toggle-btn.active {
+                    background-color: var(--bs-emphasis-color);
+                    color: var(--bs-emphasis-contrast);
+                }
             </style>
             <script>
                 (function () {
@@ -320,7 +334,49 @@
                     });
                 })();
             </script>
-
+            <!-- Latest Hotfixes (hidden entirely when this dungeon has no recorded hotfixes) -->
+            {% if hotfixes %}
+            <div class="row mb-4">
+                <div class="col-12 mb-4">
+                    <div class="card h-100" id="dungeon-hotfixes" data-share>
+                        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                            <div data-share-anchor
+                                class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                                <h6 class="text-white text-capitalize ps-3 mb-0" data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Recent official Blizzard hotfixes that mention {{ dungeon.name.en_US }}.">
+                                    Latest
+                                    Hotfixes</h6>
+                                {% if hotfix_source_url %}
+                                <a href="{{ hotfix_source_url }}" class="btn btn-sm btn-white me-3 mb-0 opacity-8"
+                                    title="Read the full hotfix notes on Blizzard's site" target="_blank">Full
+                                    Notes</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body px-3 pb-2">
+                            <p class="text-sm text-secondary mb-3">The most recent official Blizzard hotfixes affecting
+                                {{ dungeon.name.en_US }}.</p>
+                            {% for entry in hotfixes %}
+                            <div class="mb-3">
+                                <h6 class="text-sm mb-1 d-flex align-items-center flex-wrap">
+                                    <span class="me-2">{{ entry.date_text }}</span>
+                                    <small class="timestamp text-secondary fw-normal" data-bs-toggle="tooltip"
+                                        data-bs-placement="top"
+                                        data-timestamp="{{ entry.date_ts | int / 1000 }}"></small>
+                                </h6>
+                                <ul class="text-sm mb-0 ps-3">
+                                    {% for note in entry.notes %}
+                                    <li>{{ note }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             <div class="row">
                 <!-- Top Routes -->
                 <div class="col-lg-6 col-md-12 mb-4">
@@ -340,18 +396,18 @@
                             <div class="accordion px-3" id="routeDungeonAccordion">
                                 {% for route in top_routes %}
                                 {{ rt.route_accordion_item(
-                                     dungeon,
-                                     route.keystone_level,
-                                     route.duration,
-                                     route.timestamp,
-                                     route.specs,
-                                     specs,
-                                     route.route_key,
-                                     route.run_id,
-                                     season_info.slug,
-                                     usage_count=route.usage_count,
-                                     iframe_height='60vh',
-                                     item_class='border') }}
+                                dungeon,
+                                route.keystone_level,
+                                route.duration,
+                                route.timestamp,
+                                route.specs,
+                                specs,
+                                route.route_key,
+                                route.run_id,
+                                season_info.slug,
+                                usage_count=route.usage_count,
+                                iframe_height='60vh',
+                                item_class='border') }}
                                 {% else %}
                                 <div class="text-center p-3 text-sm">No routes logged yet.</div>
                                 {% endfor %}
@@ -370,36 +426,44 @@
                 <div class="col-lg-6 col-md-12 mb-4">
                     <div class="card h-100" id="dungeon-lusted-pulls" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                            <div data-share-anchor class="bg-gradient-warning shadow-warning border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                            <div data-share-anchor
+                                class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
                                 <h6 class="text-white text-capitalize ps-3 mb-0" data-bs-toggle="tooltip"
                                     data-bs-placement="top"
                                     title="The exact sets of enemies that players most frequently use Bloodlust / Heroism against.">
                                     Most Lusted Pulls</h6>
-                
+
                                 {# includePlayerSpellIds is a comma-separated list, urlencoded (%2C), so the
-                                   heatmap opens filtered to the same spells the table counted. #}
+                                heatmap opens filtered to the same spells the table counted. #}
                                 <a href="https://keystone.guru/heatmap/retail/{{ dungeon.slug }}/1?type=player_spell&includePlayerSpellIds={{ bloodlust_spell_ids | join('%2C') }}&region=world"
-                                    class="btn btn-sm btn-white me-3 mb-0 opacity-8" title="Find more Details on Keystone.guru" target="_blank">More
+                                    class="btn btn-sm btn-white me-3 mb-0 opacity-8"
+                                    title="Find more Details on Keystone.guru" target="_blank">More
                                     Details</a>
                             </div>
                         </div>
                         <div class="card-body px-0 pb-2">
-                            <div class="p-0 custom-scrollbar" style="max-height: 435px; overflow-y: auto; overflow-x: hidden;">
+                            <div class="p-0 custom-scrollbar"
+                                style="max-height: 435px; overflow-y: auto; overflow-x: hidden;">
                                 {% if lust_timeline %}
                                 <table id="lust-table" class="table align-items-center mb-0 w-100">
-                                    <thead class="sticky-top" style="z-index: 10; background-color: var(--mythi-surface-raised);">
+                                    <thead class="sticky-top"
+                                        style="z-index: 10; background-color: var(--mythi-surface-raised);">
                                         <tr>
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">Pull
+                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                                Pull
                                                 Composition</th>
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">Lust Rate
+                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                                Lust Rate
                                             </th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">Max Key<br><span class="text-success">Lusted</span> / Not Lusted
+                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                                Max Key<br><span class="text-success">Lusted</span> / Not Lusted
                                             </th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">Example Route
+                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                                Example Route
                                             </th>
                                         </tr>
                                     </thead>
@@ -418,10 +482,14 @@
                                                     {% set is_boss = n|int in bosses %}
                                                     <li class="mb-1">
                                                         {% if n in npc_icons %}
-                                                        <img src="/data/icons/npc_{{ n }}.png"
-                                                            alt="{{ name }}" class="me-1 img-fluid align-middle"
-                                                            style="width:30px;height:30px;object-fit:contain;"
-                                                            {% if is_boss %}data-wowhead="npc={{ n }}"{% else %}data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right" data-bs-title="<img src='/data/icons/npc_{{ n }}.png' width='150'>"{% endif %}>
+                                                        <img src="/data/icons/npc_{{ n }}.png" alt="{{ name }}"
+                                                            class="me-1 img-fluid align-middle"
+                                                            style="width:30px;height:30px;object-fit:contain;" {% if
+                                                            is_boss %}data-wowhead="npc={{ n }}" {% else
+                                                            %}data-bs-toggle="tooltip" data-bs-html="true"
+                                                            data-bs-placement="right"
+                                                            data-bs-title="<img src='/data/icons/npc_{{ n }}.png' width='150'>"
+                                                            {% endif %}>
                                                         {% endif %}
                                                         {% if is_boss %}
                                                         <a href="https://www.wowhead.com/npc={{ n }}"
@@ -459,22 +527,30 @@
                                                     pull.total_pulls_at_index }} Pulls</p>
                                             </td>
                                             <td class="align-middle text-center">
-                                                <span class="badge badge-sm bg-gradient-success me-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Highest key where this pull was lusted">
+                                                <span class="badge badge-sm bg-gradient-success me-1"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Highest key where this pull was lusted">
                                                     {{ ("+"~pull.max_key_lusted) if pull.max_key_lusted else "-" }}
                                                 </span>
-                                                <span class="badge badge-sm bg-gradient-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Highest key where this pull was NOT lusted">
-                                                    {{ ("+"~pull.max_key_not_lusted) if pull.max_key_not_lusted else "-" }}
+                                                <span class="badge badge-sm bg-gradient-secondary"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Highest key where this pull was NOT lusted">
+                                                    {{ ("+"~pull.max_key_not_lusted) if pull.max_key_not_lusted else "-"
+                                                    }}
                                                 </span>
                                             </td>
                                             <td class="align-middle text-center">
                                                 {% if pull.example_route %}
-                                                    <a href="https://keystone.guru/route/{{ dungeon.slug }}/{{ pull.example_route.route_key }}/{{ dungeon.slug }}"
-                                                    class="text-body-emphasis text-sm font-weight-bold" target="_blank" data-bs-toggle="tooltip" data-bs-placement="top" title="View Level {{ pull.example_route.keystone_level }} route on Keystone.guru. The exact pull in this route is Pull #{{ pull.example_route.pull_number }}.">
-                                                        <i class="bi bi-box-arrow-up-right me-1"></i>View Example Route
-                                                    </a>
-                                                    <span class="text-muted text-xs d-block mt-1">Pull: {{ pull.example_route.pull_number }}</span>
+                                                <a href="https://keystone.guru/route/{{ dungeon.slug }}/{{ pull.example_route.route_key }}/{{ dungeon.slug }}"
+                                                    class="text-body-emphasis text-sm font-weight-bold" target="_blank"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="View Level {{ pull.example_route.keystone_level }} route on Keystone.guru. The exact pull in this route is Pull #{{ pull.example_route.pull_number }}.">
+                                                    <i class="bi bi-box-arrow-up-right me-1"></i>View Example Route
+                                                </a>
+                                                <span class="text-muted text-xs d-block mt-1">Pull: {{
+                                                    pull.example_route.pull_number }}</span>
                                                 {% else %}
-                                                    <span class="text-secondary text-sm">N/A</span>
+                                                <span class="text-secondary text-sm">N/A</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -496,7 +572,7 @@
                     <div class="card h-100" id="dungeon-team-comps" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                             <div data-share-anchor
-                                class="bg-gradient-success shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                                class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
                                 <h6 class="text-white text-capitalize ps-3 mb-0">Popular Team Comps</h6>
                                 <a href="/pages/comps?dungeons={{ dungeon_id }}"
                                     class="btn btn-sm btn-white me-3 mb-0 opacity-8" title="Find more Comp info">More
@@ -533,7 +609,8 @@
                                         {% for fam in team_comp_families %}
                                         <tr>
                                             <td>
-                                                <div class="d-flex px-3 py-1 align-items-center">{{ tc.comp_slots(fam) }}</div>
+                                                <div class="d-flex px-3 py-1 align-items-center">{{ tc.comp_slots(fam)
+                                                    }}</div>
                                             </td>
                                             <td class="align-middle text-center text-sm">
                                                 <span class="badge badge-sm bg-gradient-success">+{{ fam.mk }}</span>
@@ -560,13 +637,16 @@
                 <div class="col-lg-6 col-md-12 mb-4">
                     <div class="card h-100" id="dungeon-best-loot" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                            <div data-share-anchor class="bg-gradient-info shadow-info border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                            <div data-share-anchor
+                                class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
                                 <h6 class="text-white text-capitalize ps-3 mb-0" data-bs-toggle="tooltip"
                                     data-bs-placement="top"
-                                    title="Gear that drops here, ranked by how much the current meta equips it.">Best Loot
+                                    title="Gear that drops here, ranked by how much the current meta equips it.">Best
+                                    Loot
                                     From This Dungeon</h6>
                                 <a href="/pages/items?source={{ dungeon.slug }}"
-                                    class="btn btn-sm btn-white me-3 mb-0 opacity-8" title="Browse all loot from this dungeon">All
+                                    class="btn btn-sm btn-white me-3 mb-0 opacity-8"
+                                    title="Browse all loot from this dungeon">All
                                     Loot</a>
                             </div>
                         </div>
@@ -590,7 +670,8 @@
                                                 class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                                 Most Used By</th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
-                                                data-bs-toggle="tooltip" title="Runs this season that equipped the item">
+                                                data-bs-toggle="tooltip"
+                                                title="Runs this season that equipped the item">
                                                 Runs</th>
                                         </tr>
                                     </thead>
@@ -610,7 +691,8 @@
                                                     <div class="d-flex flex-column justify-content-center">
                                                         <a href="/items/{{ l.slug }}" class="text-decoration-none"
                                                             data-wowhead="item={{ l.id }}">
-                                                            <h6 class="mb-0 text-sm item-quality-{{ l.quality }}">{{ l.name }}</h6>
+                                                            <h6 class="mb-0 text-sm item-quality-{{ l.quality }}">{{
+                                                                l.name }}</h6>
                                                         </a>
                                                     </div>
                                                 </div>
@@ -625,21 +707,25 @@
                                                     <img src="/data/icons/{{ l.top_spec_icon }}.jpg"
                                                         class="avatar avatar-xs me-2 border border-dark border-1"
                                                         alt="{{ l.top_spec_name }}">
-                                                    <span class="text-xs font-weight-bold class-{{ l.top_class_name|replace(' ', '') }}-text">{{ l.top_spec_name }} {{ l.top_class_name }}</span>
+                                                    <span
+                                                        class="text-xs font-weight-bold class-{{ l.top_class_name|replace(' ', '') }}-text">{{
+                                                        l.top_spec_name }} {{ l.top_class_name }}</span>
                                                 </a>
                                                 {% else %}
                                                 <span class="text-xs text-secondary px-2">Not tracked</span>
                                                 {% endif %}
                                             </td>
                                             <td class="align-middle text-center">
-                                                <span class="text-secondary text-xs font-weight-bold">{{ "{:,}".format(l.runs) }}</span>
+                                                <span class="text-secondary text-xs font-weight-bold">{{
+                                                    "{:,}".format(l.runs) }}</span>
                                             </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
                                 {% else %}
-                                <p class="text-center text-sm text-secondary p-3 mb-0">No tracked loot for this dungeon yet.</p>
+                                <p class="text-center text-sm text-secondary p-3 mb-0">No tracked loot for this dungeon
+                                    yet.</p>
                                 {% endif %}
                             </div>
                         </div>
@@ -653,7 +739,8 @@
                 <div class="col-lg-6 col-md-12 mb-4">
                     <div class="card h-100" id="dungeon-skipped-npcs" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                            <div data-share-anchor class="bg-gradient-danger shadow-danger border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                            <div data-share-anchor
+                                class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
                                 <h6 class="text-white text-capitalize ps-3 mb-0" data-bs-toggle="tooltip"
                                     data-bs-placement="top"
                                     title="Least encountered enemies across all logged routes for this dungeon.">Least
@@ -661,22 +748,28 @@
                             </div>
                         </div>
                         <div class="card-body px-0 pb-2" style="position: relative; min-height: 320px;">
-                            <div class="p-0 custom-scrollbar" style="position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;">
+                            <div class="p-0 custom-scrollbar"
+                                style="position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;">
                                 {% if skip_rates %}
                                 <table id="skip-npcs-table" class="table align-items-center mb-0 w-100">
-                                    <thead class="sticky-top" style="z-index: 10; background-color: var(--mythi-surface-raised);">
+                                    <thead class="sticky-top"
+                                        style="z-index: 10; background-color: var(--mythi-surface-raised);">
                                         <tr>
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">NPC / Trash
+                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                                NPC / Trash
                                             </th>
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">Skip Rate
+                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                                Skip Rate
                                             </th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">Max Key<br><span class="text-success">Skipped</span> / Played
+                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                                Max Key<br><span class="text-success">Skipped</span> / Played
                                             </th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">Example Route
+                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                                Example Route
                                             </th>
                                         </tr>
                                     </thead>
@@ -691,8 +784,12 @@
                                                     {% set skip_is_boss = skip.npc_id|int in bosses %}
                                                     <img src="/data/icons/npc_{{ skip.npc_id }}.png"
                                                         alt="{{ npc_name }}" class="me-2 img-fluid"
-                                                        style="width:44px;height:44px;object-fit:contain;"
-                                                        {% if skip_is_boss %}data-wowhead="npc={{ skip.npc_id }}"{% else %}data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right" data-bs-title="<img src='/data/icons/npc_{{ skip.npc_id }}.png' width='150'>"{% endif %}>
+                                                        style="width:44px;height:44px;object-fit:contain;" {% if
+                                                        skip_is_boss %}data-wowhead="npc={{ skip.npc_id }}" {% else
+                                                        %}data-bs-toggle="tooltip" data-bs-html="true"
+                                                        data-bs-placement="right"
+                                                        data-bs-title="<img src='/data/icons/npc_{{ skip.npc_id }}.png' width='150'>"
+                                                        {% endif %}>
                                                     {% endif %}
                                                     <div>
                                                         <h6 class="mb-0 text-sm"><a
@@ -714,30 +811,36 @@
                                                     </div>
                                                     <div class="progress">
                                                         <div class="progress-bar bg-gradient-success opacity-8"
-                                                            role="progressbar"
-                                                            aria-valuenow="{{ skipped_pct }}" aria-valuemin="0"
-                                                            aria-valuemax="100"
+                                                            role="progressbar" aria-valuenow="{{ skipped_pct }}"
+                                                            aria-valuemin="0" aria-valuemax="100"
                                                             style="width: {{ skipped_pct }}%;"></div>
                                                     </div>
                                                 </div>
-                                                <p class="text-xs text-secondary mt-1 mb-0">{{ skip.total_routes - skip.total_encounters }} / {{ skip.total_routes }} Skips</p>
+                                                <p class="text-xs text-secondary mt-1 mb-0">{{ skip.total_routes -
+                                                    skip.total_encounters }} / {{ skip.total_routes }} Skips</p>
                                             </td>
                                             <td class="align-middle text-center">
-                                                <span class="badge badge-sm bg-gradient-success me-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Highest key where this NPC was skipped">
+                                                <span class="badge badge-sm bg-gradient-success me-1"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Highest key where this NPC was skipped">
                                                     {{ ("+"~skip.max_key_skipped) if skip.max_key_skipped else "-" }}
                                                 </span>
-                                                <span class="badge badge-sm bg-gradient-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Highest key where this NPC was played">
+                                                <span class="badge badge-sm bg-gradient-secondary"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Highest key where this NPC was played">
                                                     {{ ("+"~skip.max_key_played) if skip.max_key_played else "-" }}
                                                 </span>
                                             </td>
                                             <td class="align-middle text-center">
                                                 {% if skip.example_route %}
-                                                    <a href="https://keystone.guru/route/{{ dungeon.slug }}/{{ skip.example_route.route_key }}/{{ dungeon.slug }}"
-                                                    class="text-body-emphasis text-sm font-weight-bold" target="_blank" data-bs-toggle="tooltip" data-bs-placement="top" title="View Level {{ skip.example_route.keystone_level }} route on Keystone.guru">
-                                                        <i class="bi bi-box-arrow-up-right me-1"></i>View Example Route
-                                                    </a>
+                                                <a href="https://keystone.guru/route/{{ dungeon.slug }}/{{ skip.example_route.route_key }}/{{ dungeon.slug }}"
+                                                    class="text-body-emphasis text-sm font-weight-bold" target="_blank"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="View Level {{ skip.example_route.keystone_level }} route on Keystone.guru">
+                                                    <i class="bi bi-box-arrow-up-right me-1"></i>View Example Route
+                                                </a>
                                                 {% else %}
-                                                    <span class="text-secondary text-sm">N/A</span>
+                                                <span class="text-secondary text-sm">N/A</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -756,15 +859,16 @@
                 <div class="col-lg-6 col-md-12 mb-4">
                     <div class="card h-100" id="dungeon-success-rate" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                            <div class="bg-gradient-dark shadow-dark border-radius-lg pt-3 pb-3">
+                            <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3">
                                 <div class="d-flex justify-content-between align-items-center" data-share-anchor>
                                     {# mb-0, not m-0: the title carries the auto right margin that keeps
-                                       this bar's controls together at the right edge (deep-link.css). #}
+                                    this bar's controls together at the right edge (deep-link.css). #}
                                     <h6 class="text-white text-capitalize ps-3 mb-0">Success Rate by Keystone Level</h6>
                                     {# d-none only: a d-lg-inline-block here beat the inline display with
-                                       !important, so the button showed on desktop with nothing to reset.
-                                       Zoom is disabled below lg anyway, so the class is all it needs. #}
-                                    <button id="resetZoomBtn" class="btn btn-sm btn-outline-light me-3 mb-0 d-none">Reset Zoom</button>
+                                    !important, so the button showed on desktop with nothing to reset.
+                                    Zoom is disabled below lg anyway, so the class is all it needs. #}
+                                    <button id="resetZoomBtn"
+                                        class="btn btn-sm btn-outline-light me-3 mb-0 d-none">Reset Zoom</button>
                                 </div>
                             </div>
                         </div>
@@ -774,10 +878,15 @@
                                 How reliably each keystone level gets timed in {{ dungeon.name.en_US }} this season. Use
                                 it to see how much harder the next level really is before you push your key higher.
                             </p>
-                            {% set total_runs = overall_stats.total_runs if overall_stats else (level_stats|map(attribute='total_runs')|sum) %}
-                            {% set timed_total = (overall_stats.upgrade_1 + overall_stats.upgrade_2 + overall_stats.upgrade_3) if overall_stats else ((level_stats|map(attribute='upgrade_1')|sum) + (level_stats|map(attribute='upgrade_2')|sum) + (level_stats|map(attribute='upgrade_3')|sum)) %}
-                            {% set depleted_total = overall_stats.depleted if overall_stats else (level_stats|map(attribute='depleted')|sum) %}
-                            
+                            {% set total_runs = overall_stats.total_runs if overall_stats else
+                            (level_stats|map(attribute='total_runs')|sum) %}
+                            {% set timed_total = (overall_stats.upgrade_1 + overall_stats.upgrade_2 +
+                            overall_stats.upgrade_3) if overall_stats else ((level_stats|map(attribute='upgrade_1')|sum)
+                            + (level_stats|map(attribute='upgrade_2')|sum) +
+                            (level_stats|map(attribute='upgrade_3')|sum)) %}
+                            {% set depleted_total = overall_stats.depleted if overall_stats else
+                            (level_stats|map(attribute='depleted')|sum) %}
+
                             <div class="d-flex justify-content-around mb-3">
                                 <div class="text-center">
                                     <div class="text-xs text-secondary">Total runs</div>
@@ -785,18 +894,21 @@
                                 </div>
                                 <div class="text-center">
                                     <div class="text-xs text-secondary">Timed %</div>
-                                    <div class="h5 text-success">{{ ((timed_total / (total_runs if total_runs else 1)) * 100)|round(1) }}%</div>
+                                    <div class="h5 text-success">{{ ((timed_total / (total_runs if total_runs else 1)) *
+                                        100)|round(1) }}%</div>
                                 </div>
                                 <div class="text-center">
                                     <div class="text-xs text-secondary">Depleted %</div>
-                                    <div class="h5 text-danger">{{ ((depleted_total / (total_runs if total_runs else 1)) * 100)|round(1) }}%</div>
+                                    <div class="h5 text-danger">{{ ((depleted_total / (total_runs if total_runs else 1))
+                                        * 100)|round(1) }}%</div>
                                 </div>
                             </div>
-                            
+
                             <div class="chart" style="height: 300px;">
                                 <canvas id="keyLevelChart" class="chart-canvas" height="300"></canvas>
                             </div>
-                            <p class="text-xs text-center text-secondary mt-2 mb-0 d-none d-lg-block">Use mouse scroll to zoom. Drag to pan.</p>
+                            <p class="text-xs text-center text-secondary mt-2 mb-0 d-none d-lg-block">Use mouse scroll
+                                to zoom. Drag to pan.</p>
                             {% else %}
                             <p class="text-sm text-center">No key level data available yet.</p>
                             {% endif %}
@@ -804,6 +916,7 @@
                     </div>
                 </div>
             </div>
+
             {% include "footer.html" %}
         </div>
     </main>
@@ -864,10 +977,10 @@
         $(function () {
             var common = { responsive: true, ordering: false, paging: false, searching: false, info: false };
             var tables = {
-                'lust-table':          [{ targets: 0, responsivePriority: 1 }, { targets: 1, responsivePriority: 2 }, { targets: 3, responsivePriority: 4 }, { targets: 2, responsivePriority: 5 }],
+                'lust-table': [{ targets: 0, responsivePriority: 1 }, { targets: 1, responsivePriority: 2 }, { targets: 3, responsivePriority: 4 }, { targets: 2, responsivePriority: 5 }],
                 'popular-comps-table': [{ targets: 0, responsivePriority: 1 }, { targets: 1, responsivePriority: 2 }, { targets: 3, responsivePriority: 3 }, { targets: 2, responsivePriority: 4 }],
-                'best-loot-table':     [{ targets: 0, responsivePriority: 1 }, { targets: 2, responsivePriority: 2 }, { targets: 3, responsivePriority: 3 }, { targets: 1, responsivePriority: 5 }],
-                'skip-npcs-table':     [{ targets: 0, responsivePriority: 1 }, { targets: 1, responsivePriority: 2 }, { targets: 3, responsivePriority: 4 }, { targets: 2, responsivePriority: 5 }]
+                'best-loot-table': [{ targets: 0, responsivePriority: 1 }, { targets: 2, responsivePriority: 2 }, { targets: 3, responsivePriority: 3 }, { targets: 1, responsivePriority: 5 }],
+                'skip-npcs-table': [{ targets: 0, responsivePriority: 1 }, { targets: 1, responsivePriority: 2 }, { targets: 3, responsivePriority: 4 }, { targets: 2, responsivePriority: 5 }]
             };
             Object.keys(tables).forEach(function (id) {
                 var el = document.getElementById(id);
@@ -879,71 +992,72 @@
     <script src="/assets/js/plugins/chartjs.min.js"></script>
     <script src="/assets/js/plugins/chartjs-plugin-zoom.min.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             {% if level_stats %}
             // Disable chart pan/zoom on small screens so it doesn't hijack page scrolling.
             var enableZoom = window.matchMedia('(min-width: 992px)').matches;
-            var levelData = {{ level_stats | tojson }};
-            // sort by key level
-            levelData.sort((a,b) => a.keystone_level - b.keystone_level);
+            var levelData = {{ level_stats | tojson
+        }};
+        // sort by key level
+        levelData.sort((a, b) => a.keystone_level - b.keystone_level);
 
-            var labels = levelData.map(d => '+' + d.keystone_level);
-            var up3 = levelData.map(d => d.upgrade_3);
-            var up2 = levelData.map(d => d.upgrade_2);
-            var up1 = levelData.map(d => d.upgrade_1);
-            var depleted = levelData.map(d => d.depleted);
+        var labels = levelData.map(d => '+' + d.keystone_level);
+        var up3 = levelData.map(d => d.upgrade_3);
+        var up2 = levelData.map(d => d.upgrade_2);
+        var up1 = levelData.map(d => d.upgrade_1);
+        var depleted = levelData.map(d => d.depleted);
 
-            var ctxBar = document.getElementById("keyLevelChart").getContext("2d");
-            var keyLevelChart = new Chart(ctxBar, {
-                type: "bar",
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: "Depleted", data: depleted, backgroundColor: "#FF0000" },
-                        { label: "+1", data: up1, backgroundColor: "#1eff00" },
-                        { label: "+2", data: up2, backgroundColor: "#a335ee" },   
-                        { label: "+3", data: up3, backgroundColor: "#ff8000" }
-                    ]
+        var ctxBar = document.getElementById("keyLevelChart").getContext("2d");
+        var keyLevelChart = new Chart(ctxBar, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: "Depleted", data: depleted, backgroundColor: "#FF0000" },
+                    { label: "+1", data: up1, backgroundColor: "#1eff00" },
+                    { label: "+2", data: up2, backgroundColor: "#a335ee" },
+                    { label: "+3", data: up3, backgroundColor: "#ff8000" }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true, ticks: { color: MythiChart.colors.tickText }, grid: { display: false } },
+                    y: { stacked: true, ticks: { color: MythiChart.colors.tickText }, grid: { color: MythiChart.colors.grid } }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { stacked: true, ticks: { color: MythiChart.colors.tickText }, grid: { display: false } },
-                        y: { stacked: true, ticks: { color: MythiChart.colors.tickText }, grid: { color: MythiChart.colors.grid } }
+                plugins: {
+                    legend: { labels: { color: MythiChart.colors.tickText } },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
                     },
-                    plugins: {
-                        legend: { labels: { color: MythiChart.colors.tickText } },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
+                    zoom: {
+                        pan: {
+                            enabled: enableZoom,
+                            mode: 'x',
+                            onPan: function ({ chart }) {
+                                document.getElementById('resetZoomBtn').classList.remove('d-none');
+                            }
                         },
                         zoom: {
-                            pan: {
-                                enabled: enableZoom,
-                                mode: 'x',
-                                onPan: function({chart}) {
-                                    document.getElementById('resetZoomBtn').classList.remove('d-none');
-                                }
-                            },
-                            zoom: {
-                                wheel: { enabled: enableZoom },
-                                pinch: { enabled: enableZoom },
-                                mode: 'x',
-                                onZoom: function({chart}) {
-                                    document.getElementById('resetZoomBtn').classList.remove('d-none');
-                                }
+                            wheel: { enabled: enableZoom },
+                            pinch: { enabled: enableZoom },
+                            mode: 'x',
+                            onZoom: function ({ chart }) {
+                                document.getElementById('resetZoomBtn').classList.remove('d-none');
                             }
                         }
                     }
                 }
-            });
+            }
+        });
 
-            document.getElementById('resetZoomBtn').addEventListener('click', function() {
-                keyLevelChart.resetZoom();
-                this.classList.add('d-none');
-            });
-            {% endif %}
+        document.getElementById('resetZoomBtn').addEventListener('click', function () {
+            keyLevelChart.resetZoom();
+            this.classList.add('d-none');
+        });
+        {% endif %}
         });
     </script>
     <script type="text/plain" data-type="application/javascript" data-name="wowhead"

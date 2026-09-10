@@ -80,6 +80,13 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
     season_info = load_season_info(LOOKUP_DIR)
     notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    # Latest per-dungeon hotfix notes, keyed by challenge_mode_id (str). Produced
+    # by fetchDungeonHotfixes.py; a dungeon absent here simply has no recent
+    # hotfixes and the card renders its empty state. source_url is the Blizzard
+    # hotfix post the notes were scraped from (linked from the card header).
+    hotfixes_data = load_json(os.path.join(LOOKUP_DIR, "hotfixes.json"))
+    hotfixes_lookup = hotfixes_data.get("dungeons", {})
+    hotfix_source_url = hotfixes_data.get("source_url")
     npcs_lookup = load_json(os.path.join(LOOKUP_DIR, "npcs.json"))
     # NPC model thumbnails downloaded by fetchNpcIcons.py -> data/icons/npc_<id>.png.
     # Set of npc_id strings that actually have an icon file, so the template only
@@ -497,6 +504,8 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                     role_lookup=ROLE_FOLDERS,
                     dungeon_nav=dungeon_nav,
                     current_dungeon=dungeon_data['name']['en_US'],
+                    hotfixes=hotfixes_lookup.get(str(dungeon_id), []),
+                    hotfix_source_url=hotfix_source_url,
                     dungeon_id=dungeon_id,
                     page_title=dungeon_data['name']['en_US'],
                     season_info=season_info,
