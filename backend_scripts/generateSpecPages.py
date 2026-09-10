@@ -2129,6 +2129,13 @@ def main(template_path, output_dir, debug=False, spec=None):
             _collapsed_comps, spec_lookup, class_lookup, top_n=None)
         team_spec_comps = compArchetypes.spec_team_comps(
             _team_families, spec_lookup, class_lookup)
+        # Total runs each spec is played in across all comps. Denominator for the
+        # Popular Team Comps card, so each family shows its share of the spec's runs.
+        _spec_comp_total_runs = defaultdict(int)
+        for _e in _collapsed_comps:
+            _runs = int(_e.get("runs", 0))
+            for _sid in set(_e.get("c", [])):
+                _spec_comp_total_runs[_sid] += _runs
 
     # Iterate over each spec folder
     for spec_id in spec_keys:
@@ -2508,15 +2515,15 @@ def main(template_path, output_dir, debug=False, spec=None):
                 oh = next((g for g in weapon_slots if g["slot"] == "OFF_HAND"), None)
                 if mh and mh["entries"] and len(mh["entries"]) > 0:
                     mh_item_id = mh["entries"][0]["id"]
-                    # look up its inventoryType; two‑handers are 17 and ranged weapons are 15
-                    print(f"Checking MAIN_HAND item {mh_item_id} for two‑hander or ranged type to determine if OFF_HAND slot should be removed")
+                    # look up its inventoryType; two-handers are 17 and ranged weapons are 15
+                    print(f"Checking MAIN_HAND item {mh_item_id} for two-hander or ranged type to determine if OFF_HAND slot should be removed")
                     print(f"MAIN_HAND item {mh_item_id} inventoryType: {item_lookup.get(mh_item_id, {}).get('inventoryType')}, itemSubClass: {item_lookup.get(mh_item_id, {}).get('itemSubClass')}")
                     # Passing spec_id keeps Titan's Grip Fury's off-hand: it
                     # wields a two-hander in that hand too (DUAL_WIELD_TWOHAND_SPECS).
                     if occupies_both_hands(item_lookup.get(mh_item_id), spec_id):
                         # always build combined list (falls back to just mh entries if oh is None)
                         combined = mh["entries"] + (oh.get("entries", []) if oh else [])
-                        # re‑sort + trim to top 10
+                        # re-sort + trim to top 10
                         mh["entries"] = combined
                         # if there was an Off Hand slot, drop it entirely
                         if oh:
@@ -2564,6 +2571,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                 if not team_comp_families:
                     team_comp_families = compArchetypes.top_comps_with_spec(
                         _collapsed_comps, int(spec_id), spec_lookup, class_lookup)
+                team_comp_total_runs = int(_spec_comp_total_runs.get(int(spec_id), 0))
 
             if not tree_by_spec.get(int(spec_id)):
                 raise ValueError(f"No talent tree data for spec {spec_id}")
@@ -2974,6 +2982,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                 hero_tree_count=hero_tree_count,
                 top_routes=top_routes,
                 team_comp_families=team_comp_families,
+                team_comp_total_runs=team_comp_total_runs,
                 season_info=season_info,
                 stats=stat_priority,
                 secondary_stats=SECONDARY_STATS,

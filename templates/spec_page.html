@@ -504,7 +504,7 @@
                 <div class="d-flex justify-content-between align-items-start">
                   <div>
                     <p class="text-sm mb-0 text-capitalize">Spec Popularity</p>
-                    <div class="text-xs text-secondary mt-1">Overall Played: <span class="text-body-emphasis">{{ ((summary_data.count / (total_season_runs if total_season_runs else 1)) * 100) | round(1) }}%</span></div>
+                    <div class="text-xs text-secondary mt-1">Overall Played: <span class="text-body-emphasis" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ '{:,}'.format(summary_data.count) }} of {{ '{:,}'.format(total_season_runs if total_season_runs else 0) }} runs">{{ ((summary_data.count / (total_season_runs if total_season_runs else 1)) * 100) | round(1) }}%</span></div>
                   </div>
                   <div class="d-flex align-items-center">
                     <button id="resetZoomBtnSpec" class="btn btn-sm btn-outline-light me-2 mb-0" style="display: none;">Reset Zoom</button>
@@ -538,7 +538,7 @@
               <div class="card-header p-2 ps-3">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <p class="text-sm mb-0 text-capitalize">Popular Team Comps</p>
+                    <p class="text-sm mb-0 text-capitalize">Best Team Comps</p>
                   </div>
                   <div
                     class="icon icon-md icon-shape bg-gradient-success shadow-success shadow text-center border-radius-lg">
@@ -551,7 +551,8 @@
                 <div class="{% if not loop.last %}border-bottom border-secondary pb-2 {% endif %}mb-2">
                   <div class="mb-2">{{ tc.comp_slots(fam) }}</div>
                   <div class="d-flex align-items-center flex-wrap gap-2">
-                    <span class="text-sm font-weight-bold">{{ fam.runs|humanize }} Runs</span>
+                    <span class="text-sm font-weight-bold" data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="{{ '{:,}'.format(fam.runs) }} of {{ '{:,}'.format(team_comp_total_runs) }} runs">{% if team_comp_total_runs > 0 %}{{ '%.1f' % (fam.runs / team_comp_total_runs * 100) }}{% else %}0{% endif %}% of Runs</span>
                     <span class="badge bg-gradient-{{ 'success' if fam.success >= 70 else 'warning' }}">{{ fam.success }}% Timed</span>
                     <span class="text-xs text-secondary">Highest Key: <span class="text-body font-weight-bold">+{{ fam.mk }}</span></span>
                   </div>
