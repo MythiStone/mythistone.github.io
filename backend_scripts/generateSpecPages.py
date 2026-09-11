@@ -1835,7 +1835,6 @@ def convert_slots(
                                     break
 
                 # Enchants: per-slot-group
-                # Be tolerant of plural/singular differences (e.g., SHOULDERS vs SHOULDER)
                 ench_map = bis_summary.get("enchants", {})
                 ench_id = None
                 if item.get("enchantment"):
@@ -1844,12 +1843,8 @@ def convert_slots(
                     # build candidate keys to search in the bis enchants map
                     candidates = set()
                     candidates.add(slot)
-                    candidates.add(f"{slot}S")
-                    if slot.endswith("S"):
-                        candidates.add(slot.rstrip("S"))
                     if grp:
                         candidates.add(grp)
-                        candidates.add(f"{grp}S")
                         candidates.add(f"{grp}_1")
                         candidates.add(f"{grp}_2")
                     # try each candidate key to find a matching best enchant that exceeds threshold
@@ -1897,8 +1892,8 @@ def convert_slots(
                             continue
                         # group fallback (e.g., FINGER -> FINGER_1/FINGER_2)
                         group_name = e_slot_name.split("_")[0] if isinstance(e_slot_name, str) else e_slot_name
-                        # try plural/singular variants and group-indexed keys
-                        possible_keys = [e_slot_name, f"{e_slot_name}S", group_name, f"{group_name}S", f"{group_name}_1", f"{group_name}_2"]
+                        # group-indexed keys
+                        possible_keys = [e_slot_name, group_name, f"{group_name}_1", f"{group_name}_2"]
                         for e in e_list:
                             eid = e.get("id")
                             if eid is None:

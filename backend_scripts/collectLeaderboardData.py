@@ -1102,7 +1102,7 @@ RAIDERIO_SLOT_MAP = {
     "offhand": "OFF_HAND",
     "neck": "NECK",
     "shirt": None,  # ignore shirt
-    "shoulder": "SHOULDERS",
+    "shoulder": "SHOULDER",
     "trinket1": "TRINKET_1",
     "trinket2": "TRINKET_2",
     "trinket": "TRINKET_1",
@@ -1510,6 +1510,7 @@ async def run_raiderio_top_loadouts(session):
                 ranks_sorted = sorted(collected.keys())[:TOP_PLAYER_LOADOUTS_TARGET]
                 # cache Blizzard numeric season id per region to avoid repeated API calls
                 season_id_cache: dict[str, int] = {}
+                wiped_ranks: set = set()  # ranks fully wiped this run (see delete_top_player_rank)
                 for r in ranks_sorted:
                     entries = collected.get(r) or []
                     # resolve DB season id cache per entry region as needed
@@ -1578,9 +1579,12 @@ async def run_raiderio_top_loadouts(session):
                             await WRITE_GATE.begin()
                             gated = True
 
-                            # Delete existing meta (cascades children), then insert meta + children in a transaction
-                            deleted = databaseConnector.delete_top_player_meta(conn, cursor, spec_id, r, int(map_challenge_mode_id))
-                            GLOBAL_STATS.console_log(f"DEBUG delete_top_player_meta rowcount={deleted} spec={spec_id} rank={r} map_challenge_mode_id={map_challenge_mode_id}")
+                            if r not in wiped_ranks:
+                                deleted = databaseConnector.delete_top_player_rank(conn, cursor, spec_id, r)
+                                wiped_ranks.add(r)
+                                GLOBAL_STATS.console_log(f"DEBUG delete_top_player_rank rowcount={deleted} spec={spec_id} rank={r}")
+                            else:
+                                databaseConnector.delete_top_player_meta(conn, cursor, spec_id, r, int(map_challenge_mode_id))
 
                             databaseConnector.insert_top_player_meta(
                                 conn,

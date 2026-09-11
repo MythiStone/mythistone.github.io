@@ -580,36 +580,18 @@ def _make_candidate(item_id, bonus_list, count, item_lookup,
 
 
 def top50_per_slot_gear(loadouts, item_lookup):
-    """slot -> the Top-50 verified players' most-common equipped item, as a full
-    candidate dict (see _make_candidate). The returned set is guaranteed legal:
-    it never wears the same unique-equipped item in two slots, and it respects the
-    embellishment cap and itemLimit categories.
+    """slot -> the Top-50 players' most-common equipped item, as a full candidate
+    dict (see _make_candidate). Feeds the tierlist "Top 50" bar and reseeds the
+    sweep baseline, so the returned set must legalize like any candidate.
 
-    The per-slot vote is the same one the tierlist "Top 50" bar uses
-    (generateSimcProfiles._top50_gear, which now calls this): each top-50 player
-    contributes one loadout per dungeon, the most-common item wins (ties toward
-    the higher count then lower id), and the most-common bonus set for that item
-    wins (ties by the string) — both deterministic across runs regardless of dict
-    order.
-
-    Paired ring/trinket slots are ranked across the whole GROUP by DISTINCT item
-    (FINGER_1 drops the #1 item, FINGER_2 the #2), exactly as the spec page's
-    fetch_slot_rows does, so the pair's two picks are the two most-popular
-    DIFFERENT items. The game fills FINGER_1/FINGER_2 (TRINKET_1/TRINKET_2)
-    arbitrarily, so ranking each numbered slot on its own would otherwise surface
-    the same unique-equipped ring/trinket as the winner for both slots (the bug
-    the tierlist "Top 50" gear showed). A final legalize_set pass — the same helper
-    the sweep uses — is a safety net for any residual cross-slot equip limit (a
-    unique item across non-paired slots, >2 embellishments).
-
-    Emitting the full candidate shape (not the lighter display subset) is what lets
-    these picks reseed the baseline and be unioned into the candidate pool, where
-    they must legalize like any pool candidate."""
+    Paired ring/trinket slots are ranked across the GROUP by distinct item (as the
+    spec page's fetch_slot_rows does), then legalize_set demotes any remaining
+    cross-slot equip-limit breach. Without this the game's arbitrary FINGER_1/
+    FINGER_2 (TRINKET_1/TRINKET_2) fill lets one unique-equipped item win both
+    slots and show twice. Ties break toward higher count then lower id (and the
+    bonus string) so the pick is deterministic across runs."""
     embellish_limits = load_embellishment_limits()
     socket_bonus_counts = load_bonus_socket_counts()
-    # Votes are keyed by slot, except paired ring/trinket slots which pool under
-    # their shared group key (FINGER / TRINKET) so the pair is ranked by distinct
-    # item, mirroring the spec page.
     key_item_counts = {}          # key -> item_id -> count
     key_item_bonus = {}           # key -> item_id -> bonus_str -> count
     for lo in loadouts or []:
@@ -629,9 +611,6 @@ def top50_per_slot_gear(loadouts, item_lookup):
             )
 
     def _ranked_candidates(key):
-        """Full candidate list for a slot/group key, most-popular distinct item
-        first (ties: higher count then lower id), each with its most-common bonus
-        set (ties by the string)."""
         counts = key_item_counts.get(key)
         if not counts:
             return []
@@ -645,14 +624,12 @@ def top50_per_slot_gear(loadouts, item_lookup):
             ))
         return out
 
-    # Full ranked bag per numbered slot; paired slots share the group ranking with
-    # their positional index dropped so the two slots take two DIFFERENT items.
     bags = {}
     for slot in ALL_SLOTS:
         group = MULTI_SLOT_GROUPS.get(slot)
         if group:
             ranked = _ranked_candidates(group)
-            idx = int(slot.rsplit("_", 1)[1]) - 1  # FINGER_1 -> 0, FINGER_2 -> 1
+            idx = int(slot.rsplit("_", 1)[1]) - 1  # FINGER_1 -> drop #1, FINGER_2 -> #2
             if 0 <= idx < len(ranked):
                 del ranked[idx]
         else:
@@ -661,9 +638,6 @@ def top50_per_slot_gear(loadouts, item_lookup):
             bags[slot] = ranked
 
     gear = {slot: cands[0] for slot, cands in bags.items()}
-    # Demote any pick that still breaks a cross-slot equip limit to that slot's
-    # next legal candidate (reuses the sweep's legalizer, so the bar and the sweep
-    # can never disagree). Bags give it the alternatives to demote to.
     legalize_set(gear, bags)
     return gear
 

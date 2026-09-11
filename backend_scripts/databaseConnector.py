@@ -3787,6 +3787,11 @@ DELETE FROM `Mythistone`.`top_player_loadouts`
 WHERE `spec_id` = %s AND `rank` = %s AND `map_challenge_mode_id` = %s
 """
 
+DELETE_TOP_PLAYER_RANK_SQL = """
+DELETE FROM `Mythistone`.`top_player_loadouts`
+WHERE `spec_id` = %s AND `rank` = %s
+"""
+
 INSERT_TOP_PLAYER_META_SQL = """
 INSERT INTO `Mythistone`.`top_player_loadouts`
 (`spec_id`, `season`, `rank`, `map_challenge_mode_id`, `region`, `character_id`, `character_name`, `realm`, `loadout_key`, `loadout_updated_at`, `keystone_level`, `loadout_text`, `score`)
@@ -3824,6 +3829,15 @@ WHERE `spec_id` = %s AND `rank` = %s AND `map_challenge_mode_id` = %s
 ORDER BY `season` DESC
 LIMIT 1
 """
+
+
+def delete_top_player_rank(connection, cursor, spec_id, rank):
+    """Delete every top-player meta row for a (spec_id, rank), all dungeons
+    (cascades to the child item/gem/enchant/talent tables). `rank` is a per-run
+    collection ordinal whose occupant changes between runs, so the collector wipes
+    the whole slot before re-inserting to keep each rank a single coherent player."""
+    execute_with_retry(connection, cursor, DELETE_TOP_PLAYER_RANK_SQL, (spec_id, rank))
+    return cursor.rowcount
 
 
 def delete_top_player_meta(connection, cursor, spec_id, rank, map_challenge_mode_id):
