@@ -1727,5 +1727,14 @@
         "blog": "Blood Death Knight has 965.1 K Mythic+ runs tracked this season. The San'layn hero tree leads at 89% of builds, with Deathbringer (11%) trailing.\n\n88% of tracked runs beat the timer, and 4% earn all three chests. The stat priority skews toward Haste > Crit > Mastery > Versatility. The best key so far: +21 Den of Nalorakk in 29:45.294.",
         "post": "San'layn (89.33%) drinks the blood of 965.1K runs while Deathbringer (11%) just watches. 88% timed, only 4% three-chest talk about a bloody gap #WoW #MythicPlus https://mythistone.com/classes/Tank/Blood_Death%20Knight",
         "timestamp": 1789073197140
+    },
+    "data/social/spec_overview_270_2026-09.png": {
+        "title": "Mistweaver Monk Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Healer/Mistweaver_Monk",
+        "social": "225.2 K runs: Conduit of the Celestials (95.66%) crushes Master of Harmony (4%). 89% timed, 6% three-chest. Will you follow the meta or test the underdog on +21 Den of Nalorakk? #WoW #MythicPlus https://mythistone.com/classes/Healer/Mistweaver_Monk",
+        "blog": "225.2 K Mistweaver Monk keys are in the books this season. The Conduit of the Celestials hero tree leads at 96% of builds, with Master of Harmony (4%) trailing.\n\nGroups time keys with the spec 89% of the time and three-chest 6% of them. Most builds prioritise Haste > Crit > Mastery > Versatility. The best key so far: +21 Den of Nalorakk in 31:41.537.",
+        "post": "225.2 K runs: Conduit of the Celestials (95.66%) crushes Master of Harmony (4%). 89% timed, 6% three-chest. Will you follow the meta or test the underdog on +21 Den of Nalorakk? #WoW #MythicPlus https://mythistone.com/classes/Healer/Mistweaver_Monk",
+        "timestamp": 1789160054685
     }
 }
