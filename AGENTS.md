@@ -81,6 +81,11 @@ Collect offline, render static, host static. The published site is plain HTML/CS
   or fetch them.
 - **KISS and DRY.** Smallest change that fits the existing pipeline; reuse/modify existing helpers,
   macros, and lookups before adding code.
+- **Comment sparingly.** Do not narrate what the code already says or add a block that re-explains
+  each line. A comment earns its place only when it records the non-obvious "why" (a gotcha, a
+  cross-file coupling, a constraint that is not visible locally), and then it is one short line or
+  two, not a paragraph. Prefer a clear name or a `docstring` "why" over inline commentary. When in
+  doubt, leave it out.
 
 ## Tooling reality and verification
 
