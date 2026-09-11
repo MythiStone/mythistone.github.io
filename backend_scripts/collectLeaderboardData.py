@@ -197,7 +197,15 @@ DUNGEON_STATIC = DATA_DIR / "static" / "dungeons.json"
 # dungeons, so loadouts for those zones must never be stored (they pollute
 # top_player_loadouts and skew the per-spec hero-tree badge). Fail loud if the
 # static file is unreadable so a bad deploy cannot silently store everything.
-CURRENT_DUNGEON_MAP_IDS = {int(k) for k in json.loads(DUNGEON_STATIC.read_text()).keys()}
+_DUNGEON_STATIC_DATA = json.loads(DUNGEON_STATIC.read_text())
+CURRENT_DUNGEON_MAP_IDS = {int(k) for k in _DUNGEON_STATIC_DATA.keys()}
+
+# +1 qualifying_duration (base timer, ms) per dungeon; a run is timed when its
+# duration is <= this. KeyError here fails loud rather than treating all as timed.
+DUNGEON_TIMED_THRESHOLD_MS = {
+    int(k): int(v["keystone_upgrades"]["1"]["qualifying_duration"])
+    for k, v in _DUNGEON_STATIC_DATA.items()
+}
 
 TALENTS_STATIC = DATA_DIR / "static" / "talents.json"
 CHOICE_NODE_IDS = set()
@@ -881,9 +889,13 @@ async def fetch_leaderboard_and_queue(
         run_level = group["keystone_level"]
         top_level = max_keys.get(dungeon["dungeon_id"], 0)
         threshold = max(0, top_level - KEYLEVELS_DOWN)
+        timer_ms = DUNGEON_TIMED_THRESHOLD_MS.get(dungeon["dungeon_id"])
+        is_timed = timer_ms is not None and group["duration"] <= timer_ms
         if (
-            datetime.now(timezone.utc) - completed <= timedelta(days=1)
+            top_level > 0
+            and is_timed
             and run_level >= threshold
+            and datetime.now(timezone.utc) - completed <= timedelta(days=1)
         ):
             await advanced_queue.put((region, season, period, realm, dungeon, group))
         else:
