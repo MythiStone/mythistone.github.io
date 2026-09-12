@@ -103,7 +103,16 @@ about.
    `mysql:8` container `mythistone-testdb`, loads `database.sql`, seeds plausible data from
    `data/static/**`, runs the real `sp_run_agg_pipeline()`, and prints `DATABASE_*` exports (user
    Test/test, host port 3399). Seeded runs are timestamped inside the last 14 days (aggregations
-   ignore older gear/talent data).
+   ignore older gear/talent data). RULE: the local render is the required verification, so make
+   Docker available rather than skipping it or hand-building a repro. **If Docker Desktop is not
+   running, start it** (`Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"`, then wait
+   until `docker version` reports a Server) and proceed. GOTCHA: on this Windows box the **Bash tool
+   cannot reach Docker** (`docker` there fails with `npipe:////./pipe/dockerDesktopLinuxEngine ...
+   cannot find the file`); that error is the Bash-tool docker client, NOT proof Docker is down. Run
+   docker and the seeder from the **PowerShell tool** (`docker version`, `python
+   backend_scripts/localDev/seed_test_db.py`), setting `DATABASE_*`/`KEYSTONE_GURU_*` with `$env:`.
+   Never conclude "Docker isn't running" from a Bash failure, and never fall back to a custom test
+   page to dodge the real render.
 2. Render with the generator, using the args `buildPages.yml` uses. Output dirs (`dungeons/`,
    `classes/`, `items/`, `pages/`) are gitignored. Examples: `generateDungeonPages.py --template
    templates/dungeon_page.html --output_dir dungeons`; `generateSpecPages.py --template
@@ -111,7 +120,8 @@ about.
    a token; a token silently renders nothing).
 3. Serve the repo root (pages use absolute `/assets/` paths) and inspect in the Browser pane:
    `python -m http.server 8099 --bind 127.0.0.1` (port matches `.claude/launch.json`), then open
-   `http://127.0.0.1:8099/<path>`. Confirm the cards you touched render with data and the console is
+   `http://127.0.0.1:8099/<path>`. When you first open a page it will show a cookie banner. Decline 
+   all cookies before confirming the page you touched render with data and the console is
    clean.
 4. Teardown (optional): `seed_test_db.py --teardown`.
    For synthetic seed routes the keystone.guru thumbnail fetch can poll an error job for ~25 min per
@@ -294,6 +304,12 @@ plugin `<script>` tags and the inline / `<page>.js`. Cache-bust volatile per-pag
 `generate<Page>Page.py` (own Jinja2 `Environment`, `os.makedirs` its output dir) wired into
 `buildPages.yml`.
 
+**Floating-header card rows need their own `mb-4`.** Cards using the Material Dashboard floating
+header (`.card-header ... mt-n4 mx-3 z-index-2`, the gold ribbon) pull the ribbon up 1.5rem above the
+`.card` element. A card row therefore only shows a real gap below it if the ROW carries `mb-4`; a bare
+`<div class="row">` leaves just the column `mb-4`, which the next row's `mt-n4` ribbon fully consumes,
+so the ribbons collide with the card above on wide screens. Every dungeon-page card row must be
+`row mb-4` (the column `mb-4` alone is not enough).
 ## Frontend stack
 
 **Material Dashboard 3 v3.2.0** on **Bootstrap 5.3.3**. **No build step**: plain `<script>`
@@ -325,6 +341,20 @@ literals to convert when those widgets are polished. Class colors are dual token
 `.border-quality-N`. Stat tiers `--stat-*` (+`-raw`) with `.stat-<name>` utilities. Scrollbars
 `--mythi-scrollbar-*`. UI glyphs use Material Symbols Rounded; game icons from `/data/icons/<id>.jpg`
 (specs/buffs) or `.png` (items).
+
+**In-card scroll regions.** For a list/table that should scroll inside a card while filling the
+card's real height (so two `h-100` cards in an equal-height row stay level with no dead space under
+the list), use the shared utility in `custom-scrollbars.css`: `.card-scroll-body` on the `.card-body`
+(makes it a `min-height:0` flex column) and `.card-scroll` on the scrolling child (`flex:1 1 auto`,
+`min-height:0`, `overflow-y:auto`, capped at `--card-scroll-max`, default 470px, override inline per
+card e.g. `style="--card-scroll-max: 435px;"`). Pair with `.custom-scrollbar` for the themed
+scrollbar. `.custom-scrollbar` only styles scrollbar appearance, so do NOT hand-roll the old inline
+`max-height; overflow-y:auto` box for card-filling lists. The taller sibling drives the row height;
+the scroll region fills to that height and scrolls its overflow (sticky `thead` inside still pins).
+Used by comps Hidden Gems / Best Spec Combinations and dungeon Most Lusted Pulls. The utility needs
+the card height-bounded (an `h-100` card in an equal-height row, or an explicit height); it is not for
+a fixed-height scroll box sitting below other content in a column (e.g. comps `#suggestions-container`
+keeps its own inline `max-height`).
 
 **Theming.** Dark is the **unconditional default** via `data-bs-theme` on `<html>`, set by an inline
 pre-paint script in `header_imports.html` reading `localStorage.theme` (OS `prefers-color-scheme` is
