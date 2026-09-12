@@ -58,6 +58,19 @@ code,
   scrollbar-color: var(--mythi-scrollbar-thumb) var(--mythi-scrollbar-track);
 }
 
+.card-scroll-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.card-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: var(--card-scroll-max, 470px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 /* Smooth-Scrollbar JS Plugin Overrides (Used on Sidebar) */
 .scrollbar-track {
   background: var(--mythi-scrollbar-track) !important;

@@ -150,9 +150,9 @@
                 <h6 class="text-white text-capitalize ps-3 mb-0">Most Popular</h6>
               </div>
             </div>
-            <div class="card-body px-0 pb-2">
+            <div class="card-body px-0 pb-2 card-scroll-body">
               <p class="text-sm px-3 mb-2" id="most-popular-sub">Most-played team comps across all dungeons.</p>
-              <div id="most-popular-list" class="list-group list-group-flush px-3 py-2">
+              <div id="most-popular-list" class="list-group list-group-flush px-3 py-2 card-scroll custom-scrollbar">
                 {% for arch in archetypes_all.popular %}{{ arch_row(arch, 'popular') }}{% endfor %}
               </div>
             </div>
@@ -166,9 +166,9 @@
                 <h6 class="text-white text-capitalize ps-3 mb-0">Best for Highest Keys</h6>
               </div>
             </div>
-            <div class="card-body px-0 pb-2">
+            <div class="card-body px-0 pb-2 card-scroll-body">
               <p class="text-sm px-3 mb-2" id="best-highkey-sub">Team comps performing best in {{ archetypes_all.hk_label }} across all dungeons.</p>
-              <div id="best-highkey-list" class="list-group list-group-flush px-3 py-2">
+              <div id="best-highkey-list" class="list-group list-group-flush px-3 py-2 card-scroll custom-scrollbar">
                 {% for arch in archetypes_all.highkey %}{{ arch_row(arch, 'highkey') }}{% endfor %}
               </div>
             </div>
@@ -185,9 +185,9 @@
                 <h6 class="text-white text-capitalize ps-3 mb-0">Hidden Gems</h6>
               </div>
             </div>
-            <div class="card-body px-0 pb-2">
+            <div class="card-body px-0 pb-2 card-scroll-body">
               <p class="text-sm px-3 mb-2" id="hidden-gems-sub">Niche team comps with strong success in {{ archetypes_all.gem_label }} across all dungeons.</p>
-              <div id="hidden-gems-list" class="list-group list-group-flush px-3 py-2">
+              <div id="hidden-gems-list" class="list-group list-group-flush px-3 py-2 card-scroll custom-scrollbar">
                 {% for arch in archetypes_all.gems %}{{ arch_row(arch, 'gems') }}{% else %}
                 <p class="text-sm text-secondary px-2">No hidden gems for this dungeon.</p>
                 {% endfor %}
@@ -197,17 +197,17 @@
         </div>
 
         <!-- Best Spec Combinations -->
-        <div class="col-lg-6 col-md-12 mt-4">
+        <div class="col-lg-6 col-md-12 mt-4 mb-4">
           <div class="card h-100">
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
               <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
                 <h6 class="text-white text-capitalize ps-3 mb-0">Best Spec Combinations</h6>
               </div>
             </div>
-            <div class="card-body px-0 pt-0 pb-2">
+            <div class="card-body px-0 pt-0 pb-2 card-scroll-body">
               <p class="text-sm px-3 pt-3 mb-2" id="best-pairs-sub">The strongest pairs of specs to bring together across all
                 dungeons, ranked by how well they perform in the highest keys.</p>
-              <div class="p-0 custom-scrollbar" style="max-height: 470px; overflow-y: auto; overflow-x: hidden;">
+              <div class="p-0 custom-scrollbar card-scroll">
                 {% set role_map = {'0': 'Tank', '1': 'Healer', '2': 'Dps'} %}
                 <div id="best-pairs-list" class="list-group list-group-flush px-3 py-2">
                   {% if best_spec_pairs %}

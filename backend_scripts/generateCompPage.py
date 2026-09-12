@@ -38,6 +38,8 @@ PAIR_PRIOR_A = 5
 PAIR_PRIOR_B = 5
 PAIR_MIN_HK_RUNS = 20
 
+COMP_CARD_TOP_N = 30
+
 
 def rank_best_spec_pairs(comps, synergy_matrix, top_level_set, context):
     """Rank 2-spec pairings for one dungeon context by a blend of high-key performance
@@ -45,7 +47,7 @@ def rank_best_spec_pairs(comps, synergy_matrix, top_level_set, context):
     feeds every context).
 
     context is 'all' (whole-comp keylevel stats) or an int dungeon_id (that dungeon's
-    per-comp keylevel stats). Returns the top 18 row dicts, each carrying spec_a, spec_b,
+    per-comp keylevel stats). Returns the top COMP_CARD_TOP_N row dicts, each carrying spec_a, spec_b,
     hk_success (%), total_runs and max_key measured in the context. Synergy and the raw
     blend drive the ranking only and are not emitted.
     """
@@ -107,7 +109,7 @@ def rank_best_spec_pairs(comps, synergy_matrix, top_level_set, context):
         })
 
     pair_rows.sort(key=lambda r: r['blend'], reverse=True)
-    top = pair_rows[:18]
+    top = pair_rows[:COMP_CARD_TOP_N]
     for r in top:
         r.pop('blend', None)
     return top
@@ -548,7 +550,7 @@ def main(template_path, output_dir):
         # client to swap on dungeon change.
         dungeon_ids = [str(k) for k in dungeon_lookup.keys()]
         archetypes_by_dungeon = build_dungeon_archetypes(
-            archetype_input, spec_lookup, class_lookup, dungeon_ids, top_n=6)
+            archetype_input, spec_lookup, class_lookup, dungeon_ids, top_n=COMP_CARD_TOP_N)
         with open(os.path.join(json_out_dir, "comp_archetypes.json"), "w", encoding="utf-8") as f:
             json.dump(archetypes_by_dungeon, f, separators=(',', ':'))
         archetypes_all = archetypes_by_dungeon.get(
