@@ -324,8 +324,18 @@ def seed_reference(conn, cursor, static, rng):
             "INSERT INTO season_periods (region, period_id, start_timestamp, end_timestamp, "
             "season) VALUES (%s,%s,%s,%s,%s)", sp_rows)
 
-    # bloodlust_spells (the lust spells live in spells.json)
-    lust_ids = [int(sid) for sid in static.spells.keys()]
+    # spells.json is every utility spell routes recorded (from fetch_distinct_spell_ids),
+    # so it mixes the lust family with non-lust utility like Shroud of Concealment. Only
+    # the lust variants belong in bloodlust_spells; they alone carry the "haste by 30%"
+    # party effect. Seeding the rest would make the dungeon page count non-lust pulls as
+    # lust and the routes page fold them into the Bloodlust filter.
+    def _is_lust(entry):
+        desc = entry.get("description") if isinstance(entry, dict) else None
+        text = desc.get("en_US", "") if isinstance(desc, dict) else (desc or "")
+        return "haste by 30%" in (text or "").lower()
+
+    utility_ids = [int(sid) for sid in static.spells.keys()]
+    lust_ids = [int(sid) for sid, e in static.spells.items() if _is_lust(e)]
     if lust_ids:
         _insert_many(conn, cursor,
             "INSERT IGNORE INTO bloodlust_spells (spell_id) VALUES (%s)",
@@ -352,7 +362,7 @@ def seed_reference(conn, cursor, static, rng):
     _insert_many(conn, cursor,
         "INSERT IGNORE INTO tier_set_items (item_id, item_set_id) VALUES (%s,%s)", tier)
 
-    return {"lust_ids": lust_ids}
+    return {"lust_ids": lust_ids, "utility_ids": utility_ids}
 
 
 # --------------------------------------------------------------------------------------
@@ -661,6 +671,9 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
     now_s = _now_ms() // _MS
     npc_ids = [int(n) for n in static.npcs.keys()] or [100000]
     lust_ids = ref["lust_ids"] or [32182]
+    # Trash pulls draw from every utility spell so routes carry non-lust spells too
+    # (e.g. Shroud of Concealment), which the routes-page spell filter keeps separate.
+    utility_ids = ref.get("utility_ids") or lust_ids
     dps_specs = [int(s) for s, m in static.specs.items() if m.get("role") == "2"] or [62]
     all_specs = [int(s) for s in static.specs.keys()]
 
@@ -694,9 +707,12 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
                     enemies.append(rng.choice(bosses))
                 for npc in set(enemies):
                     pull_enemies.append((route_key, npc, pull_id, rng.randint(1, 6)))
-                # lust on the boss pull always, plus occasional trash-pull lust
-                if is_boss_pull or rng.random() < 0.2:
+                # real lust on the boss pull always (the dungeon page requires it), plus
+                # occasional trash-pull utility from the wider set
+                if is_boss_pull:
                     pull_spells.append((route_key, rng.choice(lust_ids), pull_id))
+                elif rng.random() < 0.2:
+                    pull_spells.append((route_key, rng.choice(utility_ids), pull_id))
 
     _insert_many(conn, cursor,
         "INSERT INTO route_data (rio_run_id, mapping_version, enemy_forces, timestamp, "

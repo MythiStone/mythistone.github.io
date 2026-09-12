@@ -176,11 +176,20 @@
                 <select id="spellSelect" class="selectpicker form-control" data-style="btn-outline-primary"
                   data-live-search="true" multiple title="Select Spell(s)…" data-selected-text-format="count >1"
                   data-actions-box="true" data-sanitize="false">
+                  {# Every lust variant collapses into one entry. Its value "lust" is
+                     expanded back to the real lust ids in route-search.js (doQuery). #}
+                  {% if bloodlust_id_strs %}
+                  <option value="lust" data-tokens="Bloodlust Heroism Time Warp Fury of the Aspects Harrier's Cry Ancient Hysteria lust haste"
+                    data-content="<span class='dropdown-icon-item'>{% if bloodlust_icon %}<img src='/data/icons/{{ bloodlust_icon }}' class='dropdown-icon' alt='' style='width:20px;height:20px;border-radius:4px;object-fit:cover;flex:0 0 20px;margin-right:8px;'>{% endif %}<span class='dropdown-icon-label'>Bloodlust</span></span>">
+                    Bloodlust</option>
+                  {% endif %}
                   {% for sid, sval in spell_lookup.items()|sort(attribute='1.name.en_US', case_sensitive=false) %}
+                  {% if sid not in bloodlust_id_strs %}
                   {% set sname = sval.name['en_US'] if sval.name is defined else sval %}
                   <option value="{{ sid }}" data-tokens="{{ sname }}"
                     data-content="<span class='dropdown-icon-item'>{% if sval.icon %}<img src='/data/icons/{{ sval.icon }}' class='dropdown-icon' alt='' style='width:20px;height:20px;border-radius:4px;object-fit:cover;flex:0 0 20px;margin-right:8px;'>{% endif %}<span class='dropdown-icon-label'>{{ sname }}</span></span>">
                     {{ sname }}</option>
+                  {% endif %}
                   {% endfor %}
                 </select>
               </div>
@@ -306,6 +315,8 @@
     // produced broken raider.io/mythic-plus-runs//<id> links on client-rendered rows.
     window.current_season = "{{ season_info.slug }}";
     window.spell_lookup = {{ spell_lookup | tojson | safe }};
+    // The "lust" filter option stands in for all of these ids (route-search.js expands it).
+    window.bloodlust_spell_ids = {{ bloodlust_spell_ids | tojson | safe }};
     window.npc_lookup = {{ npc_lookup | tojson | safe }};
   </script>
 

@@ -89,6 +89,7 @@ def main(template_path, output_dir, limit):
                 conn, cursor, dungeon
             )
             npc_map[dungeon] = npc_ids
+        bloodlust_spell_ids = databaseConnector.fetch_bloodlust_spell_ids(conn, cursor)
     except Exception as e:
         fail(f"Error fetching data from DB: {e}")
     finally:
@@ -123,6 +124,16 @@ def main(template_path, output_dir, limit):
     for slug, d in dungeon_lookup.items():
         slug_lookup[slug] = {**d, "_id": slug}
 
+    bloodlust_id_strs = [str(x) for x in bloodlust_spell_ids]
+    bloodlust_icon = next(
+        (
+            spell_lookup[sid]["icon"]
+            for sid in ["2825", "32182", *bloodlust_id_strs]
+            if sid in spell_lookup and spell_lookup[sid].get("icon")
+        ),
+        None,
+    )
+
     # render
     template = env.get_template(os.path.basename(template_path))
     output_html = template.render(
@@ -139,6 +150,9 @@ def main(template_path, output_dir, limit):
         specs=spec_lookup,
         class_lookup=class_lookup,
         spell_lookup=spell_lookup,
+        bloodlust_spell_ids=bloodlust_spell_ids,
+        bloodlust_id_strs=bloodlust_id_strs,
+        bloodlust_icon=bloodlust_icon,
         npc_lookup=npc_lookup,
         npc_map=npc_map,
         season_info=season_info,

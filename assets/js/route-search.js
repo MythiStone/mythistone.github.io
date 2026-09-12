@@ -252,8 +252,11 @@ function doQuery({ page = 1, pageSize = PAGE_SIZE, append = false } = {}) {
   const chosenDungeon = $("#dungeonSelect").selectpicker("val") || [];
   const chosenSpecs = $("#specSelect").selectpicker("val") || [];
   const spellsSelected = $("#spellSelect").selectpicker("val") || [];
+  // "lust" is the collapsed entry for every bloodlust variant (see find_routes.html);
+  // expand it to the real spell ids the routes were indexed under.
+  const lustIds = (window.bloodlust_spell_ids || []).map(Number);
   const spellsWanted = spellsSelected
-    .map((s) => Number(s))
+    .flatMap((s) => (s === "lust" ? lustIds : Number(s)))
     .filter((n) => !Number.isNaN(n));
 
   const npcIncludeSelected = $("#npcIncludeSelect").selectpicker("val") || [];
