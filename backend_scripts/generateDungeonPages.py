@@ -5,7 +5,7 @@ import asyncio
 import argparse
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import databaseConnector
 import compArchetypes
@@ -23,6 +23,9 @@ from fetchNpcInfo import get_npc_names_retail
 from image_generation.dungeon_overview import createDungeonOverviewImg, fetch_route_thumbnail
 
 LOOKUP_DIR = "data/static"
+
+# Latest Hotfixes card only shows fixes at most this many days old (age from build time).
+HOTFIX_MAX_AGE_DAYS = 7
 
 def parse_run_rows(rows):
     if not rows:
@@ -81,11 +84,18 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
     season_info = load_season_info(LOOKUP_DIR)
     notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
     # Latest per-dungeon hotfix notes, keyed by challenge_mode_id (str). Produced
-    # by fetchDungeonHotfixes.py; a dungeon absent here simply has no recent
-    # hotfixes and the card renders its empty state. source_url is the Blizzard
-    # hotfix post the notes were scraped from (linked from the card header).
+    # by fetchDungeonHotfixes.py; source_url is the Blizzard hotfix post the notes
+    # were scraped from (linked from the card header). Entries are filtered to the
+    # last HOTFIX_MAX_AGE_DAYS below, and the template hides the card entirely for
+    # any dungeon left with no recent hotfixes.
     hotfixes_data = load_json(os.path.join(LOOKUP_DIR, "hotfixes.json"))
-    hotfixes_lookup = hotfixes_data.get("dungeons", {})
+    hotfix_cutoff_ms = (
+        datetime.now(timezone.utc) - timedelta(days=HOTFIX_MAX_AGE_DAYS)
+    ).timestamp() * 1000
+    hotfixes_lookup = {
+        dungeon_key: [e for e in entries if e["date_ts"] >= hotfix_cutoff_ms]
+        for dungeon_key, entries in hotfixes_data.get("dungeons", {}).items()
+    }
     hotfix_source_url = hotfixes_data.get("source_url")
     npcs_lookup = load_json(os.path.join(LOOKUP_DIR, "npcs.json"))
     # NPC model thumbnails downloaded by fetchNpcIcons.py -> data/icons/npc_<id>.png.

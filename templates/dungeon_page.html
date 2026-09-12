@@ -357,27 +357,29 @@
                         <div class="card-body px-3 pb-2">
                             <p class="text-sm text-secondary mb-3">The most recent official Blizzard hotfixes affecting
                                 {{ dungeon.name.en_US }}.</p>
-                            {% for entry in hotfixes %}
-                            <div class="mb-3">
-                                <h6 class="text-sm mb-1 d-flex align-items-center flex-wrap">
-                                    <span class="me-2">{{ entry.date_text }}</span>
-                                    <small class="timestamp text-secondary fw-normal" data-bs-toggle="tooltip"
-                                        data-bs-placement="top"
-                                        data-timestamp="{{ entry.date_ts | int / 1000 }}"></small>
-                                </h6>
-                                <ul class="text-sm mb-0 ps-3">
-                                    {% for note in entry.notes %}
-                                    <li>{{ note }}</li>
-                                    {% endfor %}
-                                </ul>
+                            <div class="custom-scrollbar" style="max-height: 340px; overflow-y: auto;">
+                                {% for entry in hotfixes %}
+                                <div class="mb-3">
+                                    <h6 class="text-sm mb-1 d-flex align-items-center flex-wrap">
+                                        <span class="me-2">{{ entry.date_text }}</span>
+                                        <small class="timestamp text-secondary fw-normal" data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-timestamp="{{ entry.date_ts | int / 1000 }}"></small>
+                                    </h6>
+                                    <ul class="text-sm mb-0 ps-3">
+                                        {% for note in entry.notes %}
+                                        <li>{{ note }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
                         </div>
                     </div>
                 </div>
             </div>
             {% endif %}
-            <div class="row">
+            <div class="row mb-4">
                 <!-- Top Routes -->
                 <div class="col-lg-6 col-md-12 mb-4">
                     {# data-share: deep-link.js puts a copy-link button on the title bar. #}
@@ -441,9 +443,8 @@
                                     Details</a>
                             </div>
                         </div>
-                        <div class="card-body px-0 pb-2">
-                            <div class="p-0 custom-scrollbar"
-                                style="max-height: 435px; overflow-y: auto; overflow-x: hidden;">
+                        <div class="card-body px-0 pb-2 card-scroll-body">
+                            <div class="p-0 custom-scrollbar card-scroll" style="--card-scroll-max: 435px;">
                                 {% if lust_timeline %}
                                 <table id="lust-table" class="table align-items-center mb-0 w-100">
                                     <thead class="sticky-top"
