@@ -309,7 +309,10 @@ header (`.card-header ... mt-n4 mx-3 z-index-2`, the gold ribbon) pull the ribbo
 `.card` element. A card row therefore only shows a real gap below it if the ROW carries `mb-4`; a bare
 `<div class="row">` leaves just the column `mb-4`, which the next row's `mt-n4` ribbon fully consumes,
 so the ribbons collide with the card above on wide screens. Every dungeon-page card row must be
-`row mb-4` (the column `mb-4` alone is not enough).
+`row mb-4` (the column `mb-4` alone is not enough). The spec page's top stat row is worse: its
+columns use `mb-xl-0` (zero bottom margin on wide screens), so a floating-ribbon card placed after
+it needs its own top clearance (`mt-4 mt-xl-5` on the row) or the ribbon overlaps the stat cards on
+xl. This is why the spec "Latest Hotfixes" row carries that top margin.
 ## Frontend stack
 
 **Material Dashboard 3 v3.2.0** on **Bootstrap 5.3.3**. **No build step**: plain `<script>`

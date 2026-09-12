@@ -8,7 +8,7 @@ import compArchetypes
 import aggregateData
 import commonUtils
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from contextlib import closing
 import re
 from urllib.parse import quote_plus
@@ -99,6 +99,10 @@ BIS_PCT_THRESHOLD = 80.0
 # pull in the async collector module. Surfaced to the spec page so the gear
 # overview copy states the real cutoff instead of a hard-coded example.
 KEY_LEVEL_WINDOW = 5
+
+# Latest Hotfixes card only shows fixes at most this many days old (age from build
+# time). Mirrors generateDungeonPages.HOTFIX_MAX_AGE_DAYS.
+HOTFIX_MAX_AGE_DAYS = 7
 
 # Talent Differences modal (per-dungeon talent swaps). It reads ONLY the top-50
 # verified loadouts: each of those is a complete build tied to one dungeon, so a
@@ -2053,6 +2057,22 @@ def main(template_path, output_dir, debug=False, spec=None):
 
     notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
 
+    # Latest per-spec hotfix notes, keyed by spec id (str). Produced by
+    # fetchDungeonHotfixes.py (it parses the article's Classes section into a
+    # "specs" map alongside "dungeons"); source_url is the Blizzard hotfix post the
+    # notes were scraped from (linked from the card header). Entries are filtered to
+    # the last HOTFIX_MAX_AGE_DAYS, and the template hides the card entirely for any
+    # spec left with no recent hotfixes.
+    hotfixes_data = load_json(os.path.join(LOOKUP_DIR, "hotfixes.json"))
+    hotfix_cutoff_ms = (
+        datetime.now(timezone.utc) - timedelta(days=HOTFIX_MAX_AGE_DAYS)
+    ).timestamp() * 1000
+    spec_hotfixes_lookup = {
+        spec_key: [e for e in entries if e["date_ts"] >= hotfix_cutoff_ms]
+        for spec_key, entries in hotfixes_data.get("specs", {}).items()
+    }
+    hotfix_source_url = hotfixes_data.get("source_url")
+
     # if only single page should be rendered set spec_keys to just that one spec
     if spec:
         spec_keys = [spec]
@@ -2932,6 +2952,8 @@ def main(template_path, output_dir, debug=False, spec=None):
                 item_slug_map=item_slug_map,
                 item_sources=item_sources,
                 notifications=notifications,
+                hotfixes=spec_hotfixes_lookup.get(str(spec_id), []),
+                hotfix_source_url=hotfix_source_url,
                 reagent_lookup=reagent_lookup,
                 dungeon_lookup=dungeon_lookup,
                 dungeon_lookup_slug=dungeon_lookup_slug,

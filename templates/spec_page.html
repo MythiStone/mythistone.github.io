@@ -626,37 +626,51 @@
           </div>
           {% endif %}
 
-          {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
-          <div class="col-12 mt-4">
-            <h6 class="mb-1">How this data is collected</h6>
-            <p class="text-sm">
-              Every talent, stat and gear number on this page is drawn from real Mythic+ runs recorded this season, so it
-              shows what players actually do rather than theory. To keep the picture focused on how
-              <span class="class-{{ class_slug }}-text">{{ spec.name }} {{ class_info.name }}</span>
-              is played at the highest level, only the hardest keys are counted. For each dungeon we look up the highest
-              keystone level <em>anyone</em> has completed, across every class and spec, and then include every run from
-              there down to {{ key_level_window }} levels below it, giving the {{ key_level_window + 1 }} highest key
-              levels of that dungeon.
-              {% if season_max_key %}
-              The hardest key completed anywhere this season so far is a <strong>+{{ season_max_key }}</strong>{% if
-              season_max_key_dungeon %} in <strong>{{ season_max_key_dungeon }}</strong>{% endif %}, so there every run of
-              <strong>+{{ season_max_key - key_level_window }}</strong> and above is counted. Each dungeon uses its own top
-              key, so a quieter one keeps a lower band.
-              {% if season_min_top_key and season_min_top_key_dungeon %}
-              In <strong>{{ season_min_top_key_dungeon }}</strong>, for example, the hardest key so far is a
-              <strong>+{{ season_min_top_key }}</strong>, so its runs start from
-              <strong>+{{ season_min_top_key - key_level_window }}</strong> instead.
-              {% endif %}
-              {% else %}
-              The cutoff is worked out for each dungeon on its own, so a harder dungeon keeps a higher band of keys than
-              an easier one.
-              {% endif %}
-              The sample keeps refreshing as new high keys are posted, so the numbers track how the spec is being played
-              right now rather than averaging the whole season. On top of that, the talent, gear and stat breakdowns are
-              built from a rolling window of roughly the last two weeks, so they stay in step with recent tuning and meta
-              shifts. Run totals and key levels still cover the full season.
-            </p>
+          <!-- Latest Hotfixes (hidden entirely when this spec has no recent hotfixes) -->
+          {# mt-4 mt-xl-5: the stat cards above drop to mb-xl-0 on wide screens, so
+             the ribbon's mt-n4 needs this top clearance or it overlaps them. #}
+          {% if hotfixes %}
+          <div class="row mb-4 mt-4 mt-xl-5">
+            <div class="col-12 mb-4">
+              <div class="card h-100" id="spec-hotfixes" data-share>
+                <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                  <div data-share-anchor
+                    class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                    <h6 class="text-white text-capitalize ps-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="Recent official Blizzard hotfixes that mention {{ spec.name }} {{ class_info.name }}, its class or its hero talents.">
+                      Latest Hotfixes</h6>
+                    {% if hotfix_source_url %}
+                    <a href="{{ hotfix_source_url }}" class="btn btn-sm btn-white me-3 mb-0 opacity-8"
+                      title="Read the full hotfix notes on Blizzard's site" target="_blank">Full Notes</a>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="card-body px-3 pb-2">
+                  <p class="text-sm text-secondary mb-3">The most recent official Blizzard hotfixes affecting
+                    {{ spec.name }} {{ class_info.name }}.</p>
+                  <div class="custom-scrollbar" style="max-height: 340px; overflow-y: auto;">
+                    {% for entry in hotfixes %}
+                    <div class="mb-3">
+                      <h6 class="text-sm mb-1 d-flex align-items-center flex-wrap">
+                        <span class="me-2">{{ entry.date_text }}</span>
+                        <small class="timestamp text-secondary fw-normal" data-bs-toggle="tooltip"
+                          data-bs-placement="top" data-timestamp="{{ entry.date_ts | int / 1000 }}"></small>
+                      </h6>
+                      <ul class="text-sm mb-0 ps-3">
+                        {% for note in entry.notes %}
+                        <li>{{ note }}</li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+          {% endif %}
+
+          {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
 
           {% if hero_variants and hero_variants | length > 0 %}
           <div id="static-talent-tree">
@@ -674,12 +688,9 @@
             {% if default_ht and default_ht.name %}
             <p class="text-sm mb-3">
               Most <span class="class-{{ class_slug }}-text">{{ spec.name }} {{ class_info.name }}</span> players build
-              into the <strong>{{ default_ht.name }}</strong> hero tree. The tree below is the build they run at the
-              highest keys, and the percentage under each talent is how often it is picked. Most of it is a fixed core.
-              The talents sitting near 100% are taken by almost everyone, so the real decisions are the flexible picks
-              that players swap from dungeon to dungeon.
+              into the <strong>{{ default_ht.name }}</strong> hero tree.
               {% if talent_swap_highlight %}
-              The pick that shifts the most by dungeon is
+              The pick that shifts the most in an individual dungeon is
               <a href="https://www.wowhead.com/spell={{ talent_swap_highlight.spellId }}?spec={{ spec_id }}"
                 target="_blank" rel="noopener"><strong>{{ talent_swap_highlight.talent_name }}</strong></a>, which far
               more players run in <strong>{{ talent_swap_highlight.dungeon_name }}</strong> than anywhere else. Open
@@ -2041,6 +2052,37 @@
 
 
 
+          {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
+          <div class="col-12 mt-4">
+            <h6 class="mb-1">How this data is collected</h6>
+            <p class="text-sm">
+              Every talent, stat and gear number on this page is drawn from real Mythic+ runs recorded this season, so it
+              shows what players actually do rather than theory. To keep the picture focused on how
+              <span class="class-{{ class_slug }}-text">{{ spec.name }} {{ class_info.name }}</span>
+              is played at the highest level, only the hardest keys are counted. For each dungeon we look up the highest
+              keystone level <em>anyone</em> has completed, across every class and spec, and then include every run from
+              there down to {{ key_level_window }} levels below it, giving the {{ key_level_window + 1 }} highest key
+              levels of that dungeon.
+              {% if season_max_key %}
+              The hardest key completed anywhere this season so far is a <strong>+{{ season_max_key }}</strong>{% if
+              season_max_key_dungeon %} in <strong>{{ season_max_key_dungeon }}</strong>{% endif %}, so there every run of
+              <strong>+{{ season_max_key - key_level_window }}</strong> and above is counted. Each dungeon uses its own top
+              key, so a quieter one keeps a lower band.
+              {% if season_min_top_key and season_min_top_key_dungeon %}
+              In <strong>{{ season_min_top_key_dungeon }}</strong>, for example, the hardest key so far is a
+              <strong>+{{ season_min_top_key }}</strong>, so its runs start from
+              <strong>+{{ season_min_top_key - key_level_window }}</strong> instead.
+              {% endif %}
+              {% else %}
+              The cutoff is worked out for each dungeon on its own, so a harder dungeon keeps a higher band of keys than
+              an easier one.
+              {% endif %}
+              The sample keeps refreshing as new high keys are posted, so the numbers track how the spec is being played
+              right now rather than averaging the whole season. On top of that, the talent, gear and stat breakdowns are
+              built from a rolling window of roughly the last two weeks, so they stay in step with recent tuning and meta
+              shifts. Run totals and key levels still cover the full season.
+            </p>
+          </div>
         </div>
         {% include "footer.html" %}
   </main>
@@ -2053,8 +2095,7 @@
         </div>
         <div class="modal-body">
           <p class="text-sm mb-3">
-            What the top 50 {{ spec.name }} {{ class_info.name }} players change per dungeon, from their verified
-            loadouts &mdash; one full build each, per dungeon. <span class="tt-swap-pct"><span
+            What the top 50 {{ spec.name }} {{ class_info.name }} players change per dungeon. <br><span class="tt-swap-pct"><span
                 class="tt-swap-pct-from">29%</span> <span class="tt-swap-arrow">&rarr;</span> <span
                 class="tt-swap-pct-to">39%</span></span> reads as "29% of their loadouts take it across all dungeons,
             39% take it here". Only talents that move by at least
@@ -2090,7 +2131,7 @@
                 aria-labelledby="dungeonHeading-{{ dungeon }}" data-bs-parent="#dungeonAccordion">
                 <div class="accordion-body">
 
-                  {# — Hero tree preference, only where it actually shifts — #}
+                  {# Hero tree preference, only where it actually shifts #}
                   {% set tree_shifts = hero_tree_shifts.get(dungeon|string) %}
                   {% if tree_shifts %}
                   <h6 class="tt-swap-section-title">Hero tree preference here</h6>
@@ -2382,7 +2423,7 @@
     // data-api listens on document in the CAPTURE phase (its EventHandler
     // passes the delegation flag as addEventListener's third argument), so it
     // toggles the accordion and preventDefault()s the click before the anchor
-    // ever sees it — an onclick="event.stopPropagation()" on the link can't
+    // ever sees it an onclick="event.stopPropagation()" on the link can't
     // help. A window-capture listener runs before any document listener, so
     // stopping propagation here keeps Bootstrap out while the link's native
     // navigation (and ctrl/middle-click behavior) proceeds untouched.
@@ -2497,8 +2538,8 @@
     (function () {
       // Route embeds load on first open, gated on Klaro consent for keystoneGuru
       // and never before. MythiConsent.loadEmbed (assets/js/consent.js) owns the
-      // whole dance — consent check, deferring until consent is granted, setting
-      // src, and the spinner — so the spec page, the route search page and
+      // whole dance consent check, deferring until consent is granted, setting
+      // src, and the spinner so the spec page, the route search page and
       // route-search.js can't drift apart on it.
       document.querySelectorAll('#routeDungeonAccordion .accordion-collapse').forEach(function (panel) {
         panel.addEventListener('shown.bs.collapse', function () {

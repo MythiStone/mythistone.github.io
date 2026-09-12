@@ -21,6 +21,7 @@ on:
       - 'backend_scripts/generateBlogPage.py'
       - 'backend_scripts/generateLegalPages.py'
       - 'backend_scripts/generateDungeonPages.py'
+      - 'backend_scripts/fetchHotfixes.py'
       - 'backend_scripts/generateSearchIndex.py'
       - 'backend_scripts/generateSitemap.py'
       - 'backend_scripts/generateLlmTxt.py'
@@ -418,6 +419,9 @@ jobs:
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
         run: |
           python backend_scripts/snapshotTrends.py
+
+      - name: Fetch latest hotfixes
+        run: python backend_scripts/fetchHotfixes.py
 
       - name: Generate Dashboard HTML page
         env:

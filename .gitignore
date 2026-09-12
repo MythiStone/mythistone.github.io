@@ -4,6 +4,7 @@ tmp
 
 # Generated site output — built and deployed by .github/workflows/buildPages.yml, never committed
 /pages/
+data/static/hotfixes.json
 /classes/
 /dungeons/
 /items/
@@ -31,3 +32,7 @@ assets/json/talent_trees
 assets/json/comp_archetypes.json
 sim_results
 simc_profiles
+social_preview
+data/socials.json
+data/social
+data/simc_io
