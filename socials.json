@@ -1745,5 +1745,14 @@
         "blog": "642.6 K Elemental Shaman keys are in the books this season. The Farseer hero tree leads at 100% of builds, with Stormbringer (0%) trailing.\n\n88% of tracked runs beat the timer, and 5% earn all three chests. The stat priority skews toward Mastery > Crit > Haste > Versatility. Its top run this season is +21 Kings' Rest in 31:32.041.",
         "post": "Elemental Shaman: 642.6 K runs, 88% timed, 5% three chest. Top hero tree Farseer (99.64%) vs Stormbringer (0%). Highest +21 Kings' Rest in 31:32.041. Stat priority Mastery > Crit > Haste > Versatility #WoW #MythicPlus https://mythistone.com/classes/Dps/Elemental_Shaman",
         "timestamp": 1789244952979
+    },
+    "data/social/spec_overview_65_2026-09.png": {
+        "title": "Holy Paladin Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Healer/Holy_Paladin",
+        "social": "Holy Paladins have spoken: 87% chose Herald of the Sun. Lightsmiths, you're not the main character. 773.3K runs don't lie. #WoW #MythicPlus #HolyPaladin https://mythistone.com/classes/Healer/Holy_Paladin",
+        "blog": "Holy Paladin has 773.3 K Mythic+ runs tracked this season. The Herald of the Sun hero tree leads at 87% of builds, with Lightsmith (13%) trailing.\n\nGroups time keys with the spec 88% of the time and three-chest 4% of them. Most builds prioritise Haste > Mastery > Crit > Versatility. The best key so far: +21 Kings' Rest in 31:32.041.",
+        "post": "Holy Paladins have spoken: 87% chose Herald of the Sun. Lightsmiths, you're not the main character. 773.3K runs don't lie. #WoW #MythicPlus #HolyPaladin https://mythistone.com/classes/Healer/Holy_Paladin",
+        "timestamp": 1789332019005
     }
 }
