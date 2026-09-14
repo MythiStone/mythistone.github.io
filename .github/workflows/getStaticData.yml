@@ -159,7 +159,11 @@ jobs:
           DATABASE_NAME: ${{secrets.DATABASE_NAME}} 
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
         run: |
-          python backend_scripts/fetchSeasonAndPeriodInfo.py    
+          python backend_scripts/fetchSeasonAndPeriodInfo.py
+
+      - name: Fetch Mythic+ season cutoffs
+        run: |
+          python backend_scripts/fetchMythicPlusCutoffs.py
 
 
       - name: Clean up CSV

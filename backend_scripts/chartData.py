@@ -117,6 +117,48 @@ def create_spec_scatter(spec_upgrades, spec_lookup, class_lookup, highest_key):
     return points
 
 
+def create_spec_score_scatter(
+    spec_scores, spec_run_counts, spec_lookup, class_lookup, score_key
+):
+    """Build scatter points for a score-based performance metric.
+    """
+    runs_by_spec = {int(r["id"]): int(r["count"]) for r in spec_run_counts}
+
+    points = []
+    for row in spec_scores:
+        spec_id = int(row["spec_id"])
+        score = row.get(score_key)
+        if score is None:
+            continue
+
+        sdata = spec_lookup.get(str(spec_id))
+        if not sdata:
+            # skip unknown specs
+            continue
+        cdata = class_lookup.get(str(sdata.get("classID", "")), {})
+
+        color = cdata.get("color", {"r": 150, "g": 150, "b": 150})
+        rcol = int(color.get("r", 150))
+        gcol = int(color.get("g", 150))
+        bcol = int(color.get("b", 150))
+        border = f"rgba({rcol},{gcol},{bcol},0.8)"
+        bg = f"rgba({rcol},{gcol},{bcol},0.4)"
+        icon_url = f"/data/icons/{sdata.get('SpellIconFileId')}.jpg"
+
+        points.append(
+            {
+                "label": sdata.get("name", f"Spec {spec_id}"),
+                "x": round(float(score), 1),
+                "y": runs_by_spec.get(spec_id, 0),
+                "iconUrl": icon_url,
+                "borderColor": border,
+                "backgroundColor": bg,
+            }
+        )
+
+    return points
+
+
 def create_dungeon_ease(dungeon_data, dungeon_lookup, top_n=None):
     """
     rows: list of dicts from  SQL:

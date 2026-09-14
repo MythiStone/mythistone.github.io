@@ -452,43 +452,157 @@ dashboard<!--
 
       <div class="row">
         <div class="col-lg-6 col-md-6 mt-4 mb-4">
-          <div class="card h-100" id="dash-popularity-vs-performance" data-share>
+          <div class="card h-100" id="dash-performance-scores" data-share>
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
               <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center" data-share-anchor>
-                <h6 class="text-white text-capitalize ps-3 mb-0">Spec Popularity vs Performance</h6>
+                <h6 class="text-white text-capitalize ps-3 mb-0">Spec Popularity &amp; Performance</h6>
                 <button type="button" class="btn btn-sm btn-outline-light me-3 mb-0" data-bs-toggle="modal"
-                  data-bs-target="#performanceModal">How it&rsquo;s calculated</button>
+                  data-bs-target="#scoreMetricsModal">How it&rsquo;s calculated</button>
               </div>
             </div>
             <div class="card-body p-3">
-              <div class="pe-2">
-                <div class="chart dash-chart d-none d-lg-block">
-                  <canvas id="chart-popularity-vs-tier" class="chart-canvas"></canvas>
+              <ul class="nav nav-tabs nav-fill mb-3" id="perfTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active" id="perf-tier-tab" data-bs-toggle="tab" data-bs-target="#perf-tier"
+                    type="button" role="tab" aria-controls="perf-tier" aria-selected="true">Performance</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="perf-top50-tab" data-bs-toggle="tab" data-bs-target="#perf-top50"
+                    type="button" role="tab" aria-controls="perf-top50" aria-selected="false">Top 50 Score</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="perf-elite-tab" data-bs-toggle="tab" data-bs-target="#perf-elite"
+                    type="button" role="tab" aria-controls="perf-elite" aria-selected="false">Top 1% Score vs Runs</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="perf-elite-count-tab" data-bs-toggle="tab" data-bs-target="#perf-elite-count"
+                    type="button" role="tab" aria-controls="perf-elite-count" aria-selected="false">Top 1% Score vs Characters</button>
+                </li>
+              </ul>
+              <div class="tab-content" id="perfTabsContent">
+                <!-- Performance (tier score) -->
+                <div class="tab-pane fade show active" id="perf-tier" role="tabpanel" aria-labelledby="perf-tier-tab">
+                  <div class="pe-2">
+                    <div class="chart dash-chart d-none d-lg-block">
+                      <canvas id="chart-popularity-vs-tier" class="chart-canvas"></canvas>
+                    </div>
+                    <div class="d-lg-none">
+                      {% set perf_sorted = scatter_data | sort(attribute='x', reverse=True) %}
+                      <table class="dash-rank-table text-sm">
+                        <thead>
+                          <tr class="text-xxs text-uppercase text-secondary">
+                            <th></th><th></th><th>Spec</th>
+                            <th class="text-end">Perf.</th>
+                            <th class="text-end">Runs</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for p in perf_sorted[:15] %}
+                          <tr>
+                            <td class="dash-rank-num">{{ loop.index }}</td>
+                            <td class="dash-rank-icon-cell"><img src="{{ p.iconUrl }}" class="dash-rank-icon" alt="{{ p.label }}"></td>
+                            <td><div class="dash-rank-name">{{ p.label }}</div></td>
+                            <td class="dash-rank-value font-weight-bold">{{ "%.2f"|format(p.x) }}</td>
+                            <td class="dash-rank-value text-secondary">{{ "{:,}".format(p.y) }}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
-                <!-- Mobile: ranked table sorted by performance score -->
-                <div class="d-lg-none">
-                  {% set perf_sorted = scatter_data | sort(attribute='x', reverse=True) %}
-                  {% set perf_max = (perf_sorted[0].x) if perf_sorted else 1 %}
-                  <table class="dash-rank-table text-sm">
-                    <thead>
-                      <tr class="text-xxs text-uppercase text-secondary">
-                        <th></th><th></th><th>Spec</th>
-                        <th class="text-end">Perf.</th>
-                        <th class="text-end">Runs</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for p in perf_sorted[:15] %}
-                      <tr>
-                        <td class="dash-rank-num">{{ loop.index }}</td>
-                        <td class="dash-rank-icon-cell"><img src="{{ p.iconUrl }}" class="dash-rank-icon" alt="{{ p.label }}"></td>
-                        <td><div class="dash-rank-name">{{ p.label }}</div></td>
-                        <td class="dash-rank-value font-weight-bold">{{ "%.2f"|format(p.x) }}</td>
-                        <td class="dash-rank-value text-secondary">{{ "{:,}".format(p.y) }}</td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
+                <!-- Top 50 Score -->
+                <div class="tab-pane fade" id="perf-top50" role="tabpanel" aria-labelledby="perf-top50-tab">
+                  <div class="pe-2">
+                    <div class="chart dash-chart d-none d-lg-block">
+                      <canvas id="chart-popularity-vs-top50-score" class="chart-canvas"></canvas>
+                    </div>
+                    <div class="d-lg-none">
+                      {% set top50_sorted = top50_score_scatter | sort(attribute='x', reverse=True) %}
+                      <table class="dash-rank-table text-sm">
+                        <thead>
+                          <tr class="text-xxs text-uppercase text-secondary">
+                            <th></th><th></th><th>Spec</th>
+                            <th class="text-end">Score</th>
+                            <th class="text-end">Runs</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for p in top50_sorted[:15] %}
+                          <tr>
+                            <td class="dash-rank-num">{{ loop.index }}</td>
+                            <td class="dash-rank-icon-cell"><img src="{{ p.iconUrl }}" class="dash-rank-icon" alt="{{ p.label }}"></td>
+                            <td><div class="dash-rank-name">{{ p.label }}</div></td>
+                            <td class="dash-rank-value font-weight-bold">{{ "{:,.0f}".format(p.x) }}</td>
+                            <td class="dash-rank-value text-secondary">{{ "{:,}".format(p.y) }}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+                <!-- Top 1% character score vs popularity -->
+                <div class="tab-pane fade" id="perf-elite" role="tabpanel" aria-labelledby="perf-elite-tab">
+                  <div class="pe-2">
+                    <div class="chart dash-chart d-none d-lg-block">
+                      <canvas id="chart-elite-char-vs-overall-pop" class="chart-canvas"></canvas>
+                    </div>
+                    <div class="d-lg-none">
+                      {% set elite_overall_sorted = elite_char_overall_scatter | sort(attribute='x', reverse=True) %}
+                      <table class="dash-rank-table text-sm">
+                        <thead>
+                          <tr class="text-xxs text-uppercase text-secondary">
+                            <th></th><th></th><th>Spec</th>
+                            <th class="text-end">Score</th>
+                            <th class="text-end">Runs</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for p in elite_overall_sorted[:15] %}
+                          <tr>
+                            <td class="dash-rank-num">{{ loop.index }}</td>
+                            <td class="dash-rank-icon-cell"><img src="{{ p.iconUrl }}" class="dash-rank-icon" alt="{{ p.label }}"></td>
+                            <td><div class="dash-rank-name">{{ p.label }}</div></td>
+                            <td class="dash-rank-value font-weight-bold">{{ "{:,.0f}".format(p.x) }}</td>
+                            <td class="dash-rank-value text-secondary">{{ "{:,}".format(p.y) }}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+                <!-- Top 1% character score vs elite count -->
+                <div class="tab-pane fade" id="perf-elite-count" role="tabpanel" aria-labelledby="perf-elite-count-tab">
+                  <div class="pe-2">
+                    <div class="chart dash-chart d-none d-lg-block">
+                      <canvas id="chart-elite-char-vs-top-pop" class="chart-canvas"></canvas>
+                    </div>
+                    <div class="d-lg-none">
+                      {% set elite_top_sorted = elite_char_top_scatter | sort(attribute='x', reverse=True) %}
+                      <table class="dash-rank-table text-sm">
+                        <thead>
+                          <tr class="text-xxs text-uppercase text-secondary">
+                            <th></th><th></th><th>Spec</th>
+                            <th class="text-end">Score</th>
+                            <th class="text-end">Chars</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for p in elite_top_sorted[:15] %}
+                          <tr>
+                            <td class="dash-rank-num">{{ loop.index }}</td>
+                            <td class="dash-rank-icon-cell"><img src="{{ p.iconUrl }}" class="dash-rank-icon" alt="{{ p.label }}"></td>
+                            <td><div class="dash-rank-name">{{ p.label }}</div></td>
+                            <td class="dash-rank-value font-weight-bold">{{ "{:,.0f}".format(p.x) }}</td>
+                            <td class="dash-rank-value text-secondary">{{ "{:,}".format(p.y) }}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               </div>
               <hr class="dark horizontal">
@@ -528,35 +642,34 @@ dashboard<!--
         </div>
       </div>
 
-      <div class="modal fade" id="performanceModal" tabindex="-1" aria-labelledby="performanceModalLabel"
+      <div class="modal fade" id="scoreMetricsModal" tabindex="-1" aria-labelledby="scoreMetricsModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered text-body-emphasis">
           <div class="modal-content card">
             <div class="modal-header">
-              <h5 class="modal-title" id="performanceModalLabel">How Performance Is Calculated</h5>
+              <h5 class="modal-title" id="scoreMetricsModalLabel">Spec Performance &amp; Score Metrics</h5>
             </div>
             <div class="modal-body">
-
-
-              <p>We look at every run of a given specialization and assign:</p>
-              <ul>
-                <li><strong>Positive points</strong> when the key upgrades (higher-level keys earn more points).</li>
-                <li><strong>Negative points</strong> when the key depletes (losing a low-level key is judged more
-                  harshly).</li>
-              </ul>
-              <p>Then we average those points across all runs to get a single “Performance” number.</p>
-
-              <h2>Why This Matters</h2>
-              <ul>
-                <li>Rewards high-level pushes more strongly.</li>
-                <li>Punishes depletes in a balanced way.</li>
-                <li>Gives a fair comparison regardless of how many runs each spec has.</li>
-              </ul>
-
-              <h2>Summary</h2>
-              <p>This chart helps you spot specializations that are both strong in pushing keys (high performance) and
-                popular among players (many runs).</p>
-
+              <p>This card holds four views of the same idea, switchable with the tabs. Each plots every
+                spec as a point, with popularity on the y axis (how many runs, or how many 
+                characters) and a different performance or score measure on the x axis.</p>
+              <h2>Performance</h2>
+              <p>We look at every run of a spec and award positive points when the key is timed (higher
+                keys earn more) and negative points when it depletes (losing a low key is judged more
+                harshly), then average those points across all runs. It rewards high pushes, balances the
+                penalty for depletes, and stays fair no matter how many runs a spec has.</p>
+              <h2>Top 50 Score</h2>
+              <p>For each spec we take its 50 highest-ranked players from the leaderboards and average
+                their Mythic+ score.</p>
+              <h2>Top 1% Character Score</h2>
+              <p>We average all characters who did a key in the last 2 weeks and whose spec score clears the lowest global
+                top 1% score cutoff (currently about
+                {{ "{:,.0f}".format(top1pct_score) }} {% if top1pct_region %},
+                in {{ top1pct_region }} {% endif %} taken from
+                <a href="https://raider.io" target="_blank" rel="noopener">Raider.io</a>)
+                and average that score per spec. The <strong>Top 1% Score vs Runs</strong> tab plots the result
+                against overall popularity, while the <strong>Top 1% Score vs Characters</strong> tab plots it against how
+                many characters each spec has in the top 1%.</p>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -566,6 +679,7 @@ dashboard<!--
           </div>
         </div>
       </div>
+
       {% include "footer.html" %}
       {% include "right_aside.html" %}
     </div>
@@ -1071,6 +1185,144 @@ dashboard<!--
       });
     });
 }) ();
+  </script>
+  <!-- Score-Based Performance Charts (Top 50 Score + Character Score) -->
+  <script>
+    (() => {
+      const ICON_SIZE = 20;
+
+      const formatRuns = value => {
+        if (value >= 1e9) return (value / 1e9).toFixed(1) + 'B';
+        if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
+        if (value >= 1e3) return (value / 1e3).toFixed(1) + 'k';
+        return value.toFixed(0);
+      };
+
+      // Shared renderer: score on a linear X axis, run count on a logarithmic Y
+      // axis (matching the tier-score chart's Y), spec icons as points.
+      const renderScoreScatter = (canvasId, rawPoints, xTitle, opts = {}) => {
+        const el = document.getElementById(canvasId);
+        if (!el || !rawPoints.length) return;
+        const ctx = el.getContext("2d");
+        const xTickFormat = opts.xTickFormat || formatRuns;
+        const xValueName = opts.xValueName || 'Score';
+        const xValueFormat = opts.xValueFormat || (v => Math.round(v).toLocaleString());
+        const yTitle = opts.yTitle || 'Runs';
+        const yValueName = opts.yValueName || 'Runs';
+
+        const iconPromises = rawPoints.map(p =>
+          new Promise(res => {
+            const img = new Image();
+            img.width = ICON_SIZE;
+            img.height = ICON_SIZE;
+            img.src = p.iconUrl;
+            img.onload = () => res(img);
+            img.onerror = () => res(null);
+          })
+        );
+
+        const xVals = rawPoints.map(p => p.x);
+        const minX = Math.min(...xVals);
+        const maxX = Math.max(...xVals);
+        const pad = (maxX - minX) * 0.08 || Math.abs(maxX) * 0.05 || 1;
+        const xMin = minX - pad;
+        const xMax = maxX + pad;
+
+        const runVals = rawPoints.map(p => p.y).filter(y => y > 0);
+        const minRun = runVals.length ? Math.min(...runVals) : 1;
+        const maxRun = runVals.length ? Math.max(...runVals) : 1;
+        const yMin = minRun / 1.2;
+        const yMax = maxRun * 1.2;
+        const niceRuns = [1, 2, 5, 10, 20, 50, 1e2, 2e2, 5e2, 1e3, 2e3, 5e3, 1e4, 2e4, 5e4, 1e5, 2e5, 5e5, 1e6];
+        const yTickValues = niceRuns.filter(r => r >= yMin && r <= yMax);
+
+        Promise.all(iconPromises).then(images => {
+          const data = rawPoints.map((p, i) => ({ ...p, pointStyle: images[i] }));
+
+          new Chart(ctx, {
+            type: 'scatter',
+            data: {
+              datasets: [{
+                label: xTitle,
+                data: data,
+                parsing: { xAxisKey: 'x', yAxisKey: 'y' },
+                pointRadius: 12,
+                pointHoverRadius: 16,
+                pointStyle: c => c.raw.pointStyle,
+                borderColor: c => c.raw.borderColor,
+                backgroundColor: c => c.raw.backgroundColor,
+                borderWidth: 2,
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  min: xMin,
+                  max: xMax,
+                  title: { display: true, text: xTitle },
+                  ticks: { display: true, callback: value => xTickFormat(value) }
+                },
+                y: {
+                  type: 'logarithmic',
+                  min: yMin,
+                  max: yMax,
+                  afterBuildTicks: scale => {
+                    scale.ticks = yTickValues.map(v => ({ value: v }));
+                  },
+                  title: { display: true, text: yTitle },
+                  ticks: { display: true, callback: value => formatRuns(value) }
+                }
+              },
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    label: c => {
+                      const { label, x, y } = c.raw;
+                      return `${label}: ${xValueName}=${xValueFormat(x)}, ${yValueName}=${y}`;
+                    }
+                  }
+                },
+                legend: { display: false }
+              }
+            }
+          });
+        });
+      };
+
+      renderScoreScatter(
+        "chart-popularity-vs-top50-score",
+        {{ top50_score_scatter | tojson }},
+        "Avg Top 50 Score"
+      );
+
+      renderScoreScatter(
+        "chart-elite-char-vs-overall-pop",
+        {{ elite_char_overall_scatter | tojson }},
+        "Avg Score (top 1% characters)"
+      );
+      renderScoreScatter(
+        "chart-elite-char-vs-top-pop",
+        {{ elite_char_top_scatter | tojson }},
+        "Avg Score (top 1% characters)",
+        { yTitle: 'Characters', yValueName: 'Chars' }
+      );
+    })();
+  </script>
+  <!-- Resize the combined-card charts when their tab is first shown (a chart
+       created in a display:none pane starts at zero size until the pane shows). -->
+  <script>
+    (() => {
+      const tabs = document.getElementById('perfTabs');
+      if (!tabs) return;
+      tabs.addEventListener('shown.bs.tab', ev => {
+        const pane = document.querySelector(ev.target.getAttribute('data-bs-target'));
+        const canvas = pane && pane.querySelector('canvas');
+        const chart = canvas && window.Chart && Chart.getChart(canvas);
+        if (chart) chart.resize();
+      });
+    })();
   </script>
   <!-- Dungeon Popularity vs Ease Chart -->
   <script>

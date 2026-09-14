@@ -2058,6 +2058,78 @@ def fetch_spec_run_counts_per_level(connection, cursor):
     ]
 
 
+FETCH_TOP50_AVG_SCORE_SQL = """
+SELECT spec_id, AVG(score) AS avg_score, COUNT(*) AS player_count
+FROM (
+    SELECT DISTINCT spec_id, `rank`, score
+    FROM Mythistone.top_player_loadouts
+    WHERE season = %s AND `rank` <= 50 AND score IS NOT NULL
+) p
+GROUP BY spec_id;
+"""
+
+
+def fetch_top50_avg_score(connection, cursor, season):
+    rows = fetch_with_retry(connection, cursor, FETCH_TOP50_AVG_SCORE_SQL, (season,))
+    if not rows:
+        return []
+    return [
+        {"spec_id": int(row[0]), "avg_score": float(row[1]), "player_count": int(row[2])}
+        for row in rows
+    ]
+
+
+FETCH_SPEC_MEAN_CHAR_SCORE_ABOVE_SQL = """
+SELECT spec_id, AVG(spec_score) AS mean_score, COUNT(*) AS char_count
+FROM (
+    SELECT region, blizzard_character_id, spec_id, SUM(best_rating) AS spec_score
+    FROM (
+        SELECT
+            mc.region,
+            mc.blizzard_character_id,
+            m.spec_id,
+            mds.dungeon_id,
+            MAX(mds.rating) AS best_rating
+        FROM Mythistone.member_dungeon_score mds
+        JOIN Mythistone.members m ON m.member = mds.member
+        JOIN Mythistone.member_character mc ON mc.member = mds.member
+        WHERE mds.dungeon_id IN (
+            SELECT DISTINCT dungeon_id
+            FROM Mythistone.aggregated_runs_per_dungeon_per_level
+            WHERE season = %s
+        )
+        GROUP BY mc.region, mc.blizzard_character_id, m.spec_id, mds.dungeon_id
+    ) per_dungeon
+    GROUP BY region, blizzard_character_id, spec_id
+    HAVING COUNT(*) = (
+        SELECT COUNT(DISTINCT dungeon_id)
+        FROM Mythistone.aggregated_runs_per_dungeon_per_level
+        WHERE season = %s
+    ) AND SUM(best_rating) >= %s
+) per_char_spec
+GROUP BY spec_id;
+"""
+
+
+def fetch_spec_mean_character_score_above(connection, cursor, season, min_score):
+    """Per spec, the mean character score of characters whose spec score (sum of
+    their best per-dungeon ratings, all dungeons present) clears ``min_score``
+    (the top-1% cutoff). ``char_count`` is that spec's top-1% character
+    population."""
+    rows = fetch_with_retry(
+        connection,
+        cursor,
+        FETCH_SPEC_MEAN_CHAR_SCORE_ABOVE_SQL,
+        (season, season, min_score),
+    )
+    if not rows:
+        return []
+    return [
+        {"spec_id": int(row[0]), "mean_score": float(row[1]), "char_count": int(row[2])}
+        for row in rows
+    ]
+
+
 FETCH_RUNS_PER_PERIOD = """
 -- params: (season, season)
 SELECT

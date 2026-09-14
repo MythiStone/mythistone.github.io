@@ -38,6 +38,7 @@ from chartData import (
     RARITY_COLORS,
     compute_shades,
     create_spec_scatter,
+    create_spec_score_scatter,
     create_dungeon_ease,
 )
 
@@ -803,6 +804,14 @@ def main(template_path, output_dir):
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
     notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
     season_info = load_season_info(LOOKUP_DIR)
+    # raider.io-derived top-1% key bracket (written by fetchMythicPlusCutoffs.py).
+    cutoffs = load_json(os.path.join(LOOKUP_DIR, "mythicPlusCutoffs.json"))
+    top1pct_score = cutoffs["top1pct_score"]
+    # region whose per-region cutoff is the (minimum) score we display
+    region_scores = cutoffs.get("regionScores", {})
+    top1pct_region = (
+        min(region_scores, key=region_scores.get).upper() if region_scores else ""
+    )
     spec_nav = generateSpecNav(spec_lookup, class_lookup)
     dungeon_nav = generateDungeonNav(dungeon_lookup)
 
@@ -848,6 +857,14 @@ def main(template_path, output_dir):
         print("fetching spec upgrades...")
         spec_upgrades = databaseConnector.fetch_spec_upgrades(
             conn, cursor
+        )
+        print("fetching top-50 average score...")
+        top50_avg_score = databaseConnector.fetch_top50_avg_score(
+            conn, cursor, current_season_id
+        )
+        print("fetching per-spec mean character score above top-1% cutoff...")
+        elite_char_score = databaseConnector.fetch_spec_mean_character_score_above(
+            conn, cursor, current_season_id, top1pct_score
         )
         print("fetching key throughput...")
         key_throughput_rows = databaseConnector.fetch_key_throughput(
@@ -938,6 +955,22 @@ def main(template_path, output_dir):
     scatter_data = create_spec_scatter(
         spec_upgrades, spec_lookup, class_lookup, highest_run
     )
+    print("Creating Top-50 Score Scatter...")
+    top50_score_scatter = create_spec_score_scatter(
+        top50_avg_score, spec_run_counts, spec_lookup, class_lookup, "avg_score"
+    )
+    print("Creating Top-1% Character Score Scatters...")
+    # x = avg spec score of characters whose spec score clears the top-1% cutoff.
+    # Graph A vs overall popularity, Graph B vs the count of those elite chars.
+    elite_char_overall_scatter = create_spec_score_scatter(
+        elite_char_score, spec_run_counts, spec_lookup, class_lookup, "mean_score"
+    )
+    elite_char_counts = [
+        {"id": r["spec_id"], "count": r["char_count"]} for r in elite_char_score
+    ]
+    elite_char_top_scatter = create_spec_score_scatter(
+        elite_char_score, elite_char_counts, spec_lookup, class_lookup, "mean_score"
+    )
     print("Creating Dungeon Popularity...")
     dungeon_chart = createDungeonPopularity(dungeon_data, dungeon_lookup)
     print("Creating Dungeon Ease...")
@@ -973,6 +1006,11 @@ def main(template_path, output_dir):
         dungeon_total_counts=dungeon_chart["totalCounts"],
         dungeon_datasets=dungeon_chart["datasets"],
         scatter_data=scatter_data,
+        top50_score_scatter=top50_score_scatter,
+        elite_char_overall_scatter=elite_char_overall_scatter,
+        elite_char_top_scatter=elite_char_top_scatter,
+        top1pct_score=top1pct_score,
+        top1pct_region=top1pct_region,
         dungeon_ease_levels=ease_data["keyLevels"],
         dungeon_ease_datasets=ease_data["datasets"],
         breadcrumbs=[
