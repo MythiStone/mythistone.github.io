@@ -190,8 +190,8 @@
   --mythi-overlay-bg: rgba(255, 255, 255, 0.96);
   --mythi-overlay-color: #171717;
   --mythi-scrollbar-track: rgba(10, 10, 10, 0.08);
-  --mythi-scrollbar-thumb: rgba(10, 10, 10, 0.32);
-  --mythi-scrollbar-thumb-hover: rgba(10, 10, 10, 0.52);
+  --mythi-scrollbar-thumb: rgba(var(--bs-primary-rgb), 0.55);
+  --mythi-scrollbar-thumb-hover: rgba(var(--bs-primary-rgb), 0.8);
   --mythi-text-success: #2e7d32;
   --mythi-text-danger: #c62828;
   --mythi-text-warning: #b35300;
@@ -310,8 +310,8 @@
   --mythi-overlay-bg: rgba(0, 0, 0, 0.86);
   --mythi-overlay-color: #f5f5f5;
   --mythi-scrollbar-track: rgba(255, 255, 255, 0.1);
-  --mythi-scrollbar-thumb: rgba(255, 255, 255, 0.4);
-  --mythi-scrollbar-thumb-hover: rgba(255, 255, 255, 0.6);
+  --mythi-scrollbar-thumb: rgba(var(--bs-primary-rgb), 0.6);
+  --mythi-scrollbar-thumb-hover: rgba(var(--bs-primary-rgb), 0.85);
   --mythi-text-success: #4CAF50;
   --mythi-text-danger: #F44335;
   --mythi-text-warning: #fb8c00;

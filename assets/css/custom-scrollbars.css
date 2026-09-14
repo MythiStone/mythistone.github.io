@@ -3,6 +3,7 @@
  * These were white-alpha only, so the track and thumb were invisible on a light
  * page. Colors come from the --mythi-scrollbar-* tokens in material-dashboard.css,
  * which flip with data-bs-theme. */
+html::-webkit-scrollbar,
 .table-responsive::-webkit-scrollbar,
 .dropdown-menu::-webkit-scrollbar,
 pre::-webkit-scrollbar,
@@ -14,6 +15,7 @@ code::-webkit-scrollbar,
   height: 8px;
 }
 
+html::-webkit-scrollbar-track,
 .table-responsive::-webkit-scrollbar-track,
 .dropdown-menu::-webkit-scrollbar-track,
 pre::-webkit-scrollbar-track,
@@ -25,6 +27,7 @@ code::-webkit-scrollbar-track,
   border-radius: 4px;
 }
 
+html::-webkit-scrollbar-thumb,
 .table-responsive::-webkit-scrollbar-thumb,
 .dropdown-menu::-webkit-scrollbar-thumb,
 pre::-webkit-scrollbar-thumb,
@@ -36,6 +39,7 @@ code::-webkit-scrollbar-thumb,
   border-radius: 4px;
 }
 
+html::-webkit-scrollbar-thumb:hover,
 .table-responsive::-webkit-scrollbar-thumb:hover,
 .dropdown-menu::-webkit-scrollbar-thumb:hover,
 pre::-webkit-scrollbar-thumb:hover,
@@ -47,6 +51,7 @@ code::-webkit-scrollbar-thumb:hover,
 }
 
 /* Firefox compatibility */
+html,
 .table-responsive,
 .dropdown-menu,
 pre,
