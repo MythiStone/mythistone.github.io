@@ -214,14 +214,15 @@ self.onmessage = (ev) => {
       .map((rk) => routeMeta.get(rk))
       .filter(Boolean);
 
+    // best first: uses -> key level -> shorter duration -> more recent.
     matchedRoutes.sort((a, b) => {
+      if ((a.usage_count || 0) !== (b.usage_count || 0))
+        return (b.usage_count || 0) - (a.usage_count || 0);
       if ((a.level || 0) !== (b.level || 0))
         return (b.level || 0) - (a.level || 0);
       if ((a.duration || 0) !== (b.duration || 0))
         return (a.duration || 0) - (b.duration || 0);
-      if ((a.dungeon || "") !== (b.dungeon || ""))
-        return String(a.dungeon).localeCompare(String(b.dungeon));
-      return (a.timestamp || 0) - (b.timestamp || 0);
+      return (b.timestamp || 0) - (a.timestamp || 0);
     });
 
     const total = matchedRoutes.length;

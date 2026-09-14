@@ -3104,7 +3104,7 @@ def fetch_comp_routes(
             rd_base.duration,
             rd_base.dungeon_id,
             COUNT(rs.route_key) OVER (PARTITION BY rs.route_signature) as usage_count,
-            ROW_NUMBER() OVER (PARTITION BY rs.route_signature ORDER BY rd_base.keystone_level DESC, rd_base.duration ASC) as rn,
+            ROW_NUMBER() OVER (PARTITION BY rs.route_signature ORDER BY rd_base.keystone_level DESC, rd_base.duration ASC, rd_base.timestamp DESC) as rn,
             FIRST_VALUE(rd_base.route_key) OVER (
                 PARTITION BY rs.route_signature
                 ORDER BY (COALESCE(rsc.spec_count, 0) > 0) DESC, rd_base.keystone_level DESC, rd_base.duration ASC, rd_base.route_key ASC
@@ -3127,7 +3127,7 @@ def fetch_comp_routes(
         specs_route_key
     FROM RankedRoutes
     WHERE rn = 1
-    ORDER BY usage_count DESC
+    ORDER BY usage_count DESC, keystone_level DESC, duration ASC, timestamp DESC
     """
     
     if limit:
@@ -3512,7 +3512,7 @@ RankedRoutes AS (
         rd.duration,
         rd.dungeon_id,
         COUNT(rs.route_key) OVER (PARTITION BY rs.route_signature) as usage_count,
-        ROW_NUMBER() OVER (PARTITION BY rs.route_signature ORDER BY rd.keystone_level DESC, rd.duration ASC) as rn
+        ROW_NUMBER() OVER (PARTITION BY rs.route_signature ORDER BY rd.keystone_level DESC, rd.duration ASC, rd.timestamp DESC) as rn
     FROM RouteSignatures rs
     JOIN Mythistone.route_data rd ON rs.route_key = rd.route_key
     WHERE rd.dungeon_id = %s
@@ -3527,7 +3527,7 @@ SELECT
     usage_count
 FROM RankedRoutes
 WHERE rn = 1
-ORDER BY usage_count DESC, keystone_level DESC
+ORDER BY usage_count DESC, keystone_level DESC, duration ASC, timestamp DESC
 LIMIT 5;
 """
 
