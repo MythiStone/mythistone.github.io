@@ -408,6 +408,9 @@ jobs:
             rm -rf assets/img/previews/*
             mkdir -p assets/img/previews
 
+      - name: Fetch latest hotfixes
+        run: python backend_scripts/fetchHotfixes.py
+        
       # Freeze this reset week's Top Trends snapshot BEFORE any page is rendered,
       # so the index / spec / dungeon generators read a current week to diff.
       - name: Snapshot weekly trends
@@ -419,9 +422,6 @@ jobs:
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
         run: |
           python backend_scripts/snapshotTrends.py
-
-      - name: Fetch latest hotfixes
-        run: python backend_scripts/fetchHotfixes.py
 
       - name: Generate Dashboard HTML page
         env:
