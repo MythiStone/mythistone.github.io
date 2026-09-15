@@ -909,6 +909,36 @@ CREATE TABLE `route_videos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.route_deaths definition
+
+CREATE TABLE `route_deaths` (
+  `route_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `death_seq` int unsigned NOT NULL,
+  `rio_run_id` bigint unsigned NOT NULL,
+  `died_at_ms` int unsigned NOT NULL,
+  PRIMARY KEY (`route_key`,`death_seq`),
+  KEY `route_deaths_route_data_FK` (`route_key`),
+  CONSTRAINT `route_deaths_route_data_FK` FOREIGN KEY (`route_key`) REFERENCES `route_data` (`route_key`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.route_encounters definition
+
+CREATE TABLE `route_encounters` (
+  `route_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `ordinal` int unsigned NOT NULL,
+  `rio_run_id` bigint unsigned NOT NULL,
+  `boss_wow_encounter_id` int unsigned DEFAULT NULL,
+  `boss_encounter_id` int unsigned DEFAULT NULL,
+  `boss_name` varchar(128) DEFAULT NULL,
+  `started_at_ms` int unsigned DEFAULT NULL,
+  `ended_at_ms` int unsigned DEFAULT NULL,
+  PRIMARY KEY (`route_key`,`ordinal`),
+  KEY `route_encounters_route_data_FK` (`route_key`),
+  CONSTRAINT `route_encounters_route_data_FK` FOREIGN KEY (`route_key`) REFERENCES `route_data` (`route_key`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.runs definition
 
 CREATE TABLE `runs` (
@@ -2931,6 +2961,8 @@ BEGIN
   CALL `Mythistone`.`sp_truncate_with_retry`('pull_enemies');
   CALL `Mythistone`.`sp_truncate_with_retry`('pull_spells');
   CALL `Mythistone`.`sp_truncate_with_retry`('route_videos');
+  CALL `Mythistone`.`sp_truncate_with_retry`('route_deaths');
+  CALL `Mythistone`.`sp_truncate_with_retry`('route_encounters');
   -- trend bar snapshots are period-keyed and season-specific; last season's
   -- weeks are meaningless once the raw data is gone, so clear them too.
   CALL `Mythistone`.`sp_truncate_with_retry`('trend_snapshot');

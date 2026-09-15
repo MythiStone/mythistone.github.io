@@ -3028,6 +3028,42 @@ def insert_route_video(connection, cursor, route_key, video):
     return cursor.rowcount
 
 
+INSERT_ROUTE_DEATH_SQL = """
+INSERT IGNORE INTO Mythistone.route_deaths
+  (`route_key`, `death_seq`, `rio_run_id`, `died_at_ms`) VALUES (%s, %s, %s, %s);
+"""
+
+
+def insert_route_death(connection, cursor, route_key, death_seq, rio_run_id, died_at_ms):
+    """Insert one death event (timing only) for the run stored under a route."""
+    val = (route_key, death_seq, rio_run_id, died_at_ms)
+    execute_with_retry(connection, cursor, INSERT_ROUTE_DEATH_SQL, val)
+    return cursor.rowcount
+
+
+INSERT_ROUTE_ENCOUNTER_SQL = """
+INSERT IGNORE INTO Mythistone.route_encounters
+  (`route_key`, `ordinal`, `rio_run_id`, `boss_wow_encounter_id`, `boss_encounter_id`,
+   `boss_name`, `started_at_ms`, `ended_at_ms`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+"""
+
+
+def insert_route_encounter(connection, cursor, route_key, rio_run_id, enc):
+    """Insert one boss encounter (timing) for the run stored under a route."""
+    val = (
+        route_key,
+        enc["ordinal"],
+        rio_run_id,
+        enc.get("boss_wow_encounter_id"),
+        enc.get("boss_encounter_id"),
+        enc.get("boss_name"),
+        enc.get("started_at_ms"),
+        enc.get("ended_at_ms"),
+    )
+    execute_with_retry(connection, cursor, INSERT_ROUTE_ENCOUNTER_SQL, val)
+    return cursor.rowcount
+
+
 def fetch_route_specs_map(connection, cursor):
     """
     Return dict: { route_key: [spec_id, ...], ... }

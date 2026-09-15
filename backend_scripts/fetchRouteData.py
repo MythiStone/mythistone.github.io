@@ -173,6 +173,8 @@ async def fetch_run_details(
                 full_roster = full.get("roster", [])
 
                 videos = build_video_rows(full, full.get("keystone_run_id"))
+                deaths = build_death_rows(full)
+                encounters = build_encounter_rows(full)
 
                 reduced = {
                     "route_key": full.get("logged_details", {}).get("route_key"),
@@ -184,6 +186,8 @@ async def fetch_run_details(
                     "keystone_run_id": full.get("keystone_run_id"),
                     "completed_at": completed_at,
                     "videos": videos,
+                    "deaths": deaths,
+                    "encounters": encounters,
                     "full_roster": full_roster,  # Return but don't cache
                 }
 
@@ -200,6 +204,8 @@ async def fetch_run_details(
                     "keystone_run_id": reduced["keystone_run_id"],
                     "completed_at": reduced["completed_at"],
                     "videos": reduced["videos"],
+                    "deaths": reduced["deaths"],
+                    "encounters": reduced["encounters"],
                 }
                 
                 # Implement cache eviction when cache exceeds max size
@@ -325,6 +331,37 @@ def build_video_rows(full: dict, rio_run_id: int) -> list[dict]:
     return rows
 
 
+def build_death_rows(full: dict) -> list[int]:
+    """Death timings (ms into the run) from a logged run's logged_details."""
+    ld = full.get("logged_details") or {}
+    return [
+        int(d["approximate_died_at"])
+        for d in (ld.get("deaths") or [])
+        if d.get("approximate_died_at") is not None
+    ]
+
+
+def build_encounter_rows(full: dict) -> list[dict]:
+    """Per-boss encounter timings from a logged run's logged_details (roster blob dropped)."""
+    ld = full.get("logged_details") or {}
+    rows = []
+    for e in ld.get("encounters") or []:
+        boss = e.get("boss") or {}
+        if boss.get("ordinal") is None:
+            continue
+        rows.append(
+            {
+                "ordinal": int(boss["ordinal"]),
+                "boss_wow_encounter_id": boss.get("wowEncounterId"),
+                "boss_encounter_id": boss.get("encounterId"),
+                "boss_name": boss.get("name"),
+                "started_at_ms": e.get("approximate_relative_started_at"),
+                "ended_at_ms": e.get("approximate_relative_ended_at"),
+            }
+        )
+    return rows
+
+
 # ---------------- DB worker (single thread, top-level) ----------------
 # Job type: ("insert_route", raider_reduced, keystone_route, future)
 
@@ -373,17 +410,20 @@ def db_worker_thread(job_queue: threading_queue.Queue):
                     if not route_key or not rio_run_id or not mapping_version:
                         raise ValueError(f"Invalid parameters for insert_route: route_key={route_key}, rio_run_id={rio_run_id}, mapping_version={mapping_version}")
 
-                    databaseConnector.insert_route_data(
-                        conn,
-                        cursor,
-                        rio_run_id,
-                        mapping_version,
-                        enemy_forces,
-                        timestamp,
-                        keystone_level,
-                        duration,
-                        dungeon_id,
-                        route_key,
+                    newly_inserted = (
+                        databaseConnector.insert_route_data(
+                            conn,
+                            cursor,
+                            rio_run_id,
+                            mapping_version,
+                            enemy_forces,
+                            timestamp,
+                            keystone_level,
+                            duration,
+                            dungeon_id,
+                            route_key,
+                        )
+                        == 1
                     )
                     # Insert specs
                     specs = set()
@@ -448,6 +488,22 @@ def db_worker_thread(job_queue: threading_queue.Queue):
                                 )
                             except Exception as e:
                                 print(f"[{datetime.now(timezone.utc).isoformat()}] insert_route_video ignored: {e}")
+
+                        if newly_inserted:
+                            for seq, died_at in enumerate(raider_reduced.get("deaths", [])):
+                                try:
+                                    databaseConnector.insert_route_death(
+                                        conn, cursor, route_key, seq, rio_run_id, died_at
+                                    )
+                                except Exception as e:
+                                    print(f"[{datetime.now(timezone.utc).isoformat()}] insert_route_death ignored: {e}")
+                            for enc in raider_reduced.get("encounters", []):
+                                try:
+                                    databaseConnector.insert_route_encounter(
+                                        conn, cursor, route_key, rio_run_id, enc
+                                    )
+                                except Exception as e:
+                                    print(f"[{datetime.now(timezone.utc).isoformat()}] insert_route_encounter ignored: {e}")
 
                         try:
                             conn.commit()

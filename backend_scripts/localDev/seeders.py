@@ -680,6 +680,7 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
     route_data, route_pulls, route_specs = [], [], []
     pull_enemies, pull_spells = [], []
     route_videos = []
+    route_deaths, route_encounters = [], []
     regions = ["us", "eu", "kr", "tw"]
     realms = ["illidan", "silvermoon", "area-52", "tarren-mill", "stormrage"]
     rio = 1
@@ -690,13 +691,29 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
         for _ in range(cfg["routes_per_dungeon"]):
             rio += 1
             route_key = f"seedroute-{cmid}-{rio}"
+            duration_ms = int(timer_ms * rng.uniform(0.5, 1.1))
             route_data.append((rio, 1, rng.randint(90, 105),
                                now_s - rng.randint(0, 13 * 86400), rng.randint(8, 20),
-                               int(timer_ms * rng.uniform(0.5, 1.1)), cmid, route_key))
+                               duration_ms, cmid, route_key))
             # comp = 5 specs
             comp = [rng.choice(all_specs) for _ in range(5)]
             for sid in comp:
                 route_specs.append((sid, route_key))
+            # deaths: a few timings spread across the run duration
+            for seq in range(rng.randint(0, 8)):
+                route_deaths.append((route_key, seq, rio, rng.randint(0, duration_ms)))
+            # encounters: one per dungeon boss, spaced through the run
+            route_bosses = [int(b) for b in static.boss_npcs.get(cmid, [])]
+            n_enc = len(route_bosses) or rng.randint(3, 5)
+            for ordinal in range(n_enc):
+                seg = duration_ms / n_enc
+                start = int(seg * ordinal + seg * 0.4)
+                end = int(seg * (ordinal + 1) - 1)
+                boss_id = route_bosses[ordinal] if ordinal < len(route_bosses) else 3000 + ordinal
+                route_encounters.append((
+                    route_key, ordinal, rio, 3100 + ordinal, boss_id,
+                    f"Seed Boss {ordinal}", start, max(start + 1, end),
+                ))
             # POV videos: attach one to some routes, POV = a spec from the comp
             if rng.random() < 0.4:
                 is_yt = rng.random() < 0.5
@@ -748,6 +765,13 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
         "start_seconds, duration, thumbnail_url, season_slug, created_by_user_id, pov_character_name, "
         "pov_realm_slug, pov_region, pov_character_id, pov_persona_id, pov_spec_id) "
         "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", route_videos)
+    _insert_many(conn, cursor,
+        "INSERT IGNORE INTO route_deaths (route_key, death_seq, rio_run_id, died_at_ms) "
+        "VALUES (%s,%s,%s,%s)", route_deaths)
+    _insert_many(conn, cursor,
+        "INSERT IGNORE INTO route_encounters (route_key, ordinal, rio_run_id, boss_wow_encounter_id, "
+        "boss_encounter_id, boss_name, started_at_ms, ended_at_ms) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", route_encounters)
 
 
 # --------------------------------------------------------------------------------------
