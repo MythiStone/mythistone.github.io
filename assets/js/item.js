@@ -144,33 +144,6 @@
     tbody.appendChild(tr);
   }
 
-  // One spec as a "Used by Specs" DataTable row (mirrors the spec_row macro); the
-  // name cell links to that spec's class/role page (not a re-scope).
-  function specRow(tbody, s, slot) {
-    var spec = SPECS[String(s.spec_id)] || {};
-    var tr = document.createElement("tr");
-    var c1 = document.createElement("td");
-    var a = document.createElement("a");
-    a.href = spec.page || ("?spec=" + s.spec_id);
-    a.className = "dt-name";
-    a.title = s.slot_runs
-      ? fmt(s.runs) + " of " + fmt(s.slot_runs) + " " + (slot || "slot") + " runs"
-      : fmt(s.runs) + " runs";
-    var img = document.createElement("img");
-    img.className = "spec-icon"; img.src = specIcon(spec); img.alt = "";
-    var nm = document.createElement("span");
-    nm.textContent = (spec.name || "Spec " + s.spec_id) + (spec.className ? " " + spec.className : "");
-    if (spec.color) nm.style.color = spec.color;
-    a.appendChild(img); a.appendChild(nm); c1.appendChild(a);
-    tr.appendChild(c1);
-    tr.appendChild(numCell(s.adoption || 0, s.adoption != null ? s.adoption + "%" : "—"));
-    tr.appendChild(numCell(s.runs || 0, fmt(s.runs)));
-    var mk = s.max_timed_key ? "+" + s.max_timed_key
-      : (s.max_depleted_key ? "+" + s.max_depleted_key + " (D)" : "—");
-    tr.appendChild(numCell(s.max_timed_key || s.max_depleted_key || 0, mk));
-    tbody.appendChild(tr);
-  }
-
   // The Wowhead query string for the item at the current scope. Base item only
   // (no bonus track — the header shows the canonical item, not a variant); the
   // spec param just scopes the tooltip when viewing a single spec.
@@ -226,7 +199,6 @@
     renderEnhancements(scope);
     // Set pieces are scope-independent; the server-rendered #item-set block is
     // left as-is (no JS rebuild needed).
-    renderSpecPopularity(data, scoped);
     setupKeyLevelFilter(scope);
     renderKeyLevels(scope);
     renderDungeons(scope, []);
@@ -363,18 +335,6 @@
     cnt.textContent = countText;
     row.appendChild(cnt);
     return row;
-  }
-
-  // "Used by Specs" sortable/scrollable DataTable (only in the global view).
-  function renderSpecPopularity(data, scoped) {
-    var col = el("spec-popularity-col");
-    if (!col) return; // optional card: not rendered on the current item template
-    if (scoped) { col.classList.add("d-none"); return; }
-    col.classList.remove("d-none");
-    var specs = data.global.specs || [];
-    mountTable("spec-popularity-table", function (tbody) {
-      specs.forEach(function (s) { specRow(tbody, s, data.slot); });
-    }, [[1, "desc"]], [{ targets: 0, orderable: false }]);
   }
 
   var curScope = null;

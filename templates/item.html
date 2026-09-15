@@ -3,7 +3,6 @@
 
 {# ----- helpers -------------------------------------------------------- #}
 {% macro spec_icon(spec_id) %}{% set s = specs_map[spec_id|string] %}{% if s and s.icon %}/data/icons/{{ s.icon }}.jpg{% else %}/data/icons/inv_misc_questionmark.png{% endif %}{% endmacro %}
-{% macro spec_label(spec_id) %}{% set s = specs_map[spec_id|string] %}{{ s.name if s else "Spec " ~ spec_id }}{% if s and s.className %} {{ s.className }}{% endif %}{% endmacro %}
 
 {# A single horizontal usage bar (icon · label · bar · count), matching the
    markup item.js produces so the hydrated view is identical to this SSR one. #}
@@ -107,21 +106,6 @@
     <tbody>{% for o in options %}{{ opt_row(o, kind) }}{% endfor %}</tbody>
   </table>
 </div>
-{% endmacro %}
-
-{# One spec row for the "Used by Specs" DataTable. Mirrors specRow() in item.js. #}
-{% macro spec_row(s) %}{% set sp = specs_map[s.spec_id|string] %}
-<tr>
-  <td>
-    <a class="dt-name" href="{{ sp.page if sp and sp.page else '?spec=' ~ s.spec_id }}"
-      title="{% if s.slot_runs %}{{ '{:,}'.format(s.runs) }} of {{ '{:,}'.format(s.slot_runs) }} {{ item.slot }} runs{% else %}{{ '{:,}'.format(s.runs) }} runs{% endif %}">
-      <img class="spec-icon" src="{{ spec_icon(s.spec_id) }}" alt=""><span{% if sp and sp.color %} style="color: {{ sp.color }}"{% endif %}>{{ spec_label(s.spec_id) }}</span>
-    </a>
-  </td>
-  <td class="text-center" data-order="{{ s.adoption or 0 }}"><span class="text-xs font-weight-bold">{{ (s.adoption ~ "%") if s.adoption is not none else "—" }}</span></td>
-  <td class="text-center" data-order="{{ s.runs or 0 }}"><span class="text-xs font-weight-bold">{{ "{:,}".format(s.runs) }}</span></td>
-  <td class="text-center" data-order="{{ s.max_timed_key or s.max_depleted_key or 0 }}"><span class="text-xs font-weight-bold">{% if s.max_timed_key %}+{{ s.max_timed_key }}{% elif s.max_depleted_key %}+{{ s.max_depleted_key }} (D){% else %}—{% endif %}</span></td>
-</tr>
 {% endmacro %}
 
 <head>
