@@ -35,6 +35,7 @@ on:
       - 'data/creature_img/**'
       - 'ads.txt'
       - 'robots.txt'
+      - '.github/workflows/buildPages.yml'
 
   workflow_dispatch:
     inputs:
@@ -410,7 +411,7 @@ jobs:
 
       - name: Fetch latest hotfixes
         run: python backend_scripts/fetchHotfixes.py
-        
+
       # Freeze this reset week's Top Trends snapshot BEFORE any page is rendered,
       # so the index / spec / dungeon generators read a current week to diff.
       - name: Snapshot weekly trends
