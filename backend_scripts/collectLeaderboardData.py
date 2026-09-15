@@ -1879,9 +1879,9 @@ async def realm_poller(region: str, session: ClientSession, max_keys):
             dungeons = await get_leaderboard_index(session, region, realm)
             await GLOBAL_STATS.increment("checked_realm")
             for dungeon in dungeons:
-                GLOBAL_STATS.console_log(
-                    f"{region} {realm} checking dungeon {dungeon['dungeon_id']} for period {active_period}"
-                )
+                # GLOBAL_STATS.console_log(
+                #     f"{region} {realm} checking dungeon {dungeon['dungeon_id']} for period {active_period}"
+                # )
                 # fetch the leaderboard
                 await fetch_leaderboard_and_queue(
                     session,
