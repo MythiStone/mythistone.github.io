@@ -562,7 +562,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                     break
     finally:
         thumbnail_executor.shutdown(wait=False)
-        conn.close()
+        databaseConnector.close_quietly(conn)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate WoW M+ dungeon pages")

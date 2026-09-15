@@ -9,6 +9,33 @@ MAX_LOCK_WAIT_RETRIES = 5
 LOCK_WAIT_BACKOFF_MIN = 0.2
 LOCK_WAIT_BACKOFF_MAX = 1
 
+# Error codes that mean the socket/server connection died and a reconnect+retry is warranted.
+# CR_SERVER_LOST_EXTENDED (2055) is the SSL BAD_LENGTH / "EOF in violation of protocol" variant a
+# remote MySQL throws on a mid-statement network drop, and it is NOT covered by 2006/2013.
+CONNECTION_LOST_ERRNOS = (
+    errorcode.CR_SERVER_GONE_ERROR,     # 2006
+    errorcode.CR_SERVER_LOST,           # 2013
+    errorcode.CR_SERVER_LOST_EXTENDED,  # 2055
+)
+
+
+def _is_connection_lost(err):
+    """True if err is a dropped-connection error the retry helpers should reconnect on.
+    InterfaceError is not a DatabaseError subclass and can arrive with errno unset, so treat the
+    class itself as connection-lost."""
+    return isinstance(err, mysql.connector.InterfaceError) or getattr(
+        err, "errno", None
+    ) in CONNECTION_LOST_ERRNOS
+
+
+def close_quietly(conn):
+    """Close a pooled connection without letting a dead-socket reset_session() raise and mask the
+    real error that sent us into a finally block."""
+    try:
+        conn.close()
+    except Exception:
+        pass
+
 # The shared pool, set by init_connection_pool(). Defined here so get_connection's
 # ``CONNECTION_POOL is None`` guard raises the intended RuntimeError (rather than a
 # NameError) in credential-free generators that never initialise a pool — e.g. the
@@ -96,7 +123,7 @@ def commit_with_retry(connection):
         try:
             connection.commit()
             return
-        except mysql.connector.DatabaseError as err:
+        except mysql.connector.Error as err:
             if (
                 err.errno == errorcode.ER_LOCK_WAIT_TIMEOUT
                 and attempt < MAX_LOCK_WAIT_RETRIES
@@ -112,10 +139,7 @@ def commit_with_retry(connection):
                 attempt += 1
                 continue
 
-            if (
-                err.errno in (errorcode.CR_SERVER_GONE_ERROR, errorcode.CR_SERVER_LOST)
-                and attempt < MAX_LOCK_WAIT_RETRIES
-            ):
+            if _is_connection_lost(err) and attempt < MAX_LOCK_WAIT_RETRIES:
                 wait = random.uniform(LOCK_WAIT_BACKOFF_MIN, LOCK_WAIT_BACKOFF_MAX) * (
                     2**attempt
                 )
@@ -138,7 +162,7 @@ def fetch_with_retry(connection, cursor, sql, params=None):
             cursor.execute(sql, params or ())
 
             return cursor.fetchall()
-        except mysql.connector.DatabaseError as err:
+        except mysql.connector.Error as err:
             # err.errno is the integer error code
             if (
                 err.errno == errorcode.ER_LOCK_WAIT_TIMEOUT
@@ -154,10 +178,7 @@ def fetch_with_retry(connection, cursor, sql, params=None):
                 time.sleep(wait)
                 attempt += 1
                 continue
-            if (
-                err.errno in (errorcode.CR_SERVER_GONE_ERROR, errorcode.CR_SERVER_LOST)
-                and attempt < MAX_LOCK_WAIT_RETRIES
-            ):
+            if _is_connection_lost(err) and attempt < MAX_LOCK_WAIT_RETRIES:
                 wait = random.uniform(LOCK_WAIT_BACKOFF_MIN, LOCK_WAIT_BACKOFF_MAX) * (
                     2**attempt
                 )
@@ -166,6 +187,14 @@ def fetch_with_retry(connection, cursor, sql, params=None):
                 # re‑acquire a fresh connection & cursor
                 connection.reconnect(attempts=5, delay=5)
                 cursor = connection.cursor()
+                # A reconnect resets session state (autocommit, isolation, lock_wait_timeout).
+                # fetch_with_retry only ever serves page-build reads, so restore the read session
+                # here or later SELECTs on this handle would open MDL-holding transactions and can
+                # wedge the aggregation pipeline. Never do this in the write helpers below.
+                try:
+                    configure_read_session(connection, cursor)
+                except Exception:
+                    pass
                 attempt += 1
                 continue
             # if we hit max retried or a different error, re‑raise
@@ -182,7 +211,7 @@ def execute_with_retry(connection, cursor, sql, params=None):
             cursor.execute(sql, params or ())
 
             return
-        except mysql.connector.DatabaseError as err:
+        except mysql.connector.Error as err:
             # err.errno is the integer error code
             if (
                 err.errno == errorcode.ER_LOCK_WAIT_TIMEOUT
@@ -198,10 +227,7 @@ def execute_with_retry(connection, cursor, sql, params=None):
                 time.sleep(wait)
                 attempt += 1
                 continue
-            if (
-                err.errno in (errorcode.CR_SERVER_GONE_ERROR, errorcode.CR_SERVER_LOST)
-                and attempt < MAX_LOCK_WAIT_RETRIES
-            ):
+            if _is_connection_lost(err) and attempt < MAX_LOCK_WAIT_RETRIES:
                 wait = random.uniform(LOCK_WAIT_BACKOFF_MIN, LOCK_WAIT_BACKOFF_MAX) * (
                     2**attempt
                 )
@@ -225,11 +251,8 @@ def executemany_with_retry(connection, cursor, sql, param_list):
         try:
             cursor.executemany(sql, param_list)
             return
-        except mysql.connector.DatabaseError as err:
-            if (
-                err.errno in (errorcode.CR_SERVER_GONE_ERROR, errorcode.CR_SERVER_LOST)
-                and attempt < MAX_LOCK_WAIT_RETRIES
-            ):
+        except mysql.connector.Error as err:
+            if _is_connection_lost(err) and attempt < MAX_LOCK_WAIT_RETRIES:
                 wait = random.uniform(LOCK_WAIT_BACKOFF_MIN, LOCK_WAIT_BACKOFF_MAX) * (
                     2**attempt
                 )
