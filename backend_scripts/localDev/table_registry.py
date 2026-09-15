@@ -56,6 +56,7 @@ RAW_TABLES = {
     "route_data",
     "route_pulls",
     "route_specs",
+    "route_videos",
     "pull_enemies",
     "pull_spells",
 }

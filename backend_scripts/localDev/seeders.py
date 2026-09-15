@@ -679,6 +679,9 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
 
     route_data, route_pulls, route_specs = [], [], []
     pull_enemies, pull_spells = [], []
+    route_videos = []
+    regions = ["us", "eu", "kr", "tw"]
+    realms = ["illidan", "silvermoon", "area-52", "tarren-mill", "stormrage"]
     rio = 1
 
     for d in static.dungeons:
@@ -694,6 +697,21 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
             comp = [rng.choice(all_specs) for _ in range(5)]
             for sid in comp:
                 route_specs.append((sid, route_key))
+            # POV videos: attach one to some routes, POV = a spec from the comp
+            if rng.random() < 0.4:
+                is_yt = rng.random() < 0.5
+                route_videos.append((
+                    route_key, rio, rio,
+                    "youtube" if is_yt else "twitch",
+                    f"vid{rio}",
+                    None if is_yt else rng.randint(60, 3000),
+                    rng.randint(900, 3600),
+                    None if is_yt else f"https://example.invalid/thumb-{rio}.jpg",
+                    "season-mn-2", rng.randint(1000, 999999),
+                    f"Povchar{rio}", rng.choice(realms), rng.choice(regions),
+                    rng.randint(10**8, 10**9), rng.randint(10**7, 10**8),
+                    rng.choice(comp),
+                ))
             # pulls. The last pull is a "boss pull": it carries a dungeon boss npc AND a
             # bloodlust spell, which the dungeon page requires (it validates that the lust
             # timeline contains at least one boss pull, and fails loudly otherwise).
@@ -725,6 +743,11 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
         "INSERT INTO pull_enemies (route_key, npc_id, pull_id, `count`) VALUES (%s,%s,%s,%s)", pull_enemies)
     _insert_many(conn, cursor,
         "INSERT IGNORE INTO pull_spells (route_key, spell_id, pull_id) VALUES (%s,%s,%s)", pull_spells)
+    _insert_many(conn, cursor,
+        "INSERT IGNORE INTO route_videos (route_key, video_id, rio_run_id, video_type, video_ref, "
+        "start_seconds, duration, thumbnail_url, season_slug, created_by_user_id, pov_character_name, "
+        "pov_realm_slug, pov_region, pov_character_id, pov_persona_id, pov_spec_id) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", route_videos)
 
 
 # --------------------------------------------------------------------------------------

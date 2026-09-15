@@ -884,6 +884,31 @@ CREATE TABLE `route_specs` (
 ) ENGINE=InnoDB AUTO_INCREMENT=14726 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.route_videos definition
+
+CREATE TABLE `route_videos` (
+  `route_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `video_id` bigint unsigned NOT NULL,
+  `rio_run_id` bigint unsigned NOT NULL,
+  `video_type` varchar(32) NOT NULL,
+  `video_ref` varchar(128) NOT NULL,
+  `start_seconds` int unsigned DEFAULT NULL,
+  `duration` int unsigned DEFAULT NULL,
+  `thumbnail_url` varchar(512) DEFAULT NULL,
+  `season_slug` varchar(64) DEFAULT NULL,
+  `created_by_user_id` bigint unsigned DEFAULT NULL,
+  `pov_character_name` varchar(64) DEFAULT NULL,
+  `pov_realm_slug` varchar(100) DEFAULT NULL,
+  `pov_region` varchar(8) DEFAULT NULL,
+  `pov_character_id` bigint unsigned DEFAULT NULL,
+  `pov_persona_id` bigint unsigned DEFAULT NULL,
+  `pov_spec_id` int unsigned DEFAULT NULL,
+  PRIMARY KEY (`route_key`,`video_id`),
+  KEY `route_videos_route_data_FK` (`route_key`),
+  CONSTRAINT `route_videos_route_data_FK` FOREIGN KEY (`route_key`) REFERENCES `route_data` (`route_key`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.runs definition
 
 CREATE TABLE `runs` (
@@ -2905,6 +2930,7 @@ BEGIN
   CALL `Mythistone`.`sp_truncate_with_retry`('route_specs');
   CALL `Mythistone`.`sp_truncate_with_retry`('pull_enemies');
   CALL `Mythistone`.`sp_truncate_with_retry`('pull_spells');
+  CALL `Mythistone`.`sp_truncate_with_retry`('route_videos');
   -- trend bar snapshots are period-keyed and season-specific; last season's
   -- weeks are meaningless once the raw data is gone, so clear them too.
   CALL `Mythistone`.`sp_truncate_with_retry`('trend_snapshot');

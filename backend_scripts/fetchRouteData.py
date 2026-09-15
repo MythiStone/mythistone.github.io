@@ -171,7 +171,9 @@ async def fetch_run_details(
 
                 # Extract roster data separately to return without caching large objects
                 full_roster = full.get("roster", [])
-                
+
+                videos = build_video_rows(full, full.get("keystone_run_id"))
+
                 reduced = {
                     "route_key": full.get("logged_details", {}).get("route_key"),
                     "mythic_level": full.get("mythic_level"),
@@ -181,10 +183,13 @@ async def fetch_run_details(
                     "timestamp": ts,
                     "keystone_run_id": full.get("keystone_run_id"),
                     "completed_at": completed_at,
+                    "videos": videos,
                     "full_roster": full_roster,  # Return but don't cache
                 }
-                
-                # Cache only essential fields to prevent unbounded memory growth
+
+                # Cache only essential fields to prevent unbounded memory growth.
+                # videos are small and the DB insert depends on them, so a cache hit
+                # must still carry them (unlike full_roster, which the insert ignores).
                 cached = {
                     "route_key": reduced["route_key"],
                     "mythic_level": reduced["mythic_level"],
@@ -194,6 +199,7 @@ async def fetch_run_details(
                     "timestamp": reduced["timestamp"],
                     "keystone_run_id": reduced["keystone_run_id"],
                     "completed_at": reduced["completed_at"],
+                    "videos": reduced["videos"],
                 }
                 
                 # Implement cache eviction when cache exceeds max size
@@ -287,6 +293,36 @@ def aggregate_enemies_occurrence(pull: dict) -> dict:
             continue
         counts[int(npc)] += 1
     return counts
+
+
+def build_video_rows(full: dict, rio_run_id: int) -> list[dict]:
+    """Build compact POV-video rows from a raider.io run-details payload."""
+    rows = []
+    for v in full.get("videos") or []:
+        if v.get("id") is None or not v.get("videoId"):
+            continue
+        ch = v.get("character") or {}
+        spec = ch.get("spec") or {}
+        rows.append(
+            {
+                "video_id": int(v["id"]),
+                "rio_run_id": rio_run_id,
+                "video_type": v.get("videoType") or "",
+                "video_ref": str(v.get("videoId")),
+                "start_seconds": v.get("startVideoTimeSeconds"),
+                "duration": v.get("duration"),
+                "thumbnail_url": v.get("thumbnailUrl"),
+                "season_slug": v.get("seasonSlug"),
+                "created_by_user_id": v.get("createdByUserId"),
+                "pov_character_name": ch.get("name"),
+                "pov_realm_slug": (ch.get("realm") or {}).get("slug"),
+                "pov_region": (ch.get("region") or {}).get("slug"),
+                "pov_character_id": ch.get("id"),
+                "pov_persona_id": ch.get("persona_id"),
+                "pov_spec_id": spec.get("id"),
+            }
+        )
+    return rows
 
 
 # ---------------- DB worker (single thread, top-level) ----------------
@@ -403,6 +439,16 @@ def db_worker_thread(job_queue: threading_queue.Queue):
                             except Exception as e:
                                 print(f"[{datetime.now(timezone.utc).isoformat()}] insert_pull_spells ignored: {e}")
                     else:
+                        # POV videos for the run. Non-fatal per item so a bad video
+                        # never aborts the route; commits atomically with it below.
+                        for video in raider_reduced.get("videos", []):
+                            try:
+                                databaseConnector.insert_route_video(
+                                    conn, cursor, route_key, video
+                                )
+                            except Exception as e:
+                                print(f"[{datetime.now(timezone.utc).isoformat()}] insert_route_video ignored: {e}")
+
                         try:
                             conn.commit()
                         except Exception as ex:

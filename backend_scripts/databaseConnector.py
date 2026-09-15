@@ -2995,6 +2995,39 @@ def insert_route_spec(connection, cursor, route_key, spec_id):
     return cursor.rowcount
 
 
+INSERT_ROUTE_VIDEO_SQL = """
+INSERT IGNORE INTO Mythistone.route_videos
+  (`route_key`, `video_id`, `rio_run_id`, `video_type`, `video_ref`, `start_seconds`,
+   `duration`, `thumbnail_url`, `season_slug`, `created_by_user_id`, `pov_character_name`,
+   `pov_realm_slug`, `pov_region`, `pov_character_id`, `pov_persona_id`, `pov_spec_id`)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+"""
+
+
+def insert_route_video(connection, cursor, route_key, video):
+    """Insert one POV video row for a route. `video` is the compact dict built by the collector."""
+    val = (
+        route_key,
+        video["video_id"],
+        video["rio_run_id"],
+        video["video_type"],
+        video["video_ref"],
+        video.get("start_seconds"),
+        video.get("duration"),
+        video.get("thumbnail_url"),
+        video.get("season_slug"),
+        video.get("created_by_user_id"),
+        video.get("pov_character_name"),
+        video.get("pov_realm_slug"),
+        video.get("pov_region"),
+        video.get("pov_character_id"),
+        video.get("pov_persona_id"),
+        video.get("pov_spec_id"),
+    )
+    execute_with_retry(connection, cursor, INSERT_ROUTE_VIDEO_SQL, val)
+    return cursor.rowcount
+
+
 def fetch_route_specs_map(connection, cursor):
     """
     Return dict: { route_key: [spec_id, ...], ... }
