@@ -276,3 +276,15 @@ select.selectpicker option {
     transition: none;
   }
 }
+
+/* Right ad sidebar collapse width (moved out of right_aside.html inline <style>). */
+  #sidenav-right .collapse {
+    max-width: 340px;
+    margin: 0 auto;
+  }
+
+  @media (min-width:1200px) {
+    #sidenav-right .collapse {
+      max-width: 340px;
+    }
+  }

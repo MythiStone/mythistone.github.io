@@ -318,21 +318,9 @@
     // The "lust" filter option stands in for all of these ids (route-search.js expands it).
     window.bloodlust_spell_ids = {{ bloodlust_spell_ids | tojson | safe }};
     window.npc_lookup = {{ npc_lookup | tojson | safe }};
-  </script>
 
-  <script>
-    (function () {
-      // Route embeds load on first open, gated on Klaro consent for keystoneGuru
-      // and never before. MythiConsent.loadEmbed (assets/js/consent.js) owns the
-      // whole dance — consent check, deferring until consent is granted, setting
-      // src, and the spinner — so the spec page, the route search page and
-      // route-search.js can't drift apart on it.
-      document.querySelectorAll('#routeDungeonAccordion .accordion-collapse').forEach(function (panel) {
-        panel.addEventListener('shown.bs.collapse', function () {
-          MythiConsent.loadEmbed(panel.querySelector('iframe[data-src]'));
-        });
-      });
-    })();
+    // Route embeds load on first open, gated on Klaro consent (see consent.js).
+    MythiConsent.wireAccordionEmbeds('#routeDungeonAccordion');
   </script>
 
   <div id="route-search-overlay" role="status" aria-hidden="true" aria-live="polite">

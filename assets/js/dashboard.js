@@ -101,6 +101,7 @@
               stacked: true,
               max: 100,
               ticks: {
+                color: MythiChart.colors.tickText,
                 callback: val => val + '%'   // show "%"
               },
               grid: {
@@ -165,9 +166,11 @@
               title: {
                 display: true,
                 text: (grain === 'day' ? 'Day' : 'Week'),
+                color: MythiChart.colors.axisText,
                 font: { size: 14 }
               },
               ticks: {
+                color: MythiChart.colors.tickText,
                 autoSkip: false,
                 maxRotation: 0,
                 minRotation: 0
@@ -178,9 +181,13 @@
               title: {
                 display: true,
                 text: "Total Keys",
+                color: MythiChart.colors.axisText,
                 font: { size: 14 }
               },
               beginAtZero: true,
+              ticks: {
+                color: MythiChart.colors.tickText
+              },
               grid: {
                 color: MythiChart.colors.grid,
                 borderDash: [5, 5]
@@ -274,6 +281,7 @@
                 stacked: true,
                 grid: { display: false },
                 ticks: {
+                  color: MythiChart.colors.tickText,
                   callback: v => v.toLocaleString(),
                   font: { size: 12 }
                 }
@@ -416,12 +424,14 @@
               x: {
                 min: xMin,
                 max: xMax,
+                grid: { color: MythiChart.colors.grid },
                 afterBuildTicks: scale => {
                   scale.ticks = xTickValues.map(v => ({ value: v }));
                 },
-                title: { display: true, text: 'Performance vs Average' },
+                title: { display: true, text: 'Performance vs Average', color: MythiChart.colors.axisText },
                 ticks: {
                   display: true,
+                  color: MythiChart.colors.tickText,
                   // value is the transformed position; recover the true percent.
                   callback: value => {
                     const realX = xInverse(value);
@@ -435,12 +445,14 @@
                 type: 'logarithmic',
                 min: yMin,
                 max: yMax,
+                grid: { color: MythiChart.colors.grid },
                 afterBuildTicks: scale => {
                   scale.ticks = yTickValues.map(v => ({ value: v }));
                 },
-                title: { display: true, text: 'Runs' },
+                title: { display: true, text: 'Runs', color: MythiChart.colors.axisText },
                 ticks: {
                   display: true,
+                  color: MythiChart.colors.tickText,
                   callback: value => formatRuns(value)
                 }
               }
@@ -472,11 +484,17 @@
       };
 
       // Shared renderer: score on a linear X axis, run count on a logarithmic Y
-      // axis (matching the tier-score chart's Y), spec icons as points.
-      const renderScoreScatter = (canvasId, rawPoints, xTitle) => {
+      // axis (matching the tier-score chart's Y), spec icons as points. opts lets
+      // the "vs Characters" tab count characters instead of runs.
+      const renderScoreScatter = (canvasId, rawPoints, xTitle, opts = {}) => {
         const el = document.getElementById(canvasId);
         if (!el || !rawPoints.length) return;
         const ctx = el.getContext("2d");
+        const xTickFormat = opts.xTickFormat || formatRuns;
+        const xValueName = opts.xValueName || 'Score';
+        const xValueFormat = opts.xValueFormat || (v => Math.round(v).toLocaleString());
+        const yTitle = opts.yTitle || 'Runs';
+        const yValueName = opts.yValueName || 'Runs';
 
         const iconPromises = rawPoints.map(p =>
           new Promise(res => {
@@ -501,18 +519,18 @@
         const maxRun = runVals.length ? Math.max(...runVals) : 1;
         const yMin = minRun / 1.2;
         const yMax = maxRun * 1.2;
-        const niceRuns = [1e2, 2e2, 5e2, 1e3, 2e3, 5e3, 1e4, 2e4, 5e4, 1e5, 2e5, 5e5, 1e6];
+        const niceRuns = [1, 2, 5, 10, 20, 50, 1e2, 2e2, 5e2, 1e3, 2e3, 5e3, 1e4, 2e4, 5e4, 1e5, 2e5, 5e5, 1e6];
         const yTickValues = niceRuns.filter(r => r >= yMin && r <= yMax);
 
         Promise.all(iconPromises).then(images => {
-          const chartData = rawPoints.map((p, i) => ({ ...p, pointStyle: images[i] }));
+          const data = rawPoints.map((p, i) => ({ ...p, pointStyle: images[i] }));
 
           new Chart(ctx, {
             type: 'scatter',
             data: {
               datasets: [{
                 label: xTitle,
-                data: chartData,
+                data: data,
                 parsing: { xAxisKey: 'x', yAxisKey: 'y' },
                 pointRadius: 12,
                 pointHoverRadius: 16,
@@ -529,18 +547,20 @@
                 x: {
                   min: xMin,
                   max: xMax,
-                  title: { display: true, text: xTitle },
-                  ticks: { display: true, callback: value => formatRuns(value) }
+                  grid: { color: MythiChart.colors.grid },
+                  title: { display: true, text: xTitle, color: MythiChart.colors.axisText },
+                  ticks: { display: true, color: MythiChart.colors.tickText, callback: value => xTickFormat(value) }
                 },
                 y: {
                   type: 'logarithmic',
                   min: yMin,
                   max: yMax,
+                  grid: { color: MythiChart.colors.grid },
                   afterBuildTicks: scale => {
                     scale.ticks = yTickValues.map(v => ({ value: v }));
                   },
-                  title: { display: true, text: 'Runs' },
-                  ticks: { display: true, callback: value => formatRuns(value) }
+                  title: { display: true, text: yTitle, color: MythiChart.colors.axisText },
+                  ticks: { display: true, color: MythiChart.colors.tickText, callback: value => formatRuns(value) }
                 }
               },
               plugins: {
@@ -548,7 +568,7 @@
                   callbacks: {
                     label: c => {
                       const { label, x, y } = c.raw;
-                      return `${label}: Score=${Math.round(x).toLocaleString()}, Runs=${y}`;
+                      return `${label}: ${xValueName}=${xValueFormat(x)}, ${yValueName}=${y}`;
                     }
                   }
                 },
@@ -560,7 +580,8 @@
       };
 
       renderScoreScatter("chart-popularity-vs-top50-score", d.top50Scatter, "Avg Top 50 Score");
-      renderScoreScatter("chart-popularity-vs-char-score", d.charScatter, "Avg Character Score");
+      renderScoreScatter("chart-elite-char-vs-overall-pop", d.eliteOverallScatter, "Avg Score (top 1% characters)");
+      renderScoreScatter("chart-elite-char-vs-top-pop", d.eliteTopScatter, "Avg Score (top 1% characters)", { yTitle: 'Characters', yValueName: 'Chars' });
     }
 
     function renderDungeonEase(d) {
@@ -585,7 +606,7 @@
             x: {
               stacked: true,
               max: 100,
-              ticks: { callback: v => v + '%' },
+              ticks: { color: MythiChart.colors.tickText, callback: v => v + '%' },
               grid: {
                 display: false,
                 drawBorder: false,
@@ -842,6 +863,19 @@
       }
     }
 
+    // Resize the combined-card charts when their tab is first shown (a chart
+    // created in a display:none pane starts at zero size until the pane shows).
+    function wirePerfTabResize() {
+      const tabs = document.getElementById('perfTabs');
+      if (!tabs) return;
+      tabs.addEventListener('shown.bs.tab', ev => {
+        const pane = document.querySelector(ev.target.getAttribute('data-bs-target'));
+        const canvas = pane && pane.querySelector('canvas');
+        const chart = canvas && window.Chart && Chart.getChart(canvas);
+        if (chart) chart.resize();
+      });
+    }
+
     // Each chart is isolated so one failing render never aborts the others
     // (matching the old separate inline <script> blocks).
     [
@@ -854,6 +888,7 @@
       renderScoreScatters,
       renderDungeonEase,
       renderCompletionHeatmap,
+      wirePerfTabResize,
     ].forEach(fn => {
       try { fn(data); } catch (e) { console.error(`dashboard chart ${fn.name} failed`, e); }
     });

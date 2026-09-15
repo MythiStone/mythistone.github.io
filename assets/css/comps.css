@@ -149,3 +149,9 @@
   color: #6d4c00;
   border-color: rgba(255, 193, 7, 0.65);
 }
+/* Meta comp highlight + badge (moved out of the comps.html inline <style>).
+   The gold gradient/border here are the meta treatment; kept as literal hex so
+   the shade is unchanged (candidate for a shared token later). */
+.meta-comp { background: rgba(255, 206, 74, 0.10) !important; border-left: 3px solid #ffce4a !important; }
+.meta-badge { background: linear-gradient(310deg, #f5b50e, #f7d774); color: #3a2d00; font-weight: 700; }
+.meta-badge .material-symbols-rounded { font-size: 0.9rem; line-height: 1; }

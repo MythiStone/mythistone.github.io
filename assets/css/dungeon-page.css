@@ -1,0 +1,10 @@
+/* Dungeon page styles (moved out of the dungeon_page.html inline <style>). */
+.run-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+.run-toggle-tabs .run-toggle-btn.active {
+  background-color: var(--bs-emphasis-color);
+  color: var(--bs-emphasis-contrast);
+}

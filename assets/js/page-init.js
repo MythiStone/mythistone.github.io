@@ -1,0 +1,66 @@
+// Shared page bootstrap, included from javascript_imports.html on every page
+// (after material-dashboard.js, so sidebarColor is defined). timeAgo and
+// formatDuration are intentionally global function declarations: route-search.js,
+// blog-infinite.js and some page templates call them.
+
+// Smooth scrollbar on the sidenav (Windows only, where the native scrollbar is
+// heavy). Scrollbar comes from plugins/smooth-scrollbar.min.js.
+var win = navigator.platform.indexOf('Win') > -1;
+if (win && document.querySelector('#sidenav-collapse-main')) {
+    Scrollbar.init(document.querySelector('#sidenav-collapse-main'), { damping: '0.5' });
+}
+
+function timeAgo(unixTsSeconds) {
+    const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+    const now = Date.now() / 1000;
+    const diff = now - unixTsSeconds;
+
+    const units = [
+        { name: 'year', secs: 60 * 60 * 24 * 365 },
+        { name: 'month', secs: 60 * 60 * 24 * 30 },
+        { name: 'day', secs: 60 * 60 * 24 },
+        { name: 'hour', secs: 60 * 60 },
+        { name: 'minute', secs: 60 },
+        { name: 'second', secs: 1 },
+    ];
+
+    for (const { name, secs } of units) {
+        const delta = Math.floor(diff / secs);
+        if (Math.abs(delta) >= 1) {
+            return rtf.format(-delta, name);
+        }
+    }
+    return 'just now';
+}
+
+function formatDuration(ms) {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    const milliseconds = ms % 1000;
+
+    const mm = String(minutes).padStart(2, '0');
+    const ss = String(seconds).padStart(2, '0');
+    const mmm = String(milliseconds).padStart(3, '0');
+
+    return `${mm}:${ss}.${mmm}`;
+}
+
+//initialize timestamps
+document.querySelectorAll('.timestamp').forEach(function (el) {
+    const timestamp = el.getAttribute('data-timestamp');
+    el.textContent = `${el.textContent} ${timeAgo(Number(timestamp))}`;
+    el.setAttribute('title', new Date(Number(timestamp) * 1000).toLocaleString());
+});
+
+// Move focus out of a modal before Bootstrap sets aria-hidden on it, otherwise
+// browsers warn about hiding a focused element from assistive tech (e.g. when
+// closing via the in-modal "Close" button). hide.bs.modal bubbles to document.
+document.addEventListener('hide.bs.modal', function (e) {
+    const focused = e.target.querySelector(':focus');
+    if (focused && typeof focused.blur === 'function') {
+        focused.blur();
+    }
+});
+
+// Material Dashboard sidenav colour configurator default.
+sidebarColor(document.querySelector('#defaultColor'));

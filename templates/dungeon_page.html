@@ -17,6 +17,7 @@
 
 <head>
     {% include "header_imports.html" %}
+    <link rel="stylesheet" href="/assets/css/dungeon-page.css">
     <!-- Primary SEO -->
     <title>{{ dungeon.name.en_US }} in {{ season_info.name }} | MythiStone</title>
     <meta name="description"
@@ -283,57 +284,6 @@
                 {% endfor %}
             </div>
 
-            <style>
-                .run-panel {
-                    display: flex;
-                    flex-direction: column;
-                    flex: 1 1 auto;
-                }
-
-                .run-toggle-tabs .run-toggle-btn.active {
-                    background-color: var(--bs-emphasis-color);
-                    color: var(--bs-emphasis-contrast);
-                }
-            </style>
-            <script>
-                (function () {
-                    function activate(btn) {
-                        var card = btn.closest('.run-toggle-card');
-                        if (!card) return null;
-                        card.querySelectorAll('.run-panel').forEach(function (p) { p.classList.add('d-none'); });
-                        card.querySelectorAll('.run-toggle-btn').forEach(function (b) { b.classList.remove('active'); });
-                        var target = document.getElementById(btn.dataset.target);
-                        if (target) target.classList.remove('d-none');
-                        btn.classList.add('active');
-                        return target;
-                    }
-
-                    document.querySelectorAll('.run-toggle-btn').forEach(function (btn) {
-                        btn.addEventListener('click', function () {
-                            var target = activate(btn);
-                            // #panel-closest-call / -shortest / -longest are stable names,
-                            // so they make good permalinks even though this is a plain
-                            // d-none toggle rather than a Bootstrap collapse.
-                            if (target && window.MythiLink) MythiLink.notifyShown(target);
-                        });
-                    });
-
-                    // This block sits mid-body, above javascript_imports.html, so
-                    // MythiLink doesn't exist yet — register on DOMContentLoaded,
-                    // which still lands before deep-link.js resolves the hash.
-                    document.addEventListener('DOMContentLoaded', function () {
-                        if (!window.MythiLink) return;
-                        MythiLink.registerRevealer({
-                            match: function (el) { return el.classList.contains('run-panel'); },
-                            isOpen: function (el) { return !el.classList.contains('d-none'); },
-                            show: function (el) {
-                                var btn = document.querySelector('.run-toggle-btn[data-target="' + el.id + '"]');
-                                if (btn) activate(btn);
-                            }
-                        });
-                    });
-                })();
-            </script>
             <!-- Latest Hotfixes (hidden entirely when this dungeon has no recorded hotfixes) -->
             {% if hotfixes %}
             <div class="row mb-4">
@@ -954,115 +904,16 @@
     {% include "right_aside.html" %}
     {% include "fixed_plugin.html" %}
     {% include "javascript_imports.html" %}
-    <script>
-        // These route embeds are server-rendered, so Klaro would eventually manage
-        // them on its own — but only after a consent change, and it never touches
-        // the loading spinner. Going through MythiConsent.loadEmbed on first open
-        // gives this page the same behaviour as the spec and route search pages:
-        // the embed loads as soon as consent allows, and the spinner only runs
-        // while something is actually loading (otherwise it sat spinning on top of
-        // Klaro's "enable external content" notice).
-        (function () {
-            document.querySelectorAll('#routeDungeonAccordion .accordion-collapse').forEach(function (panel) {
-                panel.addEventListener('shown.bs.collapse', function () {
-                    MythiConsent.loadEmbed(panel.querySelector('iframe[data-src]'));
-                });
-            });
-        })();
-    </script>
     <!-- DataTables (responsive tables) -->
     <script src="/assets/js/plugins/dataTables.min.js"></script>
-    <script>
-        // Curated, pre-ranked tables: enable Responsive column collapsing on small
-        // screens while keeping their server-side order (ordering disabled).
-        $(function () {
-            var common = { responsive: true, ordering: false, paging: false, searching: false, info: false };
-            var tables = {
-                'lust-table': [{ targets: 0, responsivePriority: 1 }, { targets: 1, responsivePriority: 2 }, { targets: 3, responsivePriority: 4 }, { targets: 2, responsivePriority: 5 }],
-                'popular-comps-table': [{ targets: 0, responsivePriority: 1 }, { targets: 1, responsivePriority: 2 }, { targets: 3, responsivePriority: 3 }, { targets: 2, responsivePriority: 4 }],
-                'best-loot-table': [{ targets: 0, responsivePriority: 1 }, { targets: 2, responsivePriority: 2 }, { targets: 3, responsivePriority: 3 }, { targets: 1, responsivePriority: 5 }],
-                'skip-npcs-table': [{ targets: 0, responsivePriority: 1 }, { targets: 1, responsivePriority: 2 }, { targets: 3, responsivePriority: 4 }, { targets: 2, responsivePriority: 5 }]
-            };
-            Object.keys(tables).forEach(function (id) {
-                var el = document.getElementById(id);
-                if (el) $(el).DataTable(Object.assign({ columnDefs: tables[id] }, common));
-            });
-        });
-    </script>
     <script src="/assets/js/plugins/hammer.min.js"></script>
     <script src="/assets/js/plugins/chartjs.min.js"></script>
     <script src="/assets/js/plugins/chartjs-plugin-zoom.min.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            {% if level_stats %}
-            // Disable chart pan/zoom on small screens so it doesn't hijack page scrolling.
-            var enableZoom = window.matchMedia('(min-width: 992px)').matches;
-            var levelData = {{ level_stats | tojson
-        }};
-        // sort by key level
-        levelData.sort((a, b) => a.keystone_level - b.keystone_level);
-
-        var labels = levelData.map(d => '+' + d.keystone_level);
-        var up3 = levelData.map(d => d.upgrade_3);
-        var up2 = levelData.map(d => d.upgrade_2);
-        var up1 = levelData.map(d => d.upgrade_1);
-        var depleted = levelData.map(d => d.depleted);
-
-        var ctxBar = document.getElementById("keyLevelChart").getContext("2d");
-        var keyLevelChart = new Chart(ctxBar, {
-            type: "bar",
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: "Depleted", data: depleted, backgroundColor: "#FF0000" },
-                    { label: "+1", data: up1, backgroundColor: "#1eff00" },
-                    { label: "+2", data: up2, backgroundColor: "#a335ee" },
-                    { label: "+3", data: up3, backgroundColor: "#ff8000" }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { stacked: true, ticks: { color: MythiChart.colors.tickText }, grid: { display: false } },
-                    y: { stacked: true, ticks: { color: MythiChart.colors.tickText }, grid: { color: MythiChart.colors.grid } }
-                },
-                plugins: {
-                    legend: { labels: { color: MythiChart.colors.tickText } },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    zoom: {
-                        pan: {
-                            enabled: enableZoom,
-                            mode: 'x',
-                            onPan: function ({ chart }) {
-                                document.getElementById('resetZoomBtn').classList.remove('d-none');
-                            }
-                        },
-                        zoom: {
-                            wheel: { enabled: enableZoom },
-                            pinch: { enabled: enableZoom },
-                            mode: 'x',
-                            onZoom: function ({ chart }) {
-                                document.getElementById('resetZoomBtn').classList.remove('d-none');
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        document.getElementById('resetZoomBtn').addEventListener('click', function () {
-            keyLevelChart.resetZoom();
-            this.classList.add('d-none');
-        });
-        {% endif %}
-        });
-    </script>
     <script type="text/plain" data-type="application/javascript" data-name="wowhead"
         data-src='https://wow.zamimg.com/widgets/power.js'></script>
+  <!-- Per-dungeon data for dungeon-page.js -->
+  <script type="application/json" id="dungeon-page-data">{"levelStats": {{ level_stats | default([]) | tojson }}}</script>
+  <script src="/assets/js/dungeon-page.js?v={{ generated_at | int }}"></script>
 </body>
 
 </html>

@@ -787,6 +787,95 @@ def compute_completion_heatmap(rows):
     return {"regions": region_meta, "grids": grids}
 
 
+def build_overall_spec_chart(spec_run_counts, spec_lookup, class_lookup):
+    """Labels/counts/colors/icons for the "Spec Popularity Overall" bar chart.
+
+    Mirrors the old in-template namespace loop: every spec sorted by run count
+    descending, class colour at 0.8 alpha, spec icon by SpellIconFileId. Moved
+    server-side so the chart JS can live in assets/js/dashboard.js instead of
+    inline in the template.
+    """
+    ordered = sorted(spec_run_counts, key=lambda s: s["count"], reverse=True)
+    labels, counts, bar_colors, icon_urls = [], [], [], []
+    for s in ordered:
+        spec_info = spec_lookup[str(s["id"])]
+        color = class_lookup[str(spec_info["classID"])]["color"]
+        labels.append(spec_info["name"])
+        counts.append(s["count"])
+        bar_colors.append(
+            "rgba(%d, %d, %d, 0.8)"
+            % (int(color["r"]), int(color["g"]), int(color["b"]))
+        )
+        icon_urls.append("/data/icons/%s.jpg" % spec_info["SpellIconFileId"])
+    return {
+        "labels": labels,
+        "counts": counts,
+        "barColors": bar_colors,
+        "iconUrls": icon_urls,
+    }
+
+
+def write_dashboard_data(
+    overall_chart,
+    key_levels,
+    spec_level_datasets,
+    period_datasets,
+    period_labels,
+    period_grain,
+    dungeon_chart,
+    scatter_data,
+    top50_score_scatter,
+    elite_char_overall_scatter,
+    elite_char_top_scatter,
+    ease_data,
+    key_throughput,
+    completion_heatmap,
+    patch_annotations,
+):
+    """Serialize the client-side chart payload to assets/json/dashboard_data.json.
+
+    dashboard.js fetches this instead of the data being inlined into the page.
+    Same compact-dump recipe as generateCompPage.py's comps_index.json.
+    """
+    dashboard_data = {
+        "overall": overall_chart,
+        "keyLevel": {"keyLevels": key_levels, "datasets": spec_level_datasets},
+        "keysPerWeek": {
+            "labels": period_labels,
+            "datasets": period_datasets,
+            "grain": period_grain,
+        },
+        "dungeonPopularity": {
+            "labels": dungeon_chart["labels"],
+            "fullNames": dungeon_chart["fullNames"],
+            "iconUrls": dungeon_chart["iconUrls"],
+            "totalCounts": dungeon_chart["totalCounts"],
+            "datasets": dungeon_chart["datasets"],
+        },
+        "scatter": scatter_data,
+        "top50Scatter": top50_score_scatter,
+        "eliteOverallScatter": elite_char_overall_scatter,
+        "eliteTopScatter": elite_char_top_scatter,
+        "dungeonEase": {
+            "keyLevels": ease_data["keyLevels"],
+            "datasets": ease_data["datasets"],
+        },
+        "keyThroughput": {
+            "labels": key_throughput["labels"],
+            "series": key_throughput["series"],
+        },
+        "completionHeatmap": completion_heatmap,
+        "patchAnnotations": patch_annotations,
+        "periodGrain": period_grain,
+    }
+    json_out_dir = os.path.join("assets", "json")
+    os.makedirs(json_out_dir, exist_ok=True)
+    out_path = os.path.join(json_out_dir, "dashboard_data.json")
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(dashboard_data, f, separators=(",", ":"))
+    print(f"Wrote {out_path}")
+
+
 def main(template_path, output_dir):
 
     from image_generation.dungeon_popularity_ease import create_dungeon_popularity_vs_ease_img
@@ -979,6 +1068,28 @@ def main(template_path, output_dir):
         {"name": "Longest", "data": longest_run, "icon": "hourglass_bottom"},
         {"name": "Highest", "data": highest_run, "icon": "leaderboard"},
     ]
+    print("Building overall spec chart data...")
+    overall_chart = build_overall_spec_chart(
+        spec_run_counts, spec_lookup, class_lookup
+    )
+    print("Writing dashboard chart data JSON...")
+    write_dashboard_data(
+        overall_chart=overall_chart,
+        key_levels=key_levels,
+        spec_level_datasets=json.loads(datasets_json),
+        period_datasets=period_datasets,
+        period_labels=period_labels,
+        period_grain=period_grain,
+        dungeon_chart=dungeon_chart,
+        scatter_data=scatter_data,
+        top50_score_scatter=top50_score_scatter,
+        elite_char_overall_scatter=elite_char_overall_scatter,
+        elite_char_top_scatter=elite_char_top_scatter,
+        ease_data=ease_data,
+        key_throughput=key_throughput,
+        completion_heatmap=completion_heatmap,
+        patch_annotations=patch_annotations,
+    )
     print("Rendering template...")
 
     output_html = template.render(

@@ -3,6 +3,7 @@ import sys
 import json
 import argparse
 import math
+from datetime import datetime, timezone
 from contextlib import closing
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import databaseConnector
@@ -582,7 +583,10 @@ def main(template_path, output_dir):
         )
         
         template = env.get_template(os.path.basename(template_path))
+        # Cache-buster for the per-page comps.js/inline JSON (matches the other pages).
+        generated_at = datetime.now(timezone.utc).timestamp()
         output_html = template.render(
+            generated_at=generated_at,
             # Contextual archetype trends (the comps page's own bar), diffed off the
             # already-open build connection; build_trends opens its own tuple cursor.
             trends=build_trends(conn, cursor, trend_feeds_for_comps(),

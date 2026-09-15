@@ -931,3 +931,16 @@ a.item-source-badge:hover {
 .item-pop-pct {
   color: var(--bs-emphasis-color);
 }
+
+/* Spec popularity chart wrapper sizing (moved out of the spec_page.html inline <style>). */
+.spec-popularity-chart-wrapper {
+  height: 180px;
+}
+.spec-popularity-chart-wrapper .chart-scroll-container {
+  height: calc(100% - 1.5rem);
+}
+@media (max-width: 767.98px) {
+  .spec-popularity-chart-wrapper {
+    height: 240px !important;
+  }
+}

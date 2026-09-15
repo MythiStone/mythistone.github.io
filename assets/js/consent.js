@@ -237,9 +237,22 @@
     whenGranted(service, apply);
   }
 
+  // Wire the standard "load the route embed the first time its accordion panel is
+  // opened" behaviour, shared verbatim by the spec, dungeon and route-search
+  // pages. loadEmbed owns the consent check, deferral, src and spinner, so the
+  // three pages can never drift apart on it.
+  function wireAccordionEmbeds(accordionSelector) {
+    document.querySelectorAll(accordionSelector + " .accordion-collapse").forEach(function (panel) {
+      panel.addEventListener("shown.bs.collapse", function () {
+        loadEmbed(panel.querySelector("iframe[data-src]"));
+      });
+    });
+  }
+
   window.MythiConsent = {
     granted: granted,
     whenGranted: whenGranted,
-    loadEmbed: loadEmbed
+    loadEmbed: loadEmbed,
+    wireAccordionEmbeds: wireAccordionEmbeds
   };
 })();
