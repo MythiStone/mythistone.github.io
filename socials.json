@@ -1763,5 +1763,14 @@
         "blog": "The fastest Mythic+ clear tracked this season is a +2 Ruby Life Pools, done in just 08:35.787 on the US region.\n\nCredit the group that ran it: Protection Warrior, Restoration Shaman, Beast Mastery Hunter, Subtlety Rogue, Havoc Demon Hunter. That was 27 days ago. Every record here keeps moving as new keys get pushed.",
         "post": "Ruby Life Pools +2 in 08:35.787 - the season's shortest run, 27 days ago on US. Protection Warrior, Restoration Shaman, Beast Mastery Hunter, Subtlety Rogue, Havoc Demon Hunter. Even the timer needed a breather. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
         "timestamp": 1789422401131
+    },
+    "data/social/spec_overview_1468_2026-09.png": {
+        "title": "Preservation Evoker Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Healer/Preservation_Evoker",
+        "social": "Preservation Evoker specs favor Flameshaper in 95.43% of 140.4K runs, it's blazing, leaving Chronowarden at 5%. 86% timed, +20 Den of Nalorakk in 27:41.456, stats Crit > Haste > Mastery > Versatility. #WoW #MythicPlus https://mythistone.com/classes/Healer/Preservation_Evoker",
+        "blog": "140.4 K Preservation Evoker keys are in the books this season. The Flameshaper hero tree leads at 95% of builds, with Chronowarden (5%) trailing.\n\nGroups time keys with the spec 86% of the time and three-chest 6% of them. Most builds prioritise Crit > Haste > Mastery > Versatility. Its top run this season is +20 Den of Nalorakk in 27:41.456.",
+        "post": "Preservation Evoker specs favor Flameshaper in 95.43% of 140.4K runs, it's blazing, leaving Chronowarden at 5%. 86% timed, +20 Den of Nalorakk in 27:41.456, stats Crit > Haste > Mastery > Versatility. #WoW #MythicPlus https://mythistone.com/classes/Healer/Preservation_Evoker",
+        "timestamp": 1789506783312
     }
 }
