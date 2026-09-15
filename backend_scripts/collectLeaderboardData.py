@@ -324,6 +324,60 @@ def aggregate_enemies_occurrence(pull: dict) -> dict:
         counts[int(npc)] += 1
     return counts
 
+
+def build_video_rows(full: dict, rio_run_id: int) -> list[dict]:
+    """Compact POV-video rows from a raider.io run-details payload."""
+    rows = []
+    for v in full.get("videos") or []:
+        if v.get("id") is None or not v.get("videoId"):
+            continue
+        ch = v.get("character") or {}
+        spec = ch.get("spec") or {}
+        rows.append({
+            "video_id": int(v["id"]),
+            "rio_run_id": rio_run_id,
+            "video_type": v.get("videoType") or "",
+            "video_ref": str(v.get("videoId")),
+            "start_seconds": v.get("startVideoTimeSeconds"),
+            "duration": v.get("duration"),
+            "thumbnail_url": v.get("thumbnailUrl"),
+            "season_slug": v.get("seasonSlug"),
+            "created_by_user_id": v.get("createdByUserId"),
+            "pov_character_name": ch.get("name"),
+            "pov_realm_slug": (ch.get("realm") or {}).get("slug"),
+            "pov_region": (ch.get("region") or {}).get("slug"),
+            "pov_character_id": ch.get("id"),
+            "pov_persona_id": ch.get("persona_id"),
+            "pov_spec_id": spec.get("id"),
+        })
+    return rows
+
+
+def build_death_rows(full: dict) -> list[int]:
+    """Death timings (ms into the run) from a logged run's logged_details."""
+    ld = full.get("logged_details") or {}
+    return [int(d["approximate_died_at"]) for d in (ld.get("deaths") or [])
+            if d.get("approximate_died_at") is not None]
+
+
+def build_encounter_rows(full: dict) -> list[dict]:
+    """Per-boss encounter timings from a logged run's logged_details (roster blob dropped)."""
+    ld = full.get("logged_details") or {}
+    rows = []
+    for e in ld.get("encounters") or []:
+        boss = e.get("boss") or {}
+        if boss.get("ordinal") is None:
+            continue
+        rows.append({
+            "ordinal": int(boss["ordinal"]),
+            "boss_wow_encounter_id": boss.get("wowEncounterId"),
+            "boss_encounter_id": boss.get("encounterId"),
+            "boss_name": boss.get("name"),
+            "started_at_ms": e.get("approximate_relative_started_at"),
+            "ended_at_ms": e.get("approximate_relative_ended_at"),
+        })
+    return rows
+
 async def fetch_raider_page(session: ClientSession, dungeon_slug: str, page: int) -> dict:
     url = "https://raider.io/api/v1/mythic-plus/runs"
     params = {
@@ -391,6 +445,9 @@ async def fetch_run_details(session: ClientSession, run_id: int, season: str) ->
                     "timestamp": ts,
                     "keystone_run_id": full.get("keystone_run_id"),
                     "completed_at": completed_at,
+                    "videos": build_video_rows(full, full.get("keystone_run_id")),
+                    "deaths": build_death_rows(full),
+                    "encounters": build_encounter_rows(full),
                 }
 
                 if len(run_details_cache) >= CACHE_MAX_SIZE:
@@ -489,7 +546,27 @@ async def route_db_worker(name: str):
                                 databaseConnector.insert_pull_spells(conn, cursor, route_key, new_pull_id, int(spell))
                             except Exception as e:
                                 print(f"[{name}] Error inserting pull spell for route {route_key}: {e}")
-                    print(f"[{name}] Successfully inserted route {route_key} with {len(raider_reduced.get('roster_specs', []))} specs and {len(keystone_route.get('pulls', []))} pulls.")       
+
+                    # POV videos and logged-run telemetry (deaths/encounters). Only reached for a
+                    # newly-inserted route (duplicates `continue` above), so this is the run stored
+                    # in route_data and the telemetry always matches it. Non-fatal per item.
+                    for video in raider_reduced.get("videos", []):
+                        try:
+                            databaseConnector.insert_route_video(conn, cursor, route_key, video)
+                        except Exception as e:
+                            print(f"[{name}] Error inserting route video for route {route_key}: {e}")
+                    for seq, died_at in enumerate(raider_reduced.get("deaths", [])):
+                        try:
+                            databaseConnector.insert_route_death(conn, cursor, route_key, seq, rio_run_id, died_at)
+                        except Exception as e:
+                            print(f"[{name}] Error inserting route death for route {route_key}: {e}")
+                    for enc in raider_reduced.get("encounters", []):
+                        try:
+                            databaseConnector.insert_route_encounter(conn, cursor, route_key, rio_run_id, enc)
+                        except Exception as e:
+                            print(f"[{name}] Error inserting route encounter for route {route_key}: {e}")
+
+                    print(f"[{name}] Successfully inserted route {route_key} with {len(raider_reduced.get('roster_specs', []))} specs and {len(keystone_route.get('pulls', []))} pulls.")
                     conn.commit()
                     await GLOBAL_STATS.increment("db_insert_route")
                 except Exception as e:
