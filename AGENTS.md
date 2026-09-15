@@ -380,7 +380,16 @@ rings, list-group/pagination active, progress bars, range sliders, form-check) s
 literals to convert when those widgets are polished. Class colors are dual tokens in `classes.css`: `--class-<Name>` (contrast-tuned for TEXT) and
 `--class-<Name>-raw` (true Blizzard hex for FILLS), PascalCase, with `.class-<Name>-text` /
 `.class-<Name>-bg` utilities. Item rarity `--quality-0..8` with `.item-quality-N` /
-`.border-quality-N`. Stat tiers `--stat-*` (+`-raw`) with `.stat-<name>` utilities. Scrollbars
+`.border-quality-N`; these live in `stat-colors.css`, so any page rendering item names/icons must
+link it in `<head>` (after `header_imports.html`) or the classes are inert and names fall back to
+plain white. An item's displayed rarity is NOT the base `quality`: colour by the rarity the
+most-used variant's bonus ids resolve to, via `commonUtils.resolve_bonus_quality(top_bonus,
+bonus_quality_map.json)`, falling back to base quality when no bonus id sets one. This is the shared
+convention across the spec page (equipped item), item page and dungeon loot table; templates use
+`{% set q = x.quality_override if x.quality_override is not none else x.quality %}`. In the dungeon
+generator, gather the top variant by summing `fetch_item_bonus_usage` across specs (dict cursor
+there, so `row['item_id']`/`row['bonus_list']`, item_id VARCHAR -> int; bound the sweep to loot-source
+item ids). Stat tiers `--stat-*` (+`-raw`) with `.stat-<name>` utilities. Scrollbars
 `--mythi-scrollbar-*`. UI glyphs use Material Symbols Rounded; game icons from `/data/icons/<id>.jpg`
 (specs/buffs) or `.png` (items).
 

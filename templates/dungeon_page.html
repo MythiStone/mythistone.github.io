@@ -17,6 +17,7 @@
 
 <head>
     {% include "header_imports.html" %}
+    <link rel="stylesheet" href="/assets/css/stat-colors.css" />
     <link rel="stylesheet" href="/assets/css/dungeon-page.css">
     <!-- Primary SEO -->
     <title>{{ dungeon.name.en_US }} in {{ season_info.name }} | MythiStone</title>
@@ -628,6 +629,9 @@
                                     </thead>
                                     <tbody>
                                         {% for l in top_loot %}
+                                        {# Colour by the rarity of the most-used variant's bonus ids, falling back to
+                                           the base item quality. Mirrors item.html / the items overview. #}
+                                        {% set l_quality = l.quality_override if l.quality_override is not none else l.quality %}
                                         <tr>
                                             <td>
                                                 <div class="d-flex px-2 py-1 align-items-center">
@@ -635,14 +639,14 @@
                                                         <a href="/items/{{ l.slug }}" class="text-decoration-none"
                                                             data-wowhead="item={{ l.id }}">
                                                             <img src="/data/icons/{{ l.icon }}.png"
-                                                                class="avatar avatar-sm me-3 border border-quality-{{ l.quality }} border-1"
+                                                                class="avatar avatar-sm me-3 border border-quality-{{ l_quality }} border-1"
                                                                 alt="{{ l.name }}">
                                                         </a>
                                                     </div>
                                                     <div class="d-flex flex-column justify-content-center">
                                                         <a href="/items/{{ l.slug }}" class="text-decoration-none"
                                                             data-wowhead="item={{ l.id }}">
-                                                            <h6 class="mb-0 text-sm item-quality-{{ l.quality }}">{{
+                                                            <h6 class="mb-0 text-sm item-quality-{{ l_quality }}">{{
                                                                 l.name }}</h6>
                                                         </a>
                                                     </div>

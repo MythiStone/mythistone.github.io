@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import databaseConnector
+import commonUtils
 import compArchetypes
 from pageGeneration import (
     generateSpecNav,
@@ -196,6 +197,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
     equippable_items = load_json(os.path.join(LOOKUP_DIR, "equippable-items.json"))
     item_lookup = {it["id"]: it for it in equippable_items}
     item_slug_map = build_item_slug_map(item_lookup)
+    bonus_quality_lookup = load_json(os.path.join(LOOKUP_DIR, "bonus_quality_map.json"))
 
     # Reverse map: Blizzard journal instance id -> our dungeon key (challenge_mode_id).
     # journal_instance_id is written per dungeon by fetchDungeonData.py and equals the
@@ -214,6 +216,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
             d_id = instance_to_dungeon.get(src.get("instanceId"))
             if d_id:
                 source_items_by_dungeon[d_id].add(it["id"])
+    all_loot_item_ids = set().union(*source_items_by_dungeon.values()) if source_items_by_dungeon else set()
 
     try:
         with open(os.path.join('data', 'boss_npcs.json'), 'r') as f:
@@ -304,6 +307,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
             print("Pre-fetching item usage for dungeon loot ranking...")
             item_total_runs = defaultdict(int)
             item_top_spec = {}  # item_id -> (spec_id str, runs)
+            item_bonus_runs = defaultdict(lambda: defaultdict(int))
             for spec_id in spec_lookup.keys():
                 try:
                     spec_id_int = int(spec_id)
@@ -324,6 +328,23 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                     prev = item_top_spec.get(iid)
                     if prev is None or runs > prev[1]:
                         item_top_spec[iid] = (str(spec_id), runs)
+                for row in databaseConnector.fetch_item_bonus_usage(conn, cursor, current_season, spec_id_int) or []:
+                    raw_iid = row['item_id']
+                    if not str(raw_iid).isdigit():
+                        continue
+                    iid = int(raw_iid)
+                    if iid not in all_loot_item_ids:
+                        continue
+                    runs = row['run_count'] or 0
+                    if runs <= 0:
+                        continue
+                    item_bonus_runs[iid][row['bonus_list']] += runs
+
+            # Most-used variant per loot item, so its bonus ids drive the rarity colour.
+            item_top_bonus = {
+                iid: max(combos.items(), key=lambda kv: kv[1])[0]
+                for iid, combos in item_bonus_runs.items() if combos
+            }
 
             for dungeon_id, dungeon_data in dungeon_lookup.items():
                 if target_dungeon and str(dungeon_id) != str(target_dungeon):
@@ -356,6 +377,8 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                         'name': item.get('name', 'Unknown'),
                         'icon': item.get('icon', ''),
                         'quality': item.get('quality'),
+                        'quality_override': commonUtils.resolve_bonus_quality(
+                            item_top_bonus.get(iid), bonus_quality_lookup),
                         'ilvl': item.get('itemLevel'),
                         'slot': slot_label,
                         'slug': item_slug_map.get(iid),
