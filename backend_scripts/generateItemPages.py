@@ -7,7 +7,7 @@ import hashlib
 import argparse
 from contextlib import closing
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -26,6 +26,12 @@ from generateSpecPages import (
 # How many entries to keep per item in each list (keeps per-item JSON small).
 TOP_GEMS = 10
 TOP_VARIANTS = 8
+
+# Latest Hotfixes card only shows fixes at most this many days old (age from build
+# time). Mirrors generateSpecPages / generateDungeonPages HOTFIX_MAX_AGE_DAYS. The
+# item->note matching itself happens upstream in fetchHotfixes.py, which keys
+# hotfixes.json's "items" map by item id like the dungeon/spec maps.
+HOTFIX_MAX_AGE_DAYS = 7
 
 # Blizzard inventoryType -> readable slot label + canonical slot key.
 # Only equippable gear types matter here; anything else falls back to "Other".
@@ -468,6 +474,14 @@ def load_static_lookups():
     crafting = load_json(os.path.join(LOOKUP_DIR, "crafting.json"))
     reagent_lookup = {r["id"]: r for r in crafting.get("reagents", [])}
     notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    # Latest item hotfix notes, keyed by item id (str). Produced by fetchHotfixes.py,
+    # which resolves the article's anchorless "Items" bullets to item ids against the
+    # equippable-items name index (same "items" map shape as its dungeons/specs maps).
+    # main() filters to HOTFIX_MAX_AGE_DAYS; source_url links the card header to the
+    # Blizzard post the notes were scraped from.
+    hotfixes_data = load_json(os.path.join(LOOKUP_DIR, "hotfixes.json"))
+    hotfix_items = hotfixes_data.get("items", {})
+    hotfix_source_url = hotfixes_data.get("source_url")
     enchant_all = load_json(os.path.join(LOOKUP_DIR, "enchantments.json"))
     gem_lookup = {e["itemId"]: e for e in enchant_all if e.get("slot") == "socket"}
     enchant_lookup = {e["id"]: e for e in enchant_all}
@@ -556,6 +570,8 @@ def load_static_lookups():
         "missive_lookup": missive_lookup,
         "reagent_lookup": reagent_lookup,
         "notifications": notifications,
+        "hotfix_items": hotfix_items,
+        "hotfix_source_url": hotfix_source_url,
         "enchant_lookup": enchant_lookup,
         "gem_lookup": gem_lookup,
         "item_lookup": item_lookup,
@@ -1224,6 +1240,16 @@ def main(template_path, output_dir, items_dir="items", debug=False, target_item=
     dungeons_map = ctx["dungeons_map"]
     raids_map = ctx["raids_map"]
     notifications = ctx["notifications"]
+    hotfix_source_url = ctx["hotfix_source_url"]
+    # Per-item hotfix notes filtered to the recent window; the template hides the
+    # card for any item left with no recent notes. Keyed by item id (str).
+    hotfix_cutoff_ms = (
+        datetime.now(timezone.utc) - timedelta(days=HOTFIX_MAX_AGE_DAYS)
+    ).timestamp() * 1000
+    hotfix_items_lookup = {
+        iid: [e for e in entries if e["date_ts"] >= hotfix_cutoff_ms]
+        for iid, entries in ctx["hotfix_items"].items()
+    }
 
     # Per-slot lists (manifest already sorted by runs desc) for the "other popular
     # items in this slot" card on each item page.
@@ -1312,6 +1338,8 @@ def main(template_path, output_dir, items_dir="items", debug=False, target_item=
             item=payload,
             slug=slug,
             slug_map=slug_map,
+            hotfixes=hotfix_items_lookup.get(str(payload["id"]), []),
+            hotfix_source_url=hotfix_source_url,
             intro_paragraphs=intro_paragraphs,
             meta_description=build_item_meta_description(intro_paragraphs),
             has_preview=str(payload["id"]) in preview_ids,

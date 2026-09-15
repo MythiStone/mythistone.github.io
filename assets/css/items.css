@@ -189,11 +189,14 @@
 /* Cards auto-fit and stretch to fill the row, so showing only a subset (e.g. just
    an enchant) never leaves a fixed-width column gap. Gems share this grid so they
    sit next to enchants. */
+/* Row-gap is 3rem (not 1.5rem): each card's gold floating header pulls up 1.5rem
+   (mt-n4), so a wrapped second row needs 3rem above it to leave a real 1.5rem gap
+   below the row above. margin-bottom clears the next row's ribbon the same way. */
 .item-page .enhance-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1rem;
+  gap: 3rem 1.5rem;
+  margin-bottom: 3rem;
 }
 .item-page .enhance-grid .enhance-card { margin-bottom: 0; }
 

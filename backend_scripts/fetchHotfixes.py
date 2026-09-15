@@ -33,6 +33,21 @@ Source structure (worldofwarcraft.blizzard.com hotfix living-document):
 - Dungeon names match ``data/static/dungeons.json`` ``name.en_US`` verbatim, so we
   match by name and keep only the current-season dungeons (per-dungeon only: raids
   and general Mythic+/system entries are ignored).
+- Under the "Items" category the structure is different: a flat ``<ul>`` of prose
+  bullets with no per-bullet ``<strong>`` item name, no item id and no item link
+  (item names are embedded mid-sentence). We resolve each bullet to a specific item
+  by matching its text against the ``equippable-items.json`` name index
+  (``load_item_name_index``) and key the notes by item id, exactly like the
+  dungeon/spec maps. Matching is conservative (the full item name, bounded by
+  non-alphanumerics; short/single-common-word names are skipped) so a note only
+  attaches to the item it actually names. A generic slot subsection label
+  ("Trinkets", "Weapons") is dropped since the leaf already names the item, while any
+  other label is kept as context (``_flatten_item_ul``); "Developers' notes"
+  commentary is skipped (``_is_developer_note`` - it only names items in passing, not
+  as changes). A bullet that names no known equippable item
+  (cosmetics, collision fixes, world objects) matches nothing and is dropped. The
+  section is optional (a hotfix with no item changes is normal and yields no item
+  notes).
 
 Fails loudly (per repo policy): every HTTP call raises on error, discovery raises
 if no hotfix article is found, and parsing raises if the "Dungeons and Raids"
@@ -57,17 +72,48 @@ DUNGEONS_JSON = os.path.join("data", "static", "dungeons.json")
 SPECS_JSON = os.path.join("data", "static", "specs.json")
 CLASSES_JSON = os.path.join("data", "static", "classes.json")
 TALENTS_DIR = os.path.join("data", "static", "talents")
+EQUIPPABLE_ITEMS_JSON = os.path.join("data", "static", "equippable-items.json")
 HOTFIXES_JSON = os.path.join("data", "static", "hotfixes.json")
 
-# Keep at most this many dated entries per dungeon / per spec (newest first).
+# Keep at most this many dated entries per dungeon / per spec / per item (newest
+# first).
 PER_DUNGEON_LIMIT = 8
 PER_SPEC_LIMIT = 8
+PER_ITEM_LIMIT = 8
 
 # Category header that groups per-instance hotfixes. Matched as a prefix because
 # the source occasionally renders it as "Dungeons and Raid" (a stray split node).
 DUNGEONS_CATEGORY_PREFIX = "dungeons and raid"
 # Category header that groups per-class/spec hotfixes.
 CLASSES_CATEGORY_PREFIX = "classes"
+# Category header that groups item hotfixes. Unlike the two above, this section is
+# a flat, anchorless bullet list: no per-bullet <strong> item name, no item id and
+# no item link (item names are embedded mid-sentence). So we resolve each bullet to
+# a specific item by matching its text against the equippable-items name index and
+# key the notes by item id, exactly like the dungeon/spec maps. Bullets that name no
+# known item (cosmetics, collision fixes, world objects) match nothing and are
+# dropped.
+ITEMS_CATEGORY_PREFIX = "items"
+
+# Item subsection headings that are generic slot/type groupings ("Trinkets", "Weapons").
+# The leaf bullet under them already names the specific item, so the label adds nothing
+# on an item page and is stripped. Any OTHER subsection label is kept as a "Label:
+# bullet" prefix, in case it carries real context (a set or tier name, say). Compared
+# normalized (see _normalize_name), trailing ":" already gone from the heading text.
+ITEM_GENERIC_SUBSECTION_LABELS = {
+    "trinkets", "trinket", "weapons", "weapon", "armor", "rings", "ring",
+    "necklaces", "necklace", "neck", "cloaks", "cloak", "back", "wands", "wand",
+    "off-hands", "off-hand", "shields", "shield",
+}
+
+# An item name must be at least this long to be matched inside a note; below it, a
+# name is too generic to be a reliable signal in prose.
+ITEM_NAME_MIN_LEN = 5
+# A single-word item name ("Bloodfang", "Deathbringer") must clear this higher bar,
+# since one common word ("Cloak", "Shield", "Band") would otherwise attach a note to
+# an unrelated same-named item. Multi-word names are distinctive enough at
+# ITEM_NAME_MIN_LEN.
+ITEM_NAME_SINGLE_WORD_MIN_LEN = 10
 
 _MONTHS = (
     "January February March April May June July August September October "
@@ -89,6 +135,80 @@ def _http_get(url):
 def _normalize_name(text):
     """Lowercase, straighten curly apostrophes, collapse whitespace for matching."""
     return re.sub(r"\s+", " ", text.replace("’", "'").strip()).casefold()
+
+
+def _is_matchable_item_name(name_norm):
+    """Whether a normalized item name is distinctive enough to match inside prose.
+
+    Short names are too generic; single-word names must clear a higher length bar so
+    one common word doesn't attach a note to an unrelated same-named item."""
+    if len(name_norm) < ITEM_NAME_MIN_LEN:
+        return False
+    if " " in name_norm:
+        return True
+    return len(name_norm) >= ITEM_NAME_SINGLE_WORD_MIN_LEN
+
+
+def load_item_name_index(path=EQUIPPABLE_ITEMS_JSON):
+    """Map every distinctive normalized item name -> sorted list of item ids (str).
+
+    Built from ``equippable-items.json`` (the same catalog the item pages render
+    from). Names shared by several items (old + new pieces) map to every id; on the
+    item-page side only ids that earn a rendered page show a card, so a legacy
+    same-named item never surfaces a stray note. Non-distinctive names are dropped
+    (see ``_is_matchable_item_name``) so item hotfix matching stays conservative."""
+    with open(path, "r", encoding="utf-8") as f:
+        items = json.load(f)
+    name_to_ids = {}
+    for it in items:
+        name = it.get("name")
+        iid = it.get("id")
+        if not name or iid is None:
+            continue
+        name_norm = _normalize_name(name)
+        if not _is_matchable_item_name(name_norm):
+            continue
+        name_to_ids.setdefault(name_norm, set()).add(str(iid))
+    if not name_to_ids:
+        raise RuntimeError(f"No matchable item names found in {path}")
+    return {name: sorted(ids) for name, ids in name_to_ids.items()}
+
+
+def _name_in_note(note_norm, name_norm):
+    """True if ``name_norm`` appears in ``note_norm`` bounded by non-alphanumerics,
+    so an item name matches whole ("...Preternatural Antivenom trinket...") but never
+    embedded inside a longer word/number ("venom" in "antivenom")."""
+    start = 0
+    n = len(name_norm)
+    while True:
+        i = note_norm.find(name_norm, start)
+        if i < 0:
+            return False
+        before = note_norm[i - 1] if i > 0 else ""
+        after = note_norm[i + n] if i + n < len(note_norm) else ""
+        if not before.isalnum() and not after.isalnum():
+            return True
+        start = i + 1
+
+
+def match_note_to_item_ids(note, item_name_index):
+    """Return the sorted set of item ids (str) whose name is named in ``note``.
+
+    A note may mention more than one item, and a name may resolve to several ids;
+    both are kept. Only *maximal* matched names count: a name contained within
+    another matched name is dropped, so a note that names "Zatha'tek, Breath of
+    Corruption" doesn't also tag the legacy item named "Corruption". A note that
+    names no known item returns an empty list and is dropped by the caller."""
+    note_norm = _normalize_name(note)
+    matched = [name for name in item_name_index if _name_in_note(note_norm, name)]
+    ids = set()
+    for name in matched:
+        # Skip a name that is a substring of a different matched name (the longer,
+        # more specific item is the one the note is really about).
+        if any(name != other and name in other for other in matched):
+            continue
+        ids.update(item_name_index[name])
+    return sorted(ids)
 
 
 def _parse_date(text):
@@ -159,6 +279,46 @@ def _extract_bullets(dungeon_li):
     """Flatten a matched dungeon <li>'s nested bullet list into note strings.
     Boss subsections (nested <ul> under a <strong>) become "Boss: bullet"."""
     return _flatten_ul(dungeon_li.find("ul"))
+
+
+def _flatten_item_ul(ul):
+    """Flatten the anchorless "Items" section like ``_flatten_ul``, but drop a
+    subsection label that is a generic slot/type grouping.
+
+    Under a "Trinkets" (or "Weapons", ...) subsection the leaf bullet already names
+    the item ("Coiled Fangstone: damage increased by 15%."), so the label is noise
+    and stripped; any other label (a set or tier name, say) is kept as
+    "Label: bullet" in case it adds real context."""
+    if ul is None:
+        return []
+    notes = []
+    for li in ul.find_all("li", recursive=False):
+        sub = li.find("ul")
+        if sub is not None:
+            strong = li.find("strong")
+            label = strong.get_text(" ", strip=True) if strong else ""
+            keep_label = bool(label) and _normalize_name(label) not in ITEM_GENERIC_SUBSECTION_LABELS
+            for leaf in sub.find_all("li", recursive=False):
+                text = leaf.get_text(" ", strip=True)
+                if text:
+                    notes.append(f"{label}: {text}" if keep_label else text)
+        else:
+            text = li.get_text(" ", strip=True)
+            if text:
+                notes.append(text)
+    return notes
+
+
+def _is_developer_note(note):
+    """Whether a bullet is a "Developers' notes" commentary line rather than an
+    actual change. These only discuss/justify changes (often naming items in
+    passing), so an item named inside one must not be credited with the note."""
+    # Straighten curly apostrophes and the mojibake replacement char the source
+    # sometimes emits for one, then drop apostrophes so "Developers'"/"Developer's"
+    # both reduce to "developers"/"developer".
+    head = note[:40].replace("’", "'").replace("�", "'").replace("'", "")
+    head = re.sub(r"\s+", " ", head).strip().casefold()
+    return re.match(r"developers? notes?\b", head) is not None
 
 
 def load_spec_maps(
@@ -313,22 +473,29 @@ def _finalize(by_key, limit):
     return result
 
 
-def parse_hotfixes(html, name_to_id, spec_maps):
-    """Parse an article's HTML into per-dungeon and per-spec hotfix maps, each
-    shaped {id: [ {date_ts, date_text, notes:[...]}, ... ]} (newest first, capped
-    to PER_DUNGEON_LIMIT / PER_SPEC_LIMIT). Returns ``(per_dungeon, per_spec)``.
+def parse_hotfixes(html, name_to_id, spec_maps, item_name_index):
+    """Parse an article's HTML into per-dungeon, per-spec and per-item hotfix maps,
+    each shaped {id: [ {date_ts, date_text, notes:[...]}, ... ]} (newest first, capped
+    to PER_DUNGEON_LIMIT / PER_SPEC_LIMIT / PER_ITEM_LIMIT). Returns
+    ``(per_dungeon, per_spec, per_item)``.
+
+    Dungeon and spec notes key off the section's ``<strong>`` name anchors. The
+    anchorless "Items" section is resolved by matching each bullet's text against
+    ``item_name_index`` (``load_item_name_index``) and keying by item id; a bullet
+    that names no known equippable item is dropped.
 
     Raises if the "Dungeons and Raids" category is never found (markup change). A
-    missing "Classes" section is allowed (a pure-dungeon hotfix) and yields no
-    spec entries."""
+    missing "Classes" or "Items" section is allowed (a pure-dungeon hotfix) and
+    yields no spec / item entries."""
     soup = BeautifulSoup(html, "html.parser")
     detail = soup.find("div", class_="detail")
     if detail is None:
         raise RuntimeError("Hotfix article has no <div class='detail'> content container.")
 
-    # dungeon id / spec id -> { date_ms: {"date_text": str, "notes": [...]} }
+    # dungeon id / spec id / item id -> { date_ms: {"date_text": str, "notes": [...]} }
     by_dungeon = {}
     by_spec = {}
+    by_item = {}
     current_date = None
     saw_dungeons_category = False
 
@@ -387,6 +554,18 @@ def parse_hotfixes(html, name_to_id, spec_maps):
                     for spec_id in spec_ids:
                         _add_note(by_spec, spec_id, date_ms, date_text, note)
 
+        elif heading.startswith(ITEMS_CATEGORY_PREFIX):
+            # Anchorless bullets (generic slot labels like "Trinkets" dropped, other
+            # labels kept): resolve each to the item(s) it names and key by item id. A
+            # "Developers' notes" line only mentions items in passing, and a bullet
+            # naming no known item (cosmetics, world objects) resolves to nothing;
+            # both are dropped.
+            for note in _flatten_item_ul(ul):
+                if _is_developer_note(note):
+                    continue
+                for item_id in match_note_to_item_ids(note, item_name_index):
+                    _add_note(by_item, item_id, date_ms, date_text, note)
+
     if not saw_dungeons_category:
         raise RuntimeError(
             "No 'Dungeons and Raids' section found in the hotfix article; "
@@ -396,25 +575,28 @@ def parse_hotfixes(html, name_to_id, spec_maps):
     return (
         _finalize(by_dungeon, PER_DUNGEON_LIMIT),
         _finalize(by_spec, PER_SPEC_LIMIT),
+        _finalize(by_item, PER_ITEM_LIMIT),
     )
 
 
 def main():
     name_to_id = load_dungeon_name_map()
     spec_maps = load_spec_maps()
+    item_name_index = load_item_name_index()
 
     print(f"Discovering the latest hotfix article from {NEWS_LANDING_URL} ...")
     article_url = discover_latest_article_url(_http_get(NEWS_LANDING_URL))
     print(f"Latest hotfix article: {article_url}")
 
-    per_dungeon, per_spec = parse_hotfixes(
-        _http_get(article_url), name_to_id, spec_maps
+    per_dungeon, per_spec, per_item = parse_hotfixes(
+        _http_get(article_url), name_to_id, spec_maps, item_name_index
     )
     matched_dungeons = sum(1 for v in per_dungeon.values() if v)
     matched_specs = sum(1 for v in per_spec.values() if v)
+    matched_items = sum(1 for v in per_item.values() if v)
     print(
         f"Parsed hotfixes for {matched_dungeons}/{len(name_to_id)} current-season "
-        f"dungeons and {matched_specs} specs."
+        f"dungeons, {matched_specs} specs and {matched_items} items."
     )
 
     payload = {
@@ -422,8 +604,10 @@ def main():
         "source_url": article_url,
         "per_dungeon_limit": PER_DUNGEON_LIMIT,
         "per_spec_limit": PER_SPEC_LIMIT,
+        "per_item_limit": PER_ITEM_LIMIT,
         "dungeons": per_dungeon,
         "specs": per_spec,
+        "items": per_item,
     }
     # Written last so a fetch/parse failure fails the job without touching the file.
     with open(HOTFIXES_JSON, "w", encoding="utf-8") as f:

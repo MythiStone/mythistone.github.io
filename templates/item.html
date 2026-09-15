@@ -213,8 +213,10 @@
            bonus ids), falling back to the base item quality. Mirrors spec_page.html. #}
         {% set item_quality = item.quality_override if item.quality_override is not none else item.quality %}
 
-        <!-- Page title (icon · name · stats · run/key stat box), mirrors dungeon page -->
-        <div class="row mb-4 mt-2">
+        <!-- Page title (icon · name · stats · run/key stat box), mirrors dungeon page.
+             mb-5 (not mb-4): the first floating-ribbon card below pulls its gold header
+             up 1.5rem (mt-n4), so the title needs 3rem clearance to leave a real gap. -->
+        <div class="row mb-5 mt-2">
           <div class="col-12 d-flex align-items-center justify-content-between flex-wrap gap-3 px-3 px-md-4">
             <div class="d-flex align-items-center">
               <div class="avatar avatar-xl position-relative me-3">
@@ -307,15 +309,59 @@
           {% endif %}
         </div>
 
+        <!-- Latest Hotfixes (hidden entirely when no recent hotfix mentions this item) -->
+        {% if hotfixes %}
+        <div class="row mb-4">
+          <div class="col-12 mb-4">
+            <div class="card h-100" id="item-hotfixes" data-share>
+              <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                <div data-share-anchor
+                  class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                  <h6 class="text-white text-capitalize ps-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Recent official Blizzard hotfixes that mention {{ item.name }}.">Latest Hotfixes</h6>
+                  {% if hotfix_source_url %}
+                  <a href="{{ hotfix_source_url }}" class="btn btn-sm btn-white me-3 mb-0 opacity-8"
+                    title="Read the full hotfix notes on Blizzard's site" target="_blank" rel="noopener">Full Notes</a>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="card-body px-3 pb-2">
+                <p class="text-sm text-secondary mb-3">The most recent official Blizzard hotfixes affecting {{ item.name }}.</p>
+                <div class="custom-scrollbar" style="max-height: 340px; overflow-y: auto;">
+                  {% for entry in hotfixes %}
+                  <div class="mb-3">
+                    <h6 class="text-sm mb-1 d-flex align-items-center flex-wrap">
+                      <span class="me-2">{{ entry.date_text }}</span>
+                      <small class="timestamp text-secondary fw-normal" data-bs-toggle="tooltip"
+                        data-bs-placement="top" data-timestamp="{{ entry.date_ts | int / 1000 }}"></small>
+                    </h6>
+                    <ul class="text-sm mb-0 ps-3">
+                      {% for note in entry.notes %}
+                      <li>{{ note }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
         <!-- Specs: combined re-scope switcher + recommendations (SimC BiS / top pick) -->
-        <div class="card mb-3 {{ 'd-none' if not item.spec_overview else '' }}" id="spec-overview-card">
-          <div class="card-header pb-0">
-            <h6 class="mb-0">Specs</h6>
-            <p class="text-xs opacity-6 mb-0">
-              Adoption per spec, click to re-scope. <span class="badge rec-badge rec-badge-sim">SIM</span> SimulationCraft best-in-slot · <span class="badge rec-badge rec-badge-top">TOP</span> top players' pick
-            </p>
+        <div class="row mb-4 {{ 'd-none' if not item.spec_overview else '' }}">
+          <div class="col-12 mb-4">
+          <div class="card h-100" id="spec-overview-card">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+              <h6 class="text-white text-capitalize ps-3 mb-0">Specs</h6>
+            </div>
           </div>
           <div class="card-body">
+            <p class="text-xs text-secondary mb-3">
+              Adoption per spec, click to re-scope. <span class="badge rec-badge rec-badge-sim">SIM</span> SimulationCraft best-in-slot · <span class="badge rec-badge rec-badge-top">TOP</span> top players' pick
+            </p>
             {# On phones the card grid is hidden (items.css) and this bootstrap-
                select re-scopes instead (same widget as the routes page filters).
                SIM/TOP recommendations become optgroups (an <option> can't carry
@@ -343,6 +389,8 @@
               {% for s in item.spec_overview %}{{ spec_overview_card(s) }}{% endfor %}
             </div>
           </div>
+          </div>
+          </div>
         </div>
 
         <!-- Enhancements & gems: one DataTable per type present (top rows shown, rest
@@ -351,41 +399,53 @@
              category). Empty cards get d-none and drop out of the grid flow. -->
         <div class="enhance-grid {{ 'd-none' if not (g.enchants or g.gems or g.embellishments or g.missives) else '' }}" id="enhance-wrap">
           <div class="card enhance-card {{ 'd-none' if not g.enchants else '' }}" id="enchant-card">
-            <div class="card-header pb-0"><h6 class="mb-0">Enchant</h6>
-              <p class="text-xs opacity-6 mb-0">Enchants used in this slot</p></div>
-            <div class="card-body px-2 pb-2">{{ opt_table("enchant-table", g.enchants, "enchant", "Enchant") }}</div>
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-primary shadow-primary border-radius-lg py-2 px-3">
+                <h6 class="text-white text-capitalize mb-0">Enchant</h6></div></div>
+            <div class="card-body px-2 pb-2 pt-3">
+              <p class="text-xs text-secondary mb-2 px-1">Enchants used in this slot</p>
+              {{ opt_table("enchant-table", g.enchants, "enchant", "Enchant") }}</div>
           </div>
           <div class="card enhance-card {{ 'd-none' if not g.gems else '' }}" id="gems-col">
-            <div class="card-header pb-0"><h6 class="mb-0">Popular Gems</h6>
-              <p class="text-xs opacity-6 mb-0">Gems socketed in this slot</p></div>
-            <div class="card-body px-2 pb-2" id="item-gems">{{ opt_table("gems-table", g.gems, "item", "Gem") }}</div>
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-primary shadow-primary border-radius-lg py-2 px-3">
+                <h6 class="text-white text-capitalize mb-0">Popular Gems</h6></div></div>
+            <div class="card-body px-2 pb-2 pt-3" id="item-gems">
+              <p class="text-xs text-secondary mb-2 px-1">Gems socketed in this slot</p>
+              {{ opt_table("gems-table", g.gems, "item", "Gem") }}</div>
           </div>
           <div class="card enhance-card {{ 'd-none' if not g.embellishments else '' }}" id="embellishment-card">
-            <div class="card-header pb-0"><h6 class="mb-0">Embellishment</h6>
-              <p class="text-xs opacity-6 mb-0">% of this item's copies</p></div>
-            <div class="card-body px-2 pb-2">{{ opt_table("embellishment-table", g.embellishments, "item", "Embellishment") }}</div>
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-primary shadow-primary border-radius-lg py-2 px-3">
+                <h6 class="text-white text-capitalize mb-0">Embellishment</h6></div></div>
+            <div class="card-body px-2 pb-2 pt-3">
+              <p class="text-xs text-secondary mb-2 px-1">% of this item's copies</p>
+              {{ opt_table("embellishment-table", g.embellishments, "item", "Embellishment") }}</div>
           </div>
           <div class="card enhance-card {{ 'd-none' if not g.missives else '' }}" id="missive-card">
-            <div class="card-header pb-0"><h6 class="mb-0">Missive</h6>
-              <p class="text-xs opacity-6 mb-0">% of this item's copies</p></div>
-            <div class="card-body px-2 pb-2">{{ opt_table("missive-table", g.missives, "item", "Missive") }}</div>
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-primary shadow-primary border-radius-lg py-2 px-3">
+                <h6 class="text-white text-capitalize mb-0">Missive</h6></div></div>
+            <div class="card-body px-2 pb-2 pt-3">
+              <p class="text-xs text-secondary mb-2 px-1">% of this item's copies</p>
+              {{ opt_table("missive-table", g.missives, "item", "Missive") }}</div>
           </div>
         </div>
 
-        <div class="row">
-          <div class="col-lg-7 mb-3">
+        <div class="row mb-4">
+          <div class="col-lg-7 mb-4">
             <div class="card h-100">
-              <div class="card-header pb-0 d-flex justify-content-between align-items-start flex-wrap gap-2">
-                <div>
-                  <h6 class="mb-0">Adoption by Dungeon &amp; Key Level</h6>
-                  <p class="text-xs opacity-6 mb-0">% of each dungeon's / key level's runs that use this item</p>
+              <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center gap-2">
+                  <h6 class="text-white text-capitalize ps-3 mb-0">Adoption by Dungeon &amp; Key Level</h6>
+                  <select id="keylevel-filter" class="selectpicker me-3" data-style="btn-outline-light"
+                    data-width="fit" multiple data-actions-box="true" data-selected-text-format="count > 2"
+                    data-count-selected-text="{0} key levels" title="All key levels"
+                    aria-label="Filter by key level"></select>
                 </div>
-                <select id="keylevel-filter" class="selectpicker" data-style="btn-outline-primary"
-                  data-width="fit" multiple data-actions-box="true" data-selected-text-format="count > 2"
-                  data-count-selected-text="{0} key levels" title="All key levels"
-                  aria-label="Filter by key level"></select>
               </div>
               <div class="card-body">
+                <p class="text-xs text-secondary mb-2">% of each dungeon's / key level's runs that use this item</p>
                 <div id="item-keylevels" class="mb-3">
                   {% set kls = g.keylevels | selectattr('adoption', 'ne', None) | list %}
                   {% if kls %}
@@ -421,9 +481,13 @@
               </div>
             </div>
           </div>
-          <div class="col-lg-5 mb-3">
+          <div class="col-lg-5 mb-4">
             <div class="card h-100">
-              <div class="card-header pb-0"><h6 class="mb-0">Item-Level Variants</h6></div>
+              <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex align-items-center">
+                  <h6 class="text-white text-capitalize ps-3 mb-0">Item-Level Variants</h6>
+                </div>
+              </div>
               <div class="card-body" id="item-variants">
                 {% if g.variants %}
                 {% for v in g.variants %}
@@ -449,14 +513,18 @@
         </div>
 
         {% if alternatives %}
-        <div class="card mb-3" id="alternatives-card">
-          <div class="card-header pb-0">
-            <h6 class="mb-0">
-              <a href="/pages/items?slot={{ item.slot | lower | replace(' ', '-') }}" class="slot-link"
-                title="Browse all {{ item.slot }} items">Other Popular Items in This Slot</a>
-            </h6>
-          </div>
-          <div class="card-body row g-2" id="item-alternatives">
+        <div class="row mb-4">
+          <div class="col-12 mb-4">
+            <div class="card h-100" id="alternatives-card">
+              <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex align-items-center">
+                  <h6 class="text-white text-capitalize ps-3 mb-0">
+                    <a href="/pages/items?slot={{ item.slot | lower | replace(' ', '-') }}" class="slot-link"
+                      title="Browse all {{ item.slot }} items">Other Popular Items in This Slot</a>
+                  </h6>
+                </div>
+              </div>
+              <div class="card-body row g-2 mx-0" id="item-alternatives">
             {% for m in alternatives %}
             <div class="col-12 col-md-6 col-xl-4">
               <a class="item-card" href="/items/{{ m.slug }}">
@@ -469,6 +537,8 @@
               </a>
             </div>
             {% endfor %}
+              </div>
+            </div>
           </div>
         </div>
         {% endif %}
@@ -492,7 +562,7 @@
     window.dungeons_map = {{ dungeons_map | tojson | safe }};
   </script>
   <script src="/assets/js/plugins/dataTables.min.js"></script>
-  <script src="/assets/js/item.js?v=7"></script>
+  <script src="/assets/js/item.js?v=8"></script>
 </body>
 
 </html>

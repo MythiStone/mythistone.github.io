@@ -368,6 +368,7 @@
   // "Used by Specs" sortable/scrollable DataTable (only in the global view).
   function renderSpecPopularity(data, scoped) {
     var col = el("spec-popularity-col");
+    if (!col) return; // optional card: not rendered on the current item template
     if (scoped) { col.classList.add("d-none"); return; }
     col.classList.remove("d-none");
     var specs = data.global.specs || [];
