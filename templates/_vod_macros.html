@@ -1,0 +1,101 @@
+{#- Shared POV-video accordion item, sibling of _route_macros.route_accordion_item.
+    Same visual shell (dungeon-icon header, level/duration/timestamp badges, collapse
+    body) but the right column shows the streamer's spec + character instead of the run
+    comp, and the body embeds a consent-gated Twitch/YouTube player instead of the
+    keystone.guru route map.
+
+    Kept in its OWN file (not _route_macros.html) because it uses the `vod_embed`
+    Jinja filter: an imported macro file is compiled as a whole, so any generator
+    importing it must register that filter. Only the spec generator does, so only the
+    spec page imports this; the dungeon/routes generators import _route_macros alone.
+
+    Params:
+      dungeon      = dungeon dict (needs name.en_US, slug, icon)
+      vod          = one row from fetch_top_vods_for_spec: highest_key, duration,
+                     timestamp, route_key, run_id, video_type ('twitch'|'youtube'),
+                     video_ref, start_seconds, pov_character_name, pov_spec_id
+      spec_lookup  = spec id -> spec dict (SpellIconFileId, name, role)
+      season_slug  = season_info.slug (for the raider.io permalink)
+      iframe_height= CSS height for the embed
+      item_class   = extra class(es) on .accordion-item
+
+    Uses its own #vodDungeonAccordion parent and vod- id namespace so it coexists
+    with a route accordion on the same page. Embed src is built by the `vod_embed`
+    filter (commonUtils.build_vod_embed_src); the iframe's data-name matches the Klaro
+    service ('twitch'/'youtube') so MythiConsent gates it per embed.
+
+    KEEP IN SYNC: assets/js/vods-finder.js renderVodItem() builds this SAME markup
+    client-side and mirrors build_vod_embed_src in JS (Klaro never sees client-added
+    iframes, so consent is handled per-iframe via MythiConsent.loadEmbed). -#}
+{% macro vod_accordion_item(dungeon, vod, spec_lookup, season_slug, iframe_height='calc(80vh - 3rem)', item_class='') %}
+{% set vodKey = dungeon.slug ~ '-' ~ vod.video_ref %}
+{% set run_url = 'https://raider.io/mythic-plus-runs/' ~ season_slug ~ '/' ~ vod.run_id %}
+{% set pov = spec_lookup[vod.pov_spec_id|string] %}
+{#- Same shared modern pill style as the route accordion badges. -#}
+{% set badge_cls = 'rt-pill' %}
+<div class="accordion-item mb-2{% if item_class %} {{ item_class }}{% endif %}">
+  <h2 class="accordion-header" id="vodheading-{{ vodKey }}">
+    <button class="accordion-button collapsed p-0" type="button" data-bs-toggle="collapse"
+      data-bs-target="#vodcollapse-{{ vodKey }}" aria-expanded="false" aria-controls="vodcollapse-{{ vodKey }}"
+      style="background-image: url('/data/icons/{{ dungeon.icon }}'); background-size: cover; background-position: center; background-repeat: no-repeat; background-blend-mode: overlay;">
+      <div class="w-100 row gx-2 gy-2 align-items-center py-3 px-4">
+        <div class="col-12 col-lg-5">
+          <div class="d-flex align-items-center flex-wrap gap-1 justify-content-start">
+            <span class="{{ badge_cls }} text-white">{{ dungeon.name.en_US }}</span>
+            <span class="{{ badge_cls }} text-success">+{{ vod.highest_key }}</span>
+            {% if pov or vod.pov_character_name %}
+            <span class="{{ badge_cls }} text-white" data-bs-toggle="tooltip" title="POV: {{ vod.pov_character_name if vod.pov_character_name else (pov.name if pov else '') }}">
+              {% if pov %}<img src="/data/icons/{{ pov.SpellIconFileId }}.jpg" alt="{{ pov.name }}" title="{{ pov.name }} POV" style="width:16px;height:16px;object-fit:cover;border-radius:3px;">{% endif %}
+              {% if vod.pov_character_name %}<span class="rt-name">{{ vod.pov_character_name }}</span>{% endif %}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="d-flex align-items-center flex-wrap gap-1 justify-content-start justify-content-lg-center">
+            <span class="{{ badge_cls }} text-white">{{ vod.duration|duration }}</span>
+            <span class="timestamp {{ badge_cls }} text-white" data-bs-toggle="tooltip" data-bs-placement="top" data-timestamp="{{ vod.timestamp|int }}"></span>
+          </div>
+        </div>
+        <div class="col-12 col-lg-3">
+          {# Team comp, same role-sorted icon bar as the route accordion. #}
+          <div class="d-flex align-items-center flex-wrap gap-1 justify-content-start justify-content-lg-end">
+            {% for role in ['0','1','2'] %}
+            {% for sid in vod.specs %}
+            {% set spec = spec_lookup[sid|string] %}
+            {% if spec and spec.role|string == role %}
+            <img src="/data/icons/{{ spec.SpellIconFileId }}.jpg" alt="{{ spec.name }}" title="{{ spec.name }}" class="img-fluid" style="width:24px;height:24px;object-fit:cover;border-radius:4px;">
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </button>
+  </h2>
+  {# vodKey embeds the video ref, which is stable, so the collapse id doubles as
+     the permalink target via data-share-id (see assets/js/deep-link.js). #}
+  <div id="vodcollapse-{{ vodKey }}" data-share-id="vod-{{ vodKey }}"
+    class="accordion-collapse collapse" aria-labelledby="vodheading-{{ vodKey }}" data-bs-parent="#vodDungeonAccordion">
+    <div class="accordion-body p-0">
+      <div class="route-run-details">
+        <div class="route-run-head px-3 pt-2 pb-2">
+          <a href="{{ run_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mb-0 d-inline-flex align-items-center gap-2">
+            <img src="/assets/img/logos/RaiderIOLogo.png" alt="" width="18" height="18" class="rounded">
+            <span>View full run details on Raider.io</span>
+            <i class="material-symbols-rounded text-sm">open_in_new</i>
+          </a>
+        </div>
+        <div class="iframe-container position-relative">
+          <div class="iframe-spinner position-absolute top-50 start-50 translate-middle d-none">
+            <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+          </div>
+          <iframe loading="lazy" allowfullscreen data-name="{{ vod.video_type }}"
+            data-src="{{ vod.video_ref | vod_embed(vod.video_type, vod.start_seconds) }}"
+            class="w-100 route-embed" style="border:none;width:100%;height:{{ iframe_height }};display:block;"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endmacro %}

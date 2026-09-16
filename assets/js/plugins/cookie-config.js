@@ -208,6 +208,12 @@ var klaroConfig = {
             keystoneGuru: {
                 description: 'Route display',
             },
+            twitch: {
+                description: 'Embedded Twitch videos (VODs)',
+            },
+            youtube: {
+                description: 'Embedded YouTube videos',
+            },
             purposes: {
                 analytics: 'Analytics',
                 security: 'Security',
@@ -346,6 +352,20 @@ var klaroConfig = {
         {
             name: 'keystoneGuru',
             title: 'Keystone Guru',
+            purposes: ['functional'],
+            default: true,
+            contextualConsentOnly: true,
+        },
+        {
+            name: 'twitch',
+            title: 'Twitch',
+            purposes: ['functional'],
+            default: true,
+            contextualConsentOnly: true,
+        },
+        {
+            name: 'youtube',
+            title: 'YouTube',
             purposes: ['functional'],
             default: true,
             contextualConsentOnly: true,

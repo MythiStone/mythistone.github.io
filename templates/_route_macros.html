@@ -21,43 +21,59 @@
                      upgrade_info badge (spec modal keeps its "++N" chest badge)
       iframe_height= CSS height for the embed (dungeon card uses a shorter one)
       item_class   = extra class(es) on .accordion-item (dungeon card adds "border")
+      videos       = optional list of POV videos for this route (dicts with
+                     video_type, video_ref, pov_spec, pov_character_name, watch_url
+                     from commonUtils.fetch_route_videos). When present, the header
+                     shows a "VOD available" badge with the POV spec icon(s) and the
+                     body adds a "View VOD" link out to Twitch/YouTube per video.
 
-    KEEP IN SYNC: assets/js/route-search.js renderMatches() builds this SAME item
-    client-side (Klaro never sees client-added iframes, so it cannot gate them;
-    consent is handled per-iframe via MythiConsent.loadEmbed on shown.bs.collapse).
-    Any change to the markup here must be mirrored there. -#}
-{% macro route_accordion_item(dungeon, level, duration, timestamp, specs, spec_lookup, route_key, run_id, season_slug, usage_count=0, upgrade_css='', upgrade_text='', iframe_height='calc(80vh - 3rem)', item_class='') %}
+    KEEP IN SYNC: assets/js/routes-finder.js renderRouteItem() builds this SAME
+    item client-side for the VOD/route finder results (Klaro never sees client-added
+    iframes, so it cannot gate them; consent is handled per-iframe via
+    MythiConsent.loadEmbed on shown.bs.collapse). Mirror any markup change there. -#}
+{% macro route_accordion_item(dungeon, level, duration, timestamp, specs, spec_lookup, route_key, run_id, season_slug, usage_count=0, upgrade_css='', upgrade_text='', iframe_height='calc(80vh - 3rem)', item_class='', videos=[]) %}
 {% set runKey = dungeon.slug ~ '-' ~ route_key ~ '-' ~ run_id %}
 {% set run_url = 'https://raider.io/mythic-plus-runs/' ~ season_slug ~ '/' ~ run_id %}
 {% set embed_src = 'https://keystone.guru/route/' ~ dungeon.slug ~ '/' ~ route_key ~ '/' ~ dungeon.slug ~ '/embed' %}
+{#- One modern pill style shared by every header badge so they read as a set. -#}
+{% set badge_cls = 'rt-pill' %}
 <div class="accordion-item mb-2{% if item_class %} {{ item_class }}{% endif %}">
   <h2 class="accordion-header" id="heading-{{ runKey }}">
     <button class="accordion-button collapsed p-0" type="button" data-bs-toggle="collapse"
       data-bs-target="#collapse-{{ runKey }}" aria-expanded="false" aria-controls="collapse-{{ runKey }}"
       style="background-image: url('/data/icons/{{ dungeon.icon }}'); background-size: cover; background-position: center; background-repeat: no-repeat; background-blend-mode: overlay;">
       <div class="w-100 row gx-2 gy-2 align-items-center py-3 px-4">
-        <div class="col-12 col-sm-4 text-start">
-          <span class="badge bg-secondary text-white rounded px-2 mx-1">{{ dungeon.name.en_US }}</span>
-          {% if upgrade_text %}
-          <span class="badge bg-dark bg-opacity-50 {{ upgrade_css }} rounded px-2 mx-1">{{ upgrade_text }}</span>
-          {% else %}
-          <span class="badge bg-success text-dark rounded px-2 mx-1">+{{ level }}</span>
-          {% endif %}
-          {% if usage_count and usage_count > 1 %}
-          <span class="badge bg-secondary text-white rounded px-2 mx-1" data-bs-toggle="tooltip" title="Route usage count">{{ usage_count }} Uses</span>
-          {% endif %}
+        <div class="col-12 col-lg-5">
+          <div class="d-flex align-items-center flex-wrap gap-1 justify-content-start">
+            <span class="{{ badge_cls }} text-white">{{ dungeon.name.en_US }}</span>
+            <span class="{{ badge_cls }} {{ upgrade_css if upgrade_text else 'text-success' }}">{{ upgrade_text if upgrade_text else ('+' ~ level) }}</span>
+            {% if usage_count and usage_count > 1 %}
+            <span class="{{ badge_cls }} text-white" data-bs-toggle="tooltip" title="Route usage count">{{ usage_count }} Uses</span>
+            {% endif %}
+            {% if videos %}
+            <span class="{{ badge_cls }} text-white" data-bs-toggle="tooltip" title="VOD available">
+              <i class="material-symbols-rounded text-primary" style="font-size:16px;line-height:1;">smart_display</i>
+              {% for pov_sid in videos|map(attribute='pov_spec')|reject('none')|unique %}
+              {% set pov = spec_lookup[pov_sid|string] %}
+              {% if pov %}<img src="/data/icons/{{ pov.SpellIconFileId }}.jpg" alt="{{ pov.name }}" title="{{ pov.name }} POV" style="width:16px;height:16px;object-fit:cover;border-radius:3px;">{% endif %}
+              {% endfor %}
+            </span>
+            {% endif %}
+          </div>
         </div>
-        <div class="col-12 col-sm-4 text-start text-sm-center">
-          <span class="badge bg-secondary text-white rounded px-2 mx-2">{{ duration|duration }}</span>
-          <span class="timestamp badge bg-secondary text-white rounded px-2 mx-2" data-bs-toggle="tooltip" data-bs-placement="top" data-timestamp="{{ timestamp|int }}"></span>
+        <div class="col-12 col-lg-4">
+          <div class="d-flex align-items-center flex-wrap gap-1 justify-content-start justify-content-lg-center">
+            <span class="{{ badge_cls }} text-white">{{ duration|duration }}</span>
+            <span class="timestamp {{ badge_cls }} text-white" data-bs-toggle="tooltip" data-bs-placement="top" data-timestamp="{{ timestamp|int }}"></span>
+          </div>
         </div>
-        <div class="col-12 col-sm-4 text-start text-sm-end">
-          <div class="d-inline-flex align-items-center flex-wrap">
+        <div class="col-12 col-lg-3">
+          <div class="d-flex align-items-center flex-wrap gap-1 justify-content-start justify-content-lg-end">
             {% for role in ['0','1','2'] %}
             {% for sid in specs %}
             {% set spec = spec_lookup[sid|string] %}
             {% if spec and spec.role|string == role %}
-            <img src="/data/icons/{{ spec.SpellIconFileId }}.jpg" alt="{{ spec.name }}" title="{{ spec.name }}" class="me-1 img-fluid" style="width:24px;height:24px;object-fit:cover;">
+            <img src="/data/icons/{{ spec.SpellIconFileId }}.jpg" alt="{{ spec.name }}" title="{{ spec.name }}" class="img-fluid" style="width:24px;height:24px;object-fit:cover;border-radius:4px;">
             {% endif %}
             {% endfor %}
             {% endfor %}
@@ -72,12 +88,22 @@
     class="accordion-collapse collapse" aria-labelledby="heading-{{ runKey }}" data-bs-parent="#routeDungeonAccordion">
     <div class="accordion-body p-0">
       <div class="route-run-details">
-        <div class="route-run-head px-3 pt-2 pb-2">
+        <div class="route-run-head px-3 pt-2 pb-2 d-flex flex-wrap align-items-center gap-2">
           <a href="{{ run_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mb-0 d-inline-flex align-items-center gap-2">
             <img src="/assets/img/logos/RaiderIOLogo.png" alt="" width="18" height="18" class="rounded">
             <span>View full run details on Raider.io</span>
             <i class="material-symbols-rounded text-sm">open_in_new</i>
           </a>
+          {% for v in videos %}
+          {% if v.watch_url %}
+          {% set pov = spec_lookup[v.pov_spec|string] if v.pov_spec else none %}
+          <a href="{{ v.watch_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mb-0 d-inline-flex align-items-center gap-2" title="{% if v.pov_character_name %}{{ v.pov_character_name }} POV on {% endif %}{{ v.video_type|capitalize }}">
+            {% if pov %}<img src="/data/icons/{{ pov.SpellIconFileId }}.jpg" alt="{{ pov.name }}" style="width:18px;height:18px;object-fit:cover;border-radius:4px;">{% endif %}
+            <span>View VOD{% if v.video_type == 'twitch' %} (Twitch){% elif v.video_type == 'youtube' %} (YouTube){% endif %}</span>
+            <i class="material-symbols-rounded text-sm">open_in_new</i>
+          </a>
+          {% endif %}
+          {% endfor %}
         </div>
         <div class="iframe-container position-relative">
           <div class="iframe-spinner position-absolute top-50 start-50 translate-middle d-none">

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  {% include "header_imports.html" %}
+  <link rel="stylesheet" href="/assets/css/routes.css" />
+  <!-- Primary SEO -->
+  <title>VOD Finder - Find Mythic+ POV Videos in {{ season_info.name }} | MythiStone</title>
+  <meta name="description"
+    content="Find Mythic+ VODs for {{ season_info.name }}. Filter by dungeon, team comp, POV spec, spells or NPCs and watch how top players run the key.">
+  <meta name="keywords"
+    content="MythiStone, Mythic+, VOD finder, POV, Twitch, YouTube, dungeon vods, team comp, {{ season_info.name }}">
+  <meta name="author" content="MythiStone">
+
+  <link rel="canonical" href="https://mythistone.com/pages/vods">
+  <link rel="alternate" href="https://mythistone.com/pages/vods" hreflang="en-US">
+  <link rel="alternate" href="https://mythistone.com/pages/vods" hreflang="en">
+
+  <meta name="robots" content="index, follow, max-snippet:180, max-image-preview:large">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="MythiStone">
+  <meta property="og:url" content="https://mythistone.com/pages/vods">
+  <meta property="og:title" content="VOD Finder - Mythic+ POV Videos in {{ season_info.name }}">
+  <meta property="og:description"
+    content="Find Mythic+ VODs for {{ season_info.name }}. Filter by dungeon, comp and POV spec to watch how top players run the key.">
+  <meta property="og:image" content="https://mythistone.com/assets/img/previews/route_page.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="MythiStone VOD Finder preview">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@MythiStone">
+  <meta name="twitter:creator" content="@MythiStone">
+  <meta name="twitter:title" content="VOD Finder - Mythic+ POV Videos in {{ season_info.name }}">
+  <meta name="twitter:description"
+    content="Find Mythic+ VODs for {{ season_info.name }}. Filter by dungeon, comp and POV spec.">
+  <meta name="twitter:image" content="https://mythistone.com/assets/img/previews/route_page.png">
+
+  {% set page_url = 'https://mythistone.com/pages/vods' %}
+  {% set published_iso = (generated_at | format_ts) %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "WebSite", "url": "https://mythistone.com", "name": "MythiStone" },
+      {
+        "@type": "WebPage",
+        "url": "{{ page_url }}",
+        "name": "VOD Finder — MythiStone",
+        "description": "Find Mythic+ VODs for {{ season_info.name }}. Filter by dungeon, comp and POV spec.",
+        "isAccessibleForFree": true,
+        "dateModified": "{{ published_iso }}"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mythistone.com" },
+          { "@type": "ListItem", "position": 3, "name": "VOD Finder", "item": "{{ page_url }}" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+
+<body class="g-sidenav-show g-sidenav-show-right">
+  {% include "sidenav.html" %}
+  <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">
+    {% include "navbar.html" %}
+    {% include "notifications.html" %}
+    {% include "trends_bar.html" %}
+    <div class="container-fluid py-2 mx-3 w-auto">
+      <div class="">
+        <div class="ms-3">
+          <h1 class="mb-0 h4 font-weight-bolder">Find a Mythic+ VOD in {{ season_info.name }}</h1>
+        </div>
+      </div>
+
+      {% import "_finder_macros.html" as fm %}
+      {% call fm.finder_card('compForm', 'Search for specific VODs', 'Pick dungeons, comp, POV spec, source, spells or NPCs', icon='smart_display', submit_label='Search VODs') %}
+        <div class="row gx-3">
+          {{ fm.dungeon_filter(dungeon_lookup) }}
+          {{ fm.spec_filter(specs, class_lookup) }}
+        </div>
+        <div class="row gx-3 mt-2">
+          {{ fm.spec_filter(specs, class_lookup, id='povSpecSelect', label='POV', title='Any POV spec…', max_options=0, col='col-12 col-md-6 col-lg-4') }}
+          {{ fm.video_type_filter(col='col-12 col-md-6 col-lg-4') }}
+          {{ fm.spell_filter(spell_lookup, bloodlust_id_strs, bloodlust_icon, col='col-12 col-md-6 col-lg-4') }}
+        </div>
+        <div class="row gx-3 mt-2">
+          {{ fm.npc_filter(npc_map, npc_lookup, dungeon_lookup, 'npcIncludeSelect', 'NPCs include (match ANY)', 'Include NPC(s)…', col='col-12 col-md-6') }}
+          {{ fm.npc_filter(npc_map, npc_lookup, dungeon_lookup, 'npcExcludeSelect', 'NPCs exclude (must NOT include either)', 'Exclude NPC(s)…', col='col-12 col-md-6') }}
+        </div>
+      {% endcall %}
+
+      <div class="ms-3 align-self-center small text-muted pagination-summary" style="display:none">
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="accordion" id="vodFinderAccordion">
+            <div class="text-center p-4 text-sm text-secondary" data-finder-placeholder>Loading VODs…</div>
+          </div>
+        </div>
+      </div>
+      <div id="route-sentinel" class="py-3" aria-hidden="true"></div>
+
+      {% include "footer.html" %}
+    </div>
+  </main>
+  {% include "right_aside.html" %}
+  {% include "fixed_plugin.html" %}
+  {% include "javascript_imports.html" %}
+
+  <script>
+    window.dungeons = {{ dungeon_lookup | tojson | safe }};
+    window.spec_data = {{ specs | tojson | safe }};
+    window.current_season = "{{ season_info.slug }}";
+    window.spell_lookup = {{ spell_lookup | tojson | safe }};
+    window.bloodlust_spell_ids = {{ bloodlust_spell_ids | tojson | safe }};
+    window.npc_lookup = {{ npc_lookup | tojson | safe }};
+  </script>
+  <script src="/assets/js/finder.js"></script>
+  <script src="/assets/js/vods-finder.js"></script>
+
+  <div id="route-search-overlay" role="status" aria-hidden="true" aria-live="polite">
+    <div class="overlay-backdrop" aria-hidden="true"></div>
+    <div class="overlay-content text-center">
+      <div class="spinner-border" role="status" aria-hidden="true"></div>
+      <div class="small text-muted">Searching VODs…</div>
+    </div>
+  </div>
+
+</body>
+
+</html>

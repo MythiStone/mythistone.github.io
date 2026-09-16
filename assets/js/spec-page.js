@@ -113,6 +113,8 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
 // --- Route embeds, talent export copy, hero-tree switcher, talent-diff modal ---
     // Route embeds load on first open, gated on Klaro consent (see consent.js).
     MythiConsent.wireAccordionEmbeds('#routeDungeonAccordion');
+    // VOD (Twitch/YouTube) embeds in the VODs modal, same consent gating.
+    MythiConsent.wireAccordionEmbeds('#vodDungeonAccordion');
     (function () {
       const copyBtn = document.getElementById('copyBtn');
       const btnText = document.getElementById('btnText');

@@ -3064,6 +3064,25 @@ def insert_route_encounter(connection, cursor, route_key, rio_run_id, enc):
     return cursor.rowcount
 
 
+FETCH_ROUTES_MISSING_TELEMETRY_SQL = """
+SELECT rd.route_key, rd.rio_run_id
+FROM Mythistone.route_data rd
+LEFT JOIN Mythistone.route_encounters re ON re.route_key = rd.route_key
+WHERE re.route_key IS NULL;
+"""
+
+
+def fetch_routes_missing_telemetry(connection, cursor):
+    """Routes with no encounters yet, as (route_key, rio_run_id) tuples.
+
+    Used by the one-time telemetry backfill. Encounters is the marker because every logged run has
+    at least one boss encounter, so a route lacking them has not been backfilled; INSERT IGNORE
+    makes the backfill idempotent regardless.
+    """
+    rows = fetch_with_retry(connection, cursor, FETCH_ROUTES_MISSING_TELEMETRY_SQL, None)
+    return [(r[0], int(r[1])) for r in rows]
+
+
 def fetch_route_specs_map(connection, cursor):
     """
     Return dict: { route_key: [spec_id, ...], ... }
@@ -3112,6 +3131,38 @@ def fetch_route_spells_map(connection, cursor):
         sid = int(r[1])
         out.setdefault(rk, []).append(sid)
     return {rk: sorted(list(set(v))) for rk, v in out.items()}
+
+
+FETCH_ROUTE_VIDEOS_MAP_SQL = """
+SELECT route_key, video_type, video_ref, start_seconds, pov_spec_id, pov_character_name
+FROM Mythistone.route_videos
+ORDER BY route_key, video_id;
+"""
+
+
+def fetch_route_videos_map(connection, cursor):
+    """Return dict: { route_key: [ {video_type, video_ref, start_seconds, pov_spec,
+    pov_character_name}, ... ] }. Lets a route accordion flag that a POV VOD exists
+    and link out to it. commonUtils.fetch_route_videos enriches each with watch_url."""
+    rows = fetch_with_retry(connection, cursor, FETCH_ROUTE_VIDEOS_MAP_SQL, None)
+    out = {}
+    for r in rows:
+        # Cursor-agnostic: the dungeon generator uses a dict cursor, others tuple.
+        if isinstance(r, dict):
+            rk, vt, vr, ss, ps, pcn = (
+                r["route_key"], r["video_type"], r["video_ref"],
+                r["start_seconds"], r["pov_spec_id"], r["pov_character_name"],
+            )
+        else:
+            rk, vt, vr, ss, ps, pcn = r[0], r[1], r[2], r[3], r[4], r[5]
+        out.setdefault(rk, []).append({
+            "video_type": vt,
+            "video_ref": vr,
+            "start_seconds": int(ss) if ss is not None else None,
+            "pov_spec": int(ps) if ps is not None else None,
+            "pov_character_name": pcn,
+        })
+    return out
 
 
 def fetch_comp_routes(
@@ -3271,6 +3322,66 @@ def fetch_comp_routes(
     return out
 
 
+def fetch_comp_vods(connection, cursor, recent_only_days=None, min_level=0, limit=None):
+    """Build the VOD-finder dataset: one entry per POV video, carrying the route's
+    comp/spells/npcs (so the shared finder can filter on them) plus the video's own
+    fields. Keyed `route_key_video_id` so each POV stands on its own row, mirroring
+    the compRoutes shape consumed by assets/js/finder-worker.js."""
+    where_clauses = []
+    params = []
+    if min_level and int(min_level) > 0:
+        where_clauses.append("rd.keystone_level >= %s")
+        params.append(int(min_level))
+    if recent_only_days:
+        where_clauses.append(
+            "rd.timestamp >= CAST(UNIX_TIMESTAMP(NOW() - INTERVAL %s DAY) AS UNSIGNED)"
+        )
+        params.append(int(recent_only_days))
+    where_sql = (" WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+
+    sql = f"""
+    SELECT rv.route_key, rv.video_id, rv.rio_run_id, rv.video_type, rv.video_ref,
+           rv.start_seconds, rv.pov_spec_id, rv.pov_character_name,
+           rd.dungeon_id, rd.keystone_level, rd.duration, rd.timestamp
+    FROM Mythistone.route_videos rv
+    JOIN Mythistone.route_data rd ON rd.route_key = rv.route_key
+    {where_sql}
+    ORDER BY rd.keystone_level DESC, rd.timestamp DESC, rd.duration ASC
+    """
+    if limit:
+        sql += f" LIMIT {int(limit)}"
+    sql += ";"
+
+    rows = fetch_with_retry(connection, cursor, sql, tuple(params) if params else None)
+
+    route_specs_map = fetch_route_specs_map(connection, cursor)
+    route_npcs_map = fetch_route_npcs_map(connection, cursor)
+    route_spells_map = fetch_route_spells_map(connection, cursor)
+
+    out = {}
+    for row in rows:
+        route_key = row[0]
+        video_id = int(row[1]) if row[1] is not None else None
+        out[f"{route_key}_{video_id}"] = {
+            "route_key": route_key,
+            "video_id": video_id,
+            "run_id": int(row[2]) if row[2] is not None else None,
+            "video_type": row[3],
+            "video_ref": row[4],
+            "start_seconds": int(row[5]) if row[5] is not None else None,
+            "pov_spec": int(row[6]) if row[6] is not None else None,
+            "pov_character_name": row[7],
+            "dungeon": str(row[8]) if row[8] is not None else None,
+            "level": int(row[9]) if row[9] is not None else None,
+            "duration": int(row[10]) if row[10] is not None else None,
+            "timestamp": int(row[11]) if row[11] is not None else None,
+            "specs": route_specs_map.get(route_key, []),
+            "npcs": route_npcs_map.get(route_key, []),
+            "spells": route_spells_map.get(route_key, []),
+        }
+    return out
+
+
 FETCH_DISTINCT_SPELL_IDS_SQL = """
 SELECT DISTINCT ps.spell_id from Mythistone.pull_spells ps
 """
@@ -3379,6 +3490,62 @@ def fetch_top_routes_for_spec(connection, cursor, spec_id):
         }
 
     return routes
+
+# One POV video per dungeon whose point-of-view character plays this spec. Same
+# per-dungeon window/ranking shape as FETCH_TOP_ROUTES_FOR_SPEC_SQL so the spec
+# page can render the VOD modal with the identical accordion idiom.
+FETCH_TOP_VODS_FOR_SPEC_SQL = """
+WITH filtered AS (
+  SELECT rv.route_key, rv.rio_run_id, rv.video_type, rv.video_ref, rv.start_seconds,
+         rv.pov_character_name, rv.pov_region, rv.pov_realm_slug, rv.pov_spec_id,
+         rd.dungeon_id, rd.keystone_level, rd.duration AS run_duration, rd.timestamp
+  FROM route_videos rv
+  JOIN route_data rd ON rd.route_key = rv.route_key
+  WHERE rv.pov_spec_id = %s
+    AND rd.timestamp >= (UNIX_TIMESTAMP() - 4*7*24*3600)
+),
+ranked AS (
+  SELECT f.*, ROW_NUMBER() OVER (
+    PARTITION BY dungeon_id
+    ORDER BY keystone_level DESC, timestamp DESC, run_duration ASC
+  ) AS rn
+  FROM filtered f
+)
+SELECT dungeon_id, route_key, rio_run_id, keystone_level, run_duration, timestamp,
+       video_type, video_ref, start_seconds,
+       pov_character_name, pov_region, pov_realm_slug, pov_spec_id
+FROM ranked WHERE rn = 1;
+"""
+
+
+def fetch_top_vods_for_spec(connection, cursor, spec_id):
+    rows = fetch_with_retry(
+        connection, cursor, FETCH_TOP_VODS_FOR_SPEC_SQL, (spec_id,)
+    )
+    vods = {}
+    for row in rows:
+        vods[row[0]] = {
+            "route_key": row[1],
+            "run_id": row[2],
+            "highest_key": row[3],
+            "duration": row[4],
+            "timestamp": row[5],
+            "video_type": row[6],
+            "video_ref": row[7],
+            "start_seconds": row[8],
+            "pov_character_name": row[9],
+            "pov_region": row[10],
+            "pov_realm_slug": row[11],
+            "pov_spec_id": row[12],
+        }
+
+    # Attach the run's team comp so the VOD accordion can show it alongside the POV.
+    if vods:
+        specs_map = fetch_route_specs_map(connection, cursor)
+        for v in vods.values():
+            v["specs"] = specs_map.get(v["route_key"], [])
+
+    return vods
 
 FETCH_DUNGEON_TOP_SPECS_SQL = """
 SELECT spec_id, run_count as total_runs

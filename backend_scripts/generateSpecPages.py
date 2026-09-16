@@ -35,6 +35,8 @@ from commonUtils import (
     upgrade_info,
     humanize_number,
     format_duration,
+    build_vod_embed_src,
+    fetch_route_videos,
     fetch_stat_info,
     stat_display_name,
     # Enchant slot resolution now lives in commonUtils so the spec page and the
@@ -1933,6 +1935,7 @@ def main(template_path, output_dir, debug=False, spec=None):
     env.filters["format_ts"] = format_utc_timestamp
     env.filters["iso_ts"] = format_iso_timestamp
     env.filters["upgrade_info"] = upgrade_info
+    env.filters["vod_embed"] = build_vod_embed_src
     env.globals["stat_display_name"] = stat_display_name
     template = env.get_template(os.path.basename(template_path))
 
@@ -2152,6 +2155,8 @@ def main(template_path, output_dir, debug=False, spec=None):
             for _sid in set(_e.get("c", [])):
                 _spec_comp_total_runs[_sid] += _runs
 
+    # POV videos per route, fetched once and reused across specs (all routes).
+    route_videos_map = None
     # Iterate over each spec folder
     for spec_id in spec_keys:
         print(
@@ -2220,6 +2225,13 @@ def main(template_path, output_dir, debug=False, spec=None):
                 ]
                 print(f"[{datetime.now(timezone.utc).isoformat()}] fetching routes...")
                 top_routes = databaseConnector.fetch_top_routes_for_spec(
+                    conn, cursor, spec_id
+                )
+                if route_videos_map is None:
+                    route_videos_map = fetch_route_videos(conn, cursor)
+                for _rinfo in top_routes.values():
+                    _rinfo["videos"] = route_videos_map.get(_rinfo["route_key"], [])
+                top_vods = databaseConnector.fetch_top_vods_for_spec(
                     conn, cursor, spec_id
                 )
 
@@ -2998,6 +3010,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                 hero_tree_difs=hero_tree_difs,
                 hero_tree_count=hero_tree_count,
                 top_routes=top_routes,
+                top_vods=top_vods,
                 team_comp_families=team_comp_families,
                 team_comp_total_runs=team_comp_total_runs,
                 season_info=season_info,

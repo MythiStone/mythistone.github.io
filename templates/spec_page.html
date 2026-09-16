@@ -761,6 +761,14 @@
                 Routes for every Dungeon
               </button>
             </div>
+            {% if top_vods %}
+            <div class="col-12 col-md-auto d-flex justify-content-center mb-2 mb-md-0">
+              <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
+                data-bs-target="#vodModal">
+                VODs for every Dungeon
+              </button>
+            </div>
+            {% endif %}
             {% set default_variant = ((hero_variants | selectattr('is_default') | first) or (hero_variants | first)) if hero_variants else None %}
             {% set has_any_loadout = (hero_variants | selectattr('loadout_code') | selectattr('loadout_code.code') | list | length > 0) if hero_variants else False %}
             {% if has_any_loadout %}
@@ -2226,8 +2234,9 @@
   </div>
 
   {% import "_route_macros.html" as rt %}
+  {% import "_vod_macros.html" as vt %}
   <div class="modal fade" id="routeModal" tabindex="-1" aria-labelledby="routeModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl modal-dialog-centered">
       <div class="modal-content card">
         <div class="modal-header">
           <h5 class="modal-title" id="routeModalLabel">
@@ -2252,7 +2261,8 @@
                  top_routes[ds|string].run_id,
                  season_info.slug,
                  upgrade_css=info.css,
-                 upgrade_text=info.text) }}
+                 upgrade_text=info.text,
+                 videos=top_routes[ds|string].videos) }}
             {% endif %}
             {% endfor %}
           </div> {# #dungeonAccordion #}
@@ -2271,6 +2281,46 @@
       </div>
     </div>
   </div>
+
+  {% if top_vods %}
+  <div class="modal fade" id="vodModal" tabindex="-1" aria-labelledby="vodModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl modal-dialog-centered">
+      <div class="modal-content card">
+        <div class="modal-header">
+          <h5 class="modal-title" id="vodModalLabel">
+            Top VODs for <span class="class-{{ class_info.name | default('Unknown') | replace(' ', '') }}-text">{{
+              spec.name }} {{ class_info.name }}</span>
+          </h5>
+        </div>
+        <div class="modal-body">
+          <div class="accordion" id="vodDungeonAccordion">
+            {% for ds in top_vods %}
+            {% if dungeon_lookup[ds] %}
+            {{ vt.vod_accordion_item(
+                 dungeon_lookup[ds|string],
+                 top_vods[ds|string],
+                 spec_lookup,
+                 season_info.slug) }}
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        <div class="modal-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <a href="https://raider.io/" target="_blank" rel="noopener" class="text-sm mb-0"> Data powered by <img src="/assets/img/logos/RaiderIOLogo.png"
+              alt="RaiderIo run link" title="RaiderIo run link" class="me-1" height="24em" width="24em" /></a>
+          <a href="/pages/vods?povSpecs={{ spec_id }}" class="text-primary text-sm font-weight-bold" title="Find more VODs">
+            Looking for more? Find all VODs here
+            <i class="material-symbols-rounded align-middle text-sm ms-1">arrow_forward</i>
+          </a>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   {# "How is popularity measured?" content, moved out of the gear overview intro
      so the description stays short; opened by the info button under the overview. #}
   <div class="modal fade" id="popularityInfoModal" tabindex="-1" aria-labelledby="popularityInfoModalLabel"

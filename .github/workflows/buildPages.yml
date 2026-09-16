@@ -17,6 +17,7 @@ on:
       - 'backend_scripts/generateDashboardPage.py'
       - 'backend_scripts/generateIndexPage.py'
       - 'backend_scripts/generateRoutesPage.py'
+      - 'backend_scripts/generateVodsPage.py'
       - 'backend_scripts/generateItemPages.py'
       - 'backend_scripts/generateBlogPage.py'
       - 'backend_scripts/generateLegalPages.py'
@@ -465,6 +466,10 @@ jobs:
         run: |
           python backend_scripts/generateRoutesPage.py \
             --template templates/find_routes.html  \
+            --output_dir pages
+
+          python backend_scripts/generateVodsPage.py \
+            --template templates/find_vods.html  \
             --output_dir pages
 
       - name: Generate Comp Analysis HTML page

@@ -912,6 +912,85 @@ def format_duration(ms):
     return base
 
 
+# Domains the Twitch player must be told it is embedded on. Production plus the
+# local render hosts, since Twitch refuses to play without a matching &parent=.
+VOD_EMBED_PARENTS = ("mythistone.com", "localhost", "127.0.0.1")
+
+
+def build_vod_embed_src(video_ref, video_type, start_seconds=None):
+    """Consent-gated iframe data-src for a route POV video.
+
+    Arg order is `video_ref` first so it reads naturally as a Jinja filter
+    (`video_ref | vod_embed(video_type, start_seconds)`). Mirror this in JS when
+    the client-rendered VOD list is built (same KEEP-IN-SYNC contract
+    route-search.js has with the route macro). youtube -> privacy-mode embed with
+    ?start=<sec>; twitch -> player.twitch.tv with the required &parent= domains
+    and Twitch's XhYmZs time format.
+    """
+    ref = str(video_ref)
+    try:
+        start = int(start_seconds) if start_seconds is not None else None
+    except (TypeError, ValueError):
+        start = None
+
+    if video_type == "youtube":
+        src = f"https://www.youtube-nocookie.com/embed/{ref}?rel=0"
+        if start:
+            src += f"&start={start}"
+        return src
+
+    if video_type == "twitch":
+        parents = "".join(f"&parent={p}" for p in VOD_EMBED_PARENTS)
+        src = f"https://player.twitch.tv/?video={ref}{parents}&autoplay=false"
+        if start:
+            h, rem = divmod(start, 3600)
+            m, s = divmod(rem, 60)
+            src += f"&time={h}h{m}m{s}s"
+        return src
+
+    return ""
+
+
+def build_vod_watch_url(video_ref, video_type, start_seconds=None):
+    """Direct external link to a POV video (NOT an embed): the "View VOD" button on
+    a route accordion opens this. youtube -> watch?v=&t=<sec>s; twitch ->
+    videos/<id>?t=<XhYmZs>. Mirror this in JS (routes-finder.js)."""
+    ref = str(video_ref)
+    try:
+        start = int(start_seconds) if start_seconds is not None else None
+    except (TypeError, ValueError):
+        start = None
+
+    if video_type == "youtube":
+        url = f"https://www.youtube.com/watch?v={ref}"
+        if start:
+            url += f"&t={start}s"
+        return url
+
+    if video_type == "twitch":
+        url = f"https://www.twitch.tv/videos/{ref}"
+        if start:
+            h, rem = divmod(start, 3600)
+            m, s = divmod(rem, 60)
+            url += f"?t={h}h{m}m{s}s"
+        return url
+
+    return ""
+
+
+def fetch_route_videos(conn, cursor):
+    """route_key -> [video dicts] with a precomputed `watch_url`, so the route
+    accordion can flag a POV VOD and link out. Precomputed (not a Jinja filter) so
+    _route_macros.html needs no extra filter registered across its 3 generators."""
+    videos_map = databaseConnector.fetch_route_videos_map(conn, cursor)
+    for videos in videos_map.values():
+        for v in videos:
+            v["watch_url"] = build_vod_watch_url(
+                v["video_ref"], v["video_type"], v.get("start_seconds")
+            )
+    return videos_map
+
+
 def fetch_stat_info(conn, cursor, spec_id, current_season_id, spec_lookup):
     stats = databaseConnector.fetch_stats(conn, cursor, spec_id, current_season_id)
     stat_priority = []

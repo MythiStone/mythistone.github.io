@@ -359,8 +359,11 @@
                                 route.run_id,
                                 season_info.slug,
                                 usage_count=route.usage_count,
+                                upgrade_css=route.upgrade_css,
+                                upgrade_text=route.upgrade_text,
                                 iframe_height='60vh',
-                                item_class='border') }}
+                                item_class='border',
+                                videos=route.videos) }}
                                 {% else %}
                                 <div class="text-center p-3 text-sm">No routes logged yet.</div>
                                 {% endfor %}

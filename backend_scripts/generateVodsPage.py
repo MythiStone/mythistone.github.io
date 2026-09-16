@@ -3,10 +3,8 @@ import sys
 import json
 import argparse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from collections import defaultdict
 from datetime import datetime, timezone
 
-# project imports (adjust paths if necessary)
 from pageGeneration import generateSpecNav, generateDungeonNav, build_global_trends
 from generateSpecPages import (
     humanize_number,
@@ -19,7 +17,6 @@ from generateSpecPages import (
 )
 
 import databaseConnector
-from commonUtils import fetch_route_videos
 
 
 def fail(msg):
@@ -28,8 +25,6 @@ def fail(msg):
 
 
 def main(template_path, output_dir, limit):
-    # ensure env vars exist
-
     if (
         not os.environ.get("DATABASE_HOST")
         or not os.environ.get("DATABASE_USER")
@@ -39,7 +34,6 @@ def main(template_path, output_dir, limit):
             "Missing DB credentials. Ensure DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD are set in the environment."
         )
 
-    # jinja env
     env = Environment(
         loader=FileSystemLoader(os.path.dirname(template_path)),
         autoescape=select_autoescape(["html", "xml"]),
@@ -57,7 +51,6 @@ def main(template_path, output_dir, limit):
     season_info = load_season_info(LOOKUP_DIR)
     notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
 
-    # init DB pool (this will raise on error)
     try:
         databaseConnector.init_connection_pool(
             os.environ.get("DATABASE_HOST"),
@@ -79,30 +72,17 @@ def main(template_path, output_dir, limit):
         fail(f"Failed to obtain DB connection: {e}")
 
     try:
-        comp_routes = databaseConnector.fetch_comp_routes(
+        comp_vods = databaseConnector.fetch_comp_vods(
             conn, cursor, limit=limit if limit and limit > 0 else None
         )
-        if not isinstance(comp_routes, dict):
-            fail("fetch_comp_routes returned unexpected type (expected dict).")
+        if not isinstance(comp_vods, dict):
+            fail("fetch_comp_vods returned unexpected type (expected dict).")
         npc_map = {}
         for dungeon in dungeon_lookup:
-            npc_ids = databaseConnector.fetch_distinct_npc_ids_for_dungeon(
+            npc_map[dungeon] = databaseConnector.fetch_distinct_npc_ids_for_dungeon(
                 conn, cursor, dungeon
             )
-            npc_map[dungeon] = npc_ids
         bloodlust_spell_ids = databaseConnector.fetch_bloodlust_spell_ids(conn, cursor)
-        # Flag routes that have a POV VOD + link out to it (icon in header, button in body),
-        # and precompute the keystone upgrade badge so every route accordion (here, the
-        # dungeon page and the spec modal) shows the identical +/++/- key badge.
-        route_videos_map = fetch_route_videos(conn, cursor)
-        for rk, info in comp_routes.items():
-            info["videos"] = route_videos_map.get(rk, [])
-            _du = dungeon_lookup.get(info.get("dungeon")) or {}
-            _up = upgrade_info(
-                info.get("duration"), _du.get("keystone_upgrades") or {}, info.get("level")
-            )
-            info["upgrade_css"] = _up["css"]
-            info["upgrade_text"] = _up["text"]
     except Exception as e:
         fail(f"Error fetching data from DB: {e}")
     finally:
@@ -115,39 +95,6 @@ def main(template_path, output_dir, limit):
         except Exception:
             pass
 
-    # deterministic JSON embed
-    comp_routes_json = json.dumps(
-        comp_routes, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    )
-
-    # Build comp_routes_by_dungeon expected by template
-    comp_routes_by_dungeon = defaultdict(list)
-    for key, info in comp_routes.items():
-        info_copy = dict(info)
-        info_copy["specs"] = info_copy.get(
-            "specs", key.split(",") if key != "unknown" else []
-        )
-        comp_routes_by_dungeon[str(info_copy.get("dungeon"))].append(info_copy)
-
-    for runs in comp_routes_by_dungeon.values():
-        # best first: uses -> key level -> shorter duration -> more recent.
-        # stable sort on a tuple; negate duration so a larger tuple = better and
-        # the whole thing can share one reverse=True.
-        runs.sort(
-            key=lambda r: (
-                r.get("usage_count", 0),
-                r.get("level", 0),
-                -(r.get("duration") or 0),
-                r.get("timestamp", 0),
-            ),
-            reverse=True,
-        )
-
-    # slug_lookup (template expects slug_lookup[slug] = {..., _id: ...})
-    slug_lookup = {}
-    for slug, d in dungeon_lookup.items():
-        slug_lookup[slug] = {**d, "_id": slug}
-
     bloodlust_id_strs = [str(x) for x in bloodlust_spell_ids]
     bloodlust_icon = next(
         (
@@ -158,63 +105,50 @@ def main(template_path, output_dir, limit):
         None,
     )
 
-    # render
     template = env.get_template(os.path.basename(template_path))
     output_html = template.render(
         trends=build_global_trends(),
         generated_at=datetime.now(timezone.utc).timestamp(),
-        spec_nav=generateSpecNav(
-            spec_lookup, class_lookup
-        ),  # minimal nav; replace by real spec table if available
+        spec_nav=generateSpecNav(spec_lookup, class_lookup),
         dungeon_nav=generateDungeonNav(dungeon_lookup),
-        comp_routes=comp_routes_json,
-        comp_routes_by_dungeon=comp_routes_by_dungeon,
-        slug_lookup=slug_lookup,
         dungeon_lookup=dungeon_lookup,
         specs=spec_lookup,
         class_lookup=class_lookup,
         spell_lookup=spell_lookup,
+        spec_lookup=spec_lookup,
         bloodlust_spell_ids=bloodlust_spell_ids,
         bloodlust_id_strs=bloodlust_id_strs,
         bloodlust_icon=bloodlust_icon,
         npc_lookup=npc_lookup,
         npc_map=npc_map,
         season_info=season_info,
-        active_page="routes",
+        active_page="vods",
         notifications=notifications,
         breadcrumbs=[
             {"title": "Pages", "href": "/pages"},
-            {"title": "Routes", "href": "/routes"},
+            {"title": "VODs", "href": "/vods"},
         ],
     )
-    comp_routes_path = os.path.join("assets", "json", "compRoutes.json")
-    os.makedirs(os.path.dirname(comp_routes_path), exist_ok=True)
-    with open(comp_routes_path, "w", encoding="utf-8") as fh:
-        # pretty or compact — compact reduces transfer time
-        json.dump(comp_routes, fh, separators=(",", ":"), ensure_ascii=False)
-    print(f"Wrote compRoutes JSON to {comp_routes_path}")
 
-    out_path = os.path.join(output_dir, "routes.html")
+    comp_vods_path = os.path.join("assets", "json", "compVods.json")
+    os.makedirs(os.path.dirname(comp_vods_path), exist_ok=True)
+    with open(comp_vods_path, "w", encoding="utf-8") as fh:
+        json.dump(comp_vods, fh, separators=(",", ":"), ensure_ascii=False)
+    print(f"Wrote compVods JSON to {comp_vods_path}")
+
+    out_path = os.path.join(output_dir, "vods.html")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as fh:
         fh.write(output_html)
-
     print(f"Generated {out_path}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Generate routes.html using DB-only data"
-    )
+    parser = argparse.ArgumentParser(description="Generate vods.html using DB-only data")
     parser.add_argument("--template", required=True, help="Path to Jinja template file")
+    parser.add_argument("--output_dir", required=True, help="Output directory to write generated HTML")
     parser.add_argument(
-        "--output_dir", required=True, help="Output directory to write generated HTML"
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=0,
-        help="Optional limit to number of routes pulled (0 = no limit)",
+        "--limit", type=int, default=0, help="Optional limit to number of videos pulled (0 = no limit)"
     )
     args = parser.parse_args()
     main(args.template, args.output_dir, args.limit)

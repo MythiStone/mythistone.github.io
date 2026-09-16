@@ -276,11 +276,21 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
             # to 2.5 minutes.
             top_routes_by_dungeon = {}
             thumbnail_futures = {}
+            # POV videos per route (all routes), to flag/link VODs on the top-routes card.
+            route_videos_map = commonUtils.fetch_route_videos(conn, cursor)
             for dungeon_id, dungeon_data in dungeon_lookup.items():
                 if target_dungeon and str(dungeon_id) != str(target_dungeon):
                     continue
                 print(f"Fetching top routes for {dungeon_data['name']['en_US']} ({dungeon_id})")
                 top_routes = databaseConnector.fetch_dungeon_top_routes(conn, cursor, dungeon_id)
+                _upgrades = dungeon_data.get("keystone_upgrades") or {}
+                for _r in top_routes:
+                    _r["videos"] = route_videos_map.get(_r.get("route_key"), [])
+                    _up = commonUtils.upgrade_info(
+                        _r.get("duration"), _upgrades, _r.get("keystone_level")
+                    )
+                    _r["upgrade_css"] = _up["css"]
+                    _r["upgrade_text"] = _up["text"]
                 top_routes_by_dungeon[dungeon_id] = top_routes
                 if top_routes and top_routes[0].get('route_key'):
                     print(f"Requesting thumbnail for top route: {top_routes[0]['route_key']}")

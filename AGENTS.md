@@ -441,4 +441,22 @@ client-rendered keystone.guru iframe must gate consent itself via `MythiConsent.
 URL); test loaded-ness with `getAttribute('src')`, never the `.src` property (it resolves `""` to the
 document URL so it is never empty); keep the `.iframe-spinner` hidden until a load is in flight;
 `followKlaro` repairs Klaro's accept-once path forgetting to restore `display`. `MythiConsent` owns
-the whole flow (consent check, deferral, `src`, spinner, stand-in notice).
+the whole flow (consent check, deferral, `src`, spinner, stand-in notice).**Finder pages (Route Finder + VOD Finder) share one engine.** Both `/pages/routes`
+(`generateRoutesPage.py`, `find_routes.html`) and `/pages/vods` (`generateVodsPage.py`,
+`find_vods.html`) run on a generic client search built from three shared files:
+`assets/js/finder-worker.js` (inverted indexes over declared fields; filter clauses by mode `anyOf`
+= union then AND, `allRelax` = team-comp intersect with largest-subset relaxation + relaxHint,
+`noneOf` = subtract; declared sort + pagination), `assets/js/finder.js` (`MythiFinder.create(config)`
+owns the Worker, filter<->URL sync, infinite scroll, overlay, consent wiring, render + relax-empty
+UI), and `templates/_finder_macros.html` (the filter form shell + one macro per filter). Each page
+adds a thin `<page>-finder.js` with its filter list + a `renderItem` (KEEP IN SYNC with the matching
+accordion macro) and its data URL (`compRoutes.json` / `compVods.json`, both written by the
+generator, both gitignored). Per-page filters are just extra `filters[]` entries: the VOD page adds
+POV spec (`spec_filter` with `id='povSpecSelect'`) and video source (`video_type_filter`), which the
+routes page omits. Adding a filter = add the macro column to whichever page(s) want it + one
+`filters[]` entry there. GOTCHAS: `finder.js` runs the load-time query from the Worker's `built`
+message (event-driven via `pendingInitialQuery`), NOT a `workerReady` poll (the poll silently never
+fired). `autoQueryOnLoad:true` (VOD page) shows everything on load since it has no server skeleton;
+the routes page renders a server skeleton (`rt.route_accordion_item` per dungeon) and stays idle
+until the visitor searches. The old `route-search.js`/`comp-routes-worker.js` were replaced by these;
+NPC-include is `anyOf` (union, "match any"), never all-of, despite older label wording.
