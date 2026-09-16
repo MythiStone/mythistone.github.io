@@ -2104,32 +2104,8 @@ def fetch_top50_avg_score(connection, cursor, season):
 
 FETCH_SPEC_MEAN_CHAR_SCORE_ABOVE_SQL = """
 SELECT spec_id, AVG(spec_score) AS mean_score, COUNT(*) AS char_count
-FROM (
-    SELECT region, blizzard_character_id, spec_id, SUM(best_rating) AS spec_score
-    FROM (
-        SELECT
-            mc.region,
-            mc.blizzard_character_id,
-            m.spec_id,
-            mds.dungeon_id,
-            MAX(mds.rating) AS best_rating
-        FROM Mythistone.member_dungeon_score mds
-        JOIN Mythistone.members m ON m.member = mds.member
-        JOIN Mythistone.member_character mc ON mc.member = mds.member
-        WHERE mds.dungeon_id IN (
-            SELECT DISTINCT dungeon_id
-            FROM Mythistone.aggregated_runs_per_dungeon_per_level
-            WHERE season = %s
-        )
-        GROUP BY mc.region, mc.blizzard_character_id, m.spec_id, mds.dungeon_id
-    ) per_dungeon
-    GROUP BY region, blizzard_character_id, spec_id
-    HAVING COUNT(*) = (
-        SELECT COUNT(DISTINCT dungeon_id)
-        FROM Mythistone.aggregated_runs_per_dungeon_per_level
-        WHERE season = %s
-    ) AND SUM(best_rating) >= %s
-) per_char_spec
+FROM Mythistone.aggregated_character_spec_score
+WHERE season = %s AND spec_score >= %s
 GROUP BY spec_id;
 """
 
@@ -2143,7 +2119,7 @@ def fetch_spec_mean_character_score_above(connection, cursor, season, min_score)
         connection,
         cursor,
         FETCH_SPEC_MEAN_CHAR_SCORE_ABOVE_SQL,
-        (season, season, min_score),
+        (season, min_score),
     )
     if not rows:
         return []

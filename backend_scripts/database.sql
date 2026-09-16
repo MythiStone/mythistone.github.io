@@ -409,6 +409,23 @@ CREATE TABLE `aggregated_runs_per_dungeon_per_level` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.aggregated_character_spec_score definition
+-- One row per (season, region, character, spec) that has a score in EVERY current-season
+-- dungeon. `spec_score` is the sum over those dungeons of the character-spec's best rating.
+-- Built nightly by sp_agg_character_spec_score so the dashboard's top-1% elite scatter reads
+-- a tiny indexed table instead of scanning member_dungeon_score at build time.
+
+CREATE TABLE `aggregated_character_spec_score` (
+  `season` int NOT NULL,
+  `region` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `blizzard_character_id` bigint unsigned NOT NULL,
+  `spec_id` int NOT NULL,
+  `spec_score` int NOT NULL,
+  PRIMARY KEY (`season`,`region`,`blizzard_character_id`,`spec_id`),
+  KEY `acss_read_IDX` (`season`,`spec_id`,`spec_score`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.aggregated_spec definition
 
 CREATE TABLE `aggregated_spec` (
@@ -2484,6 +2501,71 @@ BEGIN
   DROP TABLE Mythistone.aggregated_runs_per_dungeon_per_level_old;
 END;
 
+CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_character_spec_score`()
+BEGIN
+  DECLARE v_max_season   INT DEFAULT 0;
+  DECLARE v_dungeon_cnt  INT DEFAULT 0;
+  DECLARE v_region       VARCHAR(100);
+  DECLARE v_done         INT DEFAULT 0;
+  -- One pass per region so no single statement scans all of member_dungeon_score at once.
+  -- region is part of the grouping key, so per-region passes never split a character-spec.
+  DECLARE region_cur CURSOR FOR SELECT DISTINCT region FROM Mythistone.member_character;
+  DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;
+
+  CALL sp_agg_session_setup();
+
+  -- Current season, plus the set/count of its dungeons (from the aggregate built just before
+  -- this step). member_dungeon_score has no season column, so the season dungeon list defines it.
+  SELECT MAX(season) INTO v_max_season FROM Mythistone.runs;
+  SELECT COUNT(DISTINCT dungeon_id) INTO v_dungeon_cnt
+    FROM Mythistone.aggregated_runs_per_dungeon_per_level
+   WHERE season = v_max_season;
+
+  DROP TABLE IF EXISTS Mythistone.aggregated_character_spec_score_new, Mythistone.aggregated_character_spec_score_old;
+  CREATE TABLE Mythistone.aggregated_character_spec_score_new LIKE Mythistone.aggregated_character_spec_score;
+
+  -- No season dungeons yet (pre-season / post-wipe): leave the shadow empty and swap it in,
+  -- mirroring the empty result the old build-time query returned.
+  IF v_dungeon_cnt > 0 THEN
+    OPEN region_cur;
+    region_loop: LOOP
+      FETCH region_cur INTO v_region;
+      IF v_done = 1 THEN
+        LEAVE region_loop;
+      END IF;
+
+      INSERT INTO Mythistone.aggregated_character_spec_score_new
+        (season, region, blizzard_character_id, spec_id, spec_score)
+      SELECT v_max_season, region, blizzard_character_id, spec_id, SUM(best_rating) AS spec_score
+      FROM (
+        SELECT
+          mc.region,
+          mc.blizzard_character_id,
+          m.spec_id,
+          mds.dungeon_id,
+          MAX(mds.rating) AS best_rating
+        FROM Mythistone.member_dungeon_score mds
+        JOIN Mythistone.members m          ON m.member  = mds.member
+        JOIN Mythistone.member_character mc ON mc.member = mds.member
+        WHERE mc.region = v_region
+          AND mds.dungeon_id IN (
+            SELECT DISTINCT dungeon_id
+            FROM Mythistone.aggregated_runs_per_dungeon_per_level
+            WHERE season = v_max_season
+          )
+        GROUP BY mc.region, mc.blizzard_character_id, m.spec_id, mds.dungeon_id
+      ) per_dungeon
+      GROUP BY region, blizzard_character_id, spec_id
+      HAVING COUNT(*) = v_dungeon_cnt;
+    END LOOP;
+    CLOSE region_cur;
+  END IF;
+
+  RENAME TABLE Mythistone.aggregated_character_spec_score     TO Mythistone.aggregated_character_spec_score_old,
+               Mythistone.aggregated_character_spec_score_new TO Mythistone.aggregated_character_spec_score;
+  DROP TABLE Mythistone.aggregated_character_spec_score_old;
+END;
+
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_session_setup`()
 BEGIN
   SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
@@ -2868,6 +2950,8 @@ BEGIN
   CALL sp_run_agg_step('key_throughput');
   CALL sp_run_agg_step('completion_heatmap');
   CALL sp_run_agg_step('runs_per_dungeon_per_level');
+  -- reads runs_per_dungeon_per_level for the season dungeon list, so must run after it
+  CALL sp_run_agg_step('character_spec_score');
 
   -- rollups that read the detail aggregates
   CALL sp_run_agg_step('global');
