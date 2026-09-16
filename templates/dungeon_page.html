@@ -502,6 +502,16 @@
                                                     title="View Level {{ pull.example_route.keystone_level }} route on Keystone.guru. The exact pull in this route is Pull #{{ pull.example_route.pull_number }}.">
                                                     <i class="bi bi-box-arrow-up-right me-1"></i>View Example Route
                                                 </a>
+                                                {# The example route now prefers one with a POV VOD; link the first video that resolved a watch_url. #}
+                                                {% set ex_vod = (pull.example_route.videos | selectattr('watch_url') | first) if pull.example_route.videos else none %}
+                                                {% if ex_vod %}
+                                                <a href="{{ ex_vod.watch_url }}" target="_blank" rel="noopener"
+                                                    class="text-body-emphasis text-sm font-weight-bold d-block mt-1"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Watch a POV VOD of this route{% if ex_vod.pov_character_name %} ({{ ex_vod.pov_character_name }}){% endif %}.">
+                                                    <i class="bi {% if ex_vod.video_type == 'twitch' %}bi-twitch{% elif ex_vod.video_type == 'youtube' %}bi-youtube{% else %}bi-play-btn-fill{% endif %} me-1"></i>View Example VOD
+                                                </a>
+                                                {% endif %}
                                                 <span class="text-muted text-xs d-block mt-1">Pull: {{
                                                     pull.example_route.pull_number }}</span>
                                                 {% else %}
@@ -797,6 +807,16 @@
                                                     title="View Level {{ skip.example_route.keystone_level }} route on Keystone.guru">
                                                     <i class="bi bi-box-arrow-up-right me-1"></i>View Example Route
                                                 </a>
+                                                {# The example route now prefers one with a POV VOD; link the first video that resolved a watch_url. #}
+                                                {% set ex_vod = (skip.example_route.videos | selectattr('watch_url') | first) if skip.example_route.videos else none %}
+                                                {% if ex_vod %}
+                                                <a href="{{ ex_vod.watch_url }}" target="_blank" rel="noopener"
+                                                    class="text-body-emphasis text-sm font-weight-bold d-block mt-1"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="Watch a POV VOD of this route{% if ex_vod.pov_character_name %} ({{ ex_vod.pov_character_name }}){% endif %}.">
+                                                    <i class="bi {% if ex_vod.video_type == 'twitch' %}bi-twitch{% elif ex_vod.video_type == 'youtube' %}bi-youtube{% else %}bi-play-btn-fill{% endif %} me-1"></i>View Example VOD
+                                                </a>
+                                                {% endif %}
                                                 {% else %}
                                                 <span class="text-secondary text-sm">N/A</span>
                                                 {% endif %}

@@ -425,6 +425,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                 for skip in skip_rates[:15]:
                     example_route = skip_examples.get(skip['npc_id'])
                     if example_route:
+                        example_route['videos'] = route_videos_map.get(example_route['route_key'], [])
                         skip['example_route'] = example_route
 
                 lust_examples = databaseConnector.fetch_example_lust_routes(
@@ -436,6 +437,8 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                     if top_npcs_str:
                         example_lust_route = lust_examples.get(top_npcs_str)
                         if example_lust_route:
+                            example_lust_route['videos'] = route_videos_map.get(
+                                example_lust_route['route_key'], [])
                             pull['example_route'] = example_lust_route
 
                 # Validate lust_timeline contains at least one boss pull

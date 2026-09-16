@@ -3996,13 +3996,19 @@ def fetch_example_skip_route(connection, cursor, dungeon_id: str, npc_id: int):
 # same statement as FETCH_EXAMPLE_SKIP_ROUTE_SQL plus an npc marker column, so
 # one UNION ALL round trip can answer for every skipped NPC at once
 FETCH_EXAMPLE_SKIP_ROUTE_ARM_SQL = """(
-SELECT %s AS skip_npc_id, rd.rio_run_id, rd.route_key, rd.keystone_level
-FROM route_data rd
-WHERE rd.dungeon_id = %s
-  AND rd.route_key NOT IN (
-      SELECT route_key FROM pull_enemies WHERE npc_id = %s
-  )
-ORDER BY rd.keystone_level DESC, rd.timestamp DESC
+SELECT c.skip_npc_id, c.rio_run_id, c.route_key, c.keystone_level
+FROM (
+    SELECT %s AS skip_npc_id, rd.rio_run_id, rd.route_key, rd.keystone_level, rd.timestamp,
+           EXISTS(SELECT 1 FROM route_videos rv WHERE rv.route_key = rd.route_key) AS has_vod,
+           MAX(rd.keystone_level) OVER () AS kmax
+    FROM route_data rd
+    WHERE rd.dungeon_id = %s
+      AND rd.route_key NOT IN (
+          SELECT route_key FROM pull_enemies WHERE npc_id = %s
+      )
+) c
+ORDER BY (c.has_vod = 1 AND c.keystone_level >= c.kmax - 1) DESC,
+         c.keystone_level DESC, c.timestamp DESC
 LIMIT 1
 )"""
 
@@ -4030,25 +4036,31 @@ def fetch_example_skip_routes(connection, cursor, dungeon_id: str, npc_ids):
 
 
 FETCH_EXAMPLE_LUST_ROUTE_SQL = """
-WITH target_pull AS (
-    SELECT 
+WITH matching_pull AS (
+    SELECT
         rp.route_key,
         rp.pull_id,
-        rd.keystone_level
+        rd.keystone_level,
+        EXISTS(SELECT 1 FROM route_videos rv WHERE rv.route_key = rp.route_key) AS has_vod
     FROM route_data rd
     JOIN route_pulls rp ON rd.route_key = rp.route_key
     JOIN pull_enemies pe ON rp.pull_id = pe.pull_id AND rp.route_key = pe.route_key
-    JOIN pull_spells ps ON rp.pull_id = ps.pull_id AND rp.route_key = ps.route_key 
+    JOIN pull_spells ps ON rp.pull_id = ps.pull_id AND rp.route_key = ps.route_key
         AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
     WHERE rd.dungeon_id = %s
     GROUP BY rp.route_key, rp.pull_id, rd.keystone_level
     HAVING GROUP_CONCAT(CONCAT(pe.npc_id, ':', pe.count) ORDER BY pe.npc_id ASC SEPARATOR ',') = %s
-    ORDER BY rd.keystone_level DESC
+),
+target_pull AS (
+    SELECT route_key, pull_id, keystone_level, has_vod,
+           MAX(keystone_level) OVER () AS kmax
+    FROM matching_pull
+    ORDER BY (has_vod = 1 AND keystone_level >= kmax - 1) DESC, keystone_level DESC
     LIMIT 1
 )
 SELECT
-    rd.rio_run_id, 
-    rd.route_key, 
+    rd.rio_run_id,
+    rd.route_key,
     rd.keystone_level,
     (SELECT COUNT(*) FROM route_pulls rp2 WHERE rp2.route_key = tp.route_key AND rp2.pull_id <= tp.pull_id) as pull_number
 FROM target_pull tp
@@ -4070,19 +4082,24 @@ SELECT
     rd.keystone_level,
     (SELECT COUNT(*) FROM route_pulls rp2 WHERE rp2.route_key = tp.route_key AND rp2.pull_id <= tp.pull_id) as pull_number
 FROM (
-    SELECT
-        rp.route_key,
-        rp.pull_id,
-        rd.keystone_level
-    FROM route_data rd
-    JOIN route_pulls rp ON rd.route_key = rp.route_key
-    JOIN pull_enemies pe ON rp.pull_id = pe.pull_id AND rp.route_key = pe.route_key
-    JOIN pull_spells ps ON rp.pull_id = ps.pull_id AND rp.route_key = ps.route_key
-        AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
-    WHERE rd.dungeon_id = %s
-    GROUP BY rp.route_key, rp.pull_id, rd.keystone_level
-    HAVING GROUP_CONCAT(CONCAT(pe.npc_id, ':', pe.count) ORDER BY pe.npc_id ASC SEPARATOR ',') = %s
-    ORDER BY rd.keystone_level DESC
+    SELECT route_key, pull_id, keystone_level, has_vod,
+           MAX(keystone_level) OVER () AS kmax
+    FROM (
+        SELECT
+            rp.route_key,
+            rp.pull_id,
+            rd.keystone_level,
+            EXISTS(SELECT 1 FROM route_videos rv WHERE rv.route_key = rp.route_key) AS has_vod
+        FROM route_data rd
+        JOIN route_pulls rp ON rd.route_key = rp.route_key
+        JOIN pull_enemies pe ON rp.pull_id = pe.pull_id AND rp.route_key = pe.route_key
+        JOIN pull_spells ps ON rp.pull_id = ps.pull_id AND rp.route_key = ps.route_key
+            AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
+        WHERE rd.dungeon_id = %s
+        GROUP BY rp.route_key, rp.pull_id, rd.keystone_level
+        HAVING GROUP_CONCAT(CONCAT(pe.npc_id, ':', pe.count) ORDER BY pe.npc_id ASC SEPARATOR ',') = %s
+    ) mp
+    ORDER BY (has_vod = 1 AND keystone_level >= kmax - 1) DESC, keystone_level DESC
     LIMIT 1
 ) tp
 JOIN route_data rd ON rd.route_key = tp.route_key
