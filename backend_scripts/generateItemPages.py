@@ -1021,6 +1021,9 @@ def build_payloads(season, ctx, only_item=None):
         armor = armor_token_for_item(item, key)
         if armor:
             manifest_entry["armor"] = armor
+        stat_types = [s["type"] for s in item.get("stats", []) if s.get("type")]
+        if stat_types:
+            manifest_entry["stats"] = stat_types
         # Rarity of the most-used variant when its bonus ids resolve to a quality
         # different from the base item, so the browse grid colours (and filters)
         # the card by the variant. Omitted when it matches the base to keep

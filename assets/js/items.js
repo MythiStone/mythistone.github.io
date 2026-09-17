@@ -63,6 +63,11 @@
   // mirrors the character sheet's weight progression.
   var ARMOR_NAMES = { cloth: "Cloth", leather: "Leather", mail: "Mail", plate: "Plate", shield: "Shield" };
   var ARMOR_ORDER = ["cloth", "leather", "mail", "plate", "shield"];
+  var STAT_NAMES = {
+    crit: "Crit", haste: "Haste", mastery: "Mastery", versatility: "Versatility",
+    speed: "Speed", leech: "Leech", avoidance: "Avoidance",
+  };
+  var STAT_ORDER = ["crit", "haste", "mastery", "versatility", "speed", "leech", "avoidance"];
   // Class filter (multi-select), grouped by class with per-spec options, driven by
   // each item's manifest `specs` (the spec ids that actually equipped it). Tokens
   // are "c:<classSlug>" (whole class) and "s:<specId>" (one spec); the URL carries
@@ -111,6 +116,16 @@
       return v == null ? [] : (Array.isArray(v) ? v : [v]);
     }
     var out = [], opts = el("class-filter").options;
+    for (var i = 0; i < opts.length; i++) if (opts[i].selected) out.push(opts[i].value);
+    return out;
+  }
+
+  function getStatTokens() {
+    if (window.jQuery && window.jQuery.fn.selectpicker) {
+      var v = window.jQuery("#stat-filter").selectpicker("val");
+      return v == null ? [] : (Array.isArray(v) ? v : [v]);
+    }
+    var out = [], opts = el("stat-filter").options;
     for (var i = 0; i < opts.length; i++) if (opts[i].selected) out.push(opts[i].value);
     return out;
   }
@@ -222,8 +237,8 @@
     var raidList = Object.keys(raidsPresent).map(function (id) {
       var r = RAIDS[id] || {};
       return { id: id, name: r.name || ("Raid " + id), slug: r.slug || id,
-               icon: r.icon, bosses: r.bosses || {}, present: raidsPresent[id] };
-    }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+               icon: r.icon, order: r.order || 0, bosses: r.bosses || {}, present: raidsPresent[id] };
+    }).sort(function (a, b) { return b.order - a.order; });
 
     var hasCategory = hasCrafted || hasTier || hasPvp;
     var hasInstance = dungeonList.length > 0 || raidList.length > 0;
@@ -295,6 +310,24 @@
     refreshPicker("armor-filter");
   }
 
+  function buildStatOptions() {
+    var present = {};
+    all.forEach(function (i) { (i.stats || []).forEach(function (t) { present[t] = true; }); });
+    var sel = el("stat-filter");
+    sel.innerHTML = ""; // multi-select: empty selection means "all", no reset option
+    STAT_ORDER.forEach(function (tok) {
+      if (!present[tok]) return;
+      var label = STAT_NAMES[tok] || tok;
+      var o = document.createElement("option");
+      o.value = tok; o.textContent = label;
+      o.setAttribute("data-tokens", label); // enables live-search by name
+      o.setAttribute("data-content",
+        "<span class='badge stat-" + tok + "'>" + label + "</span>");
+      sel.appendChild(o);
+    });
+    refreshPicker("stat-filter");
+  }
+
   // Class filter: one optgroup per class (only classes present in the data), each
   // with an "All <Class>" option plus one option per spec that actually equipped
   // an item. Membership comes from window.specs_map, never a who-can-wear table.
@@ -361,6 +394,7 @@
       quality: QUALITY_BY_SLUG[quality] || (/^\d+$/.test(quality) ? quality : ""),
       // Armor token is its own slug; keep it only if it's one we know about.
       armor: ARMOR_NAMES[armor] ? armor : "",
+      stats: parseStatParam(sp.get("stats") || ""),
       // Comma-separated list of readable source slugs (a lone legacy dungeon slug
       // still resolves). Raw tokens (d:.., r:.., b:.., crafted, tier, pvp, other) pass through.
       source: parseSourceParam(source),
@@ -368,6 +402,12 @@
       "class": parseClassParam(sp.get("class") || ""),
       sort: sort === "name" || sort === "runs" ? sort : "runs",
     };
+  }
+
+  function parseStatParam(raw) {
+    if (!raw) return [];
+    return raw.split(",").map(function (s) { return s.trim().toLowerCase(); })
+      .filter(function (s) { return STAT_NAMES[s]; });
   }
 
   // "retribution-paladin,paladin" -> ["s:70","c:paladin"]. Unknown slugs drop.
@@ -411,6 +451,7 @@
     setSelect("quality-filter", p.quality);
     setSelect("source-filter", p.source);
     setSelect("class-filter", p["class"]);
+    setSelect("stat-filter", p.stats);
     setSelect("sort-by", p.sort);
   }
 
@@ -426,9 +467,11 @@
     var quality = el("quality-filter").value;
     var sourceTokens = getSourceTokens();
     var classTokens = getClassTokens();
+    var statTokens = getStatTokens();
     var sort = el("sort-by").value;
     if (slot) sp.set("slot", slotSlug(slot));
     if (armor) sp.set("armor", armor);
+    if (statTokens.length) sp.set("stats", statTokens.join(","));
     if (quality) sp.set("quality", (QUALITY_NAMES[quality] || quality).toLowerCase());
     if (sourceTokens.length) {
       sp.set("source", sourceTokens.map(function (t) { return SLUG_BY_TOKEN[t] || t; }).join(","));
@@ -468,6 +511,7 @@
     var quality = el("quality-filter").value;
     var sourceTokens = getSourceTokens();
     var classTokens = getClassTokens();
+    var statTokens = getStatTokens();
     var sort = el("sort-by").value;
 
     filtered = all.filter(function (i) {
@@ -475,6 +519,12 @@
       if (slot && i.slot !== slot) return false;
       if (armor && i.armor !== armor) return false;
       if (quality && String(effQuality(i)) !== quality) return false;
+      // AND across selected stats: keep the item only if it carries every one.
+      if (statTokens.length) {
+        var istats = i.stats || [];
+        var statsOk = statTokens.every(function (t) { return istats.indexOf(t) !== -1; });
+        if (!statsOk) return false;
+      }
       // OR across selected sources: keep the item if it carries any selected token.
       // "d:*" (All Dungeons) matches any item carrying at least one d: token.
       if (sourceTokens.length) {
@@ -558,13 +608,14 @@
         buildQualityOptions();
         buildSourceOptions();
         buildClassOptions();
+        buildStatOptions();
         // Sentinel-driven infinite scroll: renderMore appends the next batch and
         // reports done. Created before the first applyFilters so it can be reset.
         infinite = window.MythiInfinite.create({
           sentinel: el("items-sentinel"),
           onLoadMore: renderMore,
         });
-        // After the options exist, so the *_BY_SLUG maps can resolve ?slot=/?armor=/?source=/?class=.
+        // After the options exist, so the *_BY_SLUG maps can resolve ?slot=/?armor=/?source=/?class=/?stats=.
         applyParamsToControls(readParams());
         applyFilters();
         el("item-search").addEventListener("input", debounce(applyFilters, 200));
@@ -573,6 +624,7 @@
         el("quality-filter").addEventListener("change", applyFilters);
         el("source-filter").addEventListener("change", applyFilters);
         el("class-filter").addEventListener("change", applyFilters);
+        el("stat-filter").addEventListener("change", applyFilters);
         el("sort-by").addEventListener("change", applyFilters);
         // Only fires when the user navigates back to an earlier URL of this page;
         // our own replaceState writes never trigger it, so there is no loop.
