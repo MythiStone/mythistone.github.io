@@ -161,10 +161,19 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
         copyBtn.style.display = loadout ? '' : 'none';
       }
 
+      // The gear / stats / enchant / gem / missive / embellishment / crafted /
+      // set-combo sections each ship one .hero-section-variant per hero tree
+      // (see sections_by_tree in generateSpecPages.py); switching the hero tree
+      // shows the matching variant across every section at once.
+      const sectionVariants = Array.from(document.querySelectorAll('.hero-section-variant'));
+
       function show(idx) {
         const treeId = variants[idx].getAttribute('data-hero-tree-id');
         variants.forEach((el, i) => { el.style.display = (i === idx) ? '' : 'none'; });
         difVariants.forEach((el) => {
+          el.style.display = (el.getAttribute('data-hero-tree-id') === treeId) ? '' : 'none';
+        });
+        sectionVariants.forEach((el) => {
           el.style.display = (el.getAttribute('data-hero-tree-id') === treeId) ? '' : 'none';
         });
         syncExport(variants[idx]);

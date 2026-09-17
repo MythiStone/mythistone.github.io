@@ -37,29 +37,16 @@ CREATE TABLE `agg_pipeline_log` (
 CREATE TABLE `aggregated_bonus_lists` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   `item_id` varchar(100) NOT NULL,
   `bonus_list` text NOT NULL,
   `bonus_hash` char(32) GENERATED ALWAYS AS (md5(`bonus_list`)) STORED NOT NULL,
   `run_count` bigint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`item_id`,`bonus_hash`),
+  PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`item_id`,`bonus_hash`),
   KEY `idx_agg_summary_spec_season_item` (`spec_id`,`season`,`item_id`),
   KEY `idx_agg_summary_bonus_hash` (`bonus_hash`)
 ) /*!50100 TABLESPACE `aggregated_bonus_lists` */ ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-
--- Mythistone.aggregated_bonus_lists_new definition
-
-CREATE TABLE `aggregated_bonus_lists_new` (
-  `spec_id` int NOT NULL,
-  `season` int NOT NULL,
-  `item_id` varchar(100) NOT NULL,
-  `bonus_list` text NOT NULL,
-  `bonus_hash` char(32) GENERATED ALWAYS AS (md5(`bonus_list`)) STORED NOT NULL,
-  `run_count` bigint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`item_id`,`bonus_hash`),
-  KEY `idx_agg_summary_spec_season_item` (`spec_id`,`season`,`item_id`),
-  KEY `idx_agg_summary_bonus_hash` (`bonus_hash`)
-) /*!50100 TABLESPACE `aggregated_bonus_lists` */ ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 -- Mythistone.aggregated_character_stats definition
@@ -67,12 +54,14 @@ CREATE TABLE `aggregated_bonus_lists_new` (
 CREATE TABLE `aggregated_character_stats` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   `run_count` bigint NOT NULL DEFAULT '0',
   `stat` varchar(100) NOT NULL,
   `avg_percent` double unsigned DEFAULT NULL,
   `avg_raw` bigint unsigned DEFAULT NULL,
   `min_raw` bigint unsigned DEFAULT NULL,
-  `max_raw` bigint unsigned DEFAULT NULL
+  `max_raw` bigint unsigned DEFAULT NULL,
+  PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`stat`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -519,11 +508,12 @@ CREATE TABLE `embellishments` (
 CREATE TABLE `global_aggregated_bonus_lists` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   `item_id` varchar(100) NOT NULL,
   `bonus_list` text NOT NULL,
   `bonus_hash` char(32) GENERATED ALWAYS AS (md5(`bonus_list`)) STORED NOT NULL,
   `run_count` bigint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`item_id`,`bonus_hash`)
+  PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`item_id`,`bonus_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -532,11 +522,12 @@ CREATE TABLE `global_aggregated_bonus_lists` (
 CREATE TABLE `global_aggregated_crafted_items` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   `item_id` int NOT NULL,
   `run_count` bigint NOT NULL DEFAULT '0',
   `max_timed_key` tinyint unsigned NOT NULL DEFAULT '0',
   `max_depleted_key` tinyint unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`item_id`)
+  PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`item_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -545,11 +536,12 @@ CREATE TABLE `global_aggregated_crafted_items` (
 CREATE TABLE `global_aggregated_embellishments` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   `item_id` int NOT NULL,
   `run_count` bigint NOT NULL DEFAULT '0',
   `max_timed_key` tinyint unsigned NOT NULL DEFAULT '0',
   `max_depleted_key` tinyint unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`item_id`)
+  PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`item_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -558,12 +550,13 @@ CREATE TABLE `global_aggregated_embellishments` (
 CREATE TABLE `global_aggregated_enchantments_slot_group` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   `slot_group` varchar(100) NOT NULL,
   `enchantment_id` int NOT NULL,
   `run_count` bigint NOT NULL DEFAULT '0',
   `max_timed_key` tinyint unsigned NOT NULL DEFAULT '0',
   `max_depleted_key` tinyint unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`slot_group`,`enchantment_id`)
+  PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`slot_group`,`enchantment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -572,12 +565,13 @@ CREATE TABLE `global_aggregated_enchantments_slot_group` (
 CREATE TABLE `global_aggregated_equipment` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   `item_id` varchar(100) NOT NULL,
   `slot` varchar(100) NOT NULL,
   `run_count` bigint NOT NULL DEFAULT '0',
   `max_timed_key` tinyint unsigned NOT NULL DEFAULT '0',
   `max_depleted_key` tinyint unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`item_id`,`slot`)
+  PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`item_id`,`slot`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -598,12 +592,13 @@ CREATE TABLE `global_aggregated_hero_talent_overview` (
 CREATE TABLE `global_aggregated_item_sockets` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   `item_id` varchar(100) NOT NULL,
   `socket_item_id` varchar(100) NOT NULL,
   `run_count` bigint NOT NULL DEFAULT '0',
   `max_timed_key` tinyint unsigned NOT NULL DEFAULT '0',
   `max_depleted_key` tinyint unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`item_id`,`socket_item_id`)
+  PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`item_id`,`socket_item_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -612,11 +607,12 @@ CREATE TABLE `global_aggregated_item_sockets` (
 CREATE TABLE `global_aggregated_items` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   `item_id` varchar(100) NOT NULL,
   `run_count` bigint NOT NULL DEFAULT '0',
   `max_timed_key` tinyint unsigned NOT NULL DEFAULT '0',
   `max_depleted_key` tinyint unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`item_id`),
+  PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`item_id`),
   KEY `idx_gai_spec_season` (`spec_id`,`season`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -640,11 +636,12 @@ CREATE TABLE `global_aggregated_loadout_data` (
 CREATE TABLE `global_aggregated_missives` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   `item_id` int NOT NULL,
   `run_count` bigint NOT NULL DEFAULT '0',
   `max_timed_key` tinyint unsigned NOT NULL DEFAULT '0',
   `max_depleted_key` tinyint unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`item_id`)
+  PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`item_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -1154,12 +1151,13 @@ BEGIN
     SET end_sec   = UNIX_TIMESTAMP(DATE_ADD(v_day, INTERVAL 1 DAY)) - 1;
 
     INSERT LOW_PRIORITY INTO Mythistone.aggregated_bonus_lists_new
-      (spec_id, season, item_id, bonus_list, run_count)
-    SELECT spec_id, season, item_id, bonus_list, run_count
+      (spec_id, season, hero_talent_id, item_id, bonus_list, run_count)
+    SELECT spec_id, season, hero_talent_id, item_id, bonus_list, run_count
     FROM (
       SELECT
         occ.spec_id,
         occ.season,
+        occ.hero_talent_id,
         occ.item_id,
         occ.bonus_list,
         COUNT(*) AS run_count
@@ -1168,6 +1166,7 @@ BEGIN
         SELECT
           M.spec_id,
           R.season,
+          COALESCE(M.hero_talent_id, 0) AS hero_talent_id,
           EQ.item_id,
           COALESCE(GROUP_CONCAT(DISTINCT B.bonus_id ORDER BY B.bonus_id ASC SEPARATOR ','), '') AS bonus_list,
           R.run_id,
@@ -1183,7 +1182,7 @@ BEGIN
         GROUP BY R.run_id, EQ.equipment_id
       ) AS occ
       WHERE occ.bonus_list <> ''
-      GROUP BY occ.spec_id, occ.season, occ.item_id, occ.bonus_list
+      GROUP BY occ.spec_id, occ.season, occ.hero_talent_id, occ.item_id, occ.bonus_list
     ) AS dt
     ON DUPLICATE KEY UPDATE
       run_count = Mythistone.aggregated_bonus_lists_new.run_count + dt.run_count;
@@ -1222,10 +1221,11 @@ BEGIN
   CREATE TABLE Mythistone.aggregated_character_stats_new LIKE Mythistone.aggregated_character_stats;
 
   INSERT INTO Mythistone.aggregated_character_stats_new
-    (spec_id, season, run_count, stat, avg_percent, avg_raw, min_raw, max_raw)
+    (spec_id, season, hero_talent_id, run_count, stat, avg_percent, avg_raw, min_raw, max_raw)
   SELECT
     M.spec_id,
     R.season,
+    COALESCE(M.hero_talent_id, 0) AS hero_talent_id,
     COUNT(*) AS run_count,                  -- number of member appearances aggregated
     CS.stat,
     AVG(CS.percent) AS avg_percent,         -- AVG ignores NULLs; will be NULL if all NULL
@@ -1238,7 +1238,7 @@ BEGIN
     JOIN Mythistone.character_stats CS   ON M.member = CS.member
   WHERE R.`timestamp` > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 14 DAY)) * 1000
   GROUP BY
-    M.spec_id, R.season, CS.stat;
+    M.spec_id, R.season, COALESCE(M.hero_talent_id, 0), CS.stat;
 
   RENAME TABLE Mythistone.aggregated_character_stats     TO Mythistone.aggregated_character_stats_old,
                Mythistone.aggregated_character_stats_new TO Mythistone.aggregated_character_stats;
@@ -2094,33 +2094,34 @@ BEGIN
   -- 1. Equipment
   DROP TABLE IF EXISTS Mythistone.global_aggregated_equipment_new, Mythistone.global_aggregated_equipment_old;
   CREATE TABLE Mythistone.global_aggregated_equipment_new LIKE Mythistone.global_aggregated_equipment;
-  INSERT INTO Mythistone.global_aggregated_equipment_new (spec_id, season, item_id, slot, run_count, max_timed_key, max_depleted_key)
-  SELECT spec_id, season, item_id, slot, SUM(run_count),
+  INSERT INTO Mythistone.global_aggregated_equipment_new (spec_id, season, hero_talent_id, item_id, slot, run_count, max_timed_key, max_depleted_key)
+  SELECT spec_id, season, hero_talent_id, item_id, slot, SUM(run_count),
          MAX(IF(upgrade_tier IN ('1','2','3'), keystone_level, 0)),
          MAX(IF(upgrade_tier = 'depleted', keystone_level, 0))
   FROM Mythistone.aggregated_equipment
-  GROUP BY spec_id, season, item_id, slot;
+  GROUP BY spec_id, season, hero_talent_id, item_id, slot;
   CALL sp_swap_public_table('global_aggregated_equipment');
 
   -- 2. Enchantments
   DROP TABLE IF EXISTS Mythistone.global_aggregated_enchantments_slot_group_new, Mythistone.global_aggregated_enchantments_slot_group_old;
   CREATE TABLE Mythistone.global_aggregated_enchantments_slot_group_new LIKE Mythistone.global_aggregated_enchantments_slot_group;
-  INSERT INTO Mythistone.global_aggregated_enchantments_slot_group_new (spec_id, season, slot_group, enchantment_id, run_count, max_timed_key, max_depleted_key)
-  SELECT spec_id, season, slot_group, enchantment_id, SUM(run_count),
+  INSERT INTO Mythistone.global_aggregated_enchantments_slot_group_new (spec_id, season, hero_talent_id, slot_group, enchantment_id, run_count, max_timed_key, max_depleted_key)
+  SELECT spec_id, season, hero_talent_id, slot_group, enchantment_id, SUM(run_count),
          MAX(IF(upgrade_tier IN ('1','2','3'), keystone_level, 0)),
          MAX(IF(upgrade_tier = 'depleted', keystone_level, 0))
   FROM Mythistone.aggregated_enchantments_slot_group
-  GROUP BY spec_id, season, slot_group, enchantment_id;
+  GROUP BY spec_id, season, hero_talent_id, slot_group, enchantment_id;
   CALL sp_swap_public_table('global_aggregated_enchantments_slot_group');
 
   -- 3. Sockets (reads detail tables directly; bounded by the 14-day purge of
   --    equipment/sockets rows)
   DROP TABLE IF EXISTS Mythistone.global_aggregated_item_sockets_new, Mythistone.global_aggregated_item_sockets_old;
   CREATE TABLE Mythistone.global_aggregated_item_sockets_new LIKE Mythistone.global_aggregated_item_sockets;
-  INSERT INTO Mythistone.global_aggregated_item_sockets_new (spec_id, season, item_id, socket_item_id, run_count, max_timed_key, max_depleted_key)
+  INSERT INTO Mythistone.global_aggregated_item_sockets_new (spec_id, season, hero_talent_id, item_id, socket_item_id, run_count, max_timed_key, max_depleted_key)
   SELECT
     M.spec_id,
     COALESCE(R.season, 0) AS season,
+    COALESCE(M.hero_talent_id, 0) AS hero_talent_id,
     EQ.item_id,
     s.socket_item_id,
     COUNT(s.socket_id_pk) AS run_count,
@@ -2132,29 +2133,29 @@ BEGIN
     JOIN Mythistone.members M         ON RM.member = M.member
     JOIN Mythistone.equipment EQ      ON M.member = EQ.member
     JOIN Mythistone.sockets s         ON s.equipment_id = EQ.equipment_id
-  GROUP BY M.spec_id, COALESCE(R.season, 0), EQ.item_id, s.socket_item_id;
+  GROUP BY M.spec_id, COALESCE(R.season, 0), COALESCE(M.hero_talent_id, 0), EQ.item_id, s.socket_item_id;
   CALL sp_swap_public_table('global_aggregated_item_sockets');
 
   -- 4. Missives
   DROP TABLE IF EXISTS Mythistone.global_aggregated_missives_new, Mythistone.global_aggregated_missives_old;
   CREATE TABLE Mythistone.global_aggregated_missives_new LIKE Mythistone.global_aggregated_missives;
-  INSERT INTO Mythistone.global_aggregated_missives_new (spec_id, season, item_id, run_count, max_timed_key, max_depleted_key)
-  SELECT spec_id, season, item_id, SUM(run_count),
+  INSERT INTO Mythistone.global_aggregated_missives_new (spec_id, season, hero_talent_id, item_id, run_count, max_timed_key, max_depleted_key)
+  SELECT spec_id, season, hero_talent_id, item_id, SUM(run_count),
          MAX(IF(upgrade_tier IN ('1','2','3'), keystone_level, 0)),
          MAX(IF(upgrade_tier = 'depleted', keystone_level, 0))
   FROM Mythistone.aggregated_missives
-  GROUP BY spec_id, season, item_id;
+  GROUP BY spec_id, season, hero_talent_id, item_id;
   CALL sp_swap_public_table('global_aggregated_missives');
 
   -- 5. Embellishments
   DROP TABLE IF EXISTS Mythistone.global_aggregated_embellishments_new, Mythistone.global_aggregated_embellishments_old;
   CREATE TABLE Mythistone.global_aggregated_embellishments_new LIKE Mythistone.global_aggregated_embellishments;
-  INSERT INTO Mythistone.global_aggregated_embellishments_new (spec_id, season, item_id, run_count, max_timed_key, max_depleted_key)
-  SELECT spec_id, season, item_id, SUM(run_count),
+  INSERT INTO Mythistone.global_aggregated_embellishments_new (spec_id, season, hero_talent_id, item_id, run_count, max_timed_key, max_depleted_key)
+  SELECT spec_id, season, hero_talent_id, item_id, SUM(run_count),
          MAX(IF(upgrade_tier IN ('1','2','3'), keystone_level, 0)),
          MAX(IF(upgrade_tier = 'depleted', keystone_level, 0))
   FROM Mythistone.aggregated_embellishments
-  GROUP BY spec_id, season, item_id;
+  GROUP BY spec_id, season, hero_talent_id, item_id;
   CALL sp_swap_public_table('global_aggregated_embellishments');
 
   -- 6. Hero Talents (last 14 days — same window as equipment/talent data;
@@ -2193,27 +2194,28 @@ BEGIN
   -- 8. Global Equipment without Slot (for true max keys per item)
   DROP TABLE IF EXISTS Mythistone.global_aggregated_items_new, Mythistone.global_aggregated_items_old;
   CREATE TABLE Mythistone.global_aggregated_items_new LIKE Mythistone.global_aggregated_items;
-  INSERT INTO Mythistone.global_aggregated_items_new (spec_id, season, item_id, run_count, max_timed_key, max_depleted_key)
+  INSERT INTO Mythistone.global_aggregated_items_new (spec_id, season, hero_talent_id, item_id, run_count, max_timed_key, max_depleted_key)
   SELECT
     spec_id,
     season,
+    hero_talent_id,
     item_id,
     SUM(run_count),
     MAX(CASE WHEN upgrade_tier != 'depleted' THEN keystone_level ELSE 0 END),
     MAX(CASE WHEN upgrade_tier = 'depleted' THEN keystone_level ELSE 0 END)
   FROM Mythistone.aggregated_equipment
-  GROUP BY spec_id, season, item_id;
+  GROUP BY spec_id, season, hero_talent_id, item_id;
   CALL sp_swap_public_table('global_aggregated_items');
 
   -- 9. Crafted items
   DROP TABLE IF EXISTS Mythistone.global_aggregated_crafted_items_new, Mythistone.global_aggregated_crafted_items_old;
   CREATE TABLE Mythistone.global_aggregated_crafted_items_new LIKE Mythistone.global_aggregated_crafted_items;
-  INSERT INTO Mythistone.global_aggregated_crafted_items_new (spec_id, season, item_id, run_count, max_timed_key, max_depleted_key)
-  SELECT spec_id, season, item_id, SUM(run_count) AS run_count,
+  INSERT INTO Mythistone.global_aggregated_crafted_items_new (spec_id, season, hero_talent_id, item_id, run_count, max_timed_key, max_depleted_key)
+  SELECT spec_id, season, hero_talent_id, item_id, SUM(run_count) AS run_count,
          MAX(IF(upgrade_tier IN ('1','2','3'), keystone_level, 0)),
          MAX(IF(upgrade_tier = 'depleted', keystone_level, 0))
   FROM Mythistone.aggregated_crafted_items
-  GROUP BY spec_id, season, item_id;
+  GROUP BY spec_id, season, hero_talent_id, item_id;
   CALL sp_swap_public_table('global_aggregated_crafted_items');
 END;
 
@@ -2224,10 +2226,10 @@ BEGIN
   DROP TABLE IF EXISTS Mythistone.global_aggregated_bonus_lists_new, Mythistone.global_aggregated_bonus_lists_old;
   CREATE TABLE Mythistone.global_aggregated_bonus_lists_new LIKE Mythistone.global_aggregated_bonus_lists;
 
-  INSERT INTO Mythistone.global_aggregated_bonus_lists_new (spec_id, season, item_id, bonus_list, run_count)
-  SELECT spec_id, season, item_id, bonus_list, SUM(run_count)
+  INSERT INTO Mythistone.global_aggregated_bonus_lists_new (spec_id, season, hero_talent_id, item_id, bonus_list, run_count)
+  SELECT spec_id, season, hero_talent_id, item_id, bonus_list, SUM(run_count)
   FROM Mythistone.aggregated_bonus_lists
-  GROUP BY spec_id, season, item_id, bonus_list;
+  GROUP BY spec_id, season, hero_talent_id, item_id, bonus_list;
 
   CALL sp_swap_public_table('global_aggregated_bonus_lists');
 END;

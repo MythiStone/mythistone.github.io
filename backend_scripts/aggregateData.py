@@ -112,9 +112,9 @@ def get_hero_trees(conn, cursor, spec_id, current_season_id, valid_subtrees=None
     return overall_hero_trees
 
 
-def get_enchants_for_slot(conn, cursor, spec_id, current_season_id, slot_group):
+def get_enchants_for_slot(conn, cursor, spec_id, current_season_id, slot_group, hero_talent_id=None):
     top_enchants = databaseConnector.fetch_top_enchant_for_slot(
-        conn, cursor, spec_id, current_season_id, slot_group, 10
+        conn, cursor, spec_id, current_season_id, slot_group, 10, hero_talent_id
     )
     overall_enchants = []
     for enchant_item, count, max_timed_key, max_depleted_key in top_enchants:
@@ -123,9 +123,9 @@ def get_enchants_for_slot(conn, cursor, spec_id, current_season_id, slot_group):
     return overall_enchants
 
 
-def get_sockets(conn, cursor, spec_id, current_season_id):
+def get_sockets(conn, cursor, spec_id, current_season_id, hero_talent_id=None):
     top_sockets = databaseConnector.fetch_top_sockets(
-        conn, cursor, spec_id, current_season_id
+        conn, cursor, spec_id, current_season_id, hero_talent_id
     )
     overall_sockets = []
     for socket, count, max_timed_key, max_depleted_key in top_sockets:

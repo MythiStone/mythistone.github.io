@@ -991,8 +991,8 @@ def fetch_route_videos(conn, cursor):
     return videos_map
 
 
-def fetch_stat_info(conn, cursor, spec_id, current_season_id, spec_lookup):
-    stats = databaseConnector.fetch_stats(conn, cursor, spec_id, current_season_id)
+def fetch_stat_info(conn, cursor, spec_id, current_season_id, spec_lookup, hero_talent_id=None):
+    stats = databaseConnector.fetch_stats(conn, cursor, spec_id, current_season_id, hero_talent_id)
     stat_priority = []
     tertiary_priority = []
     health_priority = []

@@ -15,6 +15,11 @@
 {% macro pct_color(pct) -%}
 {%- if pct < 10 -%}#9d9d9d{%- elif pct < 25 -%}var(--class-Priest){%- elif pct < 50 -%}var(--class-Monk){%- elif pct < 75 -%}#0070dd{%- elif pct < 95 -%}#a335ee{%- else -%}#ff8000{%- endif -%}
 {%- endmacro %}
+{# Shown at the top of a per-hero-tree section that fell back to combined data
+   because the tree had too few runs for its own breakdown. #}
+{% macro hero_fallback_note(sec) -%}
+{% if sec.fallback %}<p class="text-sm mb-2 d-inline-flex align-items-center gap-1" style="color: var(--bs-info-text-emphasis);"><i class="material-symbols-rounded" style="font-size: 1.1rem;">info</i><span>This hero tree doesn't have enough data on its own yet. The numbers below cover all builds combined.</span></p>{% endif %}
+{%- endmacro %}
 {% macro render_slot(entry, slot_count=0, is_button=false, slug="") -%}
 {# choose tag and base classes #}
 {% if is_button %}
@@ -793,6 +798,12 @@
             {# data-share: deep-link.js pins a copy-link button to the corner (assets/js/deep-link.js). #}
             <div id="stat-overview" class="mx-auto my-4" data-share>
               <h6 class="mb-1">Stat Priority</h6>
+              {% for v in hero_variants %}
+              {% set sec = sections_by_tree[v.id] %}
+              {% set stats = sec.stats %}
+              {% set tertiary_priority = sec.tertiary_priority %}
+              <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
+              {{ hero_fallback_note(sec) }}
               {% set stat_secs = stats | selectattr('name', 'in', secondary_stats) | list %}
               {% set stat_primary = stats | rejectattr('name', 'in', secondary_stats) | first %}
               {% if stat_secs %}
@@ -826,6 +837,8 @@
                   </div>
                 </div>
               </div>
+              </div>
+              {% endfor %}
             </div>
             <div id="gear-overview" class="mx-auto my-4" data-share>
               {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
@@ -849,6 +862,15 @@
                 always simulate your own character before committing to gear changes. You can do that with
                 <a href="https://www.raidbots.com/simbot/topgear" target="_blank" rel="noopener">Raidbots Top Gear</a>.
               </p>
+              {% for v in hero_variants %}
+              {% set sec = sections_by_tree[v.id] %}
+              {% set hs = '-h' ~ v.id %}
+              {% set left_slots = sec.left_slots %}
+              {% set right_slots = sec.right_slots %}
+              {% set weapon_slots = sec.weapon_slots %}
+              {% set trinket_slots = sec.trinket_slots %}
+              <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
+              {{ hero_fallback_note(sec) }}
               <div class="d-flex flex-column flex-md-row gap-3">
                 <div class="flex-fill" style="flex: 1 1 0 !important; min-width: 0;">
                   <!-- Header for this pane -->
@@ -861,13 +883,13 @@
                     </div>
                   </div>
                   {% for slot in left_slots %}
-                  {% set slug = slot.slot | replace(' ', '') %}
+                  {% set slug = (slot.slot | replace(' ', '')) ~ hs %}
                   <div class="accordion mb-3" id="accordion-{{ slug }}">
                     <div class="accordion-item">
                       <h2 class="accordion-header" id="heading-{{ slug }}">
                         {% set first = (slot.entries | list) | first %}
                         {% if first is defined %}
-                        {{ render_slot(first, slot.slot_count, true) }}
+                        {{ render_slot(first, slot.slot_count, true, slug) }}
                         {% else %}
                         <!-- fallback when there is no top entry -->
                         <button class="accordion-button collapsed text-muted" type="button" disabled>No data</button>
@@ -899,13 +921,13 @@
 
                   <!-- Right slot items -->
                   {% for slot in right_slots %}
-                  {% set slug = slot.slot | replace(' ', '') %}
+                  {% set slug = (slot.slot | replace(' ', '')) ~ hs %}
                   <div class="accordion mb-3" id="accordion-{{ slug }}">
                     <div class="accordion-item">
                       <h2 class="accordion-header" id="heading-{{ slug }}">
                         {% set first = (slot.entries | list) | first %}
                         {% if first is defined %}
-                        {{ render_slot(first, slot.slot_count, true) }}
+                        {{ render_slot(first, slot.slot_count, true, slug) }}
                         {% else %}
                         <!-- fallback when there is no top entry -->
                         <button class="accordion-button collapsed text-muted" type="button" disabled>No data</button>
@@ -933,7 +955,7 @@
                   <!-- Rows: use a vertical gap between them -->
                   <div class="d-flex flex-column gap-2">
                     {% for slot in weapon_slots %}
-                    {% set slug = slot.slot | replace(' ', '') %}
+                    {% set slug = (slot.slot | replace(' ', '')) ~ hs %}
                     <div class="accordion mb-3" id="accordion-{{ slug }}">
                       <div class="accordion-item">
                         <h2 class="accordion-header" id="heading-{{ slug }}">
@@ -966,13 +988,13 @@
                   <div class="d-flex flex-column gap-2">
                     {% for slot in trinket_slots %}
                     {% if slot.get('entries') and slot.entries | length > 0 %}
-                    {% set slug = slot.slot | replace(' ', '') %}
+                    {% set slug = (slot.slot | replace(' ', '')) ~ hs %}
                     <div class="accordion mb-3" id="accordion-{{ slug }}">
                       <div class="accordion-item">
                         <h2 class="accordion-header" id="heading-{{ slug }}">
                           {% set first = (slot.entries | list) | first %}
                           {% if first is defined %}
-                          {{ render_slot(first, slot.slot_count, true) }}
+                          {{ render_slot(first, slot.slot_count, true, slug) }}
                           {% else %}
                           <!-- fallback when there is no top entry -->
                           <button class="accordion-button collapsed text-muted" type="button" disabled>No data</button>
@@ -994,6 +1016,8 @@
                   </div>
                 </div>
               </div>
+              </div>
+              {% endfor %}
 
 
             </div>
@@ -1008,21 +1032,46 @@
                 and missives on their crafted gear, and the combinations they pair together. Each list is ordered by how
                 common the choice is among the sampled characters, over the same rolling two-week window as the gear above.
               </p>
+              {% for v in hero_variants %}
+              {% set sec = sections_by_tree[v.id] %}
+              {% set hs = '-h' ~ v.id %}
+              {% set enchant_slots = sec.enchant_slots %}
+              {% set total_enchant_counts = sec.total_enchant_counts %}
+              {% set sockets = sec.sockets %}
+              {% set total_socket_count = sec.total_socket_count %}
+              {% set missives = sec.missives %}
+              {% set total_missive_count = sec.total_missive_count %}
+              {% set embellishments = sec.embellishments %}
+              {% set total_embellishment_count = sec.total_embellishment_count %}
+              {% set crafted_items = sec.crafted_items %}
+              {% set total_crafted_items = sec.total_crafted_items %}
+              {% set embellishment_comps = sec.embellishment_comps %}
+              {% set total_embellishment_comps = sec.total_embellishment_comps %}
+              {% set crafted_comps = sec.crafted_comps %}
+              {% set total_crafted_comps = sec.total_crafted_comps %}
+              {% set tier_set_comps = sec.tier_set_comps %}
+              {% set total_tier_set_comps = sec.total_tier_set_comps %}
+              {% set gem_comps = sec.gem_comps %}
+              {% set total_gem_comps = sec.total_gem_comps %}
+              {% set enchant_comps = sec.enchant_comps %}
+              {% set total_enchant_comps = sec.total_enchant_comps %}
+              <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
+              {{ hero_fallback_note(sec) }}
               <div class="d-flex flex-column flex-md-row gap-3">
                 <!-- Enchantment Overview-->
                 <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
                   <!-- Enchantment Overview-->
-                  <div class="accordion mx-2" id="enchantAccordion">
+                  <div class="accordion mx-2" id="enchantAccordion{{ hs }}">
                     <div class="accordion-item">
-                      <h2 class="accordion-header" id="headingEnchant">
+                      <h2 class="accordion-header" id="headingEnchant{{ hs }}">
                         <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseEnchant" aria-expanded="false"
-                          aria-controls="collapseEnchant">
+                          data-bs-toggle="collapse" data-bs-target="#collapseEnchant{{ hs }}" aria-expanded="false"
+                          aria-controls="collapseEnchant{{ hs }}">
                           Enchantment Details
                         </button>
                       </h2>
-                      <div id="collapseEnchant" class="accordion-collapse collapse w-100"
-                        aria-labelledby="headingEnchant" data-bs-parent="#enchantAccordion">
+                      <div id="collapseEnchant{{ hs }}" class="accordion-collapse collapse w-100"
+                        aria-labelledby="headingEnchant{{ hs }}" data-bs-parent="#enchantAccordion{{ hs }}">
                         <div class="accordion-body">
                           <div class="row">
                             <div class="col-12">
@@ -1048,14 +1097,14 @@
                               ~
                               spec_id %}
                               {% endif %}
-                              <div class="accordion mb-3" id="enchantAccordion-{{ slot_name }}">
+                              <div class="accordion mb-3" id="enchantAccordion-{{ slot_name }}{{ hs }}">
                                 <div class="accordion-item">
-                                  <h2 class="accordion-header" id="enchantHeading-{{ slot_name }}">
+                                  <h2 class="accordion-header" id="enchantHeading-{{ slot_name }}{{ hs }}">
                                     <button
                                       class="accordion-button border {% if enchant_lookup[enchant].quality %}border-quality-{{ enchant_lookup[enchant].quality }}{% else %}border-grey-100{% endif %} collapsed text-start overflow-hidden"
                                       type="button" data-bs-toggle="collapse"
-                                      data-bs-target="#enchantCollapse-{{ slot_name }}" aria-expanded="false"
-                                      aria-controls="enchantCollapse-{{ slot_name }}" onclick="event.preventDefault();">
+                                      data-bs-target="#enchantCollapse-{{ slot_name }}{{ hs }}" aria-expanded="false"
+                                      aria-controls="enchantCollapse-{{ slot_name }}{{ hs }}" onclick="event.preventDefault();">
                                       <div class="d-flex align-items-center flex-nowrap w-100 px-2">
                                         <div class="flex-shrink-0 me-2">{{ slot_name }}</div>
 
@@ -1094,9 +1143,9 @@
                                     </button>
 
                                   </h2>
-                                  <div id="enchantCollapse-{{ slot_name }}" class="accordion-collapse collapse"
-                                    aria-labelledby="enchantHeading-{{ slot_name }}"
-                                    data-bs-parent="#enchantAccordion-{{ slot_name }}">
+                                  <div id="enchantCollapse-{{ slot_name }}{{ hs }}" class="accordion-collapse collapse"
+                                    aria-labelledby="enchantHeading-{{ slot_name }}{{ hs }}"
+                                    data-bs-parent="#enchantAccordion-{{ slot_name }}{{ hs }}">
                                     <div class="accordion-body p-2">
                                       {# All enchants for this slot #}
                                       {% for ench in ench_list %}
@@ -1219,17 +1268,17 @@
                 <!-- Gems Overview-->
                 <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
                   <!-- Gems Overview-->
-                  <div class="accordion mx-2" id="socketAccordion">
+                  <div class="accordion mx-2" id="socketAccordion{{ hs }}">
                     <div class="accordion-item">
-                      <h2 class="accordion-header" id="headingSocket">
+                      <h2 class="accordion-header" id="headingSocket{{ hs }}">
                         <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseSocket" aria-expanded="false"
-                          aria-controls="collapseSocket">
+                          data-bs-toggle="collapse" data-bs-target="#collapseSocket{{ hs }}" aria-expanded="false"
+                          aria-controls="collapseSocket{{ hs }}">
                           Socket (Gem) Details
                         </button>
                       </h2>
-                      <div id="collapseSocket" class="accordion-collapse collapse w-100" aria-labelledby="headingSocket"
-                        data-bs-parent="#socketAccordion">
+                      <div id="collapseSocket{{ hs }}" class="accordion-collapse collapse w-100" aria-labelledby="headingSocket{{ hs }}"
+                        data-bs-parent="#socketAccordion{{ hs }}">
                         <div class="accordion-body">
                           <div class="row">
                             <div class="col-12">
@@ -1342,17 +1391,17 @@
               <div class="d-flex flex-column flex-md-row gap-3 mt-4">
                 <!-- Embelishments Overview-->
                 <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
-                  <div class="accordion mx-2" id="embellishmentAccordion">
+                  <div class="accordion mx-2" id="embellishmentAccordion{{ hs }}">
                     <div class="accordion-item">
-                      <h2 class="accordion-header" id="headingEmbellishment">
+                      <h2 class="accordion-header" id="headingEmbellishment{{ hs }}">
                         <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseEmbellishment" aria-expanded="false"
-                          aria-controls="collapseEmbellishment">
+                          data-bs-toggle="collapse" data-bs-target="#collapseEmbellishment{{ hs }}" aria-expanded="false"
+                          aria-controls="collapseEmbellishment{{ hs }}">
                           Embellishment Details
                         </button>
                       </h2>
-                      <div id="collapseEmbellishment" class="accordion-collapse collapse w-100"
-                        aria-labelledby="headingEmbellishment" data-bs-parent="#embellishmentAccordion">
+                      <div id="collapseEmbellishment{{ hs }}" class="accordion-collapse collapse w-100"
+                        aria-labelledby="headingEmbellishment{{ hs }}" data-bs-parent="#embellishmentAccordion{{ hs }}">
                         <div class="accordion-body">
                           <div class="row">
                             <div class="col-12">
@@ -1446,17 +1495,17 @@
                 <!-- Missive Overview -->
                 <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
                   <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
-                    <div class="accordion mx-2" id="missiveAccordion">
+                    <div class="accordion mx-2" id="missiveAccordion{{ hs }}">
                       <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingMissive">
+                        <h2 class="accordion-header" id="headingMissive{{ hs }}">
                           <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#collapseMissive" aria-expanded="false"
-                            aria-controls="collapseMissive">
+                            data-bs-toggle="collapse" data-bs-target="#collapseMissive{{ hs }}" aria-expanded="false"
+                            aria-controls="collapseMissive{{ hs }}">
                             Missive Details
                           </button>
                         </h2>
-                        <div id="collapseMissive" class="accordion-collapse collapse w-100"
-                          aria-labelledby="headingMissive" data-bs-parent="#missiveAccordion">
+                        <div id="collapseMissive{{ hs }}" class="accordion-collapse collapse w-100"
+                          aria-labelledby="headingMissive{{ hs }}" data-bs-parent="#missiveAccordion{{ hs }}">
                           <div class="accordion-body">
                             <div class="row">
                               <div class="col-12">
@@ -1549,17 +1598,17 @@
                 {% if crafted_items and crafted_items|length > 0 %}
                 <!-- Crafted Items Overview-->
                 <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
-                  <div class="accordion mx-2" id="craftedAccordion">
+                  <div class="accordion mx-2" id="craftedAccordion{{ hs }}">
                     <div class="accordion-item">
-                      <h2 class="accordion-header" id="headingCrafted">
+                      <h2 class="accordion-header" id="headingCrafted{{ hs }}">
                         <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseCrafted" aria-expanded="false"
-                          aria-controls="collapseCrafted">
+                          data-bs-toggle="collapse" data-bs-target="#collapseCrafted{{ hs }}" aria-expanded="false"
+                          aria-controls="collapseCrafted{{ hs }}">
                           Top Crafted Items
                         </button>
                       </h2>
-                      <div id="collapseCrafted" class="accordion-collapse collapse w-100"
-                        aria-labelledby="headingCrafted" data-bs-parent="#craftedAccordion">
+                      <div id="collapseCrafted{{ hs }}" class="accordion-collapse collapse w-100"
+                        aria-labelledby="headingCrafted{{ hs }}" data-bs-parent="#craftedAccordion{{ hs }}">
                         <div class="accordion-body">
                           <div class="row">
                             <div class="col-12">
@@ -1641,17 +1690,17 @@
                 {% if tier_set_comps and tier_set_comps|length > 0 %}
                 <!-- Set Combos Overview-->
                 <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
-                  <div class="accordion mx-2" id="tierSetCompAccordion">
+                  <div class="accordion mx-2" id="tierSetCompAccordion{{ hs }}">
                     <div class="accordion-item">
-                      <h2 class="accordion-header" id="headingTierSetComp">
+                      <h2 class="accordion-header" id="headingTierSetComp{{ hs }}">
                         <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseTierSetComp" aria-expanded="false"
-                          aria-controls="collapseTierSetComp">
+                          data-bs-toggle="collapse" data-bs-target="#collapseTierSetComp{{ hs }}" aria-expanded="false"
+                          aria-controls="collapseTierSetComp{{ hs }}">
                           Set Combos
                         </button>
                       </h2>
-                      <div id="collapseTierSetComp" class="accordion-collapse collapse w-100"
-                        aria-labelledby="headingTierSetComp" data-bs-parent="#tierSetCompAccordion">
+                      <div id="collapseTierSetComp{{ hs }}" class="accordion-collapse collapse w-100"
+                        aria-labelledby="headingTierSetComp{{ hs }}" data-bs-parent="#tierSetCompAccordion{{ hs }}">
                         <div class="accordion-body">
                           <div class="row">
                             <div class="col-12">
@@ -1725,17 +1774,17 @@
                 {% if embellishment_comps and embellishment_comps|length > 0 %}
                 <!-- Embellishment Combos Overview-->
                 <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
-                  <div class="accordion mx-2" id="embellishmentCompAccordion">
+                  <div class="accordion mx-2" id="embellishmentCompAccordion{{ hs }}">
                     <div class="accordion-item">
-                      <h2 class="accordion-header" id="headingEmbellishmentComp">
+                      <h2 class="accordion-header" id="headingEmbellishmentComp{{ hs }}">
                         <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseEmbellishmentComp" aria-expanded="false"
-                          aria-controls="collapseEmbellishmentComp">
+                          data-bs-toggle="collapse" data-bs-target="#collapseEmbellishmentComp{{ hs }}" aria-expanded="false"
+                          aria-controls="collapseEmbellishmentComp{{ hs }}">
                           Embellishment Combos
                         </button>
                       </h2>
-                      <div id="collapseEmbellishmentComp" class="accordion-collapse collapse w-100"
-                        aria-labelledby="headingEmbellishmentComp" data-bs-parent="#embellishmentCompAccordion">
+                      <div id="collapseEmbellishmentComp{{ hs }}" class="accordion-collapse collapse w-100"
+                        aria-labelledby="headingEmbellishmentComp{{ hs }}" data-bs-parent="#embellishmentCompAccordion{{ hs }}">
                         <div class="accordion-body">
                           <div class="row">
                             <div class="col-12">
@@ -1810,17 +1859,17 @@
                 {% if crafted_comps and crafted_comps|length > 0 %}
                 <!-- Crafted Item Combos Overview-->
                 <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
-                  <div class="accordion mx-2" id="craftedCompAccordion">
+                  <div class="accordion mx-2" id="craftedCompAccordion{{ hs }}">
                     <div class="accordion-item">
-                      <h2 class="accordion-header" id="headingCraftedComp">
+                      <h2 class="accordion-header" id="headingCraftedComp{{ hs }}">
                         <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseCraftedComp" aria-expanded="false"
-                          aria-controls="collapseCraftedComp">
+                          data-bs-toggle="collapse" data-bs-target="#collapseCraftedComp{{ hs }}" aria-expanded="false"
+                          aria-controls="collapseCraftedComp{{ hs }}">
                           Crafted Item Combos
                         </button>
                       </h2>
-                      <div id="collapseCraftedComp" class="accordion-collapse collapse w-100"
-                        aria-labelledby="headingCraftedComp" data-bs-parent="#craftedCompAccordion">
+                      <div id="collapseCraftedComp{{ hs }}" class="accordion-collapse collapse w-100"
+                        aria-labelledby="headingCraftedComp{{ hs }}" data-bs-parent="#craftedCompAccordion{{ hs }}">
                         <div class="accordion-body">
                           <div class="row">
                             <div class="col-12">
@@ -1887,17 +1936,17 @@
                 {% if gem_comps and gem_comps|length > 0 %}
                 <!-- Gem Combos Overview-->
                 <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
-                  <div class="accordion mx-2" id="gemCompAccordion">
+                  <div class="accordion mx-2" id="gemCompAccordion{{ hs }}">
                     <div class="accordion-item">
-                      <h2 class="accordion-header" id="headingGemComp">
+                      <h2 class="accordion-header" id="headingGemComp{{ hs }}">
                         <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseGemComp" aria-expanded="false"
-                          aria-controls="collapseGemComp">
+                          data-bs-toggle="collapse" data-bs-target="#collapseGemComp{{ hs }}" aria-expanded="false"
+                          aria-controls="collapseGemComp{{ hs }}">
                           Gem Combos
                         </button>
                       </h2>
-                      <div id="collapseGemComp" class="accordion-collapse collapse w-100"
-                        aria-labelledby="headingGemComp" data-bs-parent="#gemCompAccordion">
+                      <div id="collapseGemComp{{ hs }}" class="accordion-collapse collapse w-100"
+                        aria-labelledby="headingGemComp{{ hs }}" data-bs-parent="#gemCompAccordion{{ hs }}">
                         <div class="accordion-body">
                           <div class="row">
                             <div class="col-12">
@@ -1963,17 +2012,17 @@
                 {% if enchant_comps and enchant_comps|length > 0 %}
                 <!-- Enchant Combos Overview-->
                 <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
-                  <div class="accordion mx-2" id="enchantCompAccordion">
+                  <div class="accordion mx-2" id="enchantCompAccordion{{ hs }}">
                     <div class="accordion-item">
-                      <h2 class="accordion-header" id="headingEnchantComp">
+                      <h2 class="accordion-header" id="headingEnchantComp{{ hs }}">
                         <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                          data-bs-toggle="collapse" data-bs-target="#collapseEnchantComp" aria-expanded="false"
-                          aria-controls="collapseEnchantComp">
+                          data-bs-toggle="collapse" data-bs-target="#collapseEnchantComp{{ hs }}" aria-expanded="false"
+                          aria-controls="collapseEnchantComp{{ hs }}">
                           Enchant Combos
                         </button>
                       </h2>
-                      <div id="collapseEnchantComp" class="accordion-collapse collapse w-100"
-                        aria-labelledby="headingEnchantComp" data-bs-parent="#enchantCompAccordion">
+                      <div id="collapseEnchantComp{{ hs }}" class="accordion-collapse collapse w-100"
+                        aria-labelledby="headingEnchantComp{{ hs }}" data-bs-parent="#enchantCompAccordion{{ hs }}">
                         <div class="accordion-body">
                           <div class="row">
                             <div class="col-12">
@@ -2039,6 +2088,8 @@
                 {% endif %}
               </div>
               {% endif %}
+              </div>
+              {% endfor %}
             </div>
           </div>
 

@@ -123,6 +123,11 @@ TALENT_DIFF_TOP_N = 4                  # rows per side (take / drop)
 # it on its own: most of the dungeon's top loadouts take it, or almost none do.
 TALENT_DIFF_RECOMMEND_MIN_PCT = 50.0
 TALENT_DIFF_DROP_MAX_PCT = 20.0
+# A hero tree gets its own gear/stats/enchant/etc. section payload only when it
+# clears both gates; below them its sections fall back to the combined (all
+# builds) data so a minority tree never shows noisy or near-empty tables.
+HERO_SECTION_MIN_RUNS = 30       # absolute floor of 14-day appearances
+HERO_SECTION_MIN_SHARE = 0.05    # and this fraction of the spec's hero-tree runs
 # Hero-tree preference shifts per dungeon: a couple of tenths of a percent is
 # not a preference, so only shifts of this many points are worth a row.
 HERO_TREE_DIFF_MIN_PCT_POINTS = 5.0
@@ -1576,12 +1581,12 @@ def filter_weapon_gear_entries(weapon_lists, slot_totals):
             for lst in weapon_lists]
 
 
-def fetch_slot_info(conn, cursor, spec_id, current_season_id, slot, slot_totals):
+def fetch_slot_info(conn, cursor, spec_id, current_season_id, slot, slot_totals, hero_talent_id=None):
     if MULTI_SLOT_GROUPS.get(slot):
         group = MULTI_SLOT_GROUPS[slot]
         num = re.search(r"\d+", slot)
         data = databaseConnector.fetch_top_items_for_slot_group_with_bonus(
-            conn, cursor, spec_id, current_season_id, group
+            conn, cursor, spec_id, current_season_id, group, hero_talent_id
         )
         # Filter on the intact group list (before the positional removal below)
         # so FINGER_1/FINGER_2 both derive from the same filtered ranking — the
@@ -1594,7 +1599,7 @@ def fetch_slot_info(conn, cursor, spec_id, current_season_id, slot, slot_totals)
             del data[index_to_remove]
         return data
     data = databaseConnector.fetch_top_items_for_slot_with_bonus(
-        conn, cursor, spec_id, current_season_id, slot
+        conn, cursor, spec_id, current_season_id, slot, hero_talent_id
     )
     if slot in WEAPON_SLOTS:
         # Returned unfiltered: MAIN_HAND/OFF_HAND are filtered together by
@@ -1622,11 +1627,11 @@ def fetch_hero_tree_info(conn, cursor, spec_id, current_season_id, valid_subtree
 
 def fetch_enchant_info(
     conn, cursor, spec_id, current_season_id, enchant_lookup, spec_sample_size,
-    current_expansion,
+    current_expansion, hero_talent_id=None,
 ):
     enchant_slots_raw = {
         slot_group: aggregateData.get_enchants_for_slot(
-            conn, cursor, spec_id, current_season_id, slot_group
+            conn, cursor, spec_id, current_season_id, slot_group, hero_talent_id
         )
         for slot_group in SLOT_GROUPS
     }
@@ -1680,6 +1685,7 @@ def convert_slots(
     embellishments=None,
     bis_summary=None,
     simc_bis=None,
+    hero_talent_id=None,
 ):
     primary_ids = {int(items[0]["item"]) for items in slots if len(items) > 0}
 
@@ -1688,7 +1694,7 @@ def convert_slots(
         for it in items:
             all_item_ids.add(int(it.get("item")))
     socket_map = databaseConnector.fetch_top_sockets_for_items(
-        conn, cursor, spec_id, current_season_id, list(all_item_ids)
+        conn, cursor, spec_id, current_season_id, list(all_item_ids), hero_talent_id
     )
 
     socket_limits = {}
@@ -2557,14 +2563,18 @@ def main(template_path, output_dir, debug=False, spec=None):
                             weapon_slots = [
                                 g for g in weapon_slots if g["slot"] != "OFF_HAND"
                             ]
-                # Annotate the global sockets list with BIS flags (so Gem Details can read it directly)
-                try:
-                    if bis_summary and isinstance(bis_summary, dict) and bis_summary.get("gems") and sockets:
+                # Annotate a sockets list with BIS flags (so Gem Details can read
+                # it directly). Elite gem BIS is a season-wide signal, so the same
+                # helper serves both the combined list and each per-hero-tree list.
+                def _annotate_sockets_bis(socket_list):
+                    try:
+                        if not (bis_summary and isinstance(bis_summary, dict) and bis_summary.get("gems") and socket_list):
+                            return
                         gems_list = bis_summary.get("gems", []) or []
                         top_two = [g for g in gems_list[:2] if g.get("id")]
                         top_two_ids = {int(g.get("id")) for g in top_two}
                         top_two_map = {int(g.get("id")): g for g in top_two}
-                        for s in sockets:
+                        for s in socket_list:
                             sid = s.get("id") or s.get("gem_item_id") or s.get("itemId")
                             try:
                                 sid_int = int(sid)
@@ -2579,8 +2589,10 @@ def main(template_path, output_dir, debug=False, spec=None):
                                     if int(g.get("id")) == sid_int:
                                         s["bis_rank"] = idx + 1
                                         break
-                except Exception:
-                    pass
+                    except Exception:
+                        pass
+
+                _annotate_sockets_bis(sockets)
                 print(
                     f"[{datetime.now(timezone.utc).isoformat()}] fetching upgrade counts..."
                 )
@@ -2931,9 +2943,195 @@ def main(template_path, output_dir, debug=False, spec=None):
                     },
                 )
 
+            # --- Per-hero-tree section payloads -----------------------------
+            # The gear / stats / enchant / gem / missive / embellishment /
+            # crafted / set-combo sections switch with the hero-tree toggle. The
+            # combined (season-wide) values computed above stay the fallback for
+            # thin trees and feed the overview image + analyzer meta. Each hero
+            # tree that clears the sample threshold gets its own payload; below
+            # it, the tree reuses the combined payload (flagged so the template
+            # can note it covers all builds).
+            def _combined_sections_payload():
+                return {
+                    "left_slots": left_slots,
+                    "right_slots": right_slots,
+                    "weapon_slots": weapon_slots,
+                    "trinket_slots": trinket_slots,
+                    "enchant_slots": enchant_slots,
+                    "total_enchant_counts": total_enchant_counts,
+                    "missives": missives,
+                    "total_missive_count": total_missive_count,
+                    "embellishments": embellishments,
+                    "total_embellishment_count": total_embellishment_count,
+                    "crafted_items": crafted_items,
+                    "total_crafted_items": total_crafted_items_count,
+                    "embellishment_comps": embellishment_comps,
+                    "total_embellishment_comps": total_embellishment_comps,
+                    "crafted_comps": crafted_comps,
+                    "total_crafted_comps": total_crafted_comps,
+                    "tier_set_comps": tier_set_comps,
+                    "total_tier_set_comps": total_tier_set_comps,
+                    "gem_comps": gem_comps,
+                    "total_gem_comps": total_gem_comps,
+                    "enchant_comps": enchant_comps,
+                    "total_enchant_comps": total_enchant_comps,
+                    "sockets": sockets,
+                    "total_socket_count": total_socket_count,
+                    "stats": stat_priority,
+                    "tertiary_priority": tertiary_priority,
+                    "health_priority": health_priority,
+                    "fallback": True,
+                }
+
+            def _build_tree_sections(hero_id, tree_sample):
+                # Gear: fetch per-slot for this hero tree, then run the same
+                # convert/normalize/weapon-adjust pipeline as the combined path.
+                st = databaseConnector.fetch_slot_totals(
+                    conn, cursor, spec_id, current_season_id, hero_id
+                )
+                t_left = [fetch_slot_info(conn, cursor, spec_id, current_season_id, s, st, hero_id) for s in LEFT_ORDER]
+                t_right = [fetch_slot_info(conn, cursor, spec_id, current_season_id, s, st, hero_id) for s in RIGHT_ORDER]
+                t_weapon = filter_weapon_gear_entries(
+                    [fetch_slot_info(conn, cursor, spec_id, current_season_id, s, st, hero_id) for s in WEAPON_SLOTS],
+                    st,
+                )
+                t_trinket = [fetch_slot_info(conn, cursor, spec_id, current_season_id, s, st, hero_id) for s in TRINKET_SLOTS]
+
+                t_sockets = aggregateData.get_sockets(conn, cursor, spec_id, current_season_id, hero_id)
+                t_enchant_slots, t_total_enchant_counts = fetch_enchant_info(
+                    conn, cursor, spec_id, current_season_id, enchant_lookup, tree_sample,
+                    current_expansion, hero_id,
+                )
+
+                t_missives = databaseConnector.fetch_missive_count(conn, cursor, spec_id, current_season_id, hero_id)
+                t_total_missive = sum(e[1] for e in t_missives)
+                t_embellishments = databaseConnector.fetch_embellishment_count(conn, cursor, spec_id, current_season_id, hero_id)
+                t_total_embellishment = sum(e[1] for e in t_embellishments)
+                t_crafted = databaseConnector.fetch_crafted_items_count(conn, cursor, spec_id, current_season_id, hero_id)
+                t_total_crafted = sum(e[1] for e in t_crafted)
+
+                convert_slots(
+                    conn, cursor, spec_id, current_season_id,
+                    t_left + t_right + t_weapon + t_trinket,
+                    item_lookup, bonus_lookup, missive_lookup, embellishment_lookup,
+                    bonus_quality_lookup, t_sockets, socket_lookup, t_enchant_slots,
+                    set_members, t_missives, t_embellishments,
+                    bis_summary=bis_summary, simc_bis=simc_bis, hero_talent_id=hero_id,
+                )
+                t_left = normalize_slot_collections(t_left, LEFT_ORDER)
+                t_right = normalize_slot_collections(t_right, RIGHT_ORDER)
+                t_weapon = normalize_slot_collections(t_weapon, WEAPON_SLOTS)
+                t_trinket = normalize_slot_collections(t_trinket, TRINKET_SLOTS)
+                _mh = next((g for g in t_weapon if g["slot"] == "MAIN_HAND"), None)
+                _oh = next((g for g in t_weapon if g["slot"] == "OFF_HAND"), None)
+                if _mh and _mh["entries"]:
+                    _mh_item_id = _mh["entries"][0]["id"]
+                    if occupies_both_hands(item_lookup.get(_mh_item_id), spec_id):
+                        _mh["entries"] = _mh["entries"] + (_oh.get("entries", []) if _oh else [])
+                        if _oh:
+                            t_weapon = [g for g in t_weapon if g["slot"] != "OFF_HAND"]
+                _annotate_sockets_bis(t_sockets)
+
+                # Embellishment rarity filter, thresholded against this tree's sample.
+                emb_threshold = tree_sample * 0.001
+                if t_embellishments and emb_threshold > 0:
+                    t_embellishments = [
+                        e for e in t_embellishments
+                        if (e[1] if isinstance(e, (list, tuple)) else (e.get('total_runs') or e.get('run_count') or 0)) >= emb_threshold
+                    ]
+
+                # Comps for this hero tree, thresholded against their own per-tree totals.
+                try:
+                    t_emb_comps_raw = databaseConnector.fetch_embellishment_comps(conn, cursor, spec_id, current_season_id, hero_id)
+                except Exception:
+                    t_emb_comps_raw = []
+                try:
+                    t_crafted_comps_raw = databaseConnector.fetch_crafted_comps(conn, cursor, spec_id, current_season_id, hero_id)
+                except Exception:
+                    t_crafted_comps_raw = []
+                try:
+                    t_tier_comps_raw = databaseConnector.fetch_tier_set_comps(conn, cursor, spec_id, current_season_id, hero_id)
+                except Exception:
+                    t_tier_comps_raw = []
+                try:
+                    t_gem_comps_raw = databaseConnector.fetch_gem_comps(conn, cursor, spec_id, current_season_id, hero_id)
+                except Exception:
+                    t_gem_comps_raw = []
+                try:
+                    t_enchant_comps_raw = databaseConnector.fetch_enchant_comps(conn, cursor, spec_id, current_season_id, hero_id)
+                except Exception:
+                    t_enchant_comps_raw = []
+                t_total_emb_comps = sum(int(e[1] or 0) for e in t_emb_comps_raw)
+                t_total_crafted_comps = sum(int(e[1] or 0) for e in t_crafted_comps_raw)
+                t_total_tier_comps = sum(int(e[1] or 0) for e in t_tier_comps_raw)
+                t_total_gem_comps = sum(int(e[1] or 0) for e in t_gem_comps_raw)
+                t_total_enchant_comps = sum(int(e[1] or 0) for e in t_enchant_comps_raw)
+                t_emb_comps = build_comps(t_emb_comps_raw, t_total_emb_comps * 0.005, item_lookup, "embellishment", spec_id, slot_sorted=False)
+                t_crafted_comps = build_comps(t_crafted_comps_raw, t_total_crafted_comps * 0.005, item_lookup, "crafted", spec_id)
+                t_tier_comps = build_comps(t_tier_comps_raw, t_total_tier_comps * 0.005, item_lookup, "tier set", spec_id, set_meta=tier_set_meta)
+                t_gem_comps = build_multiset_comps(t_gem_comps_raw, socket_lookup, t_total_gem_comps * 0.005)
+                t_enchant_comps = build_multiset_comps(t_enchant_comps_raw, enchant_lookup, t_total_enchant_comps * 0.005, slot_rank=enchant_slot_pos)
+                # Elite "TOP" overlay is a season-wide signal, so reuse bis_summary.
+                _annotate_comps(t_emb_comps, bis_summary.get("embellishment_comps"))
+                _annotate_comps(t_crafted_comps, bis_summary.get("crafted_comps"))
+                _annotate_comps(t_tier_comps, bis_summary.get("tier_set_comps"))
+                _annotate_comps(t_gem_comps, bis_summary.get("gem_comps"), multiset=True)
+                _annotate_comps(t_enchant_comps, bis_summary.get("enchant_comps"), multiset=True)
+
+                t_stat_priority, t_tertiary, t_health = fetch_stat_info(
+                    conn, cursor, spec_id, current_season_id, spec_lookup, hero_id
+                )
+
+                return {
+                    "left_slots": t_left,
+                    "right_slots": t_right,
+                    "weapon_slots": t_weapon,
+                    "trinket_slots": t_trinket,
+                    "enchant_slots": t_enchant_slots,
+                    "total_enchant_counts": t_total_enchant_counts,
+                    "missives": t_missives,
+                    "total_missive_count": t_total_missive,
+                    "embellishments": t_embellishments,
+                    "total_embellishment_count": t_total_embellishment,
+                    "crafted_items": t_crafted,
+                    "total_crafted_items": t_total_crafted,
+                    "embellishment_comps": t_emb_comps,
+                    "total_embellishment_comps": t_total_emb_comps,
+                    "crafted_comps": t_crafted_comps,
+                    "total_crafted_comps": t_total_crafted_comps,
+                    "tier_set_comps": t_tier_comps,
+                    "total_tier_set_comps": t_total_tier_comps,
+                    "gem_comps": t_gem_comps,
+                    "total_gem_comps": t_total_gem_comps,
+                    "enchant_comps": t_enchant_comps,
+                    "total_enchant_comps": t_total_enchant_comps,
+                    "sockets": t_sockets,
+                    "total_socket_count": sum(s.get("count", 0) for s in t_sockets),
+                    "stats": t_stat_priority,
+                    "tertiary_priority": t_tertiary,
+                    "health_priority": t_health,
+                    "fallback": False,
+                }
+
+            _combined_payload = _combined_sections_payload()
+            sections_by_tree = {}
+            for _v in hero_variants:
+                _tid = _v["id"]
+                _count = next((h["count"] for h in hero_trees if h["id"] == _tid), 0)
+                _share = (_count / hero_tree_count) if hero_tree_count else 0
+                if _count >= HERO_SECTION_MIN_RUNS and _share >= HERO_SECTION_MIN_SHARE:
+                    try:
+                        sections_by_tree[_tid] = _build_tree_sections(_tid, spec_sample_size * _share)
+                    except Exception as _e:
+                        print(f"Warning: per-hero-tree sections failed for tree {_tid}: {_e}")
+                        sections_by_tree[_tid] = dict(_combined_payload)
+                else:
+                    sections_by_tree[_tid] = dict(_combined_payload)
+
             output_html = template.render(
                 generated_at=datetime.now(timezone.utc).timestamp(),
                 spec_id=spec_id,
+                sections_by_tree=sections_by_tree,
                 spec=spec_data,
                 trends=trends,
                 class_info=class_data,

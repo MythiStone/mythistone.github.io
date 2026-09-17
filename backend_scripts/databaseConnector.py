@@ -534,11 +534,12 @@ def fetch_slots(connection, cursor):
 FETCH_TOP_ITEM_BY_SLOT_SQL = """
 SELECT
   item_id,
-  run_count AS equip_count
+  SUM(run_count) AS equip_count
 FROM Mythistone.global_aggregated_equipment
 WHERE spec_id = %s
   AND season  = %s
   AND slot    = %s
+GROUP BY item_id
 ORDER BY equip_count DESC, item_id
 LIMIT 10;
 """
@@ -614,19 +615,69 @@ SELECT
   gai.max_timed_key,
   gai.max_depleted_key
 FROM top_items ti
-LEFT JOIN Mythistone.global_aggregated_items gai 
-  ON gai.item_id = ti.item_id AND gai.spec_id = %s AND gai.season = %s
+LEFT JOIN (
+  SELECT item_id, MAX(max_timed_key) AS max_timed_key, MAX(max_depleted_key) AS max_depleted_key
+  FROM Mythistone.global_aggregated_items
+  WHERE spec_id = %s AND season = %s
+  GROUP BY item_id
+) gai ON gai.item_id = ti.item_id
 LEFT JOIN ranked r ON ti.item_id = r.item_id AND r.rn = 1
 ORDER BY ti.equip_count DESC;
 """
 
 
-def fetch_top_items_for_slot_with_bonus(connection, cursor, spec_id, season, slot):
-    """Fetch the top items with bonus for a specific slot from the database."""
-    params = (spec_id, season, slot, spec_id, season, spec_id, season)
-    rows = fetch_with_retry(
-        connection, cursor, FETCH_TOP_ITEMS_BY_SLOT_WITH_BONUS_SQL, params
-    )
+# Same query as above but against the per-hero-tree twins, filtered to one hero
+# tree (see the hero-grained global_aggregated_* tables).
+FETCH_TOP_ITEMS_BY_SLOT_WITH_BONUS_BY_HERO_SQL = """
+WITH top_items AS (
+  SELECT item_id, SUM(run_count) AS equip_count
+  FROM Mythistone.global_aggregated_equipment
+  WHERE spec_id = %s AND season = %s AND slot = %s AND hero_talent_id = %s
+  GROUP BY item_id
+  ORDER BY equip_count DESC, item_id
+  LIMIT 10
+),
+bonus_sums AS (
+  SELECT item_id, bonus_list, SUM(run_count) AS list_count
+  FROM Mythistone.global_aggregated_bonus_lists
+  WHERE spec_id = %s AND season = %s AND hero_talent_id = %s
+    AND item_id IN (SELECT item_id FROM top_items)
+  GROUP BY item_id, bonus_list
+),
+ranked AS (
+  SELECT item_id, bonus_list, list_count,
+         ROW_NUMBER() OVER (PARTITION BY item_id ORDER BY list_count DESC, bonus_list) AS rn
+  FROM bonus_sums
+)
+SELECT ti.item_id, ti.equip_count, r.bonus_list, r.list_count,
+       gai.max_timed_key, gai.max_depleted_key
+FROM top_items ti
+LEFT JOIN Mythistone.global_aggregated_items gai
+  ON gai.item_id = ti.item_id AND gai.spec_id = %s AND gai.season = %s AND gai.hero_talent_id = %s
+LEFT JOIN ranked r ON ti.item_id = r.item_id AND r.rn = 1
+ORDER BY ti.equip_count DESC;
+"""
+
+
+def fetch_top_items_for_slot_with_bonus(
+    connection, cursor, spec_id, season, slot, hero_talent_id=None
+):
+    """Fetch the top items with bonus for a specific slot from the database.
+
+    When ``hero_talent_id`` is given, reads the per-hero-tree twin tables so the
+    result covers only that hero tree.
+    """
+    if hero_talent_id is None:
+        sql = FETCH_TOP_ITEMS_BY_SLOT_WITH_BONUS_SQL
+        params = (spec_id, season, slot, spec_id, season, spec_id, season)
+    else:
+        sql = FETCH_TOP_ITEMS_BY_SLOT_WITH_BONUS_BY_HERO_SQL
+        params = (
+            spec_id, season, slot, hero_talent_id,
+            spec_id, season, hero_talent_id,
+            spec_id, season, hero_talent_id,
+        )
+    rows = fetch_with_retry(connection, cursor, sql, params)
 
     data = []
     for row in rows:
@@ -693,22 +744,65 @@ SELECT
   gai.max_timed_key,
   gai.max_depleted_key
 FROM top_items ti
-LEFT JOIN Mythistone.global_aggregated_items gai 
-  ON gai.item_id = ti.item_id AND gai.spec_id = %s AND gai.season = %s
+LEFT JOIN (
+  SELECT item_id, MAX(max_timed_key) AS max_timed_key, MAX(max_depleted_key) AS max_depleted_key
+  FROM Mythistone.global_aggregated_items
+  WHERE spec_id = %s AND season = %s
+  GROUP BY item_id
+) gai ON gai.item_id = ti.item_id
+LEFT JOIN ranked r ON ti.item_id = r.item_id AND r.rn = 1
+ORDER BY ti.equip_count DESC;
+"""
+
+
+FETCH_TOP_ITEMS_BY_SLOT_GROUP_WITH_BONUS_BY_HERO_SQL = """
+WITH top_items AS (
+  SELECT ae.item_id, SUM(ae.run_count) AS equip_count
+  FROM Mythistone.global_aggregated_equipment ae
+  JOIN Mythistone.slot_group_map sgm ON sgm.slot = ae.slot
+  WHERE ae.spec_id = %s AND ae.season = %s AND sgm.slot_group = %s AND ae.hero_talent_id = %s
+  GROUP BY ae.item_id
+  ORDER BY equip_count DESC, ae.item_id
+  LIMIT 10
+),
+bonus_sums AS (
+  SELECT item_id, bonus_list, SUM(run_count) AS list_count
+  FROM Mythistone.global_aggregated_bonus_lists
+  WHERE spec_id = %s AND season = %s AND hero_talent_id = %s
+    AND item_id IN (SELECT item_id FROM top_items)
+  GROUP BY item_id, bonus_list
+),
+ranked AS (
+  SELECT item_id, bonus_list, list_count,
+         ROW_NUMBER() OVER (PARTITION BY item_id ORDER BY list_count DESC, bonus_list) AS rn
+  FROM bonus_sums
+)
+SELECT ti.item_id, ti.equip_count, r.bonus_list, r.list_count,
+       gai.max_timed_key, gai.max_depleted_key
+FROM top_items ti
+LEFT JOIN Mythistone.global_aggregated_items gai
+  ON gai.item_id = ti.item_id AND gai.spec_id = %s AND gai.season = %s AND gai.hero_talent_id = %s
 LEFT JOIN ranked r ON ti.item_id = r.item_id AND r.rn = 1
 ORDER BY ti.equip_count DESC;
 """
 
 
 def fetch_top_items_for_slot_group_with_bonus(
-    connection, cursor, spec_id, season, slot_group
+    connection, cursor, spec_id, season, slot_group, hero_talent_id=None
 ):
     """Fetch top items for a slot_group along with each item's top bonus_list (MySQL 8+)."""
-    # param order must match the SQL: spec, season, slot_group, spec, season, spec, season
-    params = (spec_id, season, slot_group, spec_id, season, spec_id, season)
-    rows = fetch_with_retry(
-        connection, cursor, FETCH_TOP_ITEMS_BY_SLOT_GROUP_WITH_BONUS_SQL, params
-    )
+    if hero_talent_id is None:
+        sql = FETCH_TOP_ITEMS_BY_SLOT_GROUP_WITH_BONUS_SQL
+        # param order must match the SQL: spec, season, slot_group, spec, season, spec, season
+        params = (spec_id, season, slot_group, spec_id, season, spec_id, season)
+    else:
+        sql = FETCH_TOP_ITEMS_BY_SLOT_GROUP_WITH_BONUS_BY_HERO_SQL
+        params = (
+            spec_id, season, slot_group, hero_talent_id,
+            spec_id, season, hero_talent_id,
+            spec_id, season, hero_talent_id,
+        )
+    rows = fetch_with_retry(connection, cursor, sql, params)
 
     data = []
     for row in rows:
@@ -745,9 +839,24 @@ SELECT slot, SUM(run_count)
 """
 
 
-def fetch_slot_totals(connection, cursor, spec_id, season):
+FETCH_SLOT_TOTALS_BY_HERO_SQL = """
+SELECT slot, SUM(run_count)
+  FROM Mythistone.global_aggregated_equipment
+ WHERE spec_id = %s
+   AND season  = %s
+   AND hero_talent_id = %s
+ GROUP BY slot;
+"""
+
+
+def fetch_slot_totals(connection, cursor, spec_id, season, hero_talent_id=None):
     """Total runs per slot (any item equipped) for one spec, as {slot: runs}."""
-    rows = fetch_with_retry(connection, cursor, FETCH_SLOT_TOTALS_SQL, (spec_id, season))
+    if hero_talent_id is None:
+        rows = fetch_with_retry(connection, cursor, FETCH_SLOT_TOTALS_SQL, (spec_id, season))
+    else:
+        rows = fetch_with_retry(
+            connection, cursor, FETCH_SLOT_TOTALS_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+        )
     return {r[0]: int(r[1]) for r in rows}
 
 
@@ -882,6 +991,22 @@ def fetch_spec_page_linked_items(connection, cursor, season, spec_ids, slots,
 FETCH_TOP_ENCHANT_FOR_SLOT_SQL = """
 SELECT
     enchantment_id,
+    SUM(run_count) AS equip_count,
+    MAX(max_timed_key) AS max_timed_key,
+    MAX(max_depleted_key) AS max_depleted_key
+  FROM Mythistone.global_aggregated_enchantments_slot_group
+  WHERE spec_id = %s
+    AND season  = %s
+    AND slot_group = %s
+  GROUP BY enchantment_id
+  ORDER BY equip_count DESC
+  LIMIT %s
+"""
+
+
+FETCH_TOP_ENCHANT_FOR_SLOT_BY_HERO_SQL = """
+SELECT
+    enchantment_id,
     run_count AS equip_count,
     max_timed_key,
     max_depleted_key
@@ -889,23 +1014,28 @@ SELECT
   WHERE spec_id = %s
     AND season  = %s
     AND slot_group = %s
-  ORDER BY equip_count DESC 
+    AND hero_talent_id = %s
+  ORDER BY equip_count DESC
   LIMIT %s
 """
 
 
-def fetch_top_enchant_for_slot(connection, cursor, spec_id, season, slot_group, amount):
+def fetch_top_enchant_for_slot(connection, cursor, spec_id, season, slot_group, amount, hero_talent_id=None):
     """Fetch the top enchant for a specific slot from the database."""
-    params = (spec_id, season, slot_group, amount)
-    return fetch_with_retry(connection, cursor, FETCH_TOP_ENCHANT_FOR_SLOT_SQL, params)
+    if hero_talent_id is None:
+        params = (spec_id, season, slot_group, amount)
+        return fetch_with_retry(connection, cursor, FETCH_TOP_ENCHANT_FOR_SLOT_SQL, params)
+    params = (spec_id, season, slot_group, hero_talent_id, amount)
+    return fetch_with_retry(connection, cursor, FETCH_TOP_ENCHANT_FOR_SLOT_BY_HERO_SQL, params)
 
 
 FETCH_TOP_SOCKET_FOR_ITEM_SQL = """
-SELECT ais.socket_item_id, ais.run_count AS equip_count, ais.max_timed_key, ais.max_depleted_key
+SELECT ais.socket_item_id, SUM(ais.run_count) AS equip_count, MAX(ais.max_timed_key) AS max_timed_key, MAX(ais.max_depleted_key) AS max_depleted_key
 FROM Mythistone.global_aggregated_item_sockets AS ais
 WHERE ais.spec_id = %s
   AND ais.season  = %s
   AND ais.item_id = %s
+GROUP BY ais.socket_item_id
 ORDER BY equip_count DESC
 LIMIT 10;
 
@@ -919,16 +1049,29 @@ def fetch_top_sockets_for_item(connection, cursor, spec_id, season, item_id):
 
 
 FETCH_TOP_SOCKETS_FOR_ITEMS_SQL = """
-SELECT ais.item_id, ais.socket_item_id, ais.run_count AS equip_count, ais.max_timed_key, ais.max_depleted_key
+SELECT ais.item_id, ais.socket_item_id, SUM(ais.run_count) AS equip_count, MAX(ais.max_timed_key) AS max_timed_key, MAX(ais.max_depleted_key) AS max_depleted_key
 FROM Mythistone.global_aggregated_item_sockets AS ais
 WHERE ais.spec_id = %s
   AND ais.season  = %s
   AND ais.item_id IN ({placeholders})
+GROUP BY ais.item_id, ais.socket_item_id
 ORDER BY ais.item_id, equip_count DESC;
 """
 
 
-def fetch_top_sockets_for_items(connection, cursor, spec_id, season, item_ids):
+FETCH_TOP_SOCKETS_FOR_ITEMS_BY_HERO_SQL = """
+SELECT ais.item_id, ais.socket_item_id, SUM(ais.run_count) AS equip_count, MAX(ais.max_timed_key) AS max_timed_key, MAX(ais.max_depleted_key) AS max_depleted_key
+FROM Mythistone.global_aggregated_item_sockets AS ais
+WHERE ais.spec_id = %s
+  AND ais.season  = %s
+  AND ais.hero_talent_id = %s
+  AND ais.item_id IN ({placeholders})
+GROUP BY ais.item_id, ais.socket_item_id
+ORDER BY ais.item_id, equip_count DESC;
+"""
+
+
+def fetch_top_sockets_for_items(connection, cursor, spec_id, season, item_ids, hero_talent_id=None):
     """
     Return dict: { str(item_id): [ (socket_item_id, equip_count), ... ], ... }
     Runs one query for all item_ids.
@@ -938,8 +1081,12 @@ def fetch_top_sockets_for_items(connection, cursor, spec_id, season, item_ids):
     # ensure items are strings/ints, and build placeholders
     item_ids_clean = [str(i) for i in item_ids]
     placeholders = ",".join(["%s"] * len(item_ids_clean))
-    sql = FETCH_TOP_SOCKETS_FOR_ITEMS_SQL.format(placeholders=placeholders)
-    params = [spec_id, season] + item_ids_clean
+    if hero_talent_id is None:
+        sql = FETCH_TOP_SOCKETS_FOR_ITEMS_SQL.format(placeholders=placeholders)
+        params = [spec_id, season] + item_ids_clean
+    else:
+        sql = FETCH_TOP_SOCKETS_FOR_ITEMS_BY_HERO_SQL.format(placeholders=placeholders)
+        params = [spec_id, season, hero_talent_id] + item_ids_clean
     rows = fetch_with_retry(connection, cursor, sql, params)
     out = {}
     for row in rows:
@@ -952,11 +1099,12 @@ def fetch_top_sockets_for_items(connection, cursor, spec_id, season, item_ids):
 FETCH_TOP_BONUS_IDS_FOR_ITEM_SQL = """
 SELECT
   bonus_list,
-  run_count AS list_count
+  SUM(run_count) AS list_count
 FROM Mythistone.global_aggregated_bonus_lists
 WHERE spec_id = %s
   AND season  = %s
   AND item_id = %s
+GROUP BY bonus_list
 ORDER BY list_count DESC, bonus_list
 LIMIT 1;
 
@@ -982,10 +1130,25 @@ LIMIT 10;
 """
 
 
-def fetch_top_sockets(connection, cursor, spec_id, season):
+FETCH_TOP_SOCKETS_BY_HERO_SQL = """
+SELECT ais.socket_item_id, SUM(ais.run_count) AS equip_count, MAX(ais.max_timed_key) AS max_timed_key, MAX(ais.max_depleted_key) AS max_depleted_key
+FROM Mythistone.global_aggregated_item_sockets AS ais
+WHERE ais.spec_id = %s
+  AND ais.season  = %s
+  AND ais.hero_talent_id = %s
+GROUP BY ais.socket_item_id
+ORDER BY equip_count DESC
+LIMIT 10;
+"""
+
+
+def fetch_top_sockets(connection, cursor, spec_id, season, hero_talent_id=None):
     """Fetch the top sockets for a specific item from the database."""
-    params = (spec_id, season)
-    return fetch_with_retry(connection, cursor, FETCH_TOP_SOCKETS_SQL, params)
+    if hero_talent_id is None:
+        return fetch_with_retry(connection, cursor, FETCH_TOP_SOCKETS_SQL, (spec_id, season))
+    return fetch_with_retry(
+        connection, cursor, FETCH_TOP_SOCKETS_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1001,11 +1164,12 @@ def fetch_top_sockets(connection, cursor, spec_id, season):
 # ---------------------------------------------------------------------------
 
 FETCH_ITEM_SPEC_USAGE_SQL = """
-SELECT item_id, run_count, max_timed_key, max_depleted_key
+SELECT item_id, SUM(run_count) AS run_count, MAX(max_timed_key) AS max_timed_key, MAX(max_depleted_key) AS max_depleted_key
 FROM Mythistone.global_aggregated_items
 WHERE spec_id = %s
   AND season = %s
-  AND run_count > 0;
+GROUP BY item_id
+HAVING run_count > 0;
 """
 
 
@@ -1040,11 +1204,12 @@ def fetch_item_socket_usage(connection, cursor, season, spec_id):
 
 
 FETCH_ITEM_BONUS_USAGE_SQL = """
-SELECT item_id, bonus_list, run_count
+SELECT item_id, bonus_list, SUM(run_count) AS run_count
 FROM Mythistone.global_aggregated_bonus_lists
 WHERE spec_id = %s
   AND season = %s
-  AND run_count > 0;
+GROUP BY item_id, bonus_list
+HAVING run_count > 0;
 """
 
 
@@ -1179,9 +1344,10 @@ def fetch_top50_loadout_totals(connection, cursor, season):
 
 
 FETCH_ENCHANT_SLOTGROUP_USAGE_SQL = """
-SELECT spec_id, slot_group, enchantment_id, run_count
+SELECT spec_id, slot_group, enchantment_id, SUM(run_count) AS run_count
 FROM Mythistone.global_aggregated_enchantments_slot_group
-WHERE season = %s;
+WHERE season = %s
+GROUP BY spec_id, slot_group, enchantment_id;
 """
 
 
@@ -1446,49 +1612,92 @@ def insert_missive(connection, cursor, bonus_id, item_id):
 
 
 FETCH_MISSIVE_COUNT_SQL = """
+SELECT item_id, SUM(run_count) AS total_runs, MAX(max_timed_key) AS max_timed_key, MAX(max_depleted_key) AS max_depleted_key
+FROM Mythistone.global_aggregated_missives
+WHERE spec_id = %s
+  AND season = %s
+GROUP BY item_id
+ORDER BY total_runs DESC
+"""
+
+
+FETCH_MISSIVE_COUNT_BY_HERO_SQL = """
 SELECT item_id, run_count AS total_runs, max_timed_key, max_depleted_key
 FROM Mythistone.global_aggregated_missives
 WHERE spec_id = %s
   AND season = %s
+  AND hero_talent_id = %s
 ORDER BY total_runs DESC
 """
 
 
-def fetch_missive_count(connection, cursor, spec_id, season):
+def fetch_missive_count(connection, cursor, spec_id, season, hero_talent_id=None):
     """Fetch the missive count for a specific spec and season from the database."""
-    params = (spec_id, season)
-    return fetch_with_retry(connection, cursor, FETCH_MISSIVE_COUNT_SQL, params)
+    if hero_talent_id is None:
+        return fetch_with_retry(connection, cursor, FETCH_MISSIVE_COUNT_SQL, (spec_id, season))
+    return fetch_with_retry(
+        connection, cursor, FETCH_MISSIVE_COUNT_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+    )
 
 
 FETCH_EMBELLISHMENT_COUNT_SQL = """
+SELECT item_id, SUM(run_count) AS total_runs, MAX(max_timed_key) AS max_timed_key, MAX(max_depleted_key) AS max_depleted_key
+FROM Mythistone.global_aggregated_embellishments
+WHERE spec_id = %s
+  AND season = %s
+GROUP BY item_id
+ORDER BY total_runs DESC
+"""
+
+
+FETCH_EMBELLISHMENT_COUNT_BY_HERO_SQL = """
 SELECT item_id, run_count AS total_runs, max_timed_key, max_depleted_key
 FROM Mythistone.global_aggregated_embellishments
 WHERE spec_id = %s
   AND season = %s
+  AND hero_talent_id = %s
 ORDER BY total_runs DESC
 """
 
 
-def fetch_embellishment_count(connection, cursor, spec_id, season):
+def fetch_embellishment_count(connection, cursor, spec_id, season, hero_talent_id=None):
     """Fetch the embellishment count for a specific spec and season from the database."""
-    params = (spec_id, season)
-    return fetch_with_retry(connection, cursor, FETCH_EMBELLISHMENT_COUNT_SQL, params)
+    if hero_talent_id is None:
+        return fetch_with_retry(connection, cursor, FETCH_EMBELLISHMENT_COUNT_SQL, (spec_id, season))
+    return fetch_with_retry(
+        connection, cursor, FETCH_EMBELLISHMENT_COUNT_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+    )
 
 
 FETCH_CRAFTED_ITEMS_COUNT_SQL = """
-SELECT item_id, run_count AS total_runs, max_timed_key, max_depleted_key
+SELECT item_id, SUM(run_count) AS total_runs, MAX(max_timed_key) AS max_timed_key, MAX(max_depleted_key) AS max_depleted_key
 FROM Mythistone.global_aggregated_crafted_items
 WHERE spec_id = %s
   AND season = %s
+GROUP BY item_id
 ORDER BY total_runs DESC
 LIMIT 10
 """
 
 
-def fetch_crafted_items_count(connection, cursor, spec_id, season):
+FETCH_CRAFTED_ITEMS_COUNT_BY_HERO_SQL = """
+SELECT item_id, run_count AS total_runs, max_timed_key, max_depleted_key
+FROM Mythistone.global_aggregated_crafted_items
+WHERE spec_id = %s
+  AND season = %s
+  AND hero_talent_id = %s
+ORDER BY total_runs DESC
+LIMIT 10
+"""
+
+
+def fetch_crafted_items_count(connection, cursor, spec_id, season, hero_talent_id=None):
     """Fetch the crafted items count for a specific spec and season from the database."""
-    params = (spec_id, season)
-    return fetch_with_retry(connection, cursor, FETCH_CRAFTED_ITEMS_COUNT_SQL, params)
+    if hero_talent_id is None:
+        return fetch_with_retry(connection, cursor, FETCH_CRAFTED_ITEMS_COUNT_SQL, (spec_id, season))
+    return fetch_with_retry(
+        connection, cursor, FETCH_CRAFTED_ITEMS_COUNT_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+    )
 
 
 FETCH_EMBELLISHMENT_COMPS_SQL = """
@@ -1502,10 +1711,25 @@ LIMIT 15
 """
 
 
-def fetch_embellishment_comps(connection, cursor, spec_id, season):
+FETCH_EMBELLISHMENT_COMPS_BY_HERO_SQL = """
+SELECT comp, SUM(run_count) AS total_runs, MAX(max_timed_key), MAX(max_depleted_key)
+FROM Mythistone.aggregated_embellishment_comps
+WHERE spec_id = %s
+  AND season = %s
+  AND hero_talent_id = %s
+GROUP BY comp
+ORDER BY total_runs DESC
+LIMIT 15
+"""
+
+
+def fetch_embellishment_comps(connection, cursor, spec_id, season, hero_talent_id=None):
     """Fetch the embellishment comp counts for a specific spec and season from the database."""
-    params = (spec_id, season)
-    return fetch_with_retry(connection, cursor, FETCH_EMBELLISHMENT_COMPS_SQL, params)
+    if hero_talent_id is None:
+        return fetch_with_retry(connection, cursor, FETCH_EMBELLISHMENT_COMPS_SQL, (spec_id, season))
+    return fetch_with_retry(
+        connection, cursor, FETCH_EMBELLISHMENT_COMPS_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+    )
 
 
 FETCH_CRAFTED_COMPS_SQL = """
@@ -1519,10 +1743,25 @@ LIMIT 10
 """
 
 
-def fetch_crafted_comps(connection, cursor, spec_id, season):
+FETCH_CRAFTED_COMPS_BY_HERO_SQL = """
+SELECT comp, SUM(run_count) AS total_runs, MAX(max_timed_key), MAX(max_depleted_key)
+FROM Mythistone.aggregated_crafted_comps
+WHERE spec_id = %s
+  AND season = %s
+  AND hero_talent_id = %s
+GROUP BY comp
+ORDER BY total_runs DESC
+LIMIT 10
+"""
+
+
+def fetch_crafted_comps(connection, cursor, spec_id, season, hero_talent_id=None):
     """Fetch the crafted item comp counts for a specific spec and season from the database."""
-    params = (spec_id, season)
-    return fetch_with_retry(connection, cursor, FETCH_CRAFTED_COMPS_SQL, params)
+    if hero_talent_id is None:
+        return fetch_with_retry(connection, cursor, FETCH_CRAFTED_COMPS_SQL, (spec_id, season))
+    return fetch_with_retry(
+        connection, cursor, FETCH_CRAFTED_COMPS_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+    )
 
 
 FETCH_GEM_COMPS_SQL = """
@@ -1536,10 +1775,25 @@ LIMIT 15
 """
 
 
-def fetch_gem_comps(connection, cursor, spec_id, season):
+FETCH_GEM_COMPS_BY_HERO_SQL = """
+SELECT comp, SUM(run_count) AS total_runs, MAX(max_timed_key), MAX(max_depleted_key)
+FROM Mythistone.aggregated_gem_comps
+WHERE spec_id = %s
+  AND season = %s
+  AND hero_talent_id = %s
+GROUP BY comp
+ORDER BY total_runs DESC
+LIMIT 15
+"""
+
+
+def fetch_gem_comps(connection, cursor, spec_id, season, hero_talent_id=None):
     """Fetch the gem comp counts for a specific spec and season from the database."""
-    params = (spec_id, season)
-    return fetch_with_retry(connection, cursor, FETCH_GEM_COMPS_SQL, params)
+    if hero_talent_id is None:
+        return fetch_with_retry(connection, cursor, FETCH_GEM_COMPS_SQL, (spec_id, season))
+    return fetch_with_retry(
+        connection, cursor, FETCH_GEM_COMPS_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+    )
 
 
 FETCH_ENCHANT_COMPS_SQL = """
@@ -1553,10 +1807,25 @@ LIMIT 15
 """
 
 
-def fetch_enchant_comps(connection, cursor, spec_id, season):
+FETCH_ENCHANT_COMPS_BY_HERO_SQL = """
+SELECT comp, SUM(run_count) AS total_runs, MAX(max_timed_key), MAX(max_depleted_key)
+FROM Mythistone.aggregated_enchant_comps
+WHERE spec_id = %s
+  AND season = %s
+  AND hero_talent_id = %s
+GROUP BY comp
+ORDER BY total_runs DESC
+LIMIT 15
+"""
+
+
+def fetch_enchant_comps(connection, cursor, spec_id, season, hero_talent_id=None):
     """Fetch the enchantment comp counts for a specific spec and season from the database."""
-    params = (spec_id, season)
-    return fetch_with_retry(connection, cursor, FETCH_ENCHANT_COMPS_SQL, params)
+    if hero_talent_id is None:
+        return fetch_with_retry(connection, cursor, FETCH_ENCHANT_COMPS_SQL, (spec_id, season))
+    return fetch_with_retry(
+        connection, cursor, FETCH_ENCHANT_COMPS_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+    )
 
 
 FETCH_TIER_SET_COMPS_SQL = """
@@ -1570,10 +1839,25 @@ LIMIT 10
 """
 
 
-def fetch_tier_set_comps(connection, cursor, spec_id, season):
+FETCH_TIER_SET_COMPS_BY_HERO_SQL = """
+SELECT comp, SUM(run_count) AS total_runs, MAX(max_timed_key), MAX(max_depleted_key)
+FROM Mythistone.aggregated_tier_set_comps
+WHERE spec_id = %s
+  AND season = %s
+  AND hero_talent_id = %s
+GROUP BY comp
+ORDER BY total_runs DESC
+LIMIT 10
+"""
+
+
+def fetch_tier_set_comps(connection, cursor, spec_id, season, hero_talent_id=None):
     """Fetch the tier set comp counts for a specific spec and season from the database."""
-    params = (spec_id, season)
-    return fetch_with_retry(connection, cursor, FETCH_TIER_SET_COMPS_SQL, params)
+    if hero_talent_id is None:
+        return fetch_with_retry(connection, cursor, FETCH_TIER_SET_COMPS_SQL, (spec_id, season))
+    return fetch_with_retry(
+        connection, cursor, FETCH_TIER_SET_COMPS_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+    )
 
 
 FETCH_TOTAL_SEASON_RUNS_SQL = """
@@ -2867,16 +3151,35 @@ def fetch_class_talent_overview(connection, cursor, spec_id, season):
 
 
 FETCH_STATS_SQL = """
-SELECT run_count, stat, avg_percent, avg_raw, min_raw, max_raw 
+SELECT
+  SUM(run_count) AS run_count,
+  stat,
+  SUM(avg_percent * run_count) / NULLIF(SUM(CASE WHEN avg_percent IS NULL THEN 0 ELSE run_count END), 0) AS avg_percent,
+  ROUND(SUM(avg_raw * run_count) / NULLIF(SUM(run_count), 0)) AS avg_raw,
+  MIN(min_raw) AS min_raw,
+  MAX(max_raw) AS max_raw
 FROM Mythistone.aggregated_character_stats
 WHERE spec_id = %s and season = %s
+GROUP BY stat
 ORDER BY avg_raw DESC
 """
 
 
-def fetch_stats(connection, cursor, spec_id, season):
-    params = (spec_id, season)
-    rows = fetch_with_retry(connection, cursor, FETCH_STATS_SQL, params)
+FETCH_STATS_BY_HERO_SQL = """
+SELECT run_count, stat, avg_percent, avg_raw, min_raw, max_raw
+FROM Mythistone.aggregated_character_stats
+WHERE spec_id = %s and season = %s and hero_talent_id = %s
+ORDER BY avg_raw DESC
+"""
+
+
+def fetch_stats(connection, cursor, spec_id, season, hero_talent_id=None):
+    if hero_talent_id is None:
+        rows = fetch_with_retry(connection, cursor, FETCH_STATS_SQL, (spec_id, season))
+    else:
+        rows = fetch_with_retry(
+            connection, cursor, FETCH_STATS_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+        )
     if not rows:
         return []
     data = {}
@@ -5123,9 +5426,10 @@ def fetch_talent_usage(connection, cursor, spec_id, season):
 
 
 FETCH_EQUIPMENT_USAGE_SQL = """
-SELECT slot, item_id, run_count
+SELECT slot, item_id, SUM(run_count) AS run_count
 FROM Mythistone.global_aggregated_equipment
 WHERE spec_id = %s AND season = %s
+GROUP BY slot, item_id
 """
 
 
@@ -5140,16 +5444,18 @@ def fetch_equipment_usage(connection, cursor, spec_id, season):
 
 
 FETCH_EMBELLISHMENT_USAGE_SQL = """
-SELECT item_id, run_count
+SELECT item_id, SUM(run_count) AS run_count
 FROM Mythistone.global_aggregated_embellishments
 WHERE spec_id = %s AND season = %s
+GROUP BY item_id
 ORDER BY run_count DESC
 """
 
 FETCH_CRAFTED_USAGE_SQL = """
-SELECT item_id, run_count
+SELECT item_id, SUM(run_count) AS run_count
 FROM Mythistone.global_aggregated_crafted_items
 WHERE spec_id = %s AND season = %s
+GROUP BY item_id
 ORDER BY run_count DESC
 """
 
@@ -5182,9 +5488,10 @@ def fetch_gem_usage(connection, cursor, spec_id, season):
 
 
 FETCH_MISSIVE_USAGE_SQL = """
-SELECT item_id, run_count
+SELECT item_id, SUM(run_count) AS run_count
 FROM Mythistone.global_aggregated_missives
 WHERE spec_id = %s AND season = %s
+GROUP BY item_id
 ORDER BY run_count DESC
 """
 
