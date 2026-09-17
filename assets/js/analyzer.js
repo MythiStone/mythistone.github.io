@@ -832,6 +832,47 @@
     };
   }
 
+  function heroNoteHtml(meta, T, diff) {
+    if (!diff || diff.error || !diff.haveScore) return "";
+    var playerHero = diff.playerHero, hero = diff.hero, popular = diff.popular;
+    var byHero = diff.byHero || {};
+    if (!hero) return "";
+    var topHero = T.top_hero != null ? String(T.top_hero) : null;
+    var topHeroPct = T.top_hero_pct;
+    function hn(h) { return esc(heroTreeName(T, h)); }
+    var spec = esc(meta.spec || "");
+    // Only worth showing when the compared build isn't both the player's tree AND
+    // the top-50 favourite -- otherwise everything already agrees.
+    var playerDiffers = playerHero && playerHero !== hero;
+    var topDiffers = topHero && topHero !== hero;
+    if (!playerDiffers && !topDiffers && byHero[playerHero]) return "";
+
+    var lead;
+    if (!playerHero) {
+      lead = "This report is scored against the <strong>" + hn(hero) + "</strong> build.";
+    } else if (playerHero === hero) {
+      lead = "You're scored against your own <strong>" + hn(hero) + "</strong> build.";
+    } else if (!byHero[playerHero]) {
+      lead = "There's no meta build for <strong>" + hn(playerHero) +
+        "</strong> yet, so you're scored against the <strong>" + hn(hero) + "</strong> build instead.";
+    } else {
+      lead = "You're playing <strong>" + hn(playerHero) +
+        "</strong>, but this report is scored against the <strong>" + hn(hero) +
+        "</strong> build. Pick your hero tree in the Talents card to compare against it.";
+    }
+    // The strongest single popularity signal: what the top 50 run. Only added
+    // when it names a tree other than the one we're scoring against.
+    var context = "";
+    if (topDiffers) {
+      context = " The top 50 " + spec + " players most often run <strong>" + hn(topHero) +
+        "</strong>" + (topHeroPct != null ? " (" + topHeroPct + "%)" : "") + ".";
+    } else if (popular && popular !== hero) {
+      context = " <strong>" + hn(popular) + "</strong> is the most popular pick overall.";
+    }
+    return '<div class="an-hero-note d-flex align-items-start text-sm mb-3">' +
+      '<i class="material-symbols-rounded me-2">info</i><div>' + lead + context + "</div></div>";
+  }
+
   // Render the talents card from a precomputed diff. The match figure lives in
   // the shared header now, so the card carries the hero-tree switch, a copy-meta-
   // loadout button, the build (Class tree | hero choice column | Spec tree, the
@@ -849,7 +890,10 @@
     function heroName(h) { return heroTreeName(T, h); }
 
     // Top-50 verified-player signal (spec-page parity): the tree those players
-    // most often run, its share, and the "<spec> <class>" label the badges name.
+    // most often run and its share (used by the hero column's TOP badge/hint),
+    // plus the "<spec> <class>" label the node TOP badges name. (The
+    // comparison-basis banner that used to sit in this card now renders in the
+    // results header via heroNoteHtml.)
     var topHero = T.top_hero != null ? String(T.top_hero) : null;
     var topHeroPct = T.top_hero_pct;
     var specLabel = ((meta.spec || "") + " " + (meta.class || "")).trim();
@@ -864,34 +908,6 @@
     var head = '<div class="an-tt-headrow"><div class="an-card-head">Talents</div>' + copyBtn + "</div>";
 
     var heroKeys = Object.keys(byHero);
-
-    // The comparison-basis note. Keep the general-population context ("most X
-    // players run <popular>") and layer the top-50 nuance on top of it, rather
-    // than replacing one with the other, so both facts are visible: the casual
-    // favourite AND what the elite actually run.
-    var heroNote = "";
-    var noteHead = '<p class="an-tt-note text-xs mb-2">' +
-      '<i class="material-symbols-rounded align-middle me-1">info</i>';
-    // top-50 clause, only when the elite most-run tree differs from the general
-    // favourite (otherwise it just restates the same tree).
-    var topClause = (topHero && popular && topHero !== popular)
-      ? " The top 50 players most often run <strong>" + esc(heroName(topHero)) + "</strong>" +
-        (topHeroPct != null ? " (" + topHeroPct + "%)" : "") + "."
-      : "";
-    if (playerHero && popular && playerHero !== popular) {
-      heroNote = noteHead +
-        "You're playing <strong>" + esc(heroName(playerHero)) + "</strong>. Most " +
-        esc(meta.spec || "") + " players run <strong>" + esc(heroName(popular)) + "</strong>." +
-        topClause +
-        " You're being compared to the " + esc(heroName(hero)) + " build.</p>";
-    } else if (playerHero && hero && playerHero !== hero && !byHero[playerHero]) {
-      // Player runs a tree we have no meta build for yet: say what we compared to.
-      // (A deliberate hero switch away from a tree we DO have a build for needs no
-      // banner -- the hero-tree hint already explains the top-50 preference.)
-      heroNote = noteHead +
-        "We don't have a meta build for <strong>" + esc(heroName(playerHero)) +
-        "</strong> yet, so you're being compared to the " + esc(heroName(hero)) + " build.</p>";
-    }
 
     function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
     function isActive(nid) { var n = ttNode(T, nid); return !!(n && (n.free || has(playerTaken, nid))); }
@@ -1098,7 +1114,7 @@
       }).join("");
     }
 
-    return wrap(head + heroNote + buildSection);
+    return wrap(head + buildSection);
   }
 
   // Shared "meta match" header rings: a small Gear ring, a big overall ring
@@ -1131,8 +1147,9 @@
   // Wire the hero-tree switch once: a click re-renders just the talents card
   // against the chosen tree, using the context stashed by the last render().
   var talentCtx = null;
-  // Hero-tree switch: re-diff against the chosen tree, re-render the card, and
-  // update the shared header's Talents + overall rings (gear is unaffected).
+  // Hero-tree switch: re-diff against the chosen tree, re-render the talents and
+  // gear cards (gear, gems and enchants all swap with the tree), refresh the
+  // comparison-basis banner, and update all three header rings.
   results.addEventListener("click", function (ev) {
     var btn = ev.target.closest && ev.target.closest(".an-tt-hero-btn");
     if (!btn || !talentCtx) return;
@@ -1142,9 +1159,20 @@
       host.innerHTML = talentCardHtml(talentCtx.meta, talentCtx.parsed, talentCtx.tree, diff);
       refreshTalentTooltips(host);
     }
+    var noteHost = document.getElementById("an-hero-note");
+    if (noteHost) {
+      noteHost.innerHTML = heroNoteHtml(talentCtx.meta, talentCtx.tree, diff);
+      refreshTalentTooltips(noteHost);
+    }
+    var gear = renderGear(talentCtx.meta, talentCtx.parsed, diff && diff.hero);
+    var gearHost = document.getElementById("an-gear");
+    if (gearHost) {
+      gearHost.innerHTML = gear.html;
+      refreshTalentTooltips(gearHost);
+    }
     var talentScore = diff && diff.haveScore ? diff.score : null;
     var ringsBox = results.querySelector(".an-mh-rings");
-    if (ringsBox) ringsBox.outerHTML = matchRings(talentCtx.gearScore, talentScore);
+    if (ringsBox) ringsBox.outerHTML = matchRings(gear.gearScore, talentScore);
   });
 
   // Copy the currently-compared meta loadout string to the clipboard.
@@ -1223,9 +1251,39 @@
     }
   }
 
-  function render(meta, parsed, treeFile) {
+  // The meta slot targets for a given hero tree. meta.slots_by_hero (keyed by
+  // hero tree id) lets the gear grid swap with the hero-tree toggle; a tree with
+  // too little data falls back to the spec-wide meta.slots, flagged so the card
+  // can note it covers all builds. Gems/enchants are NOT split per hero and stay
+  // on the spec-wide combos.
+  function slotsForHero(meta, hero) {
+    var byHero = meta.slots_by_hero || {};
+    var e = hero != null ? byHero[String(hero)] : null;
+    if (e && e.slots) return { slots: e.slots, fallback: !!e.fallback };
+    return { slots: meta.slots, fallback: false };
+  }
+
+  // The gem / enchant combo for a hero tree: that tree's top-50 combo when its
+  // players exist, else its general-population most-popular combo (both baked
+  // into meta.*_by_hero by the generator). Falls back to the spec-wide combo for
+  // specs/builds without per-hero data. `flat` is the spec-wide field name.
+  function comboForHero(meta, hero, mapKey, flat) {
+    var m = meta[mapKey] || {};
+    var e = hero != null ? m[String(hero)] : null;
+    return e || meta[flat] || null;
+  }
+  function enchExpectedForHero(meta, hero) {
+    var m = meta.enchant_group_expected_by_hero || {};
+    var e = hero != null ? m[String(hero)] : null;
+    return e || meta.enchant_group_expected || {};
+  }
+
+  // Build the Gear card for one hero tree: the slot grid (scored against that
+  // tree's targets) plus the spec-wide gem/enchant combo sections. Returns the
+  // card html, the folded gear score, and how many slots were comparable, so
+  // render() and the hero-switch handler can share one code path.
+  function renderGear(meta, parsed, hero) {
     var specId = meta.spec_id;
-    var disp = (window.SPEC_DISPLAY || {})[specId] || { name: meta.spec, class: meta.class, icon: null };
     // Keyed by slot, not a flat list: the scoring loop below walks SLOT_ORDER,
     // but layout() places the tiles in the armory grouping afterwards.
     var tilesBySlot = {};
@@ -1235,14 +1293,15 @@
     // Combined into --an-mod-slots below.
     var maxGems = 0, anyEnch = false;
 
+    var sel = slotsForHero(meta, hero);
     // Equipping the meta two-hander costs the player BOTH weapons, so a
     // one-hand + off-hand player has to be told about both slots, not just the
     // main hand. The spec has no OFF_HAND meta slot in that case, so we score
     // the off-hand against the two-handed MAIN_HAND picks through a virtual
-    // slot — every tile behind it (gems, enchants, badges) then falls out of the
+    // slot -- every tile behind it (gems, enchants, badges) then falls out of the
     // normal per-slot path. Specs that really do use an off-hand keep their own
     // OFF_HAND slot and never reach this.
-    var metaSlots = meta.slots;
+    var metaSlots = sel.slots;
     var twoHandSwap = false;
     if (!metaSlots.OFF_HAND && parsed.slots.OFF_HAND && parsed.slots.MAIN_HAND) {
       var th = twoHandPicks(metaSlots.MAIN_HAND);
@@ -1257,12 +1316,18 @@
       }
     }
 
+    // Per-hero gem/enchant combos (top-50 for this tree, else its general-pop
+    // most-popular), so the gem/enchant checks and combo sections swap with the
+    // hero-tree toggle alongside the gear grid.
+    var gemCombo = comboForHero(meta, hero, "gem_combo_by_hero", "gem_combo");
+    var enchCombo = comboForHero(meta, hero, "enchant_combo_by_hero", "enchant_combo");
+
     // Top-combo budgets + the player's full id counts, built once so the
     // per-slot gem/enchant checks (and the over-quantity flag) see every socket.
-    var gemBudget = comboBudget(meta.gem_combo);
-    var gemInfo = comboInfo(meta.gem_combo);
-    var enchBudget = comboBudget(meta.enchant_combo);
-    var enchInfo = comboInfo(meta.enchant_combo);
+    var gemBudget = comboBudget(gemCombo);
+    var gemInfo = comboInfo(gemCombo);
+    var enchBudget = comboBudget(enchCombo);
+    var enchInfo = comboInfo(enchCombo);
     var counts = tallyPlayer(parsed);
 
     // Which bare slots to flag as "missing an enchant". Top players enchant
@@ -1271,7 +1336,7 @@
     // only as many still-bare slots as are needed to reach it. This stops an
     // un-enchantable caster off-hand (WEAPON expected 1, main hand already done)
     // from being flagged, while a dual-wielder (WEAPON expected 2) still is.
-    var enchExpected = meta.enchant_group_expected || {};
+    var enchExpected = enchExpectedForHero(meta, hero);
     var missingSlots = {};
     var groupSlots = {};
     SLOT_ORDER.forEach(function (s) {
@@ -1364,7 +1429,7 @@
       var footIssue = false;
 
       var gemCell = "";
-      if (meta.gem_combo && user.gems && user.gems.length) {
+      if (gemCombo && user.gems && user.gems.length) {
         gemCell = user.gems.map(function (gid) {
           var st = classifyAgainstCombo(gid, counts.gems, gemBudget);
           if (st !== "ok") footIssue = true;
@@ -1385,7 +1450,7 @@
       // already covered by another slot in the group) shows nothing.
       var enchCell = "";
       var eg = ENCHANT_GROUP[slotName];
-      if (meta.enchant_combo && eg && (enchExpected[eg] || 0) > 0) {
+      if (enchCombo && eg && (enchExpected[eg] || 0) > 0) {
         if (!user.enchant) {
           if (missingSlots[slotName]) {
             footIssue = true;
@@ -1446,11 +1511,6 @@
         "</div>";
     });
 
-    if (comparable === 0) {
-      showError("Couldn't match any gear slots. Make sure you pasted the full SimC export (the lines like head=,id=...).");
-      return;
-    }
-
     // Gear match now folds in gems and enchants, not just slots: each required
     // gem/enchant instance in the meta combo the player satisfies counts toward
     // the score alongside each scored slot they hit.
@@ -1467,13 +1527,46 @@
     var gearTotal = comparable + gemNeed + enchNeed;
     var gearScore = gearTotal ? Math.round((good + gemMet + enchMet) / gearTotal * 100) : null;
 
-    var iconHtml = disp.icon ? '<img src="/data/icons/' + esc(disp.icon) + '.jpg" class="an-mh-icon" alt="">' : "";
+    var modSlots = maxGems + (anyEnch ? 1 : 0);
 
-    // Talents: decode + diff up front so its score feeds the shared header.
+    // A tree with too few runs of its own reuses the spec-wide targets; say so.
+    var fbNote = sel.fallback
+      ? '<div class="text-xs text-secondary mb-2">Gear shown across all builds (too few runs on this hero tree to split it out).</div>'
+      : "";
+
+    var html =
+      '<div class="an-card an-gear-card"><div class="an-card-head">Gear</div>' + fbNote +
+        '<div class="an-grid' + (modSlots ? " an-has-mods" : "") +
+          '" style="--an-mod-slots:' + modSlots + '">' + layout(tilesBySlot) + "</div>" +
+        comboSection(gemCombo, counts.gems, "gem", meta) +
+        comboSection(enchCombo, counts.enchants, "enchant", meta) +
+      "</div>";
+
+    return { html: html, gearScore: gearScore, comparable: comparable };
+  }
+
+  function render(meta, parsed, treeFile) {
+    var specId = meta.spec_id;
+    var disp = (window.SPEC_DISPLAY || {})[specId] || { name: meta.spec, class: meta.class, icon: null };
+
+    // Talents first: its diff picks the hero tree (the player's own, else the
+    // popular one), and the gear grid is then scored against that same tree so
+    // the whole report reads as one coherent build. A hero switch re-runs both.
     var talentTree = buildTalentTree(meta, treeFile);
     var diff = talentTree ? talentDiff(meta, parsed, talentTree, null) : null;
+
+    var gear = renderGear(meta, parsed, diff && diff.hero);
+    if (gear.comparable === 0) {
+      showError("Couldn't match any gear slots. Make sure you pasted the full SimC export (the lines like head=,id=...).");
+      return;
+    }
+    var gearScore = gear.gearScore;
     var talentScore = diff && diff.haveScore ? diff.score : null;
-    talentCtx = { meta: meta, parsed: parsed, tree: talentTree, gearScore: gearScore };
+    // Stash the render context so the hero-switch handler can re-diff and
+    // re-render both cards without re-parsing the export.
+    talentCtx = { meta: meta, parsed: parsed, tree: talentTree };
+
+    var iconHtml = disp.icon ? '<img src="/data/icons/' + esc(disp.icon) + '.jpg" class="an-mh-icon" alt="">' : "";
 
     // One shared "meta match" header for the whole report: spec identity plus a
     // small Gear ring, a big overall ring (gear + talents 50/50) and a small
@@ -1485,26 +1578,22 @@
         matchRings(gearScore, talentScore) +
       "</div>";
 
-    // Width of the modifier zone, in icon slots: the busiest slot's gem count
-    // plus one for the enchant column. Zero means no slot in this report has
-    // either, and `an-has-mods` drops the zone (and its divider) entirely.
-    var modSlots = maxGems + (anyEnch ? 1 : 0);
-
     var talentsHtml = '<div id="an-talents">' +
       (talentTree ? talentCardHtml(meta, parsed, talentTree, diff) : "") + "</div>";
 
-    // Two columns below the header: gear (grid + gem/enchant combos) on the left,
-    // talents on the right. They stack on smaller screens and split from xl.
-    var gearHtml =
-      '<div class="an-card an-gear-card"><div class="an-card-head">Gear</div>' +
-        '<div class="an-grid' + (modSlots ? " an-has-mods" : "") +
-          '" style="--an-mod-slots:' + modSlots + '">' + layout(tilesBySlot) + "</div>" +
-        comboSection(meta.gem_combo, counts.gems, "gem", meta) +
-        comboSection(meta.enchant_combo, counts.enchants, "enchant", meta) +
-      "</div>";
+    // Report-wide comparison-basis banner (which build we're scored against),
+    // between the header and the cards, in its own box so a hero switch updates it.
+    var heroNote = '<div id="an-hero-note">' +
+      (talentTree ? heroNoteHtml(meta, talentTree, diff) : "") + "</div>";
+
+    // Gear lives in its own #an-gear box so the hero-switch handler can swap it
+    // in place. Two columns below the header: gear (grid + gem/enchant combos) on
+    // the left, talents on the right. They stack on smaller screens and split from xl.
+    var gearHtml = '<div id="an-gear">' + gear.html + "</div>";
 
     results.innerHTML =
       header +
+      heroNote +
       '<div class="row g-4 an-results-row">' +
         '<div class="col-12 col-xl-5 an-col-gear">' + gearHtml + "</div>" +
         '<div class="col-12 col-xl-7 an-col-talents">' + talentsHtml + "</div>" +

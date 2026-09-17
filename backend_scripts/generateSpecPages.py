@@ -877,6 +877,7 @@ def build_spec_meta_json(
     bis_summary, socket_lookup,
     talent_lookup=None, loadouts=None,
     hero_variants=None, top_hero=None, top_hero_pct=0.0, hero_tree_top_counts=None,
+    sections_by_tree=None,
 ):
     """Compact, machine-readable meta snapshot for one spec, consumed by the
     client-side "Am I meta?" analyzer (assets/js/analyzer.js). Built entirely
@@ -889,7 +890,10 @@ def build_spec_meta_json(
     scores a slot as a match only when the equipped item is one of these. The
     single most-equipped item is kept as ``common`` for neutral display on slots
     that have neither target (sparse Raider.io/SimC data) — it never counts
-    toward the score. Also carries the single most-popular top-50 gem combo and
+    toward the score. When ``sections_by_tree`` is supplied it also carries
+    ``slots_by_hero`` (the same per-slot targets computed once per hero tree, so
+    the analyzer's gear grid swaps with the hero-tree toggle; gems/enchants stay
+    spec-wide). Also carries the single most-popular top-50 gem combo and
     enchant combo (multisets, ``gem_combo``/``enchant_combo``) that the analyzer
     scores the player's sockets/enchants against as a per-id quantity budget, how
     many enchanted slots top players run per slot group
@@ -938,23 +942,42 @@ def build_spec_meta_json(
         pick.update(extra)
         return pick
 
-    slots = {}
-    for collection in (left_slots, right_slots, weapon_slots, trinket_slots):
-        for slot_dict in collection:
-            entries = slot_dict.get("entries") or []
-            if not entries:
-                continue
-            slot_name = slot_dict.get("slot")
-            slot_count = slot_dict.get("slot_count") or 0
-            top = [_pick(e, pct=e.get("bis_pct")) for e in entries if e.get("is_bis")]
-            simc = next((e for e in entries if e.get("is_simc_bis")), None)
-            common = entries[0]
-            common_pct = round(common.get("count", 0) / slot_count * 100, 1) if slot_count else None
-            slots[slot_name] = {
-                "top": top,
-                "sim": _pick(simc, dps_pct=simc.get("simc_dps_pct")) if simc else None,
-                "common": _pick(common, pct=common_pct),
-            }
+    def _build_slots(collections):
+        out = {}
+        for collection in collections:
+            for slot_dict in collection:
+                entries = slot_dict.get("entries") or []
+                if not entries:
+                    continue
+                slot_name = slot_dict.get("slot")
+                slot_count = slot_dict.get("slot_count") or 0
+                top = [_pick(e, pct=e.get("bis_pct")) for e in entries if e.get("is_bis")]
+                simc = next((e for e in entries if e.get("is_simc_bis")), None)
+                common = entries[0]
+                common_pct = round(common.get("count", 0) / slot_count * 100, 1) if slot_count else None
+                out[slot_name] = {
+                    "top": top,
+                    "sim": _pick(simc, dps_pct=simc.get("simc_dps_pct")) if simc else None,
+                    "common": _pick(common, pct=common_pct),
+                }
+        return out
+
+    slots = _build_slots((left_slots, right_slots, weapon_slots, trinket_slots))
+
+    # Per-hero-tree slot targets, so the analyzer's gear grid swaps with the
+    # hero-tree toggle (gems/enchants stay spec-wide). Reuses the per-tree slot
+    # payloads the spec page already computed (`sections_by_tree`); a thin tree's
+    # entry is the combined payload flagged `fallback`, so the client can note it
+    # covers all builds. Only slots split per hero -- the gem/enchant combos below
+    # remain the single spec-wide top-50 set.
+    slots_by_hero = {}
+    for _tid, _sec in (sections_by_tree or {}).items():
+        _by = _build_slots((
+            _sec.get("left_slots") or [], _sec.get("right_slots") or [],
+            _sec.get("weapon_slots") or [], _sec.get("trinket_slots") or [],
+        ))
+        if _by:
+            slots_by_hero[str(_tid)] = {"slots": _by, "fallback": bool(_sec.get("fallback"))}
 
     # The single most-popular gem/enchant combo among the top-50 verified
     # loadouts (the same `best` combos the spec page's "TOP" badge is built from,
@@ -1010,29 +1033,78 @@ def build_spec_meta_json(
             "count": int(best.get("count") or 0),
         }
 
+    # How many enchanted slots top players run per group, read off a combo, so the
+    # client flags a bare slot "missing" only while under that count: a caster's
+    # WEAPON expected == 1 won't flag the un-enchantable off-hand, while a
+    # dual-wielder's WEAPON == 2 still flags a bare second weapon. FINGER == 2
+    # means both rings are expected to be enchanted. enchant_slots is keyed by the
+    # same SLOT_GROUPS names the client's ENCHANT_GROUP map targets.
+    def _ench_group_expected(combo, ench_slots):
+        id_group = {}
+        for grp, lst in (ench_slots or {}).items():
+            for e in (lst or []):
+                eid = e.get("id")
+                if eid is not None:
+                    id_group[int(eid)] = grp
+        out = {}
+        for e in (combo or {}).get("entries", []):
+            grp = id_group.get(int(e["id"]))
+            if grp:
+                out[grp] = out.get(grp, 0) + e["qty"]
+        return out
+
+    # A general-population per-hero multiset (build_multiset_comps output, ranked
+    # by count) collapsed into the same {key, pct, count} shape _combo_from_best
+    # consumes, so a hero tree with no top-50 loadouts still gets a real combo.
+    def _best_from_multiset(comps_list, total):
+        if not comps_list:
+            return None
+        top = comps_list[0]
+        ids = []
+        for e in (top.get("entries") or []):
+            ids.extend([int(e["id"])] * int(e.get("qty", 1)))
+        if not ids:
+            return None
+        count = int(top.get("count") or 0)
+        return {
+            "key": ",".join(str(i) for i in sorted(ids)),
+            "count": count,
+            "pct": (count / total * 100.0) if total else 0.0,
+        }
+
     bis = bis_summary or {}
     gem_combo = _combo_from_best((bis.get("gem_comps") or {}).get("best"), socket_lookup, False)
     enchant_combo = _combo_from_best((bis.get("enchant_comps") or {}).get("best"), enchant_lookup, True)
+    enchant_group_expected = _ench_group_expected(enchant_combo, enchant_slots)
 
-    # enchant id -> its normalized slot group (FINGER/WEAPON/...), from the
-    # popular valid enchants per group. enchant_slots is keyed by the same
-    # SLOT_GROUPS names the client's ENCHANT_GROUP map targets.
-    ench_id_group = {}
-    for grp, lst in (enchant_slots or {}).items():
-        for e in (lst or []):
-            eid = e.get("id")
-            if eid is not None:
-                ench_id_group[int(eid)] = grp
-    # How many enchanted slots top players run per group, read off the combo, so
-    # the client flags a bare slot "missing" only while under that count: a
-    # caster's WEAPON expected == 1 won't flag the un-enchantable off-hand, while
-    # a dual-wielder's WEAPON == 2 still flags a bare second weapon. FINGER == 2
-    # means both rings are expected to be enchanted.
-    enchant_group_expected = {}
-    for e in (enchant_combo or {}).get("entries", []):
-        grp = ench_id_group.get(int(e["id"]))
-        if grp:
-            enchant_group_expected[grp] = enchant_group_expected.get(grp, 0) + e["qty"]
+    # Per-hero-tree gem / enchant combos: the top-50 combo for THAT tree when its
+    # players exist, else the tree's general-population most-popular combo. The
+    # analyzer swaps these with the hero-tree toggle; the spec-wide values above
+    # stay as the fallback for specs/pages without per-hero data.
+    bis_gem_by_hero = bis.get("gem_comps_by_hero") or {}
+    bis_ench_by_hero = bis.get("enchant_comps_by_hero") or {}
+    gem_combo_by_hero = {}
+    enchant_combo_by_hero = {}
+    enchant_group_expected_by_hero = {}
+    for tid, sec in (sections_by_tree or {}).items():
+        key = str(tid)
+        gcombo = _combo_from_best((bis_gem_by_hero.get(key) or {}).get("best"), socket_lookup, False)
+        if not gcombo:
+            gcombo = _combo_from_best(
+                _best_from_multiset(sec.get("gem_comps"), sec.get("total_gem_comps") or 0),
+                socket_lookup, False,
+            )
+        ecombo = _combo_from_best((bis_ench_by_hero.get(key) or {}).get("best"), enchant_lookup, True)
+        if not ecombo:
+            ecombo = _combo_from_best(
+                _best_from_multiset(sec.get("enchant_comps"), sec.get("total_enchant_comps") or 0),
+                enchant_lookup, True,
+            )
+        if gcombo:
+            gem_combo_by_hero[key] = gcombo
+        if ecombo:
+            enchant_combo_by_hero[key] = ecombo
+            enchant_group_expected_by_hero[key] = _ench_group_expected(ecombo, sec.get("enchant_slots"))
 
     meta = {
         "spec_id": int(spec_id),
@@ -1050,6 +1122,14 @@ def build_spec_meta_json(
     )
     if talents:
         meta["talents"] = talents
+    if slots_by_hero:
+        meta["slots_by_hero"] = slots_by_hero
+    if gem_combo_by_hero:
+        meta["gem_combo_by_hero"] = gem_combo_by_hero
+    if enchant_combo_by_hero:
+        meta["enchant_combo_by_hero"] = enchant_combo_by_hero
+    if enchant_group_expected_by_hero:
+        meta["enchant_group_expected_by_hero"] = enchant_group_expected_by_hero
     return meta
 
 
@@ -1392,13 +1472,34 @@ def compute_bis_from_top_loadouts(
     missive_counts = defaultdict(int)           # reagent item_id -> loadouts
     embellishment_counts = defaultdict(int)
     embellishment_comp_counts = defaultdict(int)
+    # Gem / enchant comps split by the hero tree each loadout runs, so the
+    # analyzer can score against the top-50 combo for the SELECTED tree. Keyed by
+    # subTreeId; the denominator per tree is hero_tree_loadout_counts[tree].
+    gem_comp_counts_by_tree = defaultdict(lambda: defaultdict(int))
+    enchant_comp_counts_by_tree = defaultdict(lambda: defaultdict(int))
 
     def _comp_key(ids):
         # canonical DB key: ascending ids (repeats kept), comma-joined
         return ",".join(str(i) for i in sorted(ids))
 
+    def _loadout_hero_tree(lo):
+        # The subtree most of this loadout's hero nodes sit in (same rule the
+        # first pass uses for tree_talent_stats). None when no hero-node data.
+        if not hero_node_subtree:
+            return None
+        hits = defaultdict(int)
+        for t in lo.get("talents", []) or []:
+            node = t.get("node_id") or t.get("id")
+            if not node:
+                continue
+            st = hero_node_subtree.get(int(node))
+            if st is not None:
+                hits[st] += 1
+        return max(hits.items(), key=lambda x: x[1])[0] if hits else None
+
     for lo in top_loadouts:
         items = lo.get("items", []) or []
+        lo_tree = _loadout_hero_tree(lo)
 
         # crafted items + crafted comp
         crafted_ids = [
@@ -1432,7 +1533,10 @@ def compute_bis_from_top_loadouts(
                 continue
             gem_ids.extend([int(gid)] * int(g.get("usage_count", 1) or 1))
         if gem_ids:
-            gem_comp_counts[_comp_key(gem_ids)] += 1
+            gk = _comp_key(gem_ids)
+            gem_comp_counts[gk] += 1
+            if lo_tree is not None:
+                gem_comp_counts_by_tree[lo_tree][gk] += 1
 
         # enchant comp: multiset of enchantment ids
         ench_ids = []
@@ -1441,7 +1545,10 @@ def compute_bis_from_top_loadouts(
             if eid:
                 ench_ids.append(int(eid))
         if ench_ids:
-            enchant_comp_counts[_comp_key(ench_ids)] += 1
+            ek = _comp_key(ench_ids)
+            enchant_comp_counts[ek] += 1
+            if lo_tree is not None:
+                enchant_comp_counts_by_tree[lo_tree][ek] += 1
 
         # missives + embellishments (+ embellishment comp) from bonus ids
         missive_ids = set()
@@ -1467,17 +1574,30 @@ def compute_bis_from_top_loadouts(
         if embellishment_ids:
             embellishment_comp_counts[_comp_key(embellishment_ids)] += 1
 
-    def _summarize(countmap):
+    def _summarize(countmap, total=n):
         """Turn a {key: count} map into {'by_key': {key: {count, pct}}, 'best': {...}}."""
         by_key = {
-            k: {"count": int(c), "pct": (int(c) / n) * 100.0}
+            k: {"count": int(c), "pct": (int(c) / total) * 100.0 if total else 0.0}
             for k, c in countmap.items()
         }
         best = None
         if countmap:
             bk, bc = max(countmap.items(), key=lambda x: x[1])
-            best = {"key": bk, "count": int(bc), "pct": (int(bc) / n) * 100.0}
+            best = {"key": bk, "count": int(bc), "pct": (int(bc) / total) * 100.0 if total else 0.0}
         return {"by_key": by_key, "best": best}
+
+    # Per-hero-tree top-50 gem / enchant combos: the pct denominator is that
+    # tree's own top-50 loadout count, so `best.pct` reads "% of top-50 players ON
+    # this hero tree". A tree with no top-50 loadouts simply has no entry here and
+    # the analyzer falls back to its general-population most-popular combo.
+    gem_comps_by_hero = {
+        str(t): _summarize(c, hero_tree_loadout_counts.get(t, 0))
+        for t, c in gem_comp_counts_by_tree.items()
+    }
+    enchant_comps_by_hero = {
+        str(t): _summarize(c, hero_tree_loadout_counts.get(t, 0))
+        for t, c in enchant_comp_counts_by_tree.items()
+    }
 
     return {
         "num_loadouts": n,
@@ -1497,6 +1617,8 @@ def compute_bis_from_top_loadouts(
         "tier_set_comps": _summarize(tier_set_comp_counts),
         "gem_comps": _summarize(gem_comp_counts),
         "enchant_comps": _summarize(enchant_comp_counts),
+        "gem_comps_by_hero": gem_comps_by_hero,
+        "enchant_comps_by_hero": enchant_comps_by_hero,
         "missives": _summarize(missive_counts),
         "embellishments": _summarize(embellishment_counts),
         "embellishment_comps": _summarize(embellishment_comp_counts),
@@ -2884,24 +3006,6 @@ def main(template_path, output_dir, debug=False, spec=None):
                 overall_stats = None
 
 
-            # Machine-readable meta snapshot for the client-side "Am I meta?"
-            # analyzer. Reuses data already assembled above; writes one small
-            # JSON per spec that analyzer.js fetches by spec_id.
-            spec_meta = build_spec_meta_json(
-                spec_id, spec_data, class_data,
-                left_slots, right_slots, weapon_slots, trinket_slots,
-                enchant_slots, enchant_lookup, item_lookup, item_slug_map,
-                bis_summary, socket_lookup,
-                talent_lookup=talent_lookup, loadouts=loadouts,
-                hero_variants=hero_variants, top_hero=top_hero_tree,
-                top_hero_pct=top_hero_tree_pct,
-                hero_tree_top_counts=hero_tree_top_counts,
-            )
-            spec_meta_dir = os.path.join("assets", "json", "spec_meta")
-            os.makedirs(spec_meta_dir, exist_ok=True)
-            with open(os.path.join(spec_meta_dir, f"{spec_id}.json"), "w", encoding="utf-8") as f:
-                json.dump(spec_meta, f, separators=(",", ":"))
-
             # Merge the per-spec talent + subtree name/icon maps so the trends
             # bar can label talent movers (keys match aggregated_*_talent.talent_id).
             talent_name_map = dict(talent_lookup.get("talents", {}))
@@ -3127,6 +3231,26 @@ def main(template_path, output_dir, debug=False, spec=None):
                         sections_by_tree[_tid] = dict(_combined_payload)
                 else:
                     sections_by_tree[_tid] = dict(_combined_payload)
+
+            # Machine-readable meta snapshot for the client-side "Am I meta?"
+            # analyzer. Reuses data already assembled above (including the per-hero
+            # section payloads, so gear can swap with the hero-tree toggle); writes
+            # one small JSON per spec that analyzer.js fetches by spec_id.
+            spec_meta = build_spec_meta_json(
+                spec_id, spec_data, class_data,
+                left_slots, right_slots, weapon_slots, trinket_slots,
+                enchant_slots, enchant_lookup, item_lookup, item_slug_map,
+                bis_summary, socket_lookup,
+                talent_lookup=talent_lookup, loadouts=loadouts,
+                hero_variants=hero_variants, top_hero=top_hero_tree,
+                top_hero_pct=top_hero_tree_pct,
+                hero_tree_top_counts=hero_tree_top_counts,
+                sections_by_tree=sections_by_tree,
+            )
+            spec_meta_dir = os.path.join("assets", "json", "spec_meta")
+            os.makedirs(spec_meta_dir, exist_ok=True)
+            with open(os.path.join(spec_meta_dir, f"{spec_id}.json"), "w", encoding="utf-8") as f:
+                json.dump(spec_meta, f, separators=(",", ":"))
 
             output_html = template.render(
                 generated_at=datetime.now(timezone.utc).timestamp(),

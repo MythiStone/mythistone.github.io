@@ -607,13 +607,15 @@
 /* The hero tree is switched by clicking the glowing middle hero icon (the
    .an-tt-hero-btn handler hook lives on that icon in analyzer.js); the old pill
    button row was a redundant second switch and has been removed. */
-.an-tt-note {
+.an-hero-note {
   color: var(--mythi-text-muted);
   background: rgba(255, 167, 38, 0.08);
   border-left: 3px solid #ffa726;
-  padding: 0.4rem 0.6rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 4px;
 }
+.an-hero-note .material-symbols-rounded { color: #ffa726; font-size: 1.1rem; }
+.an-hero-note strong { color: var(--bs-emphasis-color); font-weight: 600; }
 
 .an-tt-build { display: flex; flex-direction: column; gap: 0.7rem; }
 .an-tt-group-head {
