@@ -3201,7 +3201,8 @@ def fetch_comp_routes(
             "rd_base.timestamp >= CAST(UNIX_TIMESTAMP(NOW() - INTERVAL %s DAY) AS UNSIGNED)"
         )
         params.append(int(recent_only_days))
-        
+    where_clauses.append("rd_base.duration <= dd.upgrade_1_duration")
+
     where_sql = ""
     if where_clauses:
         where_sql = " WHERE " + " AND ".join(where_clauses)
@@ -3231,6 +3232,7 @@ def fetch_comp_routes(
             ) as specs_route_key
         FROM RouteSignatures rs
         JOIN Mythistone.route_data rd_base ON rs.route_key = rd_base.route_key
+        JOIN Mythistone.dungeon_data dd ON dd.dungeon_id = rd_base.dungeon_id
         LEFT JOIN RouteSpecCounts rsc ON rsc.route_key = rd_base.route_key
         {where_sql}
     )
@@ -3313,6 +3315,7 @@ def fetch_comp_vods(connection, cursor, recent_only_days=None, min_level=0, limi
             "rd.timestamp >= CAST(UNIX_TIMESTAMP(NOW() - INTERVAL %s DAY) AS UNSIGNED)"
         )
         params.append(int(recent_only_days))
+    where_clauses.append("rd.duration <= dd.upgrade_1_duration")
     where_sql = (" WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
     sql = f"""
@@ -3321,6 +3324,7 @@ def fetch_comp_vods(connection, cursor, recent_only_days=None, min_level=0, limi
            rd.dungeon_id, rd.keystone_level, rd.duration, rd.timestamp
     FROM Mythistone.route_videos rv
     JOIN Mythistone.route_data rd ON rd.route_key = rv.route_key
+    JOIN Mythistone.dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
     {where_sql}
     ORDER BY rd.keystone_level DESC, rd.timestamp DESC, rd.duration ASC
     """
@@ -3418,7 +3422,9 @@ WITH filtered AS (
   JOIN route_specs rs_filter
     ON rd.route_key = rs_filter.route_key
     AND rs_filter.spec_id = %s
+  JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
   WHERE rd.timestamp >= (UNIX_TIMESTAMP() - 4*7*24*3600)
+    AND rd.duration <= dd.upgrade_1_duration
 ),
 ranked AS (
   SELECT
@@ -3477,8 +3483,10 @@ WITH filtered AS (
          rd.dungeon_id, rd.keystone_level, rd.duration AS run_duration, rd.timestamp
   FROM route_videos rv
   JOIN route_data rd ON rd.route_key = rv.route_key
+  JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
   WHERE rv.pov_spec_id = %s
     AND rd.timestamp >= (UNIX_TIMESTAMP() - 4*7*24*3600)
+    AND rd.duration <= dd.upgrade_1_duration
 ),
 ranked AS (
   SELECT f.*, ROW_NUMBER() OVER (
@@ -3750,12 +3758,14 @@ RankedRoutes AS (
         ROW_NUMBER() OVER (PARTITION BY rs.route_signature ORDER BY rd.keystone_level DESC, rd.duration ASC, rd.timestamp DESC) as rn
     FROM RouteSignatures rs
     JOIN Mythistone.route_data rd ON rs.route_key = rd.route_key
+    JOIN Mythistone.dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
     WHERE rd.dungeon_id = %s
+      AND rd.duration <= dd.upgrade_1_duration
 )
-SELECT 
-    route_key, 
-    enemy_forces, 
-    keystone_level, 
+SELECT
+    route_key,
+    enemy_forces,
+    keystone_level,
     duration, 
     timestamp, 
     run_id,
@@ -3899,10 +3909,12 @@ WITH PullSigs AS (
         MAX(rd.keystone_level) as keystone_level
     FROM route_data rd
     JOIN route_pulls rp ON rd.route_key = rp.route_key
+    JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
     JOIN pull_enemies pe ON rp.pull_id = pe.pull_id AND rp.route_key = pe.route_key
-    LEFT JOIN pull_spells ps ON rp.pull_id = ps.pull_id AND rp.route_key = ps.route_key 
+    LEFT JOIN pull_spells ps ON rp.pull_id = ps.pull_id AND rp.route_key = ps.route_key
         AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
     WHERE rd.dungeon_id = %s
+    AND rd.duration <= dd.upgrade_1_duration
     AND EXISTS (
         SELECT 1 FROM pull_spells ps_lust 
         WHERE ps_lust.route_key = rd.route_key 
@@ -3943,8 +3955,8 @@ SELECT
     ansr.total_encounters,
     ansr.total_routes,
     (ansr.total_encounters / ansr.total_routes) * 100 AS inclusion_percentage,
-    (SELECT MAX(rd.keystone_level) FROM route_data rd JOIN pull_enemies pe ON rd.route_key = pe.route_key WHERE rd.dungeon_id = ansr.dungeon_id AND pe.npc_id = ansr.npc_id) as max_key_played,
-    (SELECT MAX(rd.keystone_level) FROM route_data rd WHERE rd.dungeon_id = ansr.dungeon_id AND NOT EXISTS (SELECT 1 FROM pull_enemies pe WHERE pe.route_key = rd.route_key AND pe.npc_id = ansr.npc_id)) as max_key_skipped
+    (SELECT MAX(rd.keystone_level) FROM route_data rd JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id JOIN pull_enemies pe ON rd.route_key = pe.route_key WHERE rd.dungeon_id = ansr.dungeon_id AND pe.npc_id = ansr.npc_id AND rd.duration <= dd.upgrade_1_duration) as max_key_played,
+    (SELECT MAX(rd.keystone_level) FROM route_data rd JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id WHERE rd.dungeon_id = ansr.dungeon_id AND rd.duration <= dd.upgrade_1_duration AND NOT EXISTS (SELECT 1 FROM pull_enemies pe WHERE pe.route_key = rd.route_key AND pe.npc_id = ansr.npc_id)) as max_key_skipped
 FROM aggregated_npc_skip_rates ansr
 WHERE ansr.dungeon_id = %s AND ansr.total_routes > 0 AND ansr.total_encounters < ansr.total_routes
 ORDER BY inclusion_percentage ASC
@@ -3957,7 +3969,9 @@ def fetch_dungeon_skip_rates(connection, cursor, dungeon_id: str, season: int = 
 FETCH_EXAMPLE_SKIP_ROUTE_SQL = """
 SELECT rd.rio_run_id, rd.route_key, rd.keystone_level
 FROM route_data rd
+JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
 WHERE rd.dungeon_id = %s
+  AND rd.duration <= dd.upgrade_1_duration
   AND rd.route_key NOT IN (
       SELECT route_key FROM pull_enemies WHERE npc_id = %s
   )
@@ -3978,7 +3992,9 @@ FROM (
            EXISTS(SELECT 1 FROM route_videos rv WHERE rv.route_key = rd.route_key) AS has_vod,
            MAX(rd.keystone_level) OVER () AS kmax
     FROM route_data rd
+    JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
     WHERE rd.dungeon_id = %s
+      AND rd.duration <= dd.upgrade_1_duration
       AND rd.route_key NOT IN (
           SELECT route_key FROM pull_enemies WHERE npc_id = %s
       )
@@ -4020,10 +4036,12 @@ WITH matching_pull AS (
         EXISTS(SELECT 1 FROM route_videos rv WHERE rv.route_key = rp.route_key) AS has_vod
     FROM route_data rd
     JOIN route_pulls rp ON rd.route_key = rp.route_key
+    JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
     JOIN pull_enemies pe ON rp.pull_id = pe.pull_id AND rp.route_key = pe.route_key
     JOIN pull_spells ps ON rp.pull_id = ps.pull_id AND rp.route_key = ps.route_key
         AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
     WHERE rd.dungeon_id = %s
+    AND rd.duration <= dd.upgrade_1_duration
     GROUP BY rp.route_key, rp.pull_id, rd.keystone_level
     HAVING GROUP_CONCAT(CONCAT(pe.npc_id, ':', pe.count) ORDER BY pe.npc_id ASC SEPARATOR ',') = %s
 ),
@@ -4068,10 +4086,12 @@ FROM (
             EXISTS(SELECT 1 FROM route_videos rv WHERE rv.route_key = rp.route_key) AS has_vod
         FROM route_data rd
         JOIN route_pulls rp ON rd.route_key = rp.route_key
+        JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
         JOIN pull_enemies pe ON rp.pull_id = pe.pull_id AND rp.route_key = pe.route_key
         JOIN pull_spells ps ON rp.pull_id = ps.pull_id AND rp.route_key = ps.route_key
             AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
         WHERE rd.dungeon_id = %s
+        AND rd.duration <= dd.upgrade_1_duration
         GROUP BY rp.route_key, rp.pull_id, rd.keystone_level
         HAVING GROUP_CONCAT(CONCAT(pe.npc_id, ':', pe.count) ORDER BY pe.npc_id ASC SEPARATOR ',') = %s
     ) mp

@@ -1398,12 +1398,16 @@ BEGIN
       COUNT(DISTINCT rd.route_key) as total_encounters,
       tr.total_routes
   FROM Mythistone.route_data rd
+  JOIN Mythistone.dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
   JOIN Mythistone.pull_enemies pe ON pe.route_key = rd.route_key
   JOIN (
-      SELECT dungeon_id, COUNT(DISTINCT route_key) as total_routes
-      FROM Mythistone.route_data
-      GROUP BY dungeon_id
+      SELECT rd2.dungeon_id, COUNT(DISTINCT rd2.route_key) as total_routes
+      FROM Mythistone.route_data rd2
+      JOIN Mythistone.dungeon_data dd2 ON dd2.dungeon_id = rd2.dungeon_id
+      WHERE rd2.duration <= dd2.upgrade_1_duration
+      GROUP BY rd2.dungeon_id
   ) tr ON rd.dungeon_id = tr.dungeon_id
+  WHERE rd.duration <= dd.upgrade_1_duration
   GROUP BY rd.dungeon_id, pe.npc_id, tr.total_routes;
 
   RENAME TABLE Mythistone.aggregated_npc_skip_rates     TO Mythistone.aggregated_npc_skip_rates_old,
