@@ -1781,5 +1781,14 @@
         "blog": "Balance Druid has 363 K Mythic+ runs tracked this season. The Elune's Chosen hero tree leads at 98% of builds, with Keeper of the Grove (2%) trailing.\n\n87% of tracked runs beat the timer, and 5% earn all three chests. Most builds prioritise Mastery > Haste > Crit > Versatility. Its top run this season is +20 Den of Nalorakk in 27:41.456.",
         "post": "Only 5% three_chest_pct, but Balance Druids run Mastery > Haste > Crit > Versatility, a stat order most veterans never expected #WoW #MythicPlus https://mythistone.com/classes/Dps/Balance_Druid",
         "timestamp": 1789593228772
+    },
+    "data/social/dungeon_overview_586_2026-09.png": {
+        "title": "Den of Nalorakk Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/den-of-nalorakk",
+        "social": "Den of Nalorakk: 863.4K runs, 86% timed, keys up to +21. Top comp: Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. Even the bears respect the timer. #WoW #MythicPlus https://mythistone.com/dungeons/den-of-nalorakk",
+        "blog": "This overview of Den of Nalorakk draws on 863.4 K tracked Mythic+ runs.\n\nGroups most often bring Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. Most players follow the keystone.guru/QFY5btn route.",
+        "post": "Den of Nalorakk: 863.4K runs, 86% timed, keys up to +21. Top comp: Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. Even the bears respect the timer. #WoW #MythicPlus https://mythistone.com/dungeons/den-of-nalorakk",
+        "timestamp": 1789679772757
     }
 }
