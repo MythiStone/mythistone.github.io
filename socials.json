@@ -1790,5 +1790,14 @@
         "blog": "This overview of Den of Nalorakk draws on 863.4 K tracked Mythic+ runs.\n\nGroups most often bring Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. Most players follow the keystone.guru/QFY5btn route.",
         "post": "Den of Nalorakk: 863.4K runs, 86% timed, keys up to +21. Top comp: Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. Even the bears respect the timer. #WoW #MythicPlus https://mythistone.com/dungeons/den-of-nalorakk",
         "timestamp": 1789679772757
+    },
+    "data/social/spec_overview_259_2026-09.png": {
+        "title": "Assassination Rogue Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Dps/Assassination_Rogue",
+        "social": "Never tried Assassination Rogue? 329.2 K runs say 89% timed. Best: +22 Den of Nalorakk in 30:35.278. Go Fatebound (81.31%) over Deathstalker (19%), stack Crit > Haste > Mastery > Versatility. #WoW #MythicPlus https://mythistone.com/classes/Dps/Assassination_Rogue",
+        "blog": "This season MythiStone has logged 329.2 K Assassination Rogue runs. The Fatebound hero tree leads at 81% of builds, with Deathstalker (19%) trailing.\n\n89% of tracked runs beat the timer, and 6% earn all three chests. Most builds prioritise Crit > Haste > Mastery > Versatility. Its top run this season is +22 Den of Nalorakk in 30:35.278.",
+        "post": "Never tried Assassination Rogue? 329.2 K runs say 89% timed. Best: +22 Den of Nalorakk in 30:35.278. Go Fatebound (81.31%) over Deathstalker (19%), stack Crit > Haste > Mastery > Versatility. #WoW #MythicPlus https://mythistone.com/classes/Dps/Assassination_Rogue",
+        "timestamp": 1789764695653
     }
 }
