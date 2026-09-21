@@ -29,7 +29,7 @@ CREATE TABLE `agg_pipeline_log` (
   `error` text,
   PRIMARY KEY (`id`),
   KEY `idx_agg_pipeline_log_step` (`step`,`started_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=984 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1337 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 -- Mythistone.aggregated_bonus_lists definition
@@ -47,6 +47,18 @@ CREATE TABLE `aggregated_bonus_lists` (
   KEY `idx_agg_summary_bonus_hash` (`bonus_hash`)
 ) /*!50100 TABLESPACE `aggregated_bonus_lists` */ ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+
+-- Mythistone.aggregated_character_spec_score definition
+
+CREATE TABLE `aggregated_character_spec_score` (
+  `season` int NOT NULL,
+  `region` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `blizzard_character_id` bigint unsigned NOT NULL,
+  `spec_id` int NOT NULL,
+  `spec_score` int NOT NULL,
+  PRIMARY KEY (`season`,`region`,`blizzard_character_id`,`spec_id`),
+  KEY `acss_read_IDX` (`season`,`spec_id`,`spec_score`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 -- Mythistone.aggregated_character_stats definition
@@ -89,6 +101,20 @@ CREATE TABLE `aggregated_completion_heatmap` (
   `hour_of_day` tinyint unsigned NOT NULL,
   `run_count` bigint unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`season`,`region`,`day_of_week`,`hour_of_day`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.aggregated_consumables definition
+
+CREATE TABLE `aggregated_consumables` (
+  `spec_id` int NOT NULL,
+  `season` int NOT NULL DEFAULT '0',
+  `category` varchar(16) NOT NULL,
+  `spell_id` int NOT NULL,
+  `item_id` int DEFAULT NULL,
+  `run_count` bigint NOT NULL DEFAULT '0',
+  PRIMARY KEY (`spec_id`,`season`,`category`,`spell_id`),
+  KEY `idx_agg_consumables_spec_season` (`spec_id`,`season`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -241,24 +267,6 @@ CREATE TABLE `aggregated_equipment` (
 ) /*!50100 TABLESPACE `ts_agregated_equipment` */ ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
--- Mythistone.aggregated_equipment_new definition
-
-CREATE TABLE `aggregated_equipment_new` (
-  `spec_id` int NOT NULL,
-  `season` int NOT NULL,
-  `dungeon_id` varchar(100) NOT NULL,
-  `keystone_level` int unsigned NOT NULL,
-  `upgrade_tier` enum('1','2','3','depleted') NOT NULL,
-  `hero_talent_id` int NOT NULL,
-  `item_id` varchar(100) NOT NULL,
-  `slot` varchar(100) NOT NULL,
-  `run_count` bigint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`dungeon_id`,`keystone_level`,`upgrade_tier`,`hero_talent_id`,`item_id`,`slot`),
-  KEY `dungeon_id_idx` (`dungeon_id`),
-  KEY `item_id_idx` (`item_id`)
-) /*!50100 TABLESPACE `ts_agregated_equipment` */ ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-
 -- Mythistone.aggregated_gem_comps definition
 
 CREATE TABLE `aggregated_gem_comps` (
@@ -319,45 +327,9 @@ CREATE TABLE `aggregated_loadout_data` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
--- Mythistone.aggregated_loadout_data_new definition
-
-CREATE TABLE `aggregated_loadout_data_new` (
-  `spec_id` int NOT NULL,
-  `season` int NOT NULL,
-  `dungeon_id` varchar(100) NOT NULL,
-  `keystone_level` int unsigned NOT NULL,
-  `upgrade_tier` enum('1','2','3','depleted') NOT NULL,
-  `hero_talent_id` int DEFAULT NULL,
-  `loadout` varchar(255) DEFAULT NULL,
-  `hero_talent_id_key` int GENERATED ALWAYS AS (ifnull(`hero_talent_id`,0)) STORED NOT NULL,
-  `loadout_key` varchar(255) GENERATED ALWAYS AS (ifnull(`loadout`,_utf8mb4'<NULL>')) STORED NOT NULL,
-  `run_count` bigint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`dungeon_id`,`keystone_level`,`upgrade_tier`,`hero_talent_id_key`,`loadout_key`),
-  KEY `idx_dungeon` (`dungeon_id`),
-  KEY `idx_spec` (`spec_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-
 -- Mythistone.aggregated_missives definition
 
 CREATE TABLE `aggregated_missives` (
-  `spec_id` int NOT NULL,
-  `season` int NOT NULL DEFAULT '0',
-  `dungeon_id` varchar(100) NOT NULL,
-  `keystone_level` int unsigned NOT NULL,
-  `upgrade_tier` enum('1','2','3','depleted') NOT NULL,
-  `hero_talent_id` int NOT NULL DEFAULT '0',
-  `item_id` int NOT NULL,
-  `run_count` bigint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`dungeon_id`,`keystone_level`,`upgrade_tier`,`hero_talent_id`,`item_id`),
-  KEY `idx_agg_missives_spec_season_item` (`spec_id`,`season`,`item_id`),
-  KEY `aggregated_missives_fk_dd` (`dungeon_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-
--- Mythistone.aggregated_missives_new definition
-
-CREATE TABLE `aggregated_missives_new` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL DEFAULT '0',
   `dungeon_id` varchar(100) NOT NULL,
@@ -395,23 +367,6 @@ CREATE TABLE `aggregated_runs_per_dungeon_per_level` (
   `depleted` bigint unsigned NOT NULL DEFAULT '0',
   `total_runs` bigint unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`season`,`dungeon_id`,`keystone_level`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-
--- Mythistone.aggregated_character_spec_score definition
--- One row per (season, region, character, spec) that has a score in EVERY current-season
--- dungeon. `spec_score` is the sum over those dungeons of the character-spec's best rating.
--- Built nightly by sp_agg_character_spec_score so the dashboard's top-1% elite scatter reads
--- a tiny indexed table instead of scanning member_dungeon_score at build time.
-
-CREATE TABLE `aggregated_character_spec_score` (
-  `season` int NOT NULL,
-  `region` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `blizzard_character_id` bigint unsigned NOT NULL,
-  `spec_id` int NOT NULL,
-  `spec_score` int NOT NULL,
-  PRIMARY KEY (`season`,`region`,`blizzard_character_id`,`spec_id`),
-  KEY `acss_read_IDX` (`season`,`spec_id`,`spec_score`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -453,6 +408,20 @@ CREATE TABLE `aggregated_tier_set_comps` (
   `max_timed_key` tinyint unsigned NOT NULL DEFAULT '0',
   `max_depleted_key` tinyint unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`comp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.aura_run definition
+
+CREATE TABLE `aura_run` (
+  `rio_run_id` bigint unsigned NOT NULL,
+  `season` int NOT NULL DEFAULT '0',
+  `dungeon_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `keystone_level` int unsigned DEFAULT NULL,
+  `timestamp` bigint unsigned NOT NULL,
+  `region` varchar(8) DEFAULT NULL,
+  PRIMARY KEY (`rio_run_id`),
+  KEY `idx_aura_run_timestamp` (`timestamp`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -645,6 +614,18 @@ CREATE TABLE `global_aggregated_missives` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.interesting_aura definition
+
+CREATE TABLE `interesting_aura` (
+  `spell_id` int NOT NULL,
+  `school` int DEFAULT NULL,
+  `has_cooldown` tinyint DEFAULT NULL,
+  `first_seen_ts` bigint unsigned DEFAULT NULL,
+  `times_seen` bigint NOT NULL DEFAULT '0',
+  PRIMARY KEY (`spell_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.members definition
 
 CREATE TABLE `members` (
@@ -655,37 +636,7 @@ CREATE TABLE `members` (
   `talent_set_id` binary(16) DEFAULT NULL,
   PRIMARY KEY (`member`),
   KEY `members_talent_set_id_IDX` (`talent_set_id`)
-) /*!50100 TABLESPACE `members` */ ENGINE=InnoDB AUTO_INCREMENT=7535344 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-
--- Mythistone.member_character definition
-
-CREATE TABLE `member_character` (
-  `member` int unsigned NOT NULL,
-  `region` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `blizzard_character_id` bigint unsigned NOT NULL,
-  `character_name` varchar(255) DEFAULT NULL,
-  `realm_slug` varchar(255) DEFAULT NULL,
-  `mplus_score` int DEFAULT NULL,
-  `collected_ts` bigint unsigned NOT NULL,
-  PRIMARY KEY (`member`),
-  KEY `member_character_identity_IDX` (`region`,`blizzard_character_id`),
-  KEY `member_character_collected_IDX` (`collected_ts`),
-  CONSTRAINT `member_character_members_FK` FOREIGN KEY (`member`) REFERENCES `members` (`member`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-
--- Mythistone.member_dungeon_score definition
-
-CREATE TABLE `member_dungeon_score` (
-  `member` int unsigned NOT NULL,
-  `dungeon_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `rating` int NOT NULL,
-  `collected_ts` bigint unsigned NOT NULL,
-  PRIMARY KEY (`member`,`dungeon_id`),
-  KEY `member_dungeon_score_collected_IDX` (`collected_ts`),
-  CONSTRAINT `member_dungeon_score_members_FK` FOREIGN KEY (`member`) REFERENCES `members` (`member`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) /*!50100 TABLESPACE `members` */ ENGINE=InnoDB AUTO_INCREMENT=19741310 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 -- Mythistone.missives definition
@@ -809,7 +760,7 @@ CREATE TABLE `top_player_loadouts` (
   `loadout_text` text,
   `loadout_updated_at` datetime DEFAULT NULL,
   `keystone_level` tinyint DEFAULT NULL,
-  `score` double DEFAULT NULL,
+  `score` int unsigned DEFAULT NULL,
   PRIMARY KEY (`spec_id`,`rank`,`map_challenge_mode_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -846,6 +797,18 @@ CREATE TABLE `wipe_control` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.aura_roster definition
+
+CREATE TABLE `aura_roster` (
+  `rio_run_id` bigint unsigned NOT NULL,
+  `roster_index` tinyint unsigned NOT NULL,
+  `spec_id` int NOT NULL,
+  PRIMARY KEY (`rio_run_id`,`roster_index`),
+  KEY `idx_aura_roster_spec` (`spec_id`),
+  CONSTRAINT `aura_roster_run_FK` FOREIGN KEY (`rio_run_id`) REFERENCES `aura_run` (`rio_run_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.character_stats definition
 
 CREATE TABLE `character_stats` (
@@ -872,55 +835,37 @@ CREATE TABLE `equipment` (
   KEY `equipment_run_members_FK` (`member`),
   KEY `equipment_bonus_set_id_IDX` (`bonus_set_id`),
   CONSTRAINT `equipment_run_members_FK` FOREIGN KEY (`member`) REFERENCES `members` (`member`) ON DELETE CASCADE ON UPDATE CASCADE
-) /*!50100 TABLESPACE `equipments` */ ENGINE=InnoDB AUTO_INCREMENT=82506435 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) /*!50100 TABLESPACE `equipments` */ ENGINE=InnoDB AUTO_INCREMENT=155333632 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
--- Mythistone.route_pulls definition
+-- Mythistone.member_character definition
 
-CREATE TABLE `route_pulls` (
-  `route_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `pull_id` int unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`pull_id`,`route_key`),
-  KEY `route_pulls_route_data_FK` (`route_key`),
-  CONSTRAINT `route_pulls_route_data_FK` FOREIGN KEY (`route_key`) REFERENCES `route_data` (`route_key`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=44290 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-
--- Mythistone.route_specs definition
-
-CREATE TABLE `route_specs` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `spec_id` int NOT NULL,
-  `route_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_route_key` (`route_key`),
-  CONSTRAINT `route_specs_route_data_FK` FOREIGN KEY (`route_key`) REFERENCES `route_data` (`route_key`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=14726 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `member_character` (
+  `member` int unsigned NOT NULL,
+  `region` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `blizzard_character_id` bigint unsigned NOT NULL,
+  `character_name` varchar(255) DEFAULT NULL,
+  `realm_slug` varchar(255) DEFAULT NULL,
+  `mplus_score` int DEFAULT NULL,
+  `collected_ts` bigint unsigned NOT NULL,
+  PRIMARY KEY (`member`),
+  KEY `member_character_identity_IDX` (`region`,`blizzard_character_id`),
+  KEY `member_character_collected_IDX` (`collected_ts`),
+  CONSTRAINT `member_character_members_FK` FOREIGN KEY (`member`) REFERENCES `members` (`member`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci DATA DIRECTORY='/mnt/HC_Volume_103256352/mysql-vol/';
 
 
--- Mythistone.route_videos definition
+-- Mythistone.member_dungeon_score definition
 
-CREATE TABLE `route_videos` (
-  `route_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `video_id` bigint unsigned NOT NULL,
-  `rio_run_id` bigint unsigned NOT NULL,
-  `video_type` varchar(32) NOT NULL,
-  `video_ref` varchar(128) NOT NULL,
-  `start_seconds` int unsigned DEFAULT NULL,
-  `duration` int unsigned DEFAULT NULL,
-  `thumbnail_url` varchar(512) DEFAULT NULL,
-  `season_slug` varchar(64) DEFAULT NULL,
-  `created_by_user_id` bigint unsigned DEFAULT NULL,
-  `pov_character_name` varchar(64) DEFAULT NULL,
-  `pov_realm_slug` varchar(100) DEFAULT NULL,
-  `pov_region` varchar(8) DEFAULT NULL,
-  `pov_character_id` bigint unsigned DEFAULT NULL,
-  `pov_persona_id` bigint unsigned DEFAULT NULL,
-  `pov_spec_id` int unsigned DEFAULT NULL,
-  PRIMARY KEY (`route_key`,`video_id`),
-  KEY `route_videos_route_data_FK` (`route_key`),
-  CONSTRAINT `route_videos_route_data_FK` FOREIGN KEY (`route_key`) REFERENCES `route_data` (`route_key`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `member_dungeon_score` (
+  `member` int unsigned NOT NULL,
+  `dungeon_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `rating` int NOT NULL,
+  `collected_ts` bigint unsigned NOT NULL,
+  PRIMARY KEY (`member`,`dungeon_id`),
+  KEY `member_dungeon_score_collected_IDX` (`collected_ts`),
+  CONSTRAINT `member_dungeon_score_members_FK` FOREIGN KEY (`member`) REFERENCES `members` (`member`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci DATA DIRECTORY='/mnt/HC_Volume_103256352/mysql-vol/';
 
 
 -- Mythistone.route_deaths definition
@@ -953,6 +898,54 @@ CREATE TABLE `route_encounters` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.route_pulls definition
+
+CREATE TABLE `route_pulls` (
+  `route_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `pull_id` int unsigned NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`pull_id`,`route_key`),
+  KEY `route_pulls_route_data_FK` (`route_key`),
+  CONSTRAINT `route_pulls_route_data_FK` FOREIGN KEY (`route_key`) REFERENCES `route_data` (`route_key`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=99679 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.route_specs definition
+
+CREATE TABLE `route_specs` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `spec_id` int NOT NULL,
+  `route_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_route_key` (`route_key`),
+  CONSTRAINT `route_specs_route_data_FK` FOREIGN KEY (`route_key`) REFERENCES `route_data` (`route_key`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=33926 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.route_videos definition
+
+CREATE TABLE `route_videos` (
+  `route_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `video_id` bigint unsigned NOT NULL,
+  `rio_run_id` bigint unsigned NOT NULL,
+  `video_type` varchar(32) NOT NULL,
+  `video_ref` varchar(128) NOT NULL,
+  `start_seconds` int unsigned DEFAULT NULL,
+  `duration` int unsigned DEFAULT NULL,
+  `thumbnail_url` varchar(512) DEFAULT NULL,
+  `season_slug` varchar(64) DEFAULT NULL,
+  `created_by_user_id` bigint unsigned DEFAULT NULL,
+  `pov_character_name` varchar(64) DEFAULT NULL,
+  `pov_realm_slug` varchar(100) DEFAULT NULL,
+  `pov_region` varchar(8) DEFAULT NULL,
+  `pov_character_id` bigint unsigned DEFAULT NULL,
+  `pov_persona_id` bigint unsigned DEFAULT NULL,
+  `pov_spec_id` int unsigned DEFAULT NULL,
+  PRIMARY KEY (`route_key`,`video_id`),
+  KEY `route_videos_route_data_FK` (`route_key`),
+  CONSTRAINT `route_videos_route_data_FK` FOREIGN KEY (`route_key`) REFERENCES `route_data` (`route_key`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.runs definition
 
 CREATE TABLE `runs` (
@@ -967,7 +960,7 @@ CREATE TABLE `runs` (
   PRIMARY KEY (`run_id`),
   UNIQUE KEY `runs_unique` (`dungeon_id`,`keystone_level`,`duration`,`timestamp`,`faction`,`region`,`season`),
   CONSTRAINT `runs_dungeon_data_FK` FOREIGN KEY (`dungeon_id`) REFERENCES `dungeon_data` (`dungeon_id`)
-) /*!50100 TABLESPACE `ts_runs` */ ENGINE=InnoDB AUTO_INCREMENT=1654453 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) /*!50100 TABLESPACE `ts_runs` */ ENGINE=InnoDB AUTO_INCREMENT=5630726 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 -- Mythistone.simc_bis_items definition
@@ -1016,7 +1009,7 @@ CREATE TABLE `sockets` (
   PRIMARY KEY (`socket_id_pk`),
   KEY `sockets_equipment_FK` (`equipment_id`),
   CONSTRAINT `sockets_equipment_FK` FOREIGN KEY (`equipment_id`) REFERENCES `equipment` (`equipment_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=16911667 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=32441517 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 -- Mythistone.top_player_loadout_enchants definition
@@ -1080,6 +1073,20 @@ CREATE TABLE `top_player_loadout_talents` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.aura_consumable definition
+
+CREATE TABLE `aura_consumable` (
+  `rio_run_id` bigint unsigned NOT NULL,
+  `roster_index` tinyint unsigned NOT NULL,
+  `spell_id` int NOT NULL,
+  `category` varchar(16) NOT NULL,
+  `item_id` int DEFAULT NULL,
+  PRIMARY KEY (`rio_run_id`,`roster_index`,`spell_id`),
+  KEY `idx_aura_consumable_cat` (`category`,`item_id`),
+  CONSTRAINT `aura_consumable_roster_FK` FOREIGN KEY (`rio_run_id`, `roster_index`) REFERENCES `aura_roster` (`rio_run_id`, `roster_index`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.enchantments definition
 
 CREATE TABLE `enchantments` (
@@ -1089,7 +1096,7 @@ CREATE TABLE `enchantments` (
   PRIMARY KEY (`enchantment_id_pk`),
   KEY `enchantments_equipment_FK` (`equipment_id`),
   CONSTRAINT `enchantments_equipment_FK` FOREIGN KEY (`equipment_id`) REFERENCES `equipment` (`equipment_id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB AUTO_INCREMENT=36639331 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=72895322 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 -- Mythistone.pull_enemies definition
@@ -1128,7 +1135,6 @@ CREATE TABLE `run_members` (
   CONSTRAINT `run_members_members_FK` FOREIGN KEY (`member`) REFERENCES `members` (`member`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `run_members_runs_FK` FOREIGN KEY (`run_id`) REFERENCES `runs` (`run_id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) /*!50100 TABLESPACE `ts_run_members` */ ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
 
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_bonus_lists`()
 BEGIN
@@ -1211,6 +1217,71 @@ BEGIN
     SELECT 1 FROM Mythistone.equipment EQ
     WHERE EQ.bonus_set_id = BS.set_id
   );
+END;
+
+CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_character_spec_score`()
+BEGIN
+  DECLARE v_max_season   INT DEFAULT 0;
+  DECLARE v_dungeon_cnt  INT DEFAULT 0;
+  DECLARE v_region       VARCHAR(100);
+  DECLARE v_done         INT DEFAULT 0;
+  -- One pass per region so no single statement scans all of member_dungeon_score at once.
+  -- region is part of the grouping key, so per-region passes never split a character-spec.
+  DECLARE region_cur CURSOR FOR SELECT DISTINCT region FROM Mythistone.member_character;
+  DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;
+
+  CALL sp_agg_session_setup();
+
+  -- Current season, plus the set/count of its dungeons (from the aggregate built just before
+  -- this step). member_dungeon_score has no season column, so the season dungeon list defines it.
+  SELECT MAX(season) INTO v_max_season FROM Mythistone.runs;
+  SELECT COUNT(DISTINCT dungeon_id) INTO v_dungeon_cnt
+    FROM Mythistone.aggregated_runs_per_dungeon_per_level
+   WHERE season = v_max_season;
+
+  DROP TABLE IF EXISTS Mythistone.aggregated_character_spec_score_new, Mythistone.aggregated_character_spec_score_old;
+  CREATE TABLE Mythistone.aggregated_character_spec_score_new LIKE Mythistone.aggregated_character_spec_score;
+
+  -- No season dungeons yet (pre-season / post-wipe): leave the shadow empty and swap it in,
+  -- mirroring the empty result the old build-time query returned.
+  IF v_dungeon_cnt > 0 THEN
+    OPEN region_cur;
+    region_loop: LOOP
+      FETCH region_cur INTO v_region;
+      IF v_done = 1 THEN
+        LEAVE region_loop;
+      END IF;
+
+      INSERT INTO Mythistone.aggregated_character_spec_score_new
+        (season, region, blizzard_character_id, spec_id, spec_score)
+      SELECT v_max_season, region, blizzard_character_id, spec_id, SUM(best_rating) AS spec_score
+      FROM (
+        SELECT
+          mc.region,
+          mc.blizzard_character_id,
+          m.spec_id,
+          mds.dungeon_id,
+          MAX(mds.rating) AS best_rating
+        FROM Mythistone.member_dungeon_score mds
+        JOIN Mythistone.members m          ON m.member  = mds.member
+        JOIN Mythistone.member_character mc ON mc.member = mds.member
+        WHERE mc.region = v_region
+          AND mds.dungeon_id IN (
+            SELECT DISTINCT dungeon_id
+            FROM Mythistone.aggregated_runs_per_dungeon_per_level
+            WHERE season = v_max_season
+          )
+        GROUP BY mc.region, mc.blizzard_character_id, m.spec_id, mds.dungeon_id
+      ) per_dungeon
+      GROUP BY region, blizzard_character_id, spec_id
+      HAVING COUNT(*) = v_dungeon_cnt;
+    END LOOP;
+    CLOSE region_cur;
+  END IF;
+
+  RENAME TABLE Mythistone.aggregated_character_spec_score     TO Mythistone.aggregated_character_spec_score_old,
+               Mythistone.aggregated_character_spec_score_new TO Mythistone.aggregated_character_spec_score;
+  DROP TABLE Mythistone.aggregated_character_spec_score_old;
 END;
 
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_character_stats`()
@@ -1321,6 +1392,38 @@ BEGIN
   DROP TABLE Mythistone.aggregated_completion_heatmap_old;
 END;
 
+CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_consumables`()
+BEGIN
+  -- Full rebuild of the trailing 28 days of collected run-details (raider.io /
+  -- Flow B) into a shadow table, then atomic swap. Consumables live in
+  -- aura_run/aura_roster/aura_consumable (keyed by rio_run_id), NOT the
+  -- member/equipment tables, so this joins the aura tables and windows on
+  -- aura_run.timestamp (UNIX seconds, as the collector stores it). Usage % is
+  -- computed at render time as run_count over the per-category SUM (like
+  -- aggregated_missives / aggregated_embellishments), so no denominator table is
+  -- stored. Pruning of the raw aura tables is handled by
+  -- ev_purge_old_aura_data_incremental, not here.
+  DECLARE v_cutoff_s BIGINT DEFAULT 0;
+
+  CALL sp_agg_session_setup();
+  SET v_cutoff_s = UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 28 DAY));
+
+  DROP TABLE IF EXISTS Mythistone.aggregated_consumables_new, Mythistone.aggregated_consumables_old;
+  CREATE TABLE Mythistone.aggregated_consumables_new LIKE Mythistone.aggregated_consumables;
+
+  INSERT INTO Mythistone.aggregated_consumables_new
+    (spec_id, season, category, spell_id, item_id, run_count)
+  SELECT AR.spec_id, RN.season, AC.category, AC.spell_id, AC.item_id, COUNT(*) AS run_count
+  FROM Mythistone.aura_run RN
+    JOIN Mythistone.aura_roster AR      ON AR.rio_run_id = RN.rio_run_id
+    JOIN Mythistone.aura_consumable AC  ON AC.rio_run_id = AR.rio_run_id
+                                       AND AC.roster_index = AR.roster_index
+  WHERE RN.`timestamp` > v_cutoff_s
+  GROUP BY AR.spec_id, RN.season, AC.category, AC.spell_id, AC.item_id;
+
+  CALL sp_swap_public_table('aggregated_consumables');
+END;
+
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_crafted_items`()
 BEGIN
   DECLARE v_cutoff_ms  BIGINT       DEFAULT 0;
@@ -1391,6 +1494,9 @@ BEGIN
   DROP TABLE IF EXISTS Mythistone.aggregated_npc_skip_rates_new, Mythistone.aggregated_npc_skip_rates_old;
   CREATE TABLE Mythistone.aggregated_npc_skip_rates_new LIKE Mythistone.aggregated_npc_skip_rates;
 
+  -- Timed runs only: a run beat the timer when its duration is within the
+  -- dungeon's base (+1) timer. Both the encounter count and the total_routes
+  -- denominator apply the same filter so inclusion_percentage stays coherent.
   INSERT INTO Mythistone.aggregated_npc_skip_rates_new (dungeon_id, npc_id, total_encounters, total_routes)
   SELECT
       rd.dungeon_id,
@@ -2507,71 +2613,6 @@ BEGIN
   DROP TABLE Mythistone.aggregated_runs_per_dungeon_per_level_old;
 END;
 
-CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_character_spec_score`()
-BEGIN
-  DECLARE v_max_season   INT DEFAULT 0;
-  DECLARE v_dungeon_cnt  INT DEFAULT 0;
-  DECLARE v_region       VARCHAR(100);
-  DECLARE v_done         INT DEFAULT 0;
-  -- One pass per region so no single statement scans all of member_dungeon_score at once.
-  -- region is part of the grouping key, so per-region passes never split a character-spec.
-  DECLARE region_cur CURSOR FOR SELECT DISTINCT region FROM Mythistone.member_character;
-  DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;
-
-  CALL sp_agg_session_setup();
-
-  -- Current season, plus the set/count of its dungeons (from the aggregate built just before
-  -- this step). member_dungeon_score has no season column, so the season dungeon list defines it.
-  SELECT MAX(season) INTO v_max_season FROM Mythistone.runs;
-  SELECT COUNT(DISTINCT dungeon_id) INTO v_dungeon_cnt
-    FROM Mythistone.aggregated_runs_per_dungeon_per_level
-   WHERE season = v_max_season;
-
-  DROP TABLE IF EXISTS Mythistone.aggregated_character_spec_score_new, Mythistone.aggregated_character_spec_score_old;
-  CREATE TABLE Mythistone.aggregated_character_spec_score_new LIKE Mythistone.aggregated_character_spec_score;
-
-  -- No season dungeons yet (pre-season / post-wipe): leave the shadow empty and swap it in,
-  -- mirroring the empty result the old build-time query returned.
-  IF v_dungeon_cnt > 0 THEN
-    OPEN region_cur;
-    region_loop: LOOP
-      FETCH region_cur INTO v_region;
-      IF v_done = 1 THEN
-        LEAVE region_loop;
-      END IF;
-
-      INSERT INTO Mythistone.aggregated_character_spec_score_new
-        (season, region, blizzard_character_id, spec_id, spec_score)
-      SELECT v_max_season, region, blizzard_character_id, spec_id, SUM(best_rating) AS spec_score
-      FROM (
-        SELECT
-          mc.region,
-          mc.blizzard_character_id,
-          m.spec_id,
-          mds.dungeon_id,
-          MAX(mds.rating) AS best_rating
-        FROM Mythistone.member_dungeon_score mds
-        JOIN Mythistone.members m          ON m.member  = mds.member
-        JOIN Mythistone.member_character mc ON mc.member = mds.member
-        WHERE mc.region = v_region
-          AND mds.dungeon_id IN (
-            SELECT DISTINCT dungeon_id
-            FROM Mythistone.aggregated_runs_per_dungeon_per_level
-            WHERE season = v_max_season
-          )
-        GROUP BY mc.region, mc.blizzard_character_id, m.spec_id, mds.dungeon_id
-      ) per_dungeon
-      GROUP BY region, blizzard_character_id, spec_id
-      HAVING COUNT(*) = v_dungeon_cnt;
-    END LOOP;
-    CLOSE region_cur;
-  END IF;
-
-  RENAME TABLE Mythistone.aggregated_character_spec_score     TO Mythistone.aggregated_character_spec_score_old,
-               Mythistone.aggregated_character_spec_score_new TO Mythistone.aggregated_character_spec_score;
-  DROP TABLE Mythistone.aggregated_character_spec_score_old;
-END;
-
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_session_setup`()
 BEGIN
   SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
@@ -2759,104 +2800,6 @@ BEGIN
   CLOSE cur;
 END;
 
-CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_migrate_bonus_overnight`()
-proc: BEGIN
-  DECLARE v_lo    BIGINT;
-  DECLARE v_hi    BIGINT;
-  DECLARE v_max   BIGINT;
-  DECLARE v_step  BIGINT DEFAULT 100000;     -- id-range per batch; tune if needed
-  DECLARE v_batch INT    DEFAULT 0;
-  DECLARE v_upd   BIGINT DEFAULT 0;
-  DECLARE v_total BIGINT DEFAULT 0;
-  DECLARE v_err   TEXT;
-
-  -- Log the error and CONTINUE so one hiccup does not kill the night.
-  DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
-  BEGIN
-    GET DIAGNOSTICS CONDITION 1 v_err = MESSAGE_TEXT;
-    INSERT INTO Mythistone.bonus_migration_log (ts, phase, detail)
-      VALUES (NOW(), 'ERROR', CONCAT('batch=', v_batch, ' lo=', IFNULL(v_lo, -1), ' : ', v_err));
-  END;
-
-  SET SESSION group_concat_max_len   = 1000000;   -- a full bonus combo exceeds 1 KB
-  SET SESSION innodb_lock_wait_timeout = 60;
-
-  -- Guard against a double-fire.
-  IF NOT GET_LOCK('mythi_bonus_migrate', 0) THEN
-    INSERT INTO Mythistone.bonus_migration_log (ts, phase, detail)
-      VALUES (NOW(), 'SKIP', 'another run already holds the lock');
-    LEAVE proc;
-  END IF;
-
-  INSERT INTO Mythistone.bonus_migration_log (ts, phase, detail)
-    VALUES (NOW(), 'START', CONCAT('step=', v_step, ' backfill starting'));
-
-  SELECT MIN(equipment_id), MAX(equipment_id) INTO v_lo, v_max FROM Mythistone.equipment;
-
-  IF v_lo IS NOT NULL THEN
-    WHILE v_lo <= v_max DO
-      SET v_hi = v_lo + v_step - 1;
-
-      -- (a) Ensure this range's distinct combos exist in the dictionary.
-      --     GROUP_CONCAT is inherently distinct per equipment (PK is
-      --     (equipment_id,bonus_id)) and ordered ascending, so the MD5 matches
-      --     commonUtils.bonus_set_hash byte-for-byte.
-      INSERT IGNORE INTO Mythistone.bonus_sets (set_id, bonus_id)
-      SELECT h.set_id, bi.bonus_id
-      FROM (
-        SELECT b.equipment_id,
-               UNHEX(MD5(GROUP_CONCAT(b.bonus_id ORDER BY b.bonus_id SEPARATOR ','))) AS set_id
-        FROM Mythistone.bonus_ids b
-        WHERE b.equipment_id BETWEEN v_lo AND v_hi
-        GROUP BY b.equipment_id
-      ) h
-      JOIN Mythistone.bonus_ids bi ON bi.equipment_id = h.equipment_id;
-
-      -- (b) Point this range's equipment rows at their set. Only NULLs, so rows
-      --     the (new) collector already wrote, and no-bonus rows, are skipped.
-      UPDATE Mythistone.equipment e
-      JOIN (
-        SELECT b.equipment_id,
-               UNHEX(MD5(GROUP_CONCAT(b.bonus_id ORDER BY b.bonus_id SEPARATOR ','))) AS set_id
-        FROM Mythistone.bonus_ids b
-        WHERE b.equipment_id BETWEEN v_lo AND v_hi
-        GROUP BY b.equipment_id
-      ) h ON e.equipment_id = h.equipment_id
-      SET e.bonus_set_id = h.set_id
-      WHERE e.bonus_set_id IS NULL;
-
-      SET v_upd   = ROW_COUNT();
-      SET v_total = v_total + GREATEST(v_upd, 0);
-      SET v_batch = v_batch + 1;
-
-      IF v_batch % 50 = 0 THEN
-        INSERT INTO Mythistone.bonus_migration_log (ts, phase, detail)
-          VALUES (NOW(), 'PROGRESS',
-            CONCAT('batch=', v_batch, ' up_to_id=', v_hi,
-                   ' total_updated=', v_total,
-                   ' dict_rows=', (SELECT COUNT(*) FROM Mythistone.bonus_sets)));
-      END IF;
-
-      SET v_lo = v_hi + 1;
-      DO SLEEP(0.1);                          -- breathe between batches
-    END WHILE;
-  END IF;
-
-  -- Final verdict. still_null = equipment that HAS bonus_ids rows but no pointer;
-  -- if that is 0, every bonus-bearing item is migrated and bonus_ids is droppable.
-  INSERT INTO Mythistone.bonus_migration_log (ts, phase, detail)
-  SELECT NOW(), 'DONE',
-    CONCAT('total_updated=', v_total,
-           ' dict_rows=', (SELECT COUNT(*) FROM Mythistone.bonus_sets),
-           ' equipment_with_bonus_still_null=',
-           (SELECT COUNT(*) FROM Mythistone.equipment e
-              WHERE e.bonus_set_id IS NULL
-                AND EXISTS (SELECT 1 FROM Mythistone.bonus_ids b WHERE b.equipment_id = e.equipment_id)),
-           '  <== if that is 0, PART C is safe to run');
-
-  DO RELEASE_LOCK('mythi_bonus_migrate');
-END proc;
-
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_refresh_aggregated_embellishments`(IN p_days INT)
 BEGIN
   DECLARE i INT DEFAULT 0;
@@ -2936,6 +2879,7 @@ BEGIN
   CALL sp_run_agg_step('missives');
   CALL sp_run_agg_step('embellishments');
   CALL sp_run_agg_step('crafted_items');
+  CALL sp_run_agg_step('consumables');
   CALL sp_run_agg_step('loadout_data');
   CALL sp_run_agg_step('bonus_lists');
   CALL sp_run_agg_step('spec');
@@ -3053,6 +2997,11 @@ BEGIN
   CALL `Mythistone`.`sp_truncate_with_retry`('route_videos');
   CALL `Mythistone`.`sp_truncate_with_retry`('route_deaths');
   CALL `Mythistone`.`sp_truncate_with_retry`('route_encounters');
+  -- consumable collection (Flow B); interesting_aura is a cross-season dev
+  -- dictionary and is deliberately preserved.
+  CALL `Mythistone`.`sp_truncate_with_retry`('aura_consumable');
+  CALL `Mythistone`.`sp_truncate_with_retry`('aura_roster');
+  CALL `Mythistone`.`sp_truncate_with_retry`('aura_run');
   -- trend bar snapshots are period-keyed and season-specific; last season's
   -- weeks are meaningless once the raw data is gone, so clear them too.
   CALL `Mythistone`.`sp_truncate_with_retry`('trend_snapshot');
@@ -3074,7 +3023,7 @@ BEGIN
   -- against the now-empty tables
   UPDATE `Mythistone`.`summary_meta`
     SET last_run_id = 0
-  WHERE name IN ('purge_member_pointer', 'purge_routes_pointer');
+  WHERE name IN ('purge_member_pointer', 'purge_routes_pointer', 'purge_auras_pointer');
 END;
 
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_swap_public_table`(IN p_base VARCHAR(128))
@@ -3201,6 +3150,61 @@ DO BEGIN
     DO RELEASE_LOCK('agg_pipeline');
   END IF;
 END;
+
+CREATE EVENT ev_purge_old_aura_data_incremental
+ON SCHEDULE EVERY 1 DAY
+STARTS '2025-09-27 01:15:00.000'
+ON COMPLETION PRESERVE
+ENABLE
+COMMENT 'Incremental purge of aura_run older than 28 days (aura_run.timestamp is in seconds; consumable collection / Flow B). Cascades to aura_roster/aura_consumable.'
+DO purge_block: BEGIN
+  DECLARE v_cutoff_ts BIGINT DEFAULT 0;        -- seconds
+  DECLARE v_run_cutoff BIGINT DEFAULT 0;       -- highest rio_run_id <= cutoff
+  DECLARE v_last_ptr BIGINT DEFAULT 0;
+  DECLARE v_start BIGINT DEFAULT 0;
+  DECLARE v_rio_run_window BIGINT DEFAULT 200000; -- chunk size, tune if needed
+  DECLARE v_process_up_to BIGINT DEFAULT 0;
+
+  -- Stand down while the nightly pipeline / member purge / season wipe holds the
+  -- shared lock, exactly like ev_purge_old_route_data_incremental does.
+  IF IS_USED_LOCK('agg_pipeline') IS NOT NULL THEN
+    LEAVE purge_block;
+  END IF;
+
+  SET v_cutoff_ts = UNIX_TIMESTAMP() - 28*24*3600;
+
+  SELECT COALESCE(MAX(rio_run_id), 0) INTO v_run_cutoff
+  FROM Mythistone.aura_run
+  WHERE `timestamp` <= v_cutoff_ts;
+
+  INSERT INTO Mythistone.summary_meta (name, last_run_id)
+    VALUES ('purge_auras_pointer', 0)
+    ON DUPLICATE KEY UPDATE name = name;
+
+  START TRANSACTION;
+    SELECT COALESCE(last_run_id, 0) INTO v_last_ptr
+    FROM Mythistone.summary_meta
+    WHERE name = 'purge_auras_pointer'
+    FOR UPDATE;
+  COMMIT;
+
+  SET v_start = v_last_ptr + 1;
+
+  IF v_run_cutoff < v_start THEN
+    LEAVE purge_block;
+  END IF;
+
+  SET v_process_up_to = LEAST(v_run_cutoff, v_start + v_rio_run_window - 1);
+
+  DELETE ar
+  FROM Mythistone.aura_run ar
+  WHERE ar.rio_run_id BETWEEN v_start AND v_process_up_to
+    AND ar.`timestamp` <= v_cutoff_ts;
+
+  UPDATE Mythistone.summary_meta
+  SET last_run_id = v_process_up_to
+  WHERE name = 'purge_auras_pointer';
+END purge_block;
 
 CREATE EVENT ev_purge_old_route_data_incremental
 ON SCHEDULE EVERY 1 DAY
