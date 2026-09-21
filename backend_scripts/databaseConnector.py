@@ -3343,6 +3343,67 @@ def insert_route_encounter(connection, cursor, route_key, rio_run_id, enc):
     return cursor.rowcount
 
 
+INSERT_AURA_RUN_SQL = """
+INSERT IGNORE INTO Mythistone.aura_run
+  (`rio_run_id`, `season`, `dungeon_id`, `keystone_level`, `timestamp`, `region`)
+VALUES (%s, %s, %s, %s, %s, %s);
+"""
+
+
+def insert_aura_run(connection, cursor, rio_run_id, season, dungeon_id, keystone_level, timestamp, region):
+    """Insert a run-detail header for consumable collection. Returns rowcount: 0
+    means this rio_run_id was already collected, so the caller skips its rosters."""
+    val = (rio_run_id, season, dungeon_id, keystone_level, timestamp, region)
+    execute_with_retry(connection, cursor, INSERT_AURA_RUN_SQL, val)
+    return cursor.rowcount
+
+
+INSERT_AURA_ROSTER_SQL = """
+INSERT IGNORE INTO Mythistone.aura_roster (`rio_run_id`, `roster_index`, `spec_id`)
+VALUES (%s, %s, %s);
+"""
+
+
+def insert_aura_roster_batch(connection, cursor, roster_vals):
+    """Batch-insert roster entries. `roster_vals` are (rio_run_id, roster_index, spec_id) tuples."""
+    if not roster_vals:
+        return
+    executemany_with_retry(connection, cursor, INSERT_AURA_ROSTER_SQL, roster_vals)
+
+
+INSERT_AURA_CONSUMABLE_SQL = """
+INSERT IGNORE INTO Mythistone.aura_consumable
+  (`rio_run_id`, `roster_index`, `spell_id`, `category`, `item_id`)
+VALUES (%s, %s, %s, %s, %s);
+"""
+
+
+def insert_aura_consumable_batch(connection, cursor, consumable_vals):
+    """Batch-insert resolved consumable auras. `consumable_vals` are
+    (rio_run_id, roster_index, spell_id, category, item_id) tuples (item_id may be None)."""
+    if not consumable_vals:
+        return
+    executemany_with_retry(connection, cursor, INSERT_AURA_CONSUMABLE_SQL, consumable_vals)
+
+
+UPSERT_INTERESTING_AURA_SQL = """
+INSERT INTO Mythistone.interesting_aura
+  (`spell_id`, `school`, `has_cooldown`, `first_seen_ts`, `times_seen`)
+VALUES (%s, %s, %s, %s, 1)
+ON DUPLICATE KEY UPDATE times_seen = times_seen + 1;
+"""
+
+
+def upsert_interesting_aura_batch(connection, cursor, aura_vals):
+    """Record every observed aura id once (dev dictionary), bumping times_seen on
+    repeats. `aura_vals` are (spell_id, school, has_cooldown, first_seen_ts) tuples."""
+    if not aura_vals:
+        return
+    executemany_with_retry(connection, cursor, UPSERT_INTERESTING_AURA_SQL, aura_vals)
+
+
+
+
 FETCH_ROUTES_MISSING_TELEMETRY_SQL = """
 SELECT rd.route_key, rd.rio_run_id
 FROM Mythistone.route_data rd

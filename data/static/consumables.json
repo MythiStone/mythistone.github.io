@@ -1,0 +1,452 @@
+[
+  {
+    "category": "augment",
+    "icon": "inv_10_enchanting_crystal_color2",
+    "item_id": 259085,
+    "name": "Void-Touched Augment Rune",
+    "norm_name": "void-touched augment rune",
+    "norm_short": "void-touched",
+    "quality": null,
+    "value": "void_touched"
+  },
+  {
+    "category": "flask",
+    "icon": "inv_12_profession_alchemy_flask_sindoreipotion_yellow",
+    "item_id": 241320,
+    "name": "Flask of Thalassian Resistance",
+    "norm_name": "flask of thalassian resistance",
+    "norm_short": "thalassian resistance",
+    "quality": 2,
+    "value": "flask_of_thalassian_resistance_2"
+  },
+  {
+    "category": "flask",
+    "icon": "inv_12_profession_alchemy_flask_sindoreipotion_white_",
+    "item_id": 241324,
+    "name": "Flask of the Blood Knights",
+    "norm_name": "flask of the blood knights",
+    "norm_short": "blood knights",
+    "quality": 2,
+    "value": "flask_of_the_blood_knights_2"
+  },
+  {
+    "category": "flask",
+    "icon": "inv_12_profession_alchemy_flask_sindoreipotion_black",
+    "item_id": 241322,
+    "name": "Flask of the Magisters",
+    "norm_name": "flask of the magisters",
+    "norm_short": "magisters",
+    "quality": 2,
+    "value": "flask_of_the_magisters_2"
+  },
+  {
+    "category": "flask",
+    "icon": "inv_12_profession_alchemy_flask_sindoreipotion_red__",
+    "item_id": 241326,
+    "name": "Flask of the Shattered Sun",
+    "norm_name": "flask of the shattered sun",
+    "norm_short": "shattered sun",
+    "quality": 2,
+    "value": "flask_of_the_shattered_sun_2"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_legion_heartyfeast",
+    "item_id": 275264,
+    "name": "Amani Cornucopia",
+    "norm_name": "amani cornucopia",
+    "norm_short": "amani cornucopia",
+    "quality": null,
+    "value": "amani_cornucopia"
+  },
+  {
+    "category": "food",
+    "icon": "inv_cooking_81_paleosteakandpotatoes_color04",
+    "item_id": 242287,
+    "name": "Arcano Cutlets",
+    "norm_name": "arcano cutlets",
+    "norm_short": "arcano cutlets",
+    "quality": null,
+    "value": "arcano_cutlets"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_168_ricecake01",
+    "item_id": 242296,
+    "name": "Bloodthistle-Wrapped Cutlets",
+    "norm_name": "bloodthistle-wrapped cutlets",
+    "norm_short": "bloodthistle-wrapped cutlets",
+    "quality": null,
+    "value": "bloodthistlewrapped_cutlets"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_cooked_greatpabanquet_wok",
+    "item_id": 242273,
+    "name": "Blooming Feast",
+    "norm_name": "blooming feast",
+    "norm_short": "blooming feast",
+    "quality": null,
+    "value": "blooming_feast"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_legion_fishbrulspecial",
+    "item_id": 242276,
+    "name": "Braised Blood Hunter",
+    "norm_name": "braised blood hunter",
+    "norm_short": "braised blood hunter",
+    "quality": null,
+    "value": "braised_blood_hunter"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_draenor_steamedscorpion",
+    "item_id": 242280,
+    "name": "Buttered Root Crab",
+    "norm_name": "buttered root crab",
+    "norm_short": "buttered root crab",
+    "quality": null,
+    "value": "buttered_root_crab"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_vendor_poundedricecake_1",
+    "item_id": 242274,
+    "name": "Champion's Bento",
+    "norm_name": "champion's bento",
+    "norm_short": "champion's bento",
+    "quality": null,
+    "value": "champions_bento"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_cooked_valleystirfry",
+    "item_id": 242277,
+    "name": "Crimson Calamari",
+    "norm_name": "crimson calamari",
+    "norm_short": "crimson calamari",
+    "quality": null,
+    "value": "crimson_calamari"
+  },
+  {
+    "category": "food",
+    "icon": "inv_cooking_90_bananabeefpudding",
+    "item_id": 242292,
+    "name": "Eversong Pudding",
+    "norm_name": "eversong pudding",
+    "norm_short": "eversong pudding",
+    "quality": null,
+    "value": "eversong_pudding"
+  },
+  {
+    "category": "food",
+    "icon": "inv_cooking_100_revengeservedcold_color02",
+    "item_id": 242286,
+    "name": "Fel-Kissed Filet",
+    "norm_name": "fel-kissed filet",
+    "norm_short": "fel-kissed filet",
+    "quality": null,
+    "value": "felkissed_filet"
+  },
+  {
+    "category": "food",
+    "icon": "inv_cooking_100_sidesalad_color04",
+    "item_id": 255848,
+    "name": "Flora Frenzy",
+    "norm_name": "flora frenzy",
+    "norm_short": "flora frenzy",
+    "quality": null,
+    "value": "flora_frenzy"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_legion_driedmackerelstrips",
+    "item_id": 242291,
+    "name": "Fried Bloomtail",
+    "norm_name": "fried bloomtail",
+    "norm_short": "fried bloomtail",
+    "quality": null,
+    "value": "fried_bloomtail"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_160_fish_87",
+    "item_id": 242281,
+    "name": "Glitter Skewers",
+    "norm_name": "glitter skewers",
+    "norm_short": "glitter skewers",
+    "quality": null,
+    "value": "glitter_skewers"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_1h_soup_b_01_misc_1h_soup_b_01",
+    "item_id": 255846,
+    "name": "Harandar Celebration",
+    "norm_name": "harandar celebration",
+    "norm_short": "harandar celebration",
+    "quality": null,
+    "value": "harandar_celebration"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_dimsum",
+    "item_id": 242295,
+    "name": "Hearthflame Supper",
+    "norm_name": "hearthflame supper",
+    "norm_short": "hearthflame supper",
+    "quality": null,
+    "value": "hearthflame_supper"
+  },
+  {
+    "category": "food",
+    "icon": "inv_cooking_100_roastduck",
+    "item_id": 255847,
+    "name": "Impossibly Royal Roast",
+    "norm_name": "impossibly royal roast",
+    "norm_short": "impossibly royal roast",
+    "quality": null,
+    "value": "impossibly_royal_roast"
+  },
+  {
+    "category": "food",
+    "icon": "inv_cooking_10_grandbanquet",
+    "item_id": 275265,
+    "name": "Loa's Gathering",
+    "norm_name": "loa's gathering",
+    "norm_short": "loa's gathering",
+    "quality": null,
+    "value": "loas_gathering"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_draenor_saltedskulker_color01",
+    "item_id": 242282,
+    "name": "Null and Void Plate",
+    "norm_name": "null and void plate",
+    "norm_short": "null and void plate",
+    "quality": null,
+    "value": "null_and_void_plate"
+  },
+  {
+    "category": "food",
+    "icon": "inv_cooking_10_draconicdelicacies",
+    "item_id": 242272,
+    "name": "Quel'dorei Medley",
+    "norm_name": "quel'dorei medley",
+    "norm_short": "quel'dorei medley",
+    "quality": null,
+    "value": "queldorei_medley"
+  },
+  {
+    "category": "food",
+    "icon": "inv_cooking_100_roastduck",
+    "item_id": 242275,
+    "name": "Royal Roast",
+    "norm_name": "royal roast",
+    "norm_short": "royal roast",
+    "quality": null,
+    "value": "royal_roast"
+  },
+  {
+    "category": "food",
+    "icon": "inv_tradeskill_cooking_feastofblood",
+    "item_id": 255845,
+    "name": "Silvermoon Parade",
+    "norm_name": "silvermoon parade",
+    "norm_short": "silvermoon parade",
+    "quality": null,
+    "value": "silvermoon_parade"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_cooked_wildfowlroast",
+    "item_id": 242283,
+    "name": "Sun-Seared Lumifin",
+    "norm_name": "sun-seared lumifin",
+    "norm_short": "sun-seared lumifin",
+    "quality": null,
+    "value": "sunseared_lumifin"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_cooked_sauteedcarrots",
+    "item_id": 242293,
+    "name": "Sunwell Delight",
+    "norm_name": "sunwell delight",
+    "norm_short": "sunwell delight",
+    "quality": null,
+    "value": "sunwell_delight"
+  },
+  {
+    "category": "food",
+    "icon": "inv_cooking_100_revengeservedcold",
+    "item_id": 242278,
+    "name": "Tasty Smoked Tetra",
+    "norm_name": "tasty smoked tetra",
+    "norm_short": "tasty smoked tetra",
+    "quality": null,
+    "value": "tasty_smoked_tetra"
+  },
+  {
+    "category": "food",
+    "icon": "inv_cooking_80_ravenberrytart",
+    "item_id": 242284,
+    "name": "Void-Kissed Fish Rolls",
+    "norm_name": "void-kissed fish rolls",
+    "norm_short": "void-kissed fish rolls",
+    "quality": null,
+    "value": "voidkissed_fish_rolls"
+  },
+  {
+    "category": "food",
+    "icon": "inv_cooking_10_grandbanquet",
+    "item_id": 242285,
+    "name": "Warped Wise Wings",
+    "norm_name": "warped wise wings",
+    "norm_short": "warped wise wings",
+    "quality": null,
+    "value": "warped_wise_wings"
+  },
+  {
+    "category": "food",
+    "icon": "inv_misc_food_158_fish_redish",
+    "item_id": 242290,
+    "name": "Wise Tails",
+    "norm_name": "wise tails",
+    "norm_short": "wise tails",
+    "quality": null,
+    "value": "wise_tails"
+  },
+  {
+    "category": "potion",
+    "icon": "inv_121_professions_alchemy_potion_amani_purple",
+    "item_id": 271890,
+    "name": "Alluring Nostrum",
+    "norm_name": "alluring nostrum",
+    "norm_short": "alluring nostrum",
+    "quality": 2,
+    "value": "alluring_nostrum_2"
+  },
+  {
+    "category": "potion",
+    "icon": "inv_12_profession_alchemy_voidpotion_purple",
+    "item_id": 241292,
+    "name": "Draught of Rampant Abandon",
+    "norm_name": "draught of rampant abandon",
+    "norm_short": "draught of rampant abandon",
+    "quality": 2,
+    "value": "draught_of_rampant_abandon_2"
+  },
+  {
+    "category": "potion",
+    "icon": "inv_12_profession_alchemy_lightpotion_yellow",
+    "item_id": 241308,
+    "name": "Light's Potential",
+    "norm_name": "light's potential",
+    "norm_short": "light's potential",
+    "quality": 2,
+    "value": "lights_potential_2"
+  },
+  {
+    "category": "potion",
+    "icon": "inv_121_professions_alchemy_potion_amani_blue",
+    "item_id": 271887,
+    "name": "Liquid Luster",
+    "norm_name": "liquid luster",
+    "norm_short": "liquid luster",
+    "quality": 2,
+    "value": "liquid_luster_2"
+  },
+  {
+    "category": "potion",
+    "icon": "inv_12_profession_alchemy_voidpotion_red",
+    "item_id": 241288,
+    "name": "Potion of Recklessness",
+    "norm_name": "potion of recklessness",
+    "norm_short": "potion of recklessness",
+    "quality": 2,
+    "value": "potion_of_recklessness_2"
+  },
+  {
+    "category": "potion",
+    "icon": "inv_12_profession_alchemy_lightpotion_green",
+    "item_id": 241296,
+    "name": "Potion of Zealotry",
+    "norm_name": "potion of zealotry",
+    "norm_short": "potion of zealotry",
+    "quality": 2,
+    "value": "potion_of_zealotry_2"
+  },
+  {
+    "category": "weapon",
+    "icon": "inv_ammo_bullet_06",
+    "item_id": 257750,
+    "name": "Laced Zoomshots",
+    "norm_name": "laced zoomshots",
+    "norm_short": "zoomshots",
+    "quality": 2,
+    "value": "laced_zoomshots_2"
+  },
+  {
+    "category": "weapon",
+    "icon": "inv_12_profession_enchanting_manaoil_orange",
+    "item_id": 243736,
+    "name": "Oil of Dawn",
+    "norm_name": "oil of dawn",
+    "norm_short": "oil of dawn",
+    "quality": 2,
+    "value": "oil_of_dawn_2"
+  },
+  {
+    "category": "weapon",
+    "icon": "inv_12_profession_blacksmithing_weightstone_silver",
+    "item_id": 237369,
+    "name": "Refulgent Weightstone",
+    "norm_name": "refulgent weightstone",
+    "norm_short": "ap",
+    "quality": 2,
+    "value": "refulgent_weightstone_2"
+  },
+  {
+    "category": "weapon",
+    "icon": "inv_12_profession_blacksmithing_whetstones_silver",
+    "item_id": 237371,
+    "name": "Refulgent Whetstone",
+    "norm_name": "refulgent whetstone",
+    "norm_short": "ap",
+    "quality": 2,
+    "value": "refulgent_whetstone_2"
+  },
+  {
+    "category": "weapon",
+    "icon": "inv_12_profession_enchanting_manaoil_purple",
+    "item_id": 243738,
+    "name": "Smuggler's Enchanted Edge",
+    "norm_name": "smuggler's enchanted edge",
+    "norm_short": "enchanted edge",
+    "quality": 2,
+    "value": "smugglers_enchanted_edge_2"
+  },
+  {
+    "category": "weapon",
+    "icon": "inv_12_profession_enchanting_manaoil_red",
+    "item_id": 243734,
+    "name": "Thalassian Phoenix Oil",
+    "norm_name": "thalassian phoenix oil",
+    "norm_short": "phoenix oil",
+    "quality": 2,
+    "value": "thalassian_phoenix_oil_2"
+  },
+  {
+    "category": "weapon",
+    "icon": "inv_ammo_bullet_05",
+    "item_id": 257752,
+    "name": "Weighted Boomshots",
+    "norm_name": "weighted boomshots",
+    "norm_short": "boomshots",
+    "quality": 2,
+    "value": "weighted_boomshots_2"
+  }
+]

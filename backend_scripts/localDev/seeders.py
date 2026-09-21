@@ -681,6 +681,19 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
     pull_enemies, pull_spells = [], []
     route_videos = []
     route_deaths, route_encounters = [], []
+    aura_run, aura_roster, aura_consumable, interesting_aura = [], [], [], []
+    # Consumable pools grouped by category, drawn from the derived consumables.json
+    # (item categories use item_id as a stand-in aura spell id; food is the generic
+    # well-fed buff with no item). Lets the seeded rosters produce real per-spec
+    # consumable aggregates the spec page can render.
+    cons_by_cat = {}
+    try:
+        for c in load_json(os.path.join(static.dir, "consumables.json")):
+            if c.get("item_id") is not None:
+                cons_by_cat.setdefault(c["category"], []).append((c["item_id"], c["item_id"]))
+    except (OSError, ValueError):
+        pass
+    cons_by_cat.setdefault("food", []).append((1285644, None))  # Hearty Well Fed
     regions = ["us", "eu", "kr", "tw"]
     realms = ["illidan", "silvermoon", "area-52", "tarren-mill", "stormrage"]
     rio = 1
@@ -692,13 +705,26 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
             rio += 1
             route_key = f"seedroute-{cmid}-{rio}"
             duration_ms = int(timer_ms * rng.uniform(0.5, 1.1))
+            ts_s = now_s - rng.randint(0, 13 * 86400)
+            keystone_level = rng.randint(8, 20)
             route_data.append((rio, 1, rng.randint(90, 105),
-                               now_s - rng.randint(0, 13 * 86400), rng.randint(8, 20),
+                               ts_s, keystone_level,
                                duration_ms, cmid, route_key))
             # comp = 5 specs
             comp = [rng.choice(all_specs) for _ in range(5)]
             for sid in comp:
                 route_specs.append((sid, route_key))
+            # per-roster-entry consumables (aura_run / aura_roster / aura_consumable),
+            # keyed on rio_run_id like the collector's Flow-B harvest
+            aura_run.append((rio, static.season, cmid, keystone_level, ts_s, rng.choice(regions)))
+            for idx, sid in enumerate(comp):
+                aura_roster.append((rio, idx, sid))
+                for cat, pool in cons_by_cat.items():
+                    if not pool:
+                        continue
+                    spell_id, item_id = rng.choice(pool)
+                    aura_consumable.append((rio, idx, spell_id, cat, item_id))
+                    interesting_aura.append((spell_id, None, 0, ts_s))
             # deaths: a few timings spread across the run duration
             for seq in range(rng.randint(0, 8)):
                 route_deaths.append((route_key, seq, rio, rng.randint(0, duration_ms)))
@@ -772,6 +798,17 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
         "INSERT IGNORE INTO route_encounters (route_key, ordinal, rio_run_id, boss_wow_encounter_id, "
         "boss_encounter_id, boss_name, started_at_ms, ended_at_ms) "
         "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", route_encounters)
+    _insert_many(conn, cursor,
+        "INSERT IGNORE INTO aura_run (rio_run_id, season, dungeon_id, keystone_level, timestamp, region) "
+        "VALUES (%s,%s,%s,%s,%s,%s)", aura_run)
+    _insert_many(conn, cursor,
+        "INSERT IGNORE INTO aura_roster (rio_run_id, roster_index, spec_id) VALUES (%s,%s,%s)", aura_roster)
+    _insert_many(conn, cursor,
+        "INSERT IGNORE INTO aura_consumable (rio_run_id, roster_index, spell_id, category, item_id) "
+        "VALUES (%s,%s,%s,%s,%s)", aura_consumable)
+    _insert_many(conn, cursor,
+        "INSERT INTO interesting_aura (spell_id, school, has_cooldown, first_seen_ts, times_seen) "
+        "VALUES (%s,%s,%s,%s,1) ON DUPLICATE KEY UPDATE times_seen = times_seen + 1", interesting_aura)
 
 
 # --------------------------------------------------------------------------------------

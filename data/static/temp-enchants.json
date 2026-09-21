@@ -1,0 +1,352 @@
+[
+  {
+    "value": "refulgent_whetstone_2",
+    "shortName": "AP (Sharp) 2",
+    "name": "Refulgent Whetstone (Quality 2)",
+    "itemId": 237371,
+    "icon": "inv_12_profession_blacksmithing_whetstones_silver",
+    "expansion": 11,
+    "craftingQuality": 2,
+    "effectId": 7905
+  },
+  {
+    "value": "refulgent_whetstone_1",
+    "shortName": "AP (Sharp) 1",
+    "name": "Refulgent Whetstone (Quality 1)",
+    "itemId": 237370,
+    "icon": "inv_12_profession_blacksmithing_whetstones_green",
+    "expansion": 11,
+    "craftingQuality": 1,
+    "effectId": 7906
+  },
+  {
+    "value": "refulgent_weightstone_2",
+    "shortName": "AP (Blunt) 2",
+    "name": "Refulgent Weightstone (Quality 2)",
+    "itemId": 237369,
+    "icon": "inv_12_profession_blacksmithing_weightstone_silver",
+    "expansion": 11,
+    "craftingQuality": 2,
+    "effectId": 7908
+  },
+  {
+    "value": "refulgent_weightstone_1",
+    "shortName": "AP (Blunt) 1",
+    "name": "Refulgent Weightstone (Quality 1)",
+    "itemId": 237367,
+    "icon": "inv_12_profession_blacksmithing_weightstone_green",
+    "expansion": 11,
+    "craftingQuality": 1,
+    "effectId": 7907
+  },
+  {
+    "value": "thalassian_phoenix_oil_2",
+    "shortName": "Phoenix Oil (Crit/Haste) 2",
+    "name": "Thalassian Phoenix Oil (Quality 2)",
+    "itemId": 243734,
+    "icon": "inv_12_profession_enchanting_manaoil_red",
+    "expansion": 11,
+    "craftingQuality": 2,
+    "effectId": 8052
+  },
+  {
+    "value": "thalassian_phoenix_oil_1",
+    "shortName": "Phoenix Oil (Crit/Haste) 1",
+    "name": "Thalassian Phoenix Oil (Quality 1)",
+    "itemId": 243733,
+    "icon": "inv_12_profession_enchanting_manaoil_red",
+    "expansion": 11,
+    "craftingQuality": 1,
+    "effectId": 8051
+  },
+  {
+    "value": "oil_of_dawn_2",
+    "shortName": "Oil of Dawn (Holy Damage) 2",
+    "name": "Oil of Dawn (Quality 2)",
+    "itemId": 243736,
+    "icon": "inv_12_profession_enchanting_manaoil_orange",
+    "expansion": 11,
+    "craftingQuality": 2,
+    "effectId": 8054
+  },
+  {
+    "value": "oil_of_dawn_1",
+    "shortName": "Oil of Dawn (Holy Damage) 1",
+    "name": "Oil of Dawn (Quality 1)",
+    "itemId": 243735,
+    "icon": "inv_12_profession_enchanting_manaoil_orange",
+    "expansion": 11,
+    "craftingQuality": 1,
+    "effectId": 8053
+  },
+  {
+    "value": "smugglers_enchanted_edge_2",
+    "shortName": "Enchanted Edge (Damage) 2",
+    "name": "Smuggler's Enchanted Edge (Quality 2)",
+    "itemId": 243738,
+    "icon": "inv_12_profession_enchanting_manaoil_purple",
+    "expansion": 11,
+    "craftingQuality": 2,
+    "effectId": 8056
+  },
+  {
+    "value": "smugglers_enchanted_edge_1",
+    "shortName": "Enchanted Edge (Damage) 1",
+    "name": "Smuggler's Enchanted Edge (Quality 1)",
+    "itemId": 243737,
+    "icon": "inv_12_profession_enchanting_manaoil_purple",
+    "expansion": 11,
+    "craftingQuality": 1,
+    "effectId": 8055
+  },
+  {
+    "value": "laced_zoomshots_2",
+    "shortName": "Zoomshots (Haste) 2",
+    "name": "Laced Zoomshots (Quality 2)",
+    "itemId": 257750,
+    "icon": "inv_ammo_bullet_06",
+    "expansion": 11,
+    "craftingQuality": 2,
+    "effectId": 8609
+  },
+  {
+    "value": "laced_zoomshots_1",
+    "shortName": "Zoomshots (Haste) 1",
+    "name": "Laced Zoomshots (Quality 1)",
+    "itemId": 257749,
+    "icon": "inv_ammo_bullet_06",
+    "expansion": 11,
+    "craftingQuality": 1,
+    "effectId": 8608
+  },
+  {
+    "value": "weighted_boomshots_2",
+    "shortName": "Boomshots (Damage) 2",
+    "name": "Weighted Boomshots (Quality 2)",
+    "itemId": 257752,
+    "icon": "inv_ammo_bullet_05",
+    "expansion": 11,
+    "craftingQuality": 2,
+    "effectId": 8611
+  },
+  {
+    "value": "weighted_boomshots_1",
+    "shortName": "Boomshots (Damage) 1",
+    "name": "Weighted Boomshots (Quality 1)",
+    "itemId": 257751,
+    "icon": "inv_ammo_bullet_05",
+    "expansion": 11,
+    "craftingQuality": 1,
+    "effectId": 8610
+  },
+  {
+    "value": "ironclaw_whetstone_3",
+    "shortName": "AP 3",
+    "name": "Ironclaw Whetstone (Quality 3)",
+    "itemId": 222504,
+    "icon": "inv_blacksmithing_modifiedcraftingreagent_blue",
+    "expansion": 10,
+    "craftingQuality": 3,
+    "effectId": 7545
+  },
+  {
+    "value": "ironclaw_whetstone_2",
+    "shortName": "AP 2",
+    "name": "Ironclaw Whetstone (Quality 2)",
+    "itemId": 222503,
+    "icon": "inv_blacksmithing_modifiedcraftingreagent_blue",
+    "expansion": 10,
+    "craftingQuality": 2,
+    "effectId": 7544
+  },
+  {
+    "value": "ironclaw_whetstone_1",
+    "shortName": "AP 1",
+    "name": "Ironclaw Whetstone (Quality 1)",
+    "itemId": 222502,
+    "icon": "inv_blacksmithing_modifiedcraftingreagent_blue",
+    "expansion": 10,
+    "craftingQuality": 1,
+    "effectId": 7543
+  },
+  {
+    "value": "oil_of_deep_toxins_3",
+    "shortName": "Deep Toxins (Damage) 3",
+    "name": "Oil of Deep Toxins (Quality 3)",
+    "itemId": 224113,
+    "icon": "trade_alchemy_potiond6",
+    "expansion": 10,
+    "craftingQuality": 3,
+    "effectId": 7498
+  },
+  {
+    "value": "oil_of_deep_toxins_2",
+    "shortName": "Deep Toxins (Damage) 2",
+    "name": "Oil of Deep Toxins (Quality 2)",
+    "itemId": 224112,
+    "icon": "trade_alchemy_potiond6",
+    "expansion": 10,
+    "craftingQuality": 2,
+    "effectId": 7497
+  },
+  {
+    "value": "oil_of_deep_toxins_1",
+    "shortName": "Deep Toxins (Damage) 1",
+    "name": "Oil of Deep Toxins (Quality 1)",
+    "itemId": 224111,
+    "icon": "trade_alchemy_potiond6",
+    "expansion": 10,
+    "craftingQuality": 1,
+    "effectId": 7496
+  },
+  {
+    "value": "algari_mana_oil_3",
+    "shortName": "Mana Oil (Crit/Haste) 3",
+    "name": "Algari Mana Oil (Quality 3)",
+    "itemId": 224107,
+    "icon": "trade_alchemy_potiond1",
+    "expansion": 10,
+    "craftingQuality": 3,
+    "effectId": 7495
+  },
+  {
+    "value": "algari_mana_oil_2",
+    "shortName": "Mana Oil (Crit/Haste) 2",
+    "name": "Algari Mana Oil (Quality 2)",
+    "itemId": 224106,
+    "icon": "trade_alchemy_potiond1",
+    "expansion": 10,
+    "craftingQuality": 2,
+    "effectId": 7494
+  },
+  {
+    "value": "algari_mana_oil_1",
+    "shortName": "Mana Oil (Crit/Haste) 1",
+    "name": "Algari Mana Oil (Quality 1)",
+    "itemId": 224105,
+    "icon": "trade_alchemy_potiond1",
+    "expansion": 10,
+    "craftingQuality": 1,
+    "effectId": 7493
+  },
+  {
+    "value": "algari_mana_oil_3",
+    "shortName": "AP 3",
+    "name": "Algari Mana Oil (Quality 3)",
+    "itemId": 224107,
+    "icon": "trade_alchemy_potiond1",
+    "expansion": 10,
+    "craftingQuality": 3,
+    "effectId": 7495
+  },
+  {
+    "value": "algari_mana_oil_2",
+    "shortName": "AP 2",
+    "name": "Algari Mana Oil (Quality 2)",
+    "itemId": 224106,
+    "icon": "trade_alchemy_potiond1",
+    "expansion": 10,
+    "craftingQuality": 2,
+    "effectId": 7494
+  },
+  {
+    "value": "algari_mana_oil_1",
+    "shortName": "AP 1",
+    "name": "Algari Mana Oil (Quality 1)",
+    "itemId": 224105,
+    "icon": "trade_alchemy_potiond1",
+    "expansion": 10,
+    "craftingQuality": 1,
+    "effectId": 7493
+  },
+  {
+    "value": "buzzing_rune_3",
+    "shortName": "Buzzing (Crit) 3",
+    "name": "Buzzing Rune (Quality 3)",
+    "itemId": 194823,
+    "icon": "inv_misc_rune_08",
+    "expansion": 9,
+    "craftingQuality": 3,
+    "effectId": 6514
+  },
+  {
+    "value": "buzzing_rune_2",
+    "shortName": "Buzzing (Crit) 2",
+    "name": "Buzzing Rune (Quality 2)",
+    "itemId": 194822,
+    "icon": "inv_misc_rune_08",
+    "expansion": 9,
+    "craftingQuality": 2,
+    "effectId": 6513
+  },
+  {
+    "value": "buzzing_rune_1",
+    "shortName": "Buzzing (Crit) 1",
+    "name": "Buzzing Rune (Quality 1)",
+    "itemId": 194821,
+    "icon": "inv_misc_rune_08",
+    "expansion": 9,
+    "craftingQuality": 1,
+    "effectId": 6512
+  },
+  {
+    "value": "buzzing_rune_3",
+    "shortName": "Howling (Haste) 3",
+    "name": "Buzzing Rune (Quality 3)",
+    "itemId": 194823,
+    "icon": "inv_misc_rune_08",
+    "expansion": 9,
+    "craftingQuality": 3,
+    "effectId": 6514
+  },
+  {
+    "value": "buzzing_rune_2",
+    "shortName": "Howling (Haste) 2",
+    "name": "Buzzing Rune (Quality 2)",
+    "itemId": 194822,
+    "icon": "inv_misc_rune_08",
+    "expansion": 9,
+    "craftingQuality": 2,
+    "effectId": 6513
+  },
+  {
+    "value": "buzzing_rune_1",
+    "shortName": "Howling (Haste) 1",
+    "name": "Buzzing Rune (Quality 1)",
+    "itemId": 194821,
+    "icon": "inv_misc_rune_08",
+    "expansion": 9,
+    "craftingQuality": 1,
+    "effectId": 6512
+  },
+  {
+    "value": "buzzing_rune_3",
+    "shortName": "Hissing (Mastery) 3",
+    "name": "Buzzing Rune (Quality 3)",
+    "itemId": 194823,
+    "icon": "inv_misc_rune_08",
+    "expansion": 9,
+    "craftingQuality": 3,
+    "effectId": 6514
+  },
+  {
+    "value": "buzzing_rune_2",
+    "shortName": "Hissing (Mastery) 2",
+    "name": "Buzzing Rune (Quality 2)",
+    "itemId": 194822,
+    "icon": "inv_misc_rune_08",
+    "expansion": 9,
+    "craftingQuality": 2,
+    "effectId": 6513
+  },
+  {
+    "value": "buzzing_rune_1",
+    "shortName": "Hissing (Mastery) 1",
+    "name": "Buzzing Rune (Quality 1)",
+    "itemId": 194821,
+    "icon": "inv_misc_rune_08",
+    "expansion": 9,
+    "craftingQuality": 1,
+    "effectId": 6512
+  }
+]

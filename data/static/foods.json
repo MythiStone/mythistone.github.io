@@ -1,0 +1,954 @@
+[
+  {
+    "value": "amani_cornucopia",
+    "shortName": "Amani Cornucopia",
+    "name": "Amani Cornucopia",
+    "itemId": 275264,
+    "icon": "inv_misc_food_legion_heartyfeast",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 70
+      }
+    ]
+  },
+  {
+    "value": "loas_gathering",
+    "shortName": "Loa's Gathering",
+    "name": "Loa's Gathering",
+    "itemId": 275265,
+    "icon": "inv_cooking_10_grandbanquet",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 70
+      }
+    ]
+  },
+  {
+    "value": "silvermoon_parade",
+    "shortName": "Silvermoon Parade",
+    "name": "Silvermoon Parade",
+    "itemId": 255845,
+    "icon": "inv_tradeskill_cooking_feastofblood",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "primary",
+        "amount": 50
+      }
+    ]
+  },
+  {
+    "value": "queldorei_medley",
+    "shortName": "Quel'dorei Medley",
+    "name": "Quel'dorei Medley",
+    "itemId": 242272,
+    "icon": "inv_cooking_10_draconicdelicacies",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 64
+      }
+    ]
+  },
+  {
+    "value": "blooming_feast",
+    "shortName": "Blooming Feast",
+    "name": "Blooming Feast",
+    "itemId": 242273,
+    "icon": "inv_misc_food_cooked_greatpabanquet_wok",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 64
+      }
+    ]
+  },
+  {
+    "value": "harandar_celebration",
+    "shortName": "Harandar Celebration",
+    "name": "Harandar Celebration",
+    "itemId": 255846,
+    "icon": "inv_misc_1h_soup_b_01_misc_1h_soup_b_01",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "primary",
+        "amount": 50
+      }
+    ]
+  },
+  {
+    "value": "royal_roast",
+    "shortName": "Royal Roast",
+    "name": "Royal Roast",
+    "itemId": 242275,
+    "icon": "inv_cooking_100_roastduck",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "primary",
+        "amount": 50
+      }
+    ]
+  },
+  {
+    "value": "impossibly_royal_roast",
+    "shortName": "Impossibly Royal Roast",
+    "name": "Impossibly Royal Roast",
+    "itemId": 255847,
+    "icon": "inv_cooking_100_roastduck",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "primary",
+        "amount": 50
+      }
+    ]
+  },
+  {
+    "value": "flora_frenzy",
+    "shortName": "Flora Frenzy",
+    "name": "Flora Frenzy",
+    "itemId": 255848,
+    "icon": "inv_cooking_100_sidesalad_color04",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 64
+      }
+    ]
+  },
+  {
+    "value": "champions_bento",
+    "shortName": "Champion's Bento",
+    "name": "Champion's Bento",
+    "itemId": 242274,
+    "icon": "inv_misc_food_vendor_poundedricecake_1",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 64
+      }
+    ]
+  },
+  {
+    "value": "warped_wise_wings",
+    "shortName": "Warped Wise Wings",
+    "name": "Warped Wise Wings",
+    "itemId": 242285,
+    "icon": "inv_cooking_10_grandbanquet",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "mastery",
+        "amount": 58
+      }
+    ]
+  },
+  {
+    "value": "voidkissed_fish_rolls",
+    "shortName": "Void-Kissed Fish Rolls",
+    "name": "Void-Kissed Fish Rolls",
+    "itemId": 242284,
+    "icon": "inv_cooking_80_ravenberrytart",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "vers",
+        "amount": 58
+      }
+    ]
+  },
+  {
+    "value": "sunseared_lumifin",
+    "shortName": "Sun-Seared Lumifin",
+    "name": "Sun-Seared Lumifin",
+    "itemId": 242283,
+    "icon": "inv_misc_food_cooked_wildfowlroast",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "crit",
+        "amount": 58
+      }
+    ]
+  },
+  {
+    "value": "null_and_void_plate",
+    "shortName": "Null and Void Plate",
+    "name": "Null and Void Plate",
+    "itemId": 242282,
+    "icon": "inv_misc_food_draenor_saltedskulker_color01",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 58
+      }
+    ]
+  },
+  {
+    "value": "glitter_skewers",
+    "shortName": "Glitter Skewers",
+    "name": "Glitter Skewers",
+    "itemId": 242281,
+    "icon": "inv_misc_food_160_fish_87",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "mastery",
+        "amount": 58
+      }
+    ]
+  },
+  {
+    "value": "felkissed_filet",
+    "shortName": "Fel-Kissed Filet",
+    "name": "Fel-Kissed Filet",
+    "itemId": 242286,
+    "icon": "inv_cooking_100_revengeservedcold_color02",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 58
+      }
+    ]
+  },
+  {
+    "value": "buttered_root_crab",
+    "shortName": "Buttered Root Crab",
+    "name": "Buttered Root Crab",
+    "itemId": 242280,
+    "icon": "inv_misc_food_draenor_steamedscorpion",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "vers",
+        "amount": 58
+      }
+    ]
+  },
+  {
+    "value": "arcano_cutlets",
+    "shortName": "Arcano Cutlets",
+    "name": "Arcano Cutlets",
+    "itemId": 242287,
+    "icon": "inv_cooking_81_paleosteakandpotatoes_color04",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "crit",
+        "amount": 58
+      }
+    ]
+  },
+  {
+    "value": "tasty_smoked_tetra",
+    "shortName": "Tasty Smoked Tetra",
+    "name": "Tasty Smoked Tetra",
+    "itemId": 242278,
+    "icon": "inv_cooking_100_revengeservedcold",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "crit",
+        "amount": 58
+      }
+    ]
+  },
+  {
+    "value": "crimson_calamari",
+    "shortName": "Crimson Calamari",
+    "name": "Crimson Calamari",
+    "itemId": 242277,
+    "icon": "inv_misc_food_cooked_valleystirfry",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 58
+      }
+    ]
+  },
+  {
+    "value": "braised_blood_hunter",
+    "shortName": "Braised Blood Hunter",
+    "name": "Braised Blood Hunter",
+    "itemId": 242276,
+    "icon": "inv_misc_food_legion_fishbrulspecial",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "vers",
+        "amount": 58
+      }
+    ]
+  },
+  {
+    "value": "hearthflame_supper",
+    "shortName": "Hearthflame Supper",
+    "name": "Hearthflame Supper",
+    "itemId": 242295,
+    "icon": "inv_misc_food_dimsum",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "crit",
+        "amount": 22
+      },
+      {
+        "stat": "haste",
+        "amount": 22
+      }
+    ]
+  },
+  {
+    "value": "eversong_pudding",
+    "shortName": "Eversong Pudding",
+    "name": "Eversong Pudding",
+    "itemId": 242292,
+    "icon": "inv_cooking_90_bananabeefpudding",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "crit",
+        "amount": 22
+      },
+      {
+        "stat": "mastery",
+        "amount": 22
+      }
+    ]
+  },
+  {
+    "value": "wise_tails",
+    "shortName": "Wise Tails",
+    "name": "Wise Tails",
+    "itemId": 242290,
+    "icon": "inv_misc_food_158_fish_redish",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "crit",
+        "amount": 22
+      },
+      {
+        "stat": "vers",
+        "amount": 22
+      }
+    ]
+  },
+  {
+    "value": "bloodthistlewrapped_cutlets",
+    "shortName": "Bloodthistle-Wrapped Cutlets",
+    "name": "Bloodthistle-Wrapped Cutlets",
+    "itemId": 242296,
+    "icon": "inv_misc_food_168_ricecake01",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 22
+      },
+      {
+        "stat": "mastery",
+        "amount": 22
+      }
+    ]
+  },
+  {
+    "value": "sunwell_delight",
+    "shortName": "Sunwell Delight",
+    "name": "Sunwell Delight",
+    "itemId": 242293,
+    "icon": "inv_misc_food_cooked_sauteedcarrots",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 22
+      },
+      {
+        "stat": "vers",
+        "amount": 22
+      }
+    ]
+  },
+  {
+    "value": "fried_bloomtail",
+    "shortName": "Fried Bloomtail",
+    "name": "Fried Bloomtail",
+    "itemId": 242291,
+    "icon": "inv_misc_food_legion_driedmackerelstrips",
+    "expansion": 11,
+    "effects": [
+      {
+        "stat": "mastery",
+        "amount": 22
+      },
+      {
+        "stat": "vers",
+        "amount": 22
+      }
+    ]
+  },
+  {
+    "value": "authentic_undermine_clam_chowder",
+    "shortName": "Authentic Undermine Clam Chowder",
+    "name": "Authentic Undermine Clam Chowder",
+    "itemId": 235805,
+    "icon": "inv_drink_17",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 470
+      }
+    ]
+  },
+  {
+    "value": "feast_of_the_midnight_masquerade",
+    "shortName": "Feast of the Midnight Masquerade",
+    "name": "Feast of the Midnight Masquerade",
+    "itemId": 222733,
+    "icon": "inv_11_cooking_profession_feast_table02",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "primary",
+        "amount": 445
+      }
+    ]
+  },
+  {
+    "value": "feast_of_the_divine_day",
+    "shortName": "Feast of the Divine Day",
+    "name": "Feast of the Divine Day",
+    "itemId": 222732,
+    "icon": "inv_11_cooking_profession_feast_table01",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "primary",
+        "amount": 445
+      }
+    ]
+  },
+  {
+    "value": "the_sushi_special",
+    "shortName": "The Sushi Special",
+    "name": "The Sushi Special",
+    "itemId": 222720,
+    "icon": "inv_tradeskill_cooking_feastofthewater",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 469
+      }
+    ]
+  },
+  {
+    "value": "everything_stew",
+    "shortName": "Everything Stew",
+    "name": "Everything Stew",
+    "itemId": 222735,
+    "icon": "inv_cooking_10_draconicdelicacies",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "lowest_secondary",
+        "amount": 469
+      }
+    ]
+  },
+  {
+    "value": "beledars_bounty",
+    "shortName": "Beledar's Bounty",
+    "name": "Beledar's Bounty",
+    "itemId": 222728,
+    "icon": "inv_cooking_100_roastduck_color02",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 469
+      }
+    ]
+  },
+  {
+    "value": "empress_farewell",
+    "shortName": "Empress' Farewell",
+    "name": "Empress' Farewell",
+    "itemId": 222729,
+    "icon": "inv_misc_food_meat_cooked_02_color02",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 469
+      }
+    ]
+  },
+  {
+    "value": "jesters_board",
+    "shortName": "Jester's Board",
+    "name": "Jester's Board",
+    "itemId": 222730,
+    "icon": "inv_misc_food_meat_cooked_06",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 469
+      }
+    ]
+  },
+  {
+    "value": "outsiders_provisions",
+    "shortName": "Outsider's Provisions",
+    "name": "Outsider's Provisions",
+    "itemId": 222731,
+    "icon": "inv_cooking_10_draconicdelicacies",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "highest_secondary",
+        "amount": 469
+      }
+    ]
+  },
+  {
+    "value": "anglers_delight",
+    "shortName": "Angler's Delight",
+    "name": "Angler's Delight",
+    "itemId": 222727,
+    "icon": "inv_cooking_100_revengeservedcold_color04",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "stam",
+        "amount": 893
+      }
+    ]
+  },
+  {
+    "value": "mycobloom_risotto",
+    "shortName": "Mycobloom Risotto",
+    "name": "Mycobloom Risotto",
+    "itemId": 222725,
+    "icon": "inv_cooking_80_sailorspie",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "agi",
+        "amount": 223
+      },
+      {
+        "stat": "stam",
+        "amount": 446
+      }
+    ]
+  },
+  {
+    "value": "sizzling_honey_roast",
+    "shortName": "Sizzling Honey Roast",
+    "name": "Sizzling Honey Roast",
+    "itemId": 222724,
+    "icon": "inv_cooking_100_roastduck",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "str",
+        "amount": 223
+      },
+      {
+        "stat": "stam",
+        "amount": 446
+      }
+    ]
+  },
+  {
+    "value": "stuffed_cave_peppers",
+    "shortName": "Stuffed Cave Peppers",
+    "name": "Stuffed Cave Peppers",
+    "itemId": 222726,
+    "icon": "inv_cooking_90_smuggledproduce",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "int",
+        "amount": 223
+      },
+      {
+        "stat": "stam",
+        "amount": 446
+      }
+    ]
+  },
+  {
+    "value": "chippy_tea",
+    "shortName": "Chippy Tea",
+    "name": "Chippy Tea",
+    "itemId": 222736,
+    "icon": "inv_misc_food_vendor_roastedbarlytea",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "mastery",
+        "amount": 235
+      },
+      {
+        "stat": "haste",
+        "amount": 235
+      }
+    ]
+  },
+  {
+    "value": "deepfin_patty",
+    "shortName": "Deepfin Patty",
+    "name": "Deepfin Patty",
+    "itemId": 222718,
+    "icon": "inv_misc_food_vendor_poundedricecakes",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 235
+      },
+      {
+        "stat": "crit",
+        "amount": 235
+      }
+    ]
+  },
+  {
+    "value": "fiery_fish_sticks",
+    "shortName": "Fiery Fish Sticks",
+    "name": "Fiery Fish Sticks",
+    "itemId": 222715,
+    "icon": "inv_misc_fish_18",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "crit",
+        "amount": 328
+      }
+    ]
+  },
+  {
+    "value": "fish_and_chips",
+    "shortName": "Fish and Chips",
+    "name": "Fish and Chips",
+    "itemId": 222721,
+    "icon": "inv_cooking_80_swampfishnchips",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "crit",
+        "amount": 235
+      },
+      {
+        "stat": "vers",
+        "amount": 235
+      }
+    ]
+  },
+  {
+    "value": "gingerglazed_fillet",
+    "shortName": "Ginger-Glazed Fillet",
+    "name": "Ginger-Glazed Fillet",
+    "itemId": 222716,
+    "icon": "inv_cooking_82_moistfillet",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "vers",
+        "amount": 328
+      }
+    ]
+  },
+  {
+    "value": "marinated_tenderloins",
+    "shortName": "Marinated Tenderloins",
+    "name": "Marinated Tenderloins",
+    "itemId": 222723,
+    "icon": "inv_misc_food_meat_cooked_02",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "mastery",
+        "amount": 235
+      },
+      {
+        "stat": "vers",
+        "amount": 235
+      }
+    ]
+  },
+  {
+    "value": "salt_baked_seafood",
+    "shortName": "Salt Baked Seafood",
+    "name": "Salt Baked Seafood",
+    "itemId": 222722,
+    "icon": "inv_misc_food_draenor_saltedskulker",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "mastery",
+        "amount": 235
+      },
+      {
+        "stat": "crit",
+        "amount": 235
+      }
+    ]
+  },
+  {
+    "value": "salty_dog",
+    "shortName": "Salty Dog",
+    "name": "Salty Dog",
+    "itemId": 222717,
+    "icon": "inv_cooking_81_honeypotpie",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "mastery",
+        "amount": 328
+      }
+    ]
+  },
+  {
+    "value": "sweet_and_spicy_soup",
+    "shortName": "Sweet and Spicy Soup",
+    "name": "Sweet and Spicy Soup",
+    "itemId": 222719,
+    "icon": "inv_misc_food_vendor_tangypeachyogurt",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 235
+      },
+      {
+        "stat": "vers",
+        "amount": 235
+      }
+    ]
+  },
+  {
+    "value": "zesty_nibblers",
+    "shortName": "Zesty Nibblers",
+    "name": "Zesty Nibblers",
+    "itemId": 222714,
+    "icon": "inv_misc_food_86_basilisk",
+    "expansion": 10,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 328
+      }
+    ]
+  },
+  {
+    "value": "hoard_of_draconic_delicacies",
+    "shortName": "Hoard of Draconic Delicacies",
+    "name": "Hoard of Draconic Delicacies",
+    "itemId": 197795,
+    "icon": "inv_cooking_10_draconicdelicacies",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "primary",
+        "amount": 75
+      }
+    ]
+  },
+  {
+    "value": "fated_fortune_cookie",
+    "shortName": "Fated Fortune Cookie",
+    "name": "Fated Fortune Cookie",
+    "itemId": 197792,
+    "icon": "inv_misc_fortunecookie_color03",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "primary",
+        "amount": 75
+      }
+    ]
+  },
+  {
+    "value": "aromatic_seafood_platter",
+    "shortName": "Aromatic Seafood Platter",
+    "name": "Aromatic Seafood Platter",
+    "itemId": 197783,
+    "icon": "inv_misc_food_legion_drogbarstylesalmon",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 67
+      },
+      {
+        "stat": "vers",
+        "amount": 67
+      }
+    ]
+  },
+  {
+    "value": "feisty_fish_sticks",
+    "shortName": "Feisty Fish Sticks",
+    "name": "Feisty Fish Sticks",
+    "itemId": 197782,
+    "icon": "inv_misc_food_164_fish_seadog",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 67
+      },
+      {
+        "stat": "crit",
+        "amount": 67
+      }
+    ]
+  },
+  {
+    "value": "great_cerulean_sea",
+    "shortName": "Great Cerulean Sea",
+    "name": "Great Cerulean Sea",
+    "itemId": 197787,
+    "icon": "inv_misc_food_159_fish_white",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "vers",
+        "amount": 67
+      },
+      {
+        "stat": "mastery",
+        "amount": 67
+      }
+    ]
+  },
+  {
+    "value": "revenge_served_cold",
+    "shortName": "Revenge, Served Cold",
+    "name": "Revenge, Served Cold",
+    "itemId": 197785,
+    "icon": "inv_cooking_100_revengeservedcold_color02",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "crit",
+        "amount": 67
+      },
+      {
+        "stat": "vers",
+        "amount": 67
+      }
+    ]
+  },
+  {
+    "value": "sizzling_seafood_medley",
+    "shortName": "Sizzling Seafood Medley",
+    "name": "Sizzling Seafood Medley",
+    "itemId": 197784,
+    "icon": "inv_misc_food_draenor_sturgeonstew",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 67
+      },
+      {
+        "stat": "mastery",
+        "amount": 67
+      }
+    ]
+  },
+  {
+    "value": "thousandbone_tongueslicer",
+    "shortName": "Thousandbone Tongueslicer",
+    "name": "Thousandbone Tongueslicer",
+    "itemId": 197786,
+    "icon": "inv_misc_food_154_fish_77",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "crit",
+        "amount": 67
+      },
+      {
+        "stat": "mastery",
+        "amount": 67
+      }
+    ]
+  },
+  {
+    "value": "filet_of_fangs",
+    "shortName": "Filet of Fangs",
+    "name": "Filet of Fangs",
+    "itemId": 197779,
+    "icon": "inv_misc_food_cooked_eternalblossomfish",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "crit",
+        "amount": 105
+      }
+    ]
+  },
+  {
+    "value": "timely_demise",
+    "shortName": "Timely Demise",
+    "name": "Timely Demise",
+    "itemId": 197778,
+    "icon": "inv_misc_food_legion_seedbatteredfishplate",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "haste",
+        "amount": 105
+      }
+    ]
+  },
+  {
+    "value": "saltbaked_fishcake",
+    "shortName": "Salt-Baked Fishcake",
+    "name": "Salt-Baked Fishcake",
+    "itemId": 197781,
+    "icon": "inv_misc_food_legion_deepfriedmossgill",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "mastery",
+        "amount": 105
+      }
+    ]
+  },
+  {
+    "value": "seamoth_surprise",
+    "shortName": "Seamoth Surprise",
+    "name": "Seamoth Surprise",
+    "itemId": 197780,
+    "icon": "inv_misc_food_159_fish_82",
+    "expansion": 9,
+    "effects": [
+      {
+        "stat": "vers",
+        "amount": 105
+      }
+    ]
+  }
+]

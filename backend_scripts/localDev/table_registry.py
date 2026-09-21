@@ -61,6 +61,9 @@ RAW_TABLES = {
     "route_encounters",
     "pull_enemies",
     "pull_spells",
+    "aura_run",
+    "aura_roster",
+    "aura_consumable",
 }
 
 STANDALONE_TABLES = {
@@ -74,6 +77,7 @@ STANDALONE_TABLES = {
     "simc_bis_progress_meta",
     "simc_bis_progress",
     "trend_snapshot",
+    "interesting_aura",
 }
 
 CONTROL_TABLES = {

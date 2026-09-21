@@ -1,0 +1,26 @@
+[
+  {
+    "value": "void_touched",
+    "shortName": "Void-Touched",
+    "name": "Void-Touched Augment Rune",
+    "itemId": 259085,
+    "icon": "inv_10_enchanting_crystal_color2",
+    "expansion": 11
+  },
+  {
+    "value": "crystallized",
+    "shortName": "Crystallized",
+    "name": "Crystallized Augment Rune",
+    "itemId": 224572,
+    "icon": "inv_10_enchanting_crystal_color5",
+    "expansion": 10
+  },
+  {
+    "value": "draconic",
+    "shortName": "Draconic",
+    "name": "Dreambound Augment Rune",
+    "itemId": 211495,
+    "icon": "item_alchemiststonec",
+    "expansion": 9
+  }
+]

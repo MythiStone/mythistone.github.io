@@ -263,6 +263,9 @@ GLOBAL_RAIDER_BACKOFF = {"until": 0, "lock": asyncio.Lock()}
 run_details_cache: dict[int, dict] = {}
 CACHE_MAX_SIZE = 5000
 
+ROUTE_PAGES_PER_DUNGEON = 100
+ROUTE_PAGES_PER_DUNGEON = 500
+
 for region in REGIONS:
     id_var = f"BLIZ_CLIENT_ID_{region.upper()}"
     sec_var = f"BLIZ_CLIENT_SECRET_{region.upper()}"
@@ -378,6 +381,48 @@ def build_encounter_rows(full: dict) -> list[dict]:
         })
     return rows
 
+_consumable_index = None
+
+
+def get_consumable_index():
+    """Lazily-loaded consumables.json index (name -> item) for ingest-time aura
+    matching. Rebuilt per process; the collector restarts ~daily so it picks up
+    the weekly-refreshed catalog."""
+    global _consumable_index
+    if _consumable_index is None:
+        _consumable_index = commonUtils.build_consumable_index()
+    return _consumable_index
+
+
+def build_aura_rows(full: dict) -> list[dict]:
+    """Per-roster-entry auras from a run-detail's top-level roster. One dict per
+    player: spec_id, every observed aura (feeds the interesting_aura dictionary),
+    and the subset resolved to a tracked consumable (flask/potion/food/augment/
+    weapon). Names/icons are never stored; only ids."""
+    idx = get_consumable_index()
+    rows = []
+    for i, member in enumerate(full.get("roster") or []):
+        spec_id = ((member.get("character") or {}).get("spec") or {}).get("id")
+        if spec_id is None:
+            continue
+        auras, consumables = [], []
+        for a in member.get("interestingAuras") or []:
+            sid = a.get("id")
+            if sid is None:
+                continue
+            auras.append((int(sid), a.get("school"), 1 if a.get("hasCooldown") else 0))
+            match = commonUtils.match_consumable_aura(a, idx)
+            if match is not None:
+                consumables.append((int(sid), match.get("category"), match.get("item_id")))
+        rows.append({
+            "roster_index": i,
+            "spec_id": int(spec_id),
+            "auras": auras,
+            "consumables": consumables,
+        })
+    return rows
+
+
 async def fetch_raider_page(session: ClientSession, dungeon_slug: str, page: int) -> dict:
     url = "https://raider.io/api/v1/mythic-plus/runs"
     params = {
@@ -448,6 +493,7 @@ async def fetch_run_details(session: ClientSession, run_id: int, season: str) ->
                     "videos": build_video_rows(full, full.get("keystone_run_id")),
                     "deaths": build_death_rows(full),
                     "encounters": build_encounter_rows(full),
+                    "roster": build_aura_rows(full),
                 }
 
                 if len(run_details_cache) >= CACHE_MAX_SIZE:
@@ -482,6 +528,10 @@ async def route_db_worker(name: str):
     Pull route payloads from route_db_queue and write them using databaseConnector.
     """
     try:
+        try:
+            aura_season_id = commonUtils.current_season_id()
+        except Exception:
+            aura_season_id = 0
         with closing(databaseConnector.get_connection()) as conn:
             cursor = conn.cursor()
             while not cancel_event.is_set():
@@ -508,6 +558,14 @@ async def route_db_worker(name: str):
                     keystone_level = int(raider_reduced.get("mythic_level") or 0)
                     duration = int(raider_reduced.get("duration") or 0)
                     dungeon_id = raider_reduced.get("dungeon_id")
+
+                    # Consumables are harvested from every run-detail, independent of
+                    # route/keystone.guru eligibility, so this runs before the route
+                    # dedup gate and commits on its own.
+                    persist_run_auras(
+                        conn, cursor, rio_run_id, raider_reduced.get("roster", []),
+                        aura_season_id, dungeon_id, keystone_level, timestamp, None,
+                    )
 
                     if not route_key or not rio_run_id or not mapping_version:
                         raise ValueError("Invalid parameters")
@@ -578,24 +636,52 @@ async def route_db_worker(name: str):
     except Exception as e:
         GLOBAL_STATS.console_log(f"[{name}] CRITICAL ERROR starting route worker (connection pool?): {e}")
 
+def persist_run_auras(conn, cursor, rio_run_id, roster, season_id, dungeon_id, keystone_level, timestamp, region):
+    """Store one run-detail's consumables + dictionary auras, keyed on rio_run_id
+    and independent of route_data. Commits on its own so it survives even when the
+    route is a duplicate or the route insert fails. aura_run's INSERT IGNORE is the
+    dedup gate: rowcount 0 means this run was already collected, so skip it."""
+    if not rio_run_id or not roster:
+        return
+    try:
+        rowcount = databaseConnector.insert_aura_run(
+            conn, cursor, rio_run_id, season_id, dungeon_id, keystone_level, timestamp, region
+        )
+        # Record every observed aura id once regardless of dedup (dev dictionary).
+        aura_vals = [(sid, school, hc, timestamp) for e in roster for (sid, school, hc) in e["auras"]]
+        databaseConnector.upsert_interesting_aura_batch(conn, cursor, aura_vals)
+        if rowcount == 0:
+            conn.commit()  # already collected this run's rosters; keep the dictionary bump
+            return
+        roster_vals = [(rio_run_id, e["roster_index"], e["spec_id"]) for e in roster]
+        databaseConnector.insert_aura_roster_batch(conn, cursor, roster_vals)
+        cons_vals = [
+            (rio_run_id, e["roster_index"], sid, cat, item_id)
+            for e in roster for (sid, cat, item_id) in e["consumables"]
+        ]
+        databaseConnector.insert_aura_consumable_batch(conn, cursor, cons_vals)
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        GLOBAL_STATS.console_log(f"[route_db] aura persist error for run {rio_run_id}: {e}")
+
+
 async def route_poller_task(session: ClientSession):
     global CURRENT_SEASON
     dungeons = json.loads(DUNGEON_STATIC.read_text())
-    specs = json.loads((DATA_DIR / "static" / "specs.json").read_text())
     dungeon_slugs = [info["slug"] for info in dungeons.values()]
-    spec_ids = [int(k) for k in specs.keys()]
 
     while not cancel_event.is_set():
         for slug in dungeon_slugs:
             if cancel_event.is_set(): break
-            found_runs = {spec: set() for spec in spec_ids}
+            run_ids_set = set()
             page = 1
-            while page < 500 and not cancel_event.is_set():
+            while page <= ROUTE_PAGES_PER_DUNGEON and not cancel_event.is_set():
                 data = await fetch_raider_page(session, slug, page)
                 await GLOBAL_STATS.increment("rio_pages_checked")
                 rankings = data.get("rankings", [])
                 if not rankings: break
-                
+
                 if not CURRENT_SEASON:
                     CURRENT_SEASON = data.get("params", {}).get("season", "")
 
@@ -603,16 +689,10 @@ async def route_poller_task(session: ClientSession):
                     run = entry.get("run")
                     if not run or run.get("logged_run_id") is None: continue
                     keystone_id = run.get("keystone_run_id")
-                    for member in run.get("roster", []):
-                        char_spec = member.get("character", {}).get("spec", {}).get("id")
-                        if char_spec in found_runs and len(found_runs[char_spec]) < 50:
-                            found_runs[char_spec].add(keystone_id)
-                
-                page += 1
+                    if keystone_id is not None:
+                        run_ids_set.add(keystone_id)
 
-            run_ids_set = set()
-            for runs in found_runs.values():
-                run_ids_set.update(runs)
+                page += 1
 
             for run_id in sorted(run_ids_set):
                 if cancel_event.is_set(): break

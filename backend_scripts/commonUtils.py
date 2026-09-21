@@ -9,6 +9,7 @@ chains (generateSocialsPost <-> generateSpecPages/generateDashboardPage).
 import hashlib
 import json
 import os
+import re
 
 import databaseConnector
 
@@ -496,6 +497,113 @@ def load_tier_sets(static_dir=LOOKUP_DIR):
         for iid in items:
             item_to_set[iid] = sid
     return item_to_set, set_meta
+
+
+# Consumable categories in data/static/consumables.json. temp-enchants (weapon
+# oils/whetstones) collapse to "weapon"; foods are the generic well-fed buff, not
+# a specific food item.
+CONSUMABLE_CATEGORIES = ("flask", "potion", "food", "augment", "weapon")
+
+_CONSUMABLE_QUALITY_RE = re.compile(r"\s*\(quality\s*\d+\)\s*$", re.IGNORECASE)
+_CONSUMABLE_SHORT_TAIL_RE = re.compile(r"\s*\d+\s*$")
+_CONSUMABLE_SHORT_PAREN_RE = re.compile(r"\s*\([^)]*\)\s*$")
+
+
+def normalize_consumable_name(name):
+    """Match key for a Raidbots item ``name``: drop the `` (Quality N)`` suffix and
+    lowercase. The aura buff name equals the item name minus that suffix
+    (e.g. aura "Flask of the Blood Knights" -> "flask of the blood knights")."""
+    if not name:
+        return ""
+    return _CONSUMABLE_QUALITY_RE.sub("", name.strip()).strip().lower()
+
+
+def normalize_consumable_short_name(short_name):
+    """Match key for a Raidbots ``shortName``: drop the trailing quality number and
+    a trailing ``(Stat)`` group, then lowercase. Needed for augment runes whose
+    aura name equals the shortName (e.g. "Void-Touched"), not the item name
+    ("Void-Touched Augment Rune")."""
+    if not short_name:
+        return ""
+    s = _CONSUMABLE_SHORT_TAIL_RE.sub("", short_name.strip())
+    s = _CONSUMABLE_SHORT_PAREN_RE.sub("", s)
+    return s.strip().lower()
+
+
+def load_consumables(static_dir=LOOKUP_DIR):
+    """The derived consumable catalog (``data/static/consumables.json``, written by
+    processConsumables.py). A list of entries
+    ``{value, category, item_id, name, icon, quality, norm_name, norm_short}``.
+    Returns ``[]`` when absent (early season / not yet built) so callers degrade to
+    "no consumables" instead of crashing."""
+    try:
+        return load_json(os.path.join(static_dir, "consumables.json"))
+    except (OSError, ValueError):
+        return []
+
+
+def load_consumable_overrides(static_dir=LOOKUP_DIR):
+    """Hand-maintained ``spell_id -> value`` overrides for auras the name match
+    misses (``data/static/consumable_overrides.json``). Keys are spell-id strings.
+    Returns ``{}`` when absent."""
+    try:
+        return load_json(os.path.join(static_dir, "consumable_overrides.json"))
+    except (OSError, ValueError):
+        return {}
+
+
+def build_consumable_index(consumables=None, overrides=None, static_dir=LOOKUP_DIR):
+    """Build the lookup indexes ``match_consumable_aura`` needs. Loads from
+    ``static_dir`` when ``consumables``/``overrides`` are not passed."""
+    if consumables is None:
+        consumables = load_consumables(static_dir)
+    if overrides is None:
+        overrides = load_consumable_overrides(static_dir)
+    by_name, by_short, by_item, by_value = {}, {}, {}, {}
+    for e in consumables:
+        by_value[e.get("value")] = e
+        if e.get("item_id") is not None:
+            by_item[e["item_id"]] = e
+        if e.get("norm_name"):
+            by_name.setdefault(e["norm_name"], e)
+        if e.get("norm_short"):
+            by_short.setdefault(e["norm_short"], e)
+    return {
+        "by_name": by_name,
+        "by_short": by_short,
+        "by_item": by_item,
+        "by_value": by_value,
+        "overrides": overrides or {},
+    }
+
+
+def match_consumable_aura(aura, index):
+    """Resolve one ``interestingAuras`` entry (``{id, name, icon, ...}``) to a
+    consumable entry, or ``None`` when it is not a tracked consumable (raid buff,
+    class aura, etc.). Match order: spell-id override -> item name -> shortName ->
+    generic "well fed" food heuristic (no item id).
+
+    A food match returns a synthetic entry carrying the aura's own name/icon,
+    since well-fed buffs map to no single food item."""
+    spell_id = aura.get("id")
+    override = index["overrides"].get(str(spell_id)) if spell_id is not None else None
+    if override is not None:
+        return index["by_value"].get(override)
+    norm = normalize_consumable_name(aura.get("name"))
+    if norm in index["by_name"]:
+        return index["by_name"][norm]
+    if norm in index["by_short"]:
+        return index["by_short"][norm]
+    if "well fed" in norm:
+        return {
+            "category": "food",
+            "item_id": None,
+            "name": aura.get("name"),
+            "icon": aura.get("icon"),
+            "value": None,
+            "quality": None,
+        }
+    return None
 
 
 SEASON_INFO_ENV = "MYTHISTONE_SEASON_INFO"

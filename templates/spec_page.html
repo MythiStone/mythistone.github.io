@@ -840,6 +840,41 @@
               </div>
               {% endfor %}
             </div>
+            {# Consumables are spec-level (raider.io run-details), so this compact
+               row renders once, outside the hero-tree variant loop. #}
+            {% if consumable_sections %}
+            {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
+            <div id="consumables-overview" class="mx-auto my-4" data-share>
+              <h6 class="mb-1">Top Consumables</h6>
+              <p class="text-sm mb-2">
+                The flask, potion, food, weapon enchant and augment rune most used by high-key
+                <span class="class-{{ class_slug }}-text">{{ spec.name }} {{ class_info.name }}</span>
+                players, from recorded Mythic+ runs.
+              </p>
+              <div class="row g-3">
+                {% for sec in consumable_sections %}
+                {% set top = sec.entries[0] %}
+                <div class="col-6 col-md-4 col-xl">
+                  <div class="card h-100">
+                    <div class="card-body p-3 text-center">
+                      <p class="text-xs text-secondary text-uppercase mb-2">{{ sec.label }}</p>
+                      {% if top.icon_url %}
+                      <img src="{{ top.icon_url }}" alt="{{ top.name }}" width="40" height="40" class="rounded border border-grey-100">
+                      {% endif %}
+                      <p class="text-sm font-weight-bold mb-0 mt-2">
+                        {% if top.item_id %}
+                        <a target="_blank" href="https://www.wowhead.com/item={{ top.item_id }}&spec={{ spec_id }}">{{ top.name }}</a>
+                        {% else %}{{ top.name }}{% endif %}
+                      </p>
+                      <p class="text-xs text-secondary mb-0" data-bs-toggle="tooltip"
+                        title="{{ top.count }} of {{ sec.total }} {{ sec.label | lower }} users">{{ top.pct }}%</p>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
             <div id="gear-overview" class="mx-auto my-4" data-share>
               {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
               <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
@@ -2095,6 +2130,69 @@
 
 
 
+
+          {# Consumables detail accordions (spec-level, rendered once). #}
+          {% if consumable_sections %}
+          <div id="consumables-detail" class="col-12 mt-4" data-share>
+            <h6 class="mb-1">Consumables</h6>
+            <p class="text-sm mb-2">
+              Every flask, potion, food, weapon enchant and augment rune seen on sampled high-key
+              players, ranked by how many ran it. Percentages are the share within each category.
+            </p>
+            <div class="accordion mx-2" id="consumablesAccordion">
+              {% for sec in consumable_sections %}
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingConsumable-{{ sec.key }}">
+                  <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapseConsumable-{{ sec.key }}" aria-expanded="false"
+                    aria-controls="collapseConsumable-{{ sec.key }}">
+                    {{ sec.label }}
+                  </button>
+                </h2>
+                <div id="collapseConsumable-{{ sec.key }}" class="accordion-collapse collapse w-100"
+                  aria-labelledby="headingConsumable-{{ sec.key }}" data-bs-parent="#consumablesAccordion">
+                  <div class="accordion-body">
+                    <div class="row">
+                      <div class="col-12">
+                        {% for entry in sec.entries %}
+                        <div class="row align-items-center mb-2">
+                          <div class="col-auto">
+                            {% if entry.icon_url %}
+                            {% if entry.item_id %}
+                            <a target="_blank" href="https://www.wowhead.com/item={{ entry.item_id }}&spec={{ spec_id }}"
+                              class="icon-link position-relative detail-row-icon">
+                              <img src="{{ entry.icon_url }}" alt="" class="base-icon border border-grey-100">
+                            </a>
+                            {% else %}
+                            <span class="detail-row-icon"><img src="{{ entry.icon_url }}" alt="" class="base-icon border border-grey-100"></span>
+                            {% endif %}
+                            {% endif %}
+                          </div>
+                          <div class="col">
+                            {% if entry.item_id %}
+                            <a target="_blank" href="https://www.wowhead.com/item={{ entry.item_id }}&spec={{ spec_id }}">
+                              <p class="mb-1">{{ entry.name }}</p>
+                            </a>
+                            {% else %}
+                            <p class="mb-1">{{ entry.name }}</p>
+                            {% endif %}
+                          </div>
+                          <div class="col-auto ms-auto text-end">
+                            <p data-bs-toggle="tooltip" data-bs-placement="top"
+                              title="{{ entry.count }} of {{ sec.total }} {{ sec.label | lower }} users" class="mb-0">
+                              {{ entry.pct }}%</p>
+                          </div>
+                        </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
 
           {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
           <div class="col-12 mt-4">

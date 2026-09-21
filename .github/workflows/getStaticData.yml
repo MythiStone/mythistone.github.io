@@ -43,10 +43,21 @@ jobs:
           curl -L "https://www.raidbots.com/static/data/live/crafting.json" -o data/static/crafting.json
           curl -L "https://www.raidbots.com/static/data/live/bonuses.json" -o data/static/bonuses.json
           curl -L "https://www.raidbots.com/static/data/live/item-sets.json" -o data/static/item-sets.json
+          curl -L "https://www.raidbots.com/static/data/live/flasks.json" -o data/static/flasks.json
+          curl -L "https://www.raidbots.com/static/data/live/potions.json" -o data/static/potions.json
+          curl -L "https://www.raidbots.com/static/data/live/foods.json" -o data/static/foods.json
+          curl -L "https://www.raidbots.com/static/data/live/augments.json" -o data/static/augments.json
+          curl -L "https://www.raidbots.com/static/data/live/temp-enchants.json" -o data/static/temp-enchants.json
 
       - name: process crafting data
         run: |
           python backend_scripts/processBonusIds.py
+      - name: Build consumable catalog
+        run: |
+          python backend_scripts/processConsumables.py
+      - name: Download consumable icons
+        run: |
+          python backend_scripts/downloadConsumableIcons.py
       - name: Download crafting icons
         run: |
           python backend_scripts/downloadCraftingIcons.py   
