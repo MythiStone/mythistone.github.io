@@ -73,14 +73,27 @@ def build_category(entries, category):
     return list(families.values())
 
 
+REQUIRED_CATEGORIES = ("flask", "potion", "food")
+
+
 def main():
     catalog = []
+    counts = {}
     for fname, category in CATEGORY_BY_FILE.items():
         path = os.path.join(STATIC_DIR, f"{fname}.json")
         entries = load_json(path)
         built = build_category(entries, category)
         catalog.extend(built)
+        counts[category] = len(built)
         print(f"{fname}: {len(built)} {category} entries")
+
+    empty = [c for c in REQUIRED_CATEGORIES if not counts.get(c)]
+    if empty:
+        raise RuntimeError(
+            f"consumables catalog is missing required categories {empty} "
+            f"(counts={counts}). The Raidbots catalogs or the current-expansion filter "
+            f"produced nothing for them; refusing to write an incomplete consumables.json."
+        )
 
     catalog.sort(key=lambda e: (e["category"], e["name"] or ""))
     out_path = os.path.join(STATIC_DIR, "consumables.json")

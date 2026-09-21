@@ -387,7 +387,8 @@ _consumable_index = None
 def get_consumable_index():
     """Lazily-loaded consumables.json index (name -> item) for ingest-time aura
     matching. Rebuilt per process; the collector restarts ~daily so it picks up
-    the weekly-refreshed catalog."""
+    the weekly-refreshed catalog. processConsumables.py fails the build if the
+    catalog is empty/incomplete, so a shipped consumables.json is always valid."""
     global _consumable_index
     if _consumable_index is None:
         _consumable_index = commonUtils.build_consumable_index()
