@@ -1817,5 +1817,14 @@
         "blog": "Feral Druid has 165.4 K Mythic+ runs tracked this season. The Druid of the Claw hero tree leads at 88% of builds, with Wildstalker (12%) trailing.\n\n87% of tracked runs beat the timer, and 5% earn all three chests. The stat priority skews toward Mastery > Haste > Crit > Versatility. Its top run this season is +21 Den of Nalorakk in 29:45.294.",
         "post": "Feral Druid milestone: +21 Den of Nalorakk in 29:45.294. The timer got clawed first. #WoW #MythicPlus https://mythistone.com/classes/Dps/Feral_Druid",
         "timestamp": 1789936922909
+    },
+    "data/social/dungeon_overview_249_2026-09.png": {
+        "title": "Kings' Rest Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/kings-rest",
+        "social": "1 M runs logged for Kings' Rest: a true milestone. That's enough data to make the kings themselves take a nap. #WoW #MythicPlus https://mythistone.com/dungeons/kings-rest",
+        "blog": "Kings' Rest has 1 M Mythic+ runs tracked this season.\n\nGroups most often bring Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. The most-used route right now is keystone.guru/7JEKXnh.",
+        "post": "1 M runs logged for Kings' Rest: a true milestone. That's enough data to make the kings themselves take a nap. #WoW #MythicPlus https://mythistone.com/dungeons/kings-rest",
+        "timestamp": 1790027796491
     }
 }
