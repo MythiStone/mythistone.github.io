@@ -52,6 +52,7 @@ COPY data/static/enchantments.json ${APP_DIR}/data/static/enchantments.json
 # which verifyImageImports.py does NOT detect (it only tracks STATIC_DIR / "x.json"
 # literals), so this COPY is not build-guarded -- keep it by hand.
 COPY data/static/item-sets.json ${APP_DIR}/data/static/item-sets.json
+COPY data/static/consumables.json ${APP_DIR}/data/static/consumables.json
 
 # entrypoint and executable
 COPY entrypoint.sh /entrypoint.sh

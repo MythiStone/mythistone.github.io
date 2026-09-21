@@ -382,16 +382,44 @@ def build_encounter_rows(full: dict) -> list[dict]:
     return rows
 
 _consumable_index = None
+_consumable_index_warned = False
 
 
 def get_consumable_index():
-    """Lazily-loaded consumables.json index (name -> item) for ingest-time aura
-    matching. Rebuilt per process; the collector restarts ~daily so it picks up
-    the weekly-refreshed catalog. processConsumables.py fails the build if the
-    catalog is empty/incomplete, so a shipped consumables.json is always valid."""
-    global _consumable_index
-    if _consumable_index is None:
-        _consumable_index = commonUtils.build_consumable_index()
+    """consumables.json index (name -> item) for ingest-time aura matching.
+
+    An EMPTY catalog is never cached: an always-on collector that first ran before
+    data/static/consumables.json existed would otherwise cache the empty index and
+    silently match only the catalog-free "well fed" food heuristic for the life of
+    the process (the "only food is collected" failure). Not caching it lets the
+    collector self-heal on the next run once the file is present, and it warns once
+    so the empty state is visible in the logs."""
+    global _consumable_index, _consumable_index_warned
+    if _consumable_index is not None:
+        return _consumable_index
+
+    # Load the raw catalog first so we can log exactly what this process sees: the
+    # resolved path, whether it exists, and the per-category breakdown. "only food
+    # is collected" means this catalog has no flask/potion/etc. name keys, so this
+    # line is the ground truth for diagnosing it inside the container.
+    path = os.path.join(commonUtils.LOOKUP_DIR, "consumables.json")
+    catalog = commonUtils.load_consumables()
+    by_cat = Counter(c.get("category") for c in catalog)
+    print(f"[consumables] path={os.path.abspath(path)} exists={os.path.exists(path)} "
+          f"entries={len(catalog)} by_category={dict(by_cat)}")
+
+    idx = commonUtils.build_consumable_index(consumables=catalog)
+    if not idx["by_name"] and not idx["by_short"]:
+        if not _consumable_index_warned:
+            GLOBAL_STATS.console_log(
+                f"WARNING: consumables catalog is EMPTY at {os.path.abspath(path)} "
+                f"(exists={os.path.exists(path)}, entries={len(catalog)}) -- only 'well fed' "
+                f"food auras will match. Ensure the collector's data/static has the built "
+                f"consumables.json."
+            )
+            _consumable_index_warned = True
+        return idx  # not cached: retry on the next call so it self-heals
+    _consumable_index = idx
     return _consumable_index
 
 
@@ -560,16 +588,24 @@ async def route_db_worker(name: str):
                     duration = int(raider_reduced.get("duration") or 0)
                     dungeon_id = raider_reduced.get("dungeon_id")
 
-                    # Consumables are harvested from every run-detail, independent of
-                    # route/keystone.guru eligibility, so this runs before the route
-                    # dedup gate and commits on its own.
+                    # Consumables are harvested from EVERY swept run-detail, before
+                    # (and independent of) route eligibility, and commit on their own.
                     persist_run_auras(
                         conn, cursor, rio_run_id, raider_reduced.get("roster", []),
                         aura_season_id, dungeon_id, keystone_level, timestamp, None,
                     )
 
-                    if not route_key or not rio_run_id or not mapping_version:
-                        raise ValueError("Invalid parameters")
+                    # Route storage is gated on a valid, timed keystone.guru route
+                    # (enemyForces met). Runs without one still had their auras saved
+                    # above; just skip the route insert here rather than erroring.
+                    ef_actual = keystone_route.get("enemyForces")
+                    ef_required = keystone_route.get("enemyForcesRequired")
+                    route_eligible = bool(route_key) and rio_run_id and mapping_version \
+                        and ef_actual is not None and ef_required is not None \
+                        and int(ef_actual) >= int(ef_required)
+                    if not route_eligible:
+                        conn.rollback()
+                        continue
 
                     rowcount = databaseConnector.insert_route_data(
                         conn, cursor, rio_run_id, mapping_version, enemy_forces, timestamp, keystone_level, duration, dungeon_id, route_key
@@ -706,21 +742,18 @@ async def route_poller_task(session: ClientSession):
                 if not ts or int(ts) < int(time.time()) - (28 * 24 * 60 * 60):
                     continue
 
+                # Fetch the keystone.guru route when this run has one, but do NOT gate
+                # on it here: consumables/auras must be collected for every logged run
+                # in the sweep. route_db_worker persists auras first, then stores the
+                # route only when it is eligible (enemyForces check moved there).
+                keystone = {}
                 route_key = raider.get("route_key")
-                if not route_key: 
-                    continue
+                if route_key:
+                    keystone = await fetch_keystone_route(session, route_key) or {}
+                    await GLOBAL_STATS.increment("kg_routes_fetched")
 
-                keystone = await fetch_keystone_route(session, route_key)
-                await GLOBAL_STATS.increment("kg_routes_fetched")
-                if not keystone: 
-                    continue
-                ef_actual = keystone.get("enemyForces")
-                ef_required = keystone.get("enemyForcesRequired")
-                if ef_actual is None or ef_required is None or int(ef_actual) < int(ef_required):
-                    continue
-                
                 await route_db_queue.put((raider, keystone))
-                
+
                 await asyncio.sleep(10) # slow running
 
         await asyncio.sleep(3600) # wait an hour before fetching again

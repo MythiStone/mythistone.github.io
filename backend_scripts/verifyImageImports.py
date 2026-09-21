@@ -75,6 +75,9 @@ def collect_static_json_refs(tree):
     return names
 
 
+REQUIRED_STATIC_EXTRA = ("consumables.json", "item-sets.json")
+
+
 def resolves(name, root):
     """Can `name` be imported from `root`? Local module first, then installed."""
     if (root / f"{name}.py").exists() or (root / name).is_dir():
@@ -111,6 +114,12 @@ def main(argv):
             static_refs += 1
             if not (static_dir / name).exists():
                 missing_data.append(f"{path.name}: data/static/{name}")
+
+    # os.path.join-referenced lookups the AST scan cannot see (see the note above).
+    for name in REQUIRED_STATIC_EXTRA:
+        static_refs += 1
+        if not (static_dir / name).exists():
+            missing_data.append(f"(required) data/static/{name}")
 
     if missing_imports or missing_data:
         if missing_imports:
