@@ -104,7 +104,7 @@
 
 
   {% include "header_imports.html" %}
-  <link rel="stylesheet" href="/assets/css/tierlist.css" />
+  <link rel="stylesheet" href="/assets/css/tierlist.css?v={{ generated_at | int }}" />
 </head>
 
 <body class="g-sidenav-show g-sidenav-show-right">
@@ -156,8 +156,12 @@
 
           <div class="row card shadow-sm">
             <div class="card-header d-flex align-items-center justify-content-between" data-share-anchor>
-              <div>
+              <div class="d-flex flex-wrap align-items-center gap-3">
                 <h2 class="mb-0">Spec Tierlist</h2>
+                <div class="tier-view-toggle" role="group" aria-label="Tierlist view">
+                  <button type="button" class="active" data-tier-view-btn="spec" aria-pressed="true">Specs</button>
+                  <button type="button" data-tier-view-btn="hero" aria-pressed="false">Hero Trees</button>
+                </div>
               </div>
               {% if spec_scores_available %}
               <div class="text-end"><span class="badge bg-gradient-info">Ranked by Performance</span></div>
@@ -167,7 +171,7 @@
             </div>
 
             <div class="card-body">
-              <div class="container-fluid">
+              <div class="container-fluid tier-view" data-tier-view="spec">
                 {% for tier in tiers %}
                 {% set tier_items = spec_tiers[tier] %}
                 {% call tier_row(tier, tier_items, 'specs') %}
@@ -178,8 +182,9 @@
                   {% set class_meta = class_lookup.get((spec_meta.get('classID')|string) if spec_meta.get('classID') is
                   not none else (s.class_id|string) ) or s.class_meta or {} %}
                   <div class="spec-col">
-                    <a class="spec-btn"
+                    <a class="spec-btn class-ring"
                       href="/classes/{{ role_lookup.get(spec_meta['role'])}}/{{spec_meta['name']}}_{{class_meta['name']}}"
+                      style="--class-ring: var(--class-{{ class_meta['name']|replace(' ', '') }}-raw);"
                       aria-label="Open page for {{spec_meta['name']}} {{class_meta['name']}}">
                       {% if icon_file %}
                       <img
@@ -200,6 +205,38 @@
                   </div>
                   {% else %}
                   <div class="text-muted">No specs in this tier.</div>
+                  {% endfor %}
+                </div>
+                {% endcall %}
+                {% endfor %}
+              </div>
+
+              {# Hero tree view: every (spec, hero tree) pair ranked on its own, toggled by index.js. #}
+              <div class="container-fluid tier-view d-none" data-tier-view="hero">
+                {% if not spec_hero_scores_available %}
+                <div class="text-muted mb-3">No hero tree data available.</div>
+                {% endif %}
+                {% for tier in tiers %}
+                {% set tier_items = spec_hero_tiers[tier] %}
+                {% call tier_row(tier, tier_items, 'hero trees') %}
+                <div class="spec-row">
+                  {% for h in tier_items %}
+                  {% set spec_meta = specs[h.spec_id|string] %}
+                  {% set class_meta = class_lookup[spec_meta['classID']|string] %}
+                  {% set full_label = h.hero_name ~ ', ' ~ spec_meta['name'] ~ ' ' ~ class_meta['name'] %}
+                  <div class="spec-col">
+                    <a class="spec-btn class-ring"
+                      href="/classes/{{ role_lookup.get(spec_meta['role'])}}/{{spec_meta['name']}}_{{class_meta['name']}}#&hero={{ h.hero_talent_id }}"
+                      style="--class-ring:var(--class-{{ class_meta['name']|replace(' ', '') }}-raw);"
+                      title="{{ full_label }}" data-bs-toggle="tooltip"
+                      aria-label="Open {{ full_label }} page">
+                      <img src="/data/icons/{{ h.hero_icon }}.png" alt="{{ full_label }} icon" loading="lazy">
+                      <div class="spec-label">{{ spec_meta['name'] }}</div>
+                      <span class="visually-hidden">{{ full_label }}, open page</span>
+                    </a>
+                  </div>
+                  {% else %}
+                  <div class="text-muted">No hero trees in this tier.</div>
                   {% endfor %}
                 </div>
                 {% endcall %}
@@ -339,6 +376,7 @@
   {% include "right_aside.html" %}
   {% include "fixed_plugin.html" %}
   {% include "javascript_imports.html" %}
+  <script src="/assets/js/index.js?v={{ generated_at | int }}"></script>
 </body>
 
 </html>

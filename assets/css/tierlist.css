@@ -40,6 +40,46 @@
   display: block;
 }
 
+/* Class-coloured ring on spec and hero tree icons (--class-ring is set inline per entry). */
+.round-tierlist .class-ring {
+  border: 3px solid var(--class-ring, transparent);
+}
+
+/* Quiet segmented pill sized like the header badges; only the active segment carries gold. */
+.tier-view-toggle {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 999px;
+  background: var(--mythi-chip-bg);
+}
+
+.tier-view-toggle button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  background: transparent;
+  color: var(--mythi-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tier-view-toggle button:hover:not(.active) {
+  color: var(--bs-body-color);
+}
+
+.tier-view-toggle button:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 1px;
+}
+
+.tier-view-toggle button.active {
+  background: var(--bs-primary);
+  color: #241700;
+}
+
 .round-tierlist .spec-label {
   position: absolute;
   left: 50%;
@@ -105,6 +145,14 @@
     height: var(--spec-size);
     border-radius: 50%;
     object-fit: cover;
+  }
+  /* caption layout: the ring moves from the button onto the icon itself */
+  .round-tierlist .class-ring {
+    border: 0;
+  }
+  .round-tierlist .class-ring > img,
+  .round-tierlist .class-ring > span:not(.spec-label):not(.visually-hidden) {
+    border: 3px solid var(--class-ring, transparent);
   }
   .round-tierlist .spec-label {
     position: static;

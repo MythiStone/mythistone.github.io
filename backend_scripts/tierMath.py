@@ -692,6 +692,32 @@ def build_buff_tiers(buff_lookup, buff_rows, k=6):
     return _finish_building_tiers_from_items(items, k)
 
 
+def _spec_tier_item(sid, s, spec_lookup, class_lookup):
+    meta = spec_lookup.get(str(sid)) or spec_lookup.get(sid) or {}
+    class_id = meta.get("class_id") or meta.get("class") or None
+    return {
+        "spec_id": sid,
+        "name": meta.get("name", {"en_US": f"Spec {sid}"})
+        if isinstance(meta.get("name"), dict)
+        else meta.get("name", f"Spec {sid}"),
+        "icon": meta.get("icon"),
+        "class_id": class_id,
+        "class_meta": class_lookup.get(str(class_id))
+        or class_lookup.get(class_id)
+        if class_lookup
+        else None,
+        "lb_ci": s["lb_ci"],
+        "mean": s["mean"],
+        "var": s["var"],
+        "total_runs": s.get("total_runs", 0),
+        "upgrade_3": s.get("upgrade_3", 0),
+        "upgrade_2": s.get("upgrade_2", 0),
+        "upgrade_1": s.get("upgrade_1", 0),
+        "depleted": s.get("depleted", 0),
+        "N": s["N"],
+    }
+
+
 def build_spec_tiers(spec_lookup, class_lookup, spec_rows, weight_base=1.6, k=6):
     # compute stats using generic aggregator keyed by spec_id
     stats = compute_weighted_stats_and_lbci(
@@ -699,32 +725,43 @@ def build_spec_tiers(spec_lookup, class_lookup, spec_rows, weight_base=1.6, k=6)
         id_key="spec_id",
         weight_base=weight_base,
     )
-    items = []
-    for sid, s in stats.items():
-        meta = spec_lookup.get(str(sid)) or spec_lookup.get(sid) or {}
-        class_id = meta.get("class_id") or meta.get("class") or None
-        items.append(
-            {
-                "spec_id": sid,
-                "name": meta.get("name", {"en_US": f"Spec {sid}"})
-                if isinstance(meta.get("name"), dict)
-                else meta.get("name", f"Spec {sid}"),
-                "icon": meta.get("icon"),
-                "class_id": class_id,
-                "class_meta": class_lookup.get(str(class_id))
-                or class_lookup.get(class_id)
-                if class_lookup
-                else None,
-                "lb_ci": s["lb_ci"],
-                "mean": s["mean"],
-                "var": s["var"],
-                "total_runs": s.get("total_runs", 0),
-                "upgrade_3": s.get("upgrade_3", 0),
-                "upgrade_2": s.get("upgrade_2", 0),
-                "upgrade_1": s.get("upgrade_1", 0),
-                "depleted": s.get("depleted", 0),
-                "N": s["N"],
-            }
-        )
+    items = [
+        _spec_tier_item(sid, s, spec_lookup, class_lookup)
+        for sid, s in stats.items()
+    ]
+    return _finish_building_tiers_from_items(items, k)
 
+
+def build_spec_hero_tiers(
+    spec_lookup, class_lookup, hero_rows, sub_trees_by_spec, weight_base=1.6, k=6
+):
+    """Tiers every (spec, hero tree) pair as its own entry.
+
+    sub_trees_by_spec: {spec_id(int): talents/<spec>.json "subTrees"} for names/icons.
+    """
+    # composite "spec:hero" id stays a string through compute_weighted_stats_and_lbci
+    keyed_rows = [
+        {**r, "spec_hero": f"{r['spec_id']}:{r['hero_talent_id']}"} for r in hero_rows
+    ]
+    stats = compute_weighted_stats_and_lbci(
+        rows=keyed_rows,
+        id_key="spec_hero",
+        weight_base=weight_base,
+    )
+    items = []
+    for key, s in stats.items():
+        sid, hero_id = (int(p) for p in key.split(":"))
+        sub_tree = sub_trees_by_spec.get(sid, {}).get(str(hero_id))
+        if sub_tree is None:
+            # cross-spec contaminated loadout, same skip as aggregateData.get_hero_trees
+            print(
+                f"WARNING: spec {sid} has hero tree {hero_id} (runs={s['N']}) "
+                f"not in its subTrees; skipping."
+            )
+            continue
+        item = _spec_tier_item(sid, s, spec_lookup, class_lookup)
+        item["hero_talent_id"] = hero_id
+        item["hero_name"] = sub_tree.get("name", "")
+        item["hero_icon"] = sub_tree.get("icon", "")
+        items.append(item)
     return _finish_building_tiers_from_items(items, k)

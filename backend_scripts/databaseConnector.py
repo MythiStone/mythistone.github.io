@@ -2791,6 +2791,43 @@ def fetch_spec_upgrades(connection, cursor):
     ]
 
 
+# aggregated_spec is keyed per hero tree; hero_talent_id 0 means the tree was unknown.
+FETCH_SPEC_HERO_UPGRADES_SQL = """
+SELECT
+    spec_id,
+    hero_talent_id,
+    keystone_level,
+    SUM(CASE WHEN upgrade_tier = '3' THEN run_count ELSE 0 END) AS tier_3,
+    SUM(CASE WHEN upgrade_tier = '2' THEN run_count ELSE 0 END) AS tier_2,
+    SUM(CASE WHEN upgrade_tier = '1' THEN run_count ELSE 0 END) AS tier_1,
+    SUM(CASE WHEN upgrade_tier = 'depleted' THEN run_count ELSE 0 END) AS depleted,
+    SUM(run_count) AS total_runs
+FROM aggregated_spec
+WHERE hero_talent_id <> 0
+GROUP BY spec_id, hero_talent_id, keystone_level
+ORDER BY total_runs DESC;
+"""
+
+
+def fetch_spec_hero_upgrades(connection, cursor):
+    rows = fetch_with_retry(connection, cursor, FETCH_SPEC_HERO_UPGRADES_SQL, None)
+    if not rows:
+        return []
+    return [
+        {
+            "spec_id": int(row[0]),
+            "hero_talent_id": int(row[1]),
+            "keystone_level": int(row[2]),
+            "upgrade_3": int(row[3]),
+            "upgrade_2": int(row[4]),
+            "upgrade_1": int(row[5]),
+            "depleted": int(row[6]),
+            "total_runs": int(row[7]),
+        }
+        for row in rows
+    ]
+
+
 FETCH_SPEC_UPGRADES_ABOVE_LEVEL_SQL = """
 SELECT
     spec_id,

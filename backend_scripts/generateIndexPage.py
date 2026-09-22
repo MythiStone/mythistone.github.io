@@ -2,7 +2,12 @@ import os
 import databaseConnector
 from datetime import datetime, timezone
 import argparse
-from tierMath import build_buff_tiers, build_ckmeans_tiers, build_spec_tiers
+from tierMath import (
+    build_buff_tiers,
+    build_ckmeans_tiers,
+    build_spec_hero_tiers,
+    build_spec_tiers,
+)
 from contextlib import closing
 from pageGeneration import (
     load_notifications,
@@ -48,6 +53,10 @@ def main(template_path, output_dir):
     notifications = load_notifications(LOOKUP_DIR)
     season_info = load_season_info(LOOKUP_DIR)
     buff_lookup = {b.get("id"): b for b in group_buffs}
+    sub_trees_by_spec = {
+        int(sid): load_json(os.path.join(LOOKUP_DIR, "talents", f"{sid}.json"))["subTrees"]
+        for sid in spec_lookup
+    }
 
     spec_nav = generateSpecNav(spec_lookup, class_lookup)
     dungeon_nav = generateDungeonNav(dungeon_lookup)
@@ -66,6 +75,7 @@ def main(template_path, output_dir):
             conn, cursor, current_season
         )
         spec_data = databaseConnector.fetch_spec_upgrades(conn, cursor)
+        spec_hero_data = databaseConnector.fetch_spec_hero_upgrades(conn, cursor)
         groupbuffs_stats = databaseConnector.fetch_groupbuffs_stats(
             conn, cursor, group_buffs, current_season, 12, 14
         )
@@ -89,6 +99,10 @@ def main(template_path, output_dir):
     spec_tiers = build_spec_tiers(
         spec_lookup, class_lookup, spec_data, weight_base=1.6, k=6
     )
+    spec_hero_tiers = build_spec_hero_tiers(
+        spec_lookup, class_lookup, spec_hero_data, sub_trees_by_spec,
+        weight_base=1.6, k=6,
+    )
     buff_tiers = build_buff_tiers(buff_lookup, groupbuffs_stats)
 
     print("Rendering template...")
@@ -109,6 +123,8 @@ def main(template_path, output_dir):
         dungeon_scores_available=bool(dungeon_data),
         spec_tiers=spec_tiers,
         spec_scores_available=bool(spec_data),
+        spec_hero_tiers=spec_hero_tiers,
+        spec_hero_scores_available=bool(spec_hero_data),
         season=current_season,
         role_lookup=ROLE_FOLDERS,
         buff_tiers=buff_tiers,
