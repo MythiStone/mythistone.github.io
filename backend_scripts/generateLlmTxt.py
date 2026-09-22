@@ -22,17 +22,11 @@ OUTPUT_FILE = "llms.txt"
 
 # Directories containing output HTML files
 SEARCH_DIRECTORIES = ["classes", "dungeons", "pages"]
-ROOT_FILES = ["index.html"]
 
-# Main site sections (non-class/dungeon pages)
-MAIN_SECTIONS = [
-    {"name": "Home", "path": "index.html"},
-    {"name": "Dashboard", "path": "pages/dashboard.html"},
-    {"name": "Routes", "path": "pages/routes.html"},
-    {"name": "Composition Analysis", "path": "pages/comps.html"},
-    {"name": "Sim DPS Tierlist", "path": "pages/tierlist.html"},
-    {"name": "Blog", "path": "pages/blog.html"},
-]
+# Same noindex check as generateSitemap.py, so llms.txt and the sitemap list the same pages
+NOINDEX_PATTERN = re.compile(r'<meta\s+name=["\']robots["\']\s+content=["\'][^"\']*noindex[^"\']*["\']', re.IGNORECASE)
+TITLE_PATTERN = re.compile(r'<title>\s*(.*?)\s*</title>', re.IGNORECASE | re.DOTALL)
+TITLE_SUFFIX = "| MythiStone"
 
 
 def extract_meta_description(html_content):
@@ -53,18 +47,23 @@ def extract_meta_description(html_content):
     return "No description available"
 
 
-def extract_noindex(html_content):
+def extract_title(html_content):
     """
-    Check if page has noindex meta tag.
-    
+    Extract the page title without the site suffix.
+
     Args:
         html_content: The HTML content as a string
-        
+
     Returns:
-        True if noindex is present, False otherwise
+        The title (e.g., "Mythic+ Consumable Usage in Midnight Season 2") or None
     """
-    pattern = r'<meta\s+name=["\']robots["\']\s+content=["\'][^"\']*noindex[^"\']*["\']'
-    return bool(pattern.search(html_content, re.IGNORECASE))
+    match = TITLE_PATTERN.search(html_content)
+    if not match:
+        return None
+    title = " ".join(html.unescape(match.group(1)).split())
+    if title.endswith(TITLE_SUFFIX):
+        title = title[:-len(TITLE_SUFFIX)].strip()
+    return title
 
 
 def scan_pages_for_descriptions(directories):
@@ -78,10 +77,7 @@ def scan_pages_for_descriptions(directories):
         List of dictionaries with page information
     """
     pages = []
-    
-    # Compile noindex pattern once for efficiency
-    noindex_pattern = re.compile(r'<meta\s+name=["\']robots["\']\s+content=["\'][^"\']*noindex[^"\']*["\']', re.IGNORECASE)
-    
+
     for directory in directories:
         if not os.path.exists(directory):
             continue
@@ -96,14 +92,14 @@ def scan_pages_for_descriptions(directories):
                             content = f.read()
                         
                         # Skip pages with noindex
-                        if noindex_pattern.search(content):
+                        if NOINDEX_PATTERN.search(content):
                             print(f"Skipping {file_path} (noindex found)")
                             continue
-                        
-                        description = extract_meta_description(content)
+
                         pages.append({
                             "path": file_path,
-                            "description": description
+                            "title": extract_title(content),
+                            "description": extract_meta_description(content)
                         })
                     except Exception as e:
                         print(f"Error processing {file_path}: {e}")
@@ -237,6 +233,41 @@ def group_dungeon_pages(pages):
     return dungeons
 
 
+def group_main_pages(pages):
+    """
+    Collect the indexable main pages: index.html first, then pages/*.html by filename.
+
+    Args:
+        pages: List of page dictionaries (noindex pages already removed)
+
+    Returns:
+        List of main page dictionaries with a guaranteed title
+    """
+    main_pages = []
+
+    if os.path.exists("index.html"):
+        with open("index.html", 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+        if NOINDEX_PATTERN.search(content):
+            print("Skipping index.html (noindex found)")
+        else:
+            main_pages.append({
+                "path": "index.html",
+                "title": "Home",
+                "description": extract_meta_description(content)
+            })
+
+    sub_pages = [page for page in pages if page["path"].replace("\\", "/").startswith("pages/")]
+    sub_pages.sort(key=lambda x: os.path.basename(x["path"]))
+
+    for page in sub_pages:
+        if not page["title"]:
+            raise ValueError(f"{page['path']} has no <title>, cannot name it in llms.txt")
+        main_pages.append(page)
+
+    return main_pages
+
+
 def generate_llm_txt(output_dir="."):
     """
     Generate the llm.txt file.
@@ -292,7 +323,8 @@ def generate_llm_txt(output_dir="."):
     # Group pages
     class_pages = group_class_pages(all_pages)
     dungeon_pages = group_dungeon_pages(all_pages)
-    
+    main_pages = group_main_pages(all_pages)
+
     # Get current timestamp
     current_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
     
@@ -341,22 +373,10 @@ def generate_llm_txt(output_dir="."):
     lines.append("## Site Sections")
     lines.append("")
     
-    for section in MAIN_SECTIONS:
-        lines.append(f"### {section['name']}")
-        
-        # Try to get description from HTML if it exists
-        description = "No description available"
-        if os.path.exists(section["path"]):
-            try:
-                with open(section["path"], 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.read()
-                description = extract_meta_description(content)
-            except Exception as e:
-                print(f"Could not read {section['path']}: {e}")
-        
-        url = build_url_from_path(section["path"])
-        lines.append(f"- URL: {url}")
-        lines.append(f"- Description: {description}")
+    for page in main_pages:
+        lines.append(f"### {page['title']}")
+        lines.append(f"- URL: {build_url_from_path(page['path'])}")
+        lines.append(f"- Description: {page['description']}")
         lines.append("")
     
     # Class Guides (grouped by role)
@@ -404,7 +424,7 @@ def generate_llm_txt(output_dir="."):
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines))
     
-    total_pages = sum(len(pages) for pages in class_pages.values()) + len(dungeon_pages) + len(MAIN_SECTIONS)
+    total_pages = sum(len(pages) for pages in class_pages.values()) + len(dungeon_pages) + len(main_pages)
     print(f"llm.txt generated successfully with {total_pages} entries.")
 
 
