@@ -83,6 +83,12 @@ class StaticData:
         self.periods = load_json(os.path.join(lookup_dir, "periods.json"))
         self.items = load_json(os.path.join(lookup_dir, "equippable-items.json"))
         self.enchants = load_json(os.path.join(lookup_dir, "enchantments.json"))
+        # Temp weapon enchants (oils/whetstones): weapon enchantments, not in
+        # enchantments.json. effectId is the enchantment_id they apply. Tolerate absence.
+        try:
+            self.temp_enchants = load_json(os.path.join(lookup_dir, "temp-enchants.json"))
+        except (OSError, ValueError):
+            self.temp_enchants = []
         self.bonuses = load_json(os.path.join(lookup_dir, "bonuses.json"))
         self.embellishments = load_json(os.path.join(lookup_dir, "embellishments.json"))
         self.missives = load_json(os.path.join(lookup_dir, "missives.json"))
@@ -173,6 +179,16 @@ def _enchant_pools_by_group(static):
         for g in groups:
             pools.setdefault(g, []).append(int(e["id"]))
     return pools
+
+
+def _temp_enchant_pool(static):
+    """Current-expansion temp weapon enchant effectIds (the enchantment_id an oil/
+    whetstone applies), seeded onto WEAPON slots so the "Weapon Enchant" section has
+    data locally. These are NOT in enchantments.json."""
+    entries = static.temp_enchants or []
+    current = max((e.get("expansion", 0) for e in entries), default=0)
+    return [int(e["effectId"]) for e in entries
+            if e.get("expansion") == current and e.get("effectId") is not None]
 
 
 def _item_pools_by_slot(static, rng, per_slot=8):
@@ -380,6 +396,7 @@ def seed_runs(conn, cursor, static, rng, cfg, pools):
 
     item_pools = pools["items"]
     enchant_pools = pools["enchants"]
+    temp_enchant_pool = pools["temp_enchants"]
     gem_pool = pools["gems"]
     bonus_pool = pools["bonus"]
     emb_bonus = pools["embellishment_bonus"]
@@ -486,6 +503,10 @@ def seed_runs(conn, cursor, static, rng, cfg, pools):
                 epool = enchant_pools.get(grp)
                 if epool:
                     enchantments.append((str(_zipf_pick(rng, epool)), eid))
+                # Weapons also carry a temp enchant (oil/whetstone) most of the time,
+                # on top of the permanent enchant, so the "Weapon Enchant" section fills.
+                if grp == "WEAPON" and temp_enchant_pool and rng.random() < 0.7:
+                    enchantments.append((str(_zipf_pick(rng, temp_enchant_pool)), eid))
             # socket + gem on a few slots
             if slot in SOCKETED_SLOTS and gem_pool and rng.random() < 0.6:
                 sockets.append(("PRISMATIC", str(_zipf_pick(rng, gem_pool)), eid))
@@ -1097,6 +1118,7 @@ def build_pools(static, rng):
         "variants": variants,
         "items": item_pools,
         "enchants": _enchant_pools_by_group(static),
+        "temp_enchants": _temp_enchant_pool(static),
         "gems": _gem_pool(static, rng),
         "bonus": bonus_pool,
         "embellishment_bonus": rng.sample(emb_bonus, min(8, len(emb_bonus))),

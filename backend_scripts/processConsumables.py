@@ -1,8 +1,11 @@
 """Build data/static/consumables.json from the Raidbots consumable catalogs.
 
-Reads the five raidbots live lookups (flasks/potions/foods/augments/temp-enchants,
-curled into data/static by getStaticData.yml) and emits one flat catalog the
-collector and the spec-page generator both consume via commonUtils.
+Reads the raidbots live lookups (flasks/potions/foods/augments, curled into
+data/static by getStaticData.yml) and emits one flat catalog the collector and the
+spec-page generator both consume via commonUtils. Temp weapon enchants (oils /
+whetstones) are deliberately NOT here: they are not aura consumables but weapon
+enchantments, sourced from the enchant aggregation and resolved via
+commonUtils.load_temp_enchant_index (temp-enchants.json).
 
 Raidbots entries carry no spell id, only itemId + name/shortName + icon, so the
 buff-spell -> item link is made at ingest by normalized name (see
@@ -31,7 +34,6 @@ CATEGORY_BY_FILE = {
     "potions": "potion",
     "foods": "food",
     "augments": "augment",
-    "temp-enchants": "weapon",
 }
 
 

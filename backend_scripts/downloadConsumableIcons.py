@@ -13,6 +13,15 @@ with open("data/static/consumables.json", "r", encoding="utf-8") as f:
 
 icon_names = {c["icon"] for c in consumables if c.get("icon")}
 
+# Temp weapon enchants (oils/whetstones) are no longer in consumables.json but their
+# item icons are still rendered by the "Weapon Enchant" section, so fetch them too.
+try:
+    with open("data/static/temp-enchants.json", "r", encoding="utf-8") as f:
+        temp_enchants = json.load(f)
+    icon_names |= {e["icon"] for e in temp_enchants if e.get("icon")}
+except (OSError, ValueError):
+    pass
+
 SEM_LIMIT = 100  # max concurrent fetches
 
 

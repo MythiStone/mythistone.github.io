@@ -840,9 +840,12 @@
               </div>
               {% endfor %}
             </div>
-            {# Consumables are spec-level (raider.io run-details), so this compact
-               row renders once, outside the hero-tree variant loop. #}
-            {% if consumable_sections %}
+            {# Consumables split per hero tree (from the run-detail talentLoadout).
+               Outer block renders once; one .hero-section-variant per tree swaps
+               with the hero-tree toggle, like the gear sections. #}
+            {% set cons_overview_any = namespace(v=false) %}
+            {% for v in hero_variants %}{% if sections_by_tree[v.id].consumable_sections %}{% set cons_overview_any.v = true %}{% endif %}{% endfor %}
+            {% if cons_overview_any.v %}
             {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
             <div id="consumables-overview" class="mx-auto my-4" data-share>
               <h6 class="mb-1">Top Consumables</h6>
@@ -851,8 +854,12 @@
                 <span class="class-{{ class_slug }}-text">{{ spec.name }} {{ class_info.name }}</span>
                 players, from recorded Mythic+ runs.
               </p>
+              {% for v in hero_variants %}
+              {% set sec_c = sections_by_tree[v.id] %}
+              <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
+              {{ hero_fallback_note(sec_c) }}
               <div class="row g-3">
-                {% for sec in consumable_sections %}
+                {% for sec in sec_c.consumable_sections %}
                 {% set top = sec.entries[0] %}
                 <div class="col-6 col-md-4 col-xl">
                   <div class="card h-100">
@@ -873,6 +880,8 @@
                 </div>
                 {% endfor %}
               </div>
+              </div>
+              {% endfor %}
             </div>
             {% endif %}
             <div id="gear-overview" class="mx-auto my-4" data-share>
@@ -2131,26 +2140,35 @@
 
 
 
-          {# Consumables detail accordions (spec-level, rendered once). #}
-          {% if consumable_sections %}
+          {# Consumables detail accordions, split per hero tree (outer wrapper once,
+             one .hero-section-variant per tree; accordion ids are suffixed with the
+             tree id so the hidden variants never collide). #}
+          {% set cons_detail_any = namespace(v=false) %}
+          {% for v in hero_variants %}{% if sections_by_tree[v.id].consumable_sections %}{% set cons_detail_any.v = true %}{% endif %}{% endfor %}
+          {% if cons_detail_any.v %}
           <div id="consumables-detail" class="col-12 mt-4" data-share>
             <h6 class="mb-1">Consumables</h6>
             <p class="text-sm mb-2">
               Every flask, potion, food, weapon enchant and augment rune seen on sampled high-key
               players, ranked by how many ran it. Percentages are the share within each category.
             </p>
-            <div class="accordion mx-2" id="consumablesAccordion">
-              {% for sec in consumable_sections %}
+            {% for v in hero_variants %}
+            {% set sec_c = sections_by_tree[v.id] %}
+            {% set hs = '-h' ~ v.id %}
+            <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
+            {{ hero_fallback_note(sec_c) }}
+            <div class="accordion mx-2" id="consumablesAccordion{{ hs }}">
+              {% for sec in sec_c.consumable_sections %}
               <div class="accordion-item">
-                <h2 class="accordion-header" id="headingConsumable-{{ sec.key }}">
+                <h2 class="accordion-header" id="headingConsumable-{{ sec.key }}{{ hs }}">
                   <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#collapseConsumable-{{ sec.key }}" aria-expanded="false"
-                    aria-controls="collapseConsumable-{{ sec.key }}">
+                    data-bs-toggle="collapse" data-bs-target="#collapseConsumable-{{ sec.key }}{{ hs }}" aria-expanded="false"
+                    aria-controls="collapseConsumable-{{ sec.key }}{{ hs }}">
                     {{ sec.label }}
                   </button>
                 </h2>
-                <div id="collapseConsumable-{{ sec.key }}" class="accordion-collapse collapse w-100"
-                  aria-labelledby="headingConsumable-{{ sec.key }}" data-bs-parent="#consumablesAccordion">
+                <div id="collapseConsumable-{{ sec.key }}{{ hs }}" class="accordion-collapse collapse w-100"
+                  aria-labelledby="headingConsumable-{{ sec.key }}{{ hs }}" data-bs-parent="#consumablesAccordion{{ hs }}">
                   <div class="accordion-body">
                     <div class="row">
                       <div class="col-12">
@@ -2191,6 +2209,8 @@
               </div>
               {% endfor %}
             </div>
+            </div>
+            {% endfor %}
           </div>
           {% endif %}
 

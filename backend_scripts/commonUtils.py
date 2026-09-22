@@ -499,10 +499,10 @@ def load_tier_sets(static_dir=LOOKUP_DIR):
     return item_to_set, set_meta
 
 
-# Consumable categories in data/static/consumables.json. temp-enchants (weapon
-# oils/whetstones) collapse to "weapon"; foods are the generic well-fed buff, not
-# a specific food item.
-CONSUMABLE_CATEGORIES = ("flask", "potion", "food", "augment", "weapon")
+# Consumable categories in data/static/consumables.json. Foods are the generic
+# well-fed buff, not a specific food item. Temp weapon enchants (oils/whetstones)
+# are NOT consumables: they are weapon enchantments (see load_temp_enchant_index).
+CONSUMABLE_CATEGORIES = ("flask", "potion", "food", "augment")
 
 _CONSUMABLE_QUALITY_RE = re.compile(r"\s*\(quality\s*\d+\)\s*$", re.IGNORECASE)
 _CONSUMABLE_SHORT_TAIL_RE = re.compile(r"\s*\d+\s*$")
@@ -516,6 +516,14 @@ def normalize_consumable_name(name):
     if not name:
         return ""
     return _CONSUMABLE_QUALITY_RE.sub("", name.strip()).strip().lower()
+
+
+def normalize_consumable_icon(icon):
+    """Match key for a consumable icon: lowercase and drop trailing underscores.
+    processConsumables.py's derived catalog stores some icons with a trailing ``__``
+    (e.g. ``..._red__``) that the raider.io aura icon (``..._red``) lacks, so a raw
+    string compare would miss. Only used to disambiguate the shortName match."""
+    return (icon or "").strip().rstrip("_").lower()
 
 
 def normalize_consumable_short_name(short_name):
@@ -540,6 +548,39 @@ def load_consumables(static_dir=LOOKUP_DIR):
         return load_json(os.path.join(static_dir, "consumables.json"))
     except (OSError, ValueError):
         return []
+
+
+def load_temp_enchant_index(static_dir=LOOKUP_DIR):
+    """Map a temp weapon enchant's ``effectId`` -> its item, from
+    ``data/static/temp-enchants.json`` (weapon oils / whetstones / weightstones).
+
+    ``effectId`` is the Blizzard/SimC ``enchantment_id`` these items apply, which is
+    how they appear in ``aggregated_enchantments_slot_group`` (slot_group ``WEAPON``).
+    Unlike the aura consumables, each crafting quality stays its own entry (Q1 and Q2
+    are distinct effectIds and distinct rows on the page), so the full ``(Quality N)``
+    name is kept. Current-expansion only (max ``expansion`` present), mirroring
+    processConsumables. Returns ``{}`` when the file is absent so callers degrade to
+    "no weapon enchants" instead of crashing."""
+    try:
+        entries = load_json(os.path.join(static_dir, "temp-enchants.json"))
+    except (OSError, ValueError):
+        return {}
+    current = max((e.get("expansion", 0) for e in entries), default=0)
+    index = {}
+    for e in entries:
+        if e.get("expansion") != current:
+            continue
+        effect_id = e.get("effectId")
+        if effect_id is None or e.get("itemId") is None:
+            continue
+        index[int(effect_id)] = {
+            "value": e.get("value"),
+            "item_id": e.get("itemId"),
+            "name": (e.get("name") or "").strip(),
+            "icon": e.get("icon"),
+            "quality": e.get("craftingQuality"),
+        }
+    return index
 
 
 def load_consumable_overrides(static_dir=LOOKUP_DIR):
@@ -611,8 +652,15 @@ def match_consumable_aura(aura, index):
     norm = normalize_consumable_name(aura.get("name"))
     if norm in index["by_name"]:
         return index["by_name"][norm]
-    if norm in index["by_short"]:
-        return index["by_short"][norm]
+    short = index["by_short"].get(norm)
+    if short is not None:
+        # shortNames are generic ("Void-Touched") and collide with unrelated class
+        # auras of the same name (e.g. a Death Knight aura vs the Void-Touched
+        # Augment Rune). The real consumable's buff carries the item's icon, so
+        # require the icon to match to drop those false positives.
+        if normalize_consumable_icon(aura.get("icon")) == normalize_consumable_icon(short.get("icon")):
+            return short
+        return None
     return None
 
 

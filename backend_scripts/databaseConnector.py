@@ -1029,6 +1029,48 @@ def fetch_top_enchant_for_slot(connection, cursor, spec_id, season, slot_group, 
     return fetch_with_retry(connection, cursor, FETCH_TOP_ENCHANT_FOR_SLOT_BY_HERO_SQL, params)
 
 
+FETCH_WEAPON_TEMP_ENCHANT_USAGE_SQL = """
+SELECT enchantment_id, SUM(run_count) AS equip_count
+  FROM Mythistone.global_aggregated_enchantments_slot_group
+  WHERE spec_id = %s
+    AND season = %s
+    AND slot_group = 'WEAPON'
+    AND enchantment_id IN ({ids})
+  GROUP BY enchantment_id
+  ORDER BY equip_count DESC
+"""
+
+FETCH_WEAPON_TEMP_ENCHANT_USAGE_BY_HERO_SQL = """
+SELECT enchantment_id, SUM(run_count) AS equip_count
+  FROM Mythistone.global_aggregated_enchantments_slot_group
+  WHERE spec_id = %s
+    AND season = %s
+    AND slot_group = 'WEAPON'
+    AND hero_talent_id = %s
+    AND enchantment_id IN ({ids})
+  GROUP BY enchantment_id
+  ORDER BY equip_count DESC
+"""
+
+
+def fetch_weapon_temp_enchant_usage(connection, cursor, spec_id, season, effect_ids, hero_talent_id=None):
+    """Per-enchantment_id WEAPON-slot run counts for the given temp-enchant effectIds.
+
+    Returns ``[(enchantment_id, run_count), ...]``. Empty list when ``effect_ids`` is
+    empty (no oils to look up)."""
+    ids = [int(e) for e in (effect_ids or [])]
+    if not ids:
+        return []
+    id_ph = ", ".join(["%s"] * len(ids))
+    if hero_talent_id is None:
+        sql = FETCH_WEAPON_TEMP_ENCHANT_USAGE_SQL.format(ids=id_ph)
+        params = (spec_id, season, *ids)
+    else:
+        sql = FETCH_WEAPON_TEMP_ENCHANT_USAGE_BY_HERO_SQL.format(ids=id_ph)
+        params = (spec_id, season, hero_talent_id, *ids)
+    return fetch_with_retry(connection, cursor, sql, params)
+
+
 FETCH_TOP_SOCKET_FOR_ITEM_SQL = """
 SELECT ais.socket_item_id, SUM(ais.run_count) AS equip_count, MAX(ais.max_timed_key) AS max_timed_key, MAX(ais.max_depleted_key) AS max_depleted_key
 FROM Mythistone.global_aggregated_item_sockets AS ais
