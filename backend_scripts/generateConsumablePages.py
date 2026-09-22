@@ -39,6 +39,7 @@ import commonUtils
 from pageGeneration import (
     generateSpecNav, generateDungeonNav, build_consumable_slug_map,
     build_trends, trend_feeds_for_consumables, trend_feeds_for_consumable,
+    BROWSE_SSR_PAGE_SIZE,
 )
 from generateSpecPages import LOOKUP_DIR, load_json, load_season_info
 
@@ -507,6 +508,7 @@ def main(template_path, output_dir, consumables_dir="consumables", debug=False,
         ],
         overview_url=overview_url,
         consumable_count=len(manifest),
+        initial_consumables=manifest[:BROWSE_SSR_PAGE_SIZE],
         spec_nav=spec_nav,
         dungeon_nav=dungeon_nav,
         season_info=season_info,

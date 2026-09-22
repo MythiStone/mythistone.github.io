@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 
+{# ----- helpers -------------------------------------------------------- #}
+{# Server-rendered browse card, mirroring consumableCard() in
+   assets/js/consumables.js (KEEP IN SYNC). Used only for the first
+   BROWSE_SSR_PAGE_SIZE entries; infinite scroll appends the rest client-side
+   from consumables_index.json. Consumables carry no rarity, so the icon
+   border stays neutral grey, never border-quality-*. #}
+{% macro consumable_card(item, specs_map) %}
+{% set spec = specs_map.get(item.top_spec|string) if item.top_spec is not none else none %}
+<div class="col-12 col-md-6 col-xl-4">
+  <a class="consumable-card" href="/consumables/{{ item.slug }}" data-wowhead="item={{ item.id }}">
+    <img src="/data/icons/{{ item.icon }}.png" alt="{{ item.name }}" loading="lazy" class="border border-grey-100">
+    <div class="meta flex-grow-1">
+      <div class="name">{{ item.name }}</div>
+      <div class="sub">{{ item.category_label or item.category }} · {{ "{:,}".format(item.runs) }} runs{% if spec %} · mostly {{ spec.name }} {{ spec.className }}{% endif %}</div>
+    </div>
+  </a>
+</div>
+{% endmacro %}
+
 <head>
   {% include "header_imports.html" %}
   <link rel="stylesheet" href="/assets/css/stat-colors.css" />
@@ -89,7 +108,11 @@
           </div>
         </div>
 
-        <div id="consumables-grid" class="row g-2"></div>
+        <div id="consumables-grid" class="row g-2">
+          {% for item in initial_consumables %}
+          {{ consumable_card(item, specs_map) }}
+          {% endfor %}
+        </div>
         <p id="consumables-empty" class="text-center opacity-6 py-4 d-none">No consumables match your filters.</p>
         <!-- Infinite-scroll sentinel: MythiInfinite watches this and appends the
              next batch as it nears the fold. -->

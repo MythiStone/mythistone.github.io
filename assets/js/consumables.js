@@ -274,7 +274,17 @@
           onLoadMore: renderMore,
         });
         applyParamsToControls(readParams());
-        applyFilters();
+        var grid = el("consumables-grid");
+        if (!window.location.search && grid.children.length) {
+          // Server already rendered page 1 in the default (unfiltered, runs-desc)
+          // order; reuse it instead of wiping and re-rendering identical cards.
+          filtered = all.slice().sort(function (a, b) { return b.runs - a.runs; });
+          shown = Math.min(PAGE_SIZE, filtered.length, grid.children.length);
+          el("consumables-empty").classList.add("d-none");
+          if (shown >= filtered.length) infinite.finish(); else infinite.reset();
+        } else {
+          applyFilters();
+        }
         el("consumable-search").addEventListener("input", debounce(applyFilters, 200));
         el("category-filter").addEventListener("change", applyFilters);
         el("class-filter").addEventListener("change", applyFilters);

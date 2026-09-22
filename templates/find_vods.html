@@ -66,6 +66,8 @@
 </head>
 
 <body class="g-sidenav-show g-sidenav-show-right">
+  {% import "_vod_macros.html" as vm %}
+
   {% include "sidenav.html" %}
   <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">
     {% include "navbar.html" %}
@@ -99,8 +101,14 @@
       </div>
       <div class="row">
         <div class="col">
-          <div class="accordion" id="vodFinderAccordion">
-            <div class="text-center p-4 text-sm text-secondary" data-finder-placeholder>Loading VODs…</div>
+          <div class="accordion" id="vodDungeonAccordion">
+            {# one default POV video per dungeon; vods-finder.js leaves this in
+               place until a search is made, same pattern as find_routes.html. #}
+            {% for dungeon, vods in comp_vods_by_dungeon.items() %}
+            {% if vods %}
+            {{ vm.vod_accordion_item(dungeon_lookup[dungeon], vods[0], spec_lookup, season_info.slug) }}
+            {% endif %}
+            {% endfor %}
           </div>
         </div>
       </div>
@@ -120,6 +128,10 @@
     window.spell_lookup = {{ spell_lookup | tojson | safe }};
     window.bloodlust_spell_ids = {{ bloodlust_spell_ids | tojson | safe }};
     window.npc_lookup = {{ npc_lookup | tojson | safe }};
+
+    // Wire consent on the server-rendered skeleton panels; the finder wires the
+    // panels it renders itself once the worker replaces the skeleton.
+    MythiConsent.wireAccordionEmbeds('#vodDungeonAccordion');
   </script>
   <script src="/assets/js/finder.js"></script>
   <script src="/assets/js/vods-finder.js"></script>

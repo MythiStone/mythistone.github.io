@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 
+{# ----- helpers -------------------------------------------------------- #}
+{# Server-rendered browse card, mirroring itemCard() in assets/js/items.js
+   (KEEP IN SYNC). Used only for the first BROWSE_SSR_PAGE_SIZE entries;
+   infinite scroll appends the rest client-side from items_index.json. #}
+{% macro item_card(item, specs_map) %}
+{% set q = item.get('quality_override') if item.get('quality_override') is not none else item.quality %}
+{% set spec = specs_map.get(item.top_spec|string) if item.top_spec is not none else none %}
+<div class="col-12 col-md-6 col-xl-4">
+  <a class="item-card" href="/items/{{ item.slug }}" data-wowhead="item={{ item.id }}">
+    <img src="/data/icons/{{ item.icon }}.png" alt="{{ item.name }}" loading="lazy" class="border-quality-{{ q }}">
+    <div class="meta flex-grow-1">
+      <div class="name item-quality-{{ q }}">{{ item.name }}</div>
+      <div class="sub">{{ item.slot }} · {{ "{:,}".format(item.runs) }} runs{% if spec %} · mostly {{ spec.name }} {{ spec.className }}{% endif %}</div>
+    </div>
+  </a>
+</div>
+{% endmacro %}
+
 <head>
   {% include "header_imports.html" %}
   <link rel="stylesheet" href="/assets/css/stat-colors.css" />
@@ -120,7 +138,11 @@
           </div>
         </div>
 
-        <div id="items-grid" class="row g-2"></div>
+        <div id="items-grid" class="row g-2">
+          {% for item in initial_items %}
+          {{ item_card(item, specs_map) }}
+          {% endfor %}
+        </div>
         <p id="items-empty" class="text-center opacity-6 py-4 d-none">No items match your filters.</p>
         <!-- Infinite-scroll sentinel: MythiInfinite watches this and appends the
              next batch as it nears the fold. -->

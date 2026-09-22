@@ -7,7 +7,12 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 # project imports (adjust paths if necessary)
-from pageGeneration import generateSpecNav, generateDungeonNav, build_global_trends
+from pageGeneration import (
+    generateSpecNav,
+    generateDungeonNav,
+    build_global_trends,
+    rank_run_entries,
+)
 from generateSpecPages import (
     humanize_number,
     format_duration,
@@ -130,18 +135,7 @@ def main(template_path, output_dir, limit):
         comp_routes_by_dungeon[str(info_copy.get("dungeon"))].append(info_copy)
 
     for runs in comp_routes_by_dungeon.values():
-        # best first: uses -> key level -> shorter duration -> more recent.
-        # stable sort on a tuple; negate duration so a larger tuple = better and
-        # the whole thing can share one reverse=True.
-        runs.sort(
-            key=lambda r: (
-                r.get("usage_count", 0),
-                r.get("level", 0),
-                -(r.get("duration") or 0),
-                r.get("timestamp", 0),
-            ),
-            reverse=True,
-        )
+        rank_run_entries(runs)
 
     # slug_lookup (template expects slug_lookup[slug] = {..., _id: ...})
     slug_lookup = {}

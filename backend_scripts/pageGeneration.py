@@ -38,6 +38,28 @@ NPC_CLUSTER_CAP = 4
 ITEM_SUB_FEEDS = {"item_spec", "item_gem", "item_embellishment", "item_missive", "item_variant"}
 ITEM_SUB_MIN_POP = 0.5
 
+# How many manifest entries the items/consumables browse pages server-render for
+# SEO/no-JS. KEEP IN SYNC with PAGE_SIZE in assets/js/items.js and
+# assets/js/consumables.js (no build step, so this can't be a shared constant).
+BROWSE_SSR_PAGE_SIZE = 60
+
+
+def rank_run_entries(entries):
+    """Sort run-like dicts (routes or vods) best-first, in place: most used,
+    then highest key, then shortest duration, then most recent. Shared by the
+    routes and vods finder pages so "pick the default per dungeon" stays one
+    definition. Vod dicts carry no usage_count, so they simply tie on that
+    field and fall through to level/duration/timestamp."""
+    entries.sort(
+        key=lambda r: (
+            r.get("usage_count", 0),
+            r.get("level", 0),
+            -(r.get("duration") or 0),
+            r.get("timestamp", 0),
+        ),
+        reverse=True,
+    )
+
 
 def slugify(text):
     """Turn an item name into a URL slug (lowercase, hyphen-separated).

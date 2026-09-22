@@ -2,10 +2,16 @@ import os
 import sys
 import json
 import argparse
+from collections import defaultdict
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from datetime import datetime, timezone
 
-from pageGeneration import generateSpecNav, generateDungeonNav, build_global_trends
+from pageGeneration import (
+    generateSpecNav,
+    generateDungeonNav,
+    build_global_trends,
+    rank_run_entries,
+)
 from generateSpecPages import (
     humanize_number,
     format_duration,
@@ -17,6 +23,7 @@ from generateSpecPages import (
 )
 
 import databaseConnector
+from commonUtils import build_vod_embed_src
 
 
 def fail(msg):
@@ -42,6 +49,7 @@ def main(template_path, output_dir, limit):
     env.filters["duration"] = format_duration
     env.filters["format_ts"] = format_utc_timestamp
     env.filters["upgrade_info"] = upgrade_info
+    env.filters["vod_embed"] = build_vod_embed_src
 
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
@@ -105,6 +113,15 @@ def main(template_path, output_dir, limit):
         None,
     )
 
+    comp_vods_by_dungeon = defaultdict(list)
+    for info in comp_vods.values():
+        v = dict(info)
+        v["highest_key"] = v.get("level")
+        v["pov_spec_id"] = v.get("pov_spec")
+        comp_vods_by_dungeon[str(v.get("dungeon"))].append(v)
+    for vods in comp_vods_by_dungeon.values():
+        rank_run_entries(vods)
+
     template = env.get_template(os.path.basename(template_path))
     output_html = template.render(
         trends=build_global_trends(),
@@ -112,6 +129,7 @@ def main(template_path, output_dir, limit):
         spec_nav=generateSpecNav(spec_lookup, class_lookup),
         dungeon_nav=generateDungeonNav(dungeon_lookup),
         dungeon_lookup=dungeon_lookup,
+        comp_vods_by_dungeon=comp_vods_by_dungeon,
         specs=spec_lookup,
         class_lookup=class_lookup,
         spell_lookup=spell_lookup,

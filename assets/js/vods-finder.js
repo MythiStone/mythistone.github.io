@@ -43,7 +43,7 @@
   }
 
   // KEEP IN SYNC with vod_accordion_item in templates/_vod_macros.html. Same
-  // markup, but the accordion parent is this page's #vodFinderAccordion.
+  // markup, but the accordion parent is this page's #vodDungeonAccordion.
   function renderVodItem(v) {
     const dungeon = (window.dungeons || {})[v.dungeon] || {};
     const slug = dungeon.slug || v.dungeon;
@@ -102,7 +102,7 @@
     </button>
   </h2>
   <div id="vodcollapse-${key}" data-share-id="${safeId(`vod-${slug}-${v.video_ref}`)}"
-    class="accordion-collapse collapse" aria-labelledby="vodheading-${key}" data-bs-parent="#vodFinderAccordion">
+    class="accordion-collapse collapse" aria-labelledby="vodheading-${key}" data-bs-parent="#vodDungeonAccordion">
     <div class="accordion-body p-0">
       <div class="route-run-details">
         <div class="route-run-head px-3 pt-2 pb-2">
@@ -134,7 +134,7 @@
 
   window.MythiFinder.create({
     formId: "compForm",
-    accordionId: "vodFinderAccordion",
+    accordionId: "vodDungeonAccordion",
     sentinelId: "route-sentinel",
     overlayId: "route-search-overlay",
     jsonUrl: "/assets/json/compVods.json",
@@ -146,7 +146,6 @@
     ],
     noun: "VOD",
     relaxFilterId: "specSelect",
-    autoQueryOnLoad: true,
     filters: [
       { id: "dungeonSelect", param: "dungeons", field: "dungeon", mode: "anyOf" },
       { id: "specSelect", param: "specs", field: "specs", mode: "allRelax", priorityByRole: true, multiset: true, max: 5, label: specLabel },

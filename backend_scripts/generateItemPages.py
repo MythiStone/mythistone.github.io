@@ -15,7 +15,7 @@ import databaseConnector
 import commonUtils
 from pageGeneration import (
     generateSpecNav, generateDungeonNav, build_item_slug_map, build_source_lookups,
-    build_trends, trend_feeds_for_items, trend_feeds_for_item,
+    build_trends, trend_feeds_for_items, trend_feeds_for_item, BROWSE_SSR_PAGE_SIZE,
 )
 from generateSpecPages import (
     LOOKUP_DIR, load_json, load_season_info, BLIZZARD_STAT_MAP,
@@ -1404,6 +1404,7 @@ def main(template_path, output_dir, items_dir="items", debug=False, target_item=
         ],
         overview_url=overview_url,
         item_count=len(manifest),
+        initial_items=manifest[:BROWSE_SSR_PAGE_SIZE],
         spec_nav=spec_nav,
         dungeon_nav=dungeon_nav,
         season_info=season_info,
