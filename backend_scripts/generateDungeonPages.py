@@ -10,6 +10,7 @@ import databaseConnector
 import commonUtils
 import compArchetypes
 from pageGeneration import (
+    load_notifications,
     generateSpecNav, make_jinja_env,
     generateDungeonNav,
     build_item_slug_map,
@@ -82,7 +83,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
     season_info = load_season_info(LOOKUP_DIR)
-    notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    notifications = load_notifications(LOOKUP_DIR)
     # Latest per-dungeon hotfix notes, keyed by challenge_mode_id (str). Produced
     # by fetchDungeonHotfixes.py; source_url is the Blizzard hotfix post the notes
     # were scraped from (linked from the card header). Entries are filtered to the

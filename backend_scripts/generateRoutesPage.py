@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 # project imports (adjust paths if necessary)
 from pageGeneration import (
+    load_notifications,
     generateSpecNav, make_jinja_env,
     generateDungeonNav,
     build_global_trends,
@@ -56,7 +57,7 @@ def main(template_path, output_dir, limit):
     spell_lookup = load_json(os.path.join(LOOKUP_DIR, "spells.json"))
     npc_lookup = load_json(os.path.join(LOOKUP_DIR, "npcs.json"))
     season_info = load_season_info(LOOKUP_DIR)
-    notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    notifications = load_notifications(LOOKUP_DIR)
 
     # init DB pool (this will raise on error)
     try:

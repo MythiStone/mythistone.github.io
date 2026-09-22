@@ -36,6 +36,7 @@ from datetime import datetime, timezone
 import databaseConnector
 import commonUtils
 from pageGeneration import (
+    load_notifications,
     generateSpecNav, make_jinja_env, generateDungeonNav, build_consumable_slug_map,
     build_trends, trend_feeds_for_consumables, trend_feeds_for_consumable,
     BROWSE_SSR_PAGE_SIZE,
@@ -88,7 +89,7 @@ def load_static_lookups():
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
-    notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    notifications = load_notifications(LOOKUP_DIR)
 
     # spell -> consumable resolver (name / shortName / food-buff map).
     consumable_index = commonUtils.build_consumable_index(static_dir=LOOKUP_DIR)

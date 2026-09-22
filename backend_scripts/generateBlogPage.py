@@ -3,7 +3,7 @@ import re
 import json
 import argparse
 from datetime import datetime, timezone
-from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, ROLE_FOLDERS
+from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, ROLE_FOLDERS, load_notifications
 from generateSpecPages import (
     LOOKUP_DIR,
     humanize_number,
@@ -198,7 +198,7 @@ def main():
     env.filters["upgrade_info"] = upgrade_info
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
-    notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    notifications = load_notifications(LOOKUP_DIR)
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
 
     # The text records live alongside the images on the social-images branch,

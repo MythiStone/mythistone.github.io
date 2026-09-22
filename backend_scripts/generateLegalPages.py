@@ -3,7 +3,7 @@ import json
 from collections import OrderedDict, defaultdict
 from datetime import datetime, timezone
 import argparse
-from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav
+from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, load_notifications
 from generateSpecPages import (
     LOOKUP_DIR,
     humanize_number,
@@ -52,7 +52,7 @@ def main():
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
-    notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    notifications = load_notifications(LOOKUP_DIR)
 
     spec_nav = generateSpecNav(spec_lookup, class_lookup)
     dungeon_nav = generateDungeonNav(dungeon_lookup)

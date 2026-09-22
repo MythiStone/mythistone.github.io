@@ -14,7 +14,7 @@ import shutil
 import argparse
 from datetime import datetime, timezone
 import databaseConnector
-from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, build_global_trends
+from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, build_global_trends, load_notifications
 from commonUtils import (
     LOOKUP_DIR,
     load_json,
@@ -232,7 +232,7 @@ def main(template_path, output_dir):
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
-    notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    notifications = load_notifications(LOOKUP_DIR)
     season_info = load_season_info(LOOKUP_DIR)
 
     spec_index, spec_display = build_spec_index(spec_lookup, class_lookup)

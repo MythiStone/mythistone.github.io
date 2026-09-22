@@ -1,27 +1,12 @@
 /**
- * Persists dismissals of dismissible site notifications across pages and reloads
- * (per browser, via localStorage).
+ * Injects dismissible site notifications from assets/json/notifications.json
+ * (written by pageGeneration.load_notifications) into #page-notifications, skipping
+ * ones the visitor already dismissed. They are never in the static HTML, so a
+ * dismissed banner cannot flash and crawlers do not index them.
  *
- * Each dismissible notification carries a stable, content-derived key in its
- * `data-notification-key` attribute (an explicit `id` from notifications.json,
- * otherwise message+link, stamped at build time in templates/notifications.html).
- * The key is identical on every page for the same notification, so a dismissal on
- * one page hides it everywhere.
- *
- * This script is loaded synchronously at the tail of templates/notifications.html,
- * the shared include every page composes, immediately after the notification
- * markup (NOT deferred, NOT in javascript_imports.html): a blocking classic script
- * at that DOM position runs before the browser paints the markup above it, so
- * already-dismissed notifications are removed without a visible
- * flash-then-disappear.
- *
- * Remembering a dismissal is first-party functional storage, treated exactly like
- * the light/dark theme preference (localStorage 'theme', set in
- * assets/js/material-dashboard.js and read inline in header_imports.html): it is
- * strictly-necessary for the feature the visitor is actively using, so it is NOT
- * gated behind the Klaro consent banner (which governs third-party embeds). All
- * localStorage access is wrapped in try/catch, so private mode / disabled storage
- * degrades gracefully to the previous behaviour (notifications simply reappear).
+ * Dismissals persist per browser in localStorage under a key identical on every
+ * page, so dismissing on one page hides it everywhere. Like the theme preference
+ * this is first-party functional storage, so it is not gated behind Klaro.
  */
 (function () {
     "use strict";
@@ -53,35 +38,89 @@
         }
     }
 
-    // Only notifications that render a Bootstrap dismiss control are persistable.
-    function isDismissible(el) {
-        return !!el.querySelector('[data-bs-dismiss="alert"]');
+    function el(tag, className) {
+        var node = document.createElement(tag);
+        if (className) {
+            node.className = className;
+        }
+        return node;
     }
 
-    // Hide already-dismissed notifications. Remove the node outright rather than
-    // setting display:none, because the alert carries Bootstrap's `d-flex`
-    // (display:flex !important), which an inline display:none cannot override.
-    var dismissed = readDismissed();
-    var alerts = document.querySelectorAll(".page-notification[data-notification-key]");
-    Array.prototype.forEach.call(alerts, function (el) {
-        if (!isDismissible(el)) {
-            return;
-        }
-        var key = el.getAttribute("data-notification-key");
-        if (key && dismissed.indexOf(key) !== -1) {
-            el.parentNode.removeChild(el);
-        }
-    });
+    function buildAlert(n) {
+        var wrap = el("div", "container-fluid");
+        var alert = el("div", "alert alert-" + (n.type || "warning") +
+            " alert-dismissible d-flex align-items-center mx-3 my-2 page-notification");
+        alert.setAttribute("role", "alert");
+        alert.setAttribute("data-notification-key", n.key);
 
-    // Record the key when the user dismisses. Bootstrap fires close.bs.alert (which
-    // bubbles to document) before it removes the element. Bootstrap loads later in
-    // the page, but registering the listener now is fine: it only fires on a click.
+        var icon = el("span", "material-symbols-rounded me-2");
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = "announcement";
+        alert.appendChild(icon);
+
+        var body = el("div", "flex-fill");
+        body.innerHTML = n.message; // trusted repo data, rendered with | safe before
+        alert.appendChild(body);
+
+        if (n.link && n.link_text) {
+            var link = el("a", "btn btn-sm btn-light ms-3");
+            link.href = n.link;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = n.link_text;
+            alert.appendChild(link);
+        }
+
+        var close = el("button", "btn-close ms-3");
+        close.type = "button";
+        close.setAttribute("data-bs-dismiss", "alert");
+        close.setAttribute("aria-label", "Close");
+        var closeIcon = el("span", "material-symbols-rounded me-2");
+        closeIcon.setAttribute("aria-hidden", "true");
+        closeIcon.textContent = "close";
+        close.appendChild(closeIcon);
+        alert.appendChild(close);
+
+        wrap.appendChild(alert);
+        return wrap;
+    }
+
+    var slot = document.getElementById("page-notifications");
+    if (!slot) {
+        return;
+    }
+    var page = slot.getAttribute("data-page");
+    var dungeon = slot.getAttribute("data-dungeon");
+
+    fetch("/assets/json/notifications.json", { cache: "no-cache" })
+        .then(function (res) {
+            if (!res.ok) {
+                throw new Error("HTTP " + res.status);
+            }
+            return res.json();
+        })
+        .then(function (notifications) {
+            var dismissed = readDismissed();
+            notifications.forEach(function (n) {
+                // Same filter as the Jinja condition in templates/notifications.html.
+                var onPage = !n.page || n.page === page || (dungeon && n.page === dungeon);
+                if (n.message && onPage && dismissed.indexOf(n.key) === -1) {
+                    slot.appendChild(buildAlert(n));
+                }
+            });
+        })
+        .catch(function (err) {
+            console.error("Failed to load notifications:", err);
+        });
+
+    // Bootstrap fires close.bs.alert (bubbling) before it removes the element, and its
+    // data-bs-dismiss handler is delegated on document, so injected alerts need no wiring.
     document.addEventListener("close.bs.alert", function (e) {
-        var el = e.target;
-        if (!el || !el.classList || !el.classList.contains("page-notification")) {
+        var target = e.target;
+        if (!target || !target.classList || !target.classList.contains("page-notification")) {
             return;
         }
-        var key = el.getAttribute("data-notification-key");
+        var key = target.getAttribute("data-notification-key");
         if (key) {
             recordDismissed(key);
         }

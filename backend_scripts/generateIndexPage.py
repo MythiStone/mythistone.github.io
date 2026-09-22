@@ -5,6 +5,7 @@ import argparse
 from tierMath import build_buff_tiers, build_ckmeans_tiers, build_spec_tiers
 from contextlib import closing
 from pageGeneration import (
+    load_notifications,
     generateSpecNav, make_jinja_env,
     ROLE_FOLDERS,
     generateDungeonNav,
@@ -44,7 +45,7 @@ def main(template_path, output_dir):
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
     group_buffs = load_json(os.path.join(LOOKUP_DIR, "groupbuffs.json"))
-    notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    notifications = load_notifications(LOOKUP_DIR)
     season_info = load_season_info(LOOKUP_DIR)
     buff_lookup = {b.get("id"): b for b in group_buffs}
 

@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 import databaseConnector
 import commonUtils
 from pageGeneration import (
+    load_notifications,
     generateSpecNav, make_jinja_env, generateDungeonNav, build_item_slug_map, build_source_lookups,
     build_trends, trend_feeds_for_items, trend_feeds_for_item, BROWSE_SSR_PAGE_SIZE,
 )
@@ -472,7 +473,7 @@ def load_static_lookups():
     # live in the crafting reagents table.
     crafting = load_json(os.path.join(LOOKUP_DIR, "crafting.json"))
     reagent_lookup = {r["id"]: r for r in crafting.get("reagents", [])}
-    notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    notifications = load_notifications(LOOKUP_DIR)
     # Latest item hotfix notes, keyed by item id (str). Produced by fetchHotfixes.py,
     # which resolves the article's anchorless "Items" bullets to item ids against the
     # equippable-items name index (same "items" map shape as its dungeons/specs maps).

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from contextlib import closing
 import databaseConnector
 from compArchetypes import build_dungeon_archetypes
-from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, build_trends, trend_feeds_for_comps
+from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, build_trends, trend_feeds_for_comps, load_notifications
 from generateSpecPages import LOOKUP_DIR, load_json, load_season_info
 from image_generation.comp_overview import createCompOverviewImg
 
@@ -507,7 +507,7 @@ def main(template_path, output_dir):
         dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
         spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
         class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
-        notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+        notifications = load_notifications(LOOKUP_DIR)
         # Raid-buff / utility coverage map (buff -> providing specIDs) for the
         # Perfect Fit widget. Small static file (~a dozen entries); passed to the
         # template as-is so the client can compute covered/missing buffs.

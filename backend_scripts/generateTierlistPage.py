@@ -29,6 +29,7 @@ import tempfile
 from datetime import datetime, timedelta, timezone
 import databaseConnector
 from pageGeneration import (
+    load_notifications,
     generateSpecNav, make_jinja_env, generateDungeonNav, build_trends,
 )
 from image_generation.tierlist_preview import PREVIEW_URL, PREVIEW_TARGETS, generate_preview_image
@@ -452,7 +453,7 @@ def main(template_path, output_dir, sim_results_dir, debug=False):
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
-    notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    notifications = load_notifications(LOOKUP_DIR)
 
     # total simulated specs per role, so the page can say "23 of 26 simmed"
     expected = {"Dps": 0, "Tank": 0}

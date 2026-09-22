@@ -12,6 +12,7 @@ from contextlib import closing
 import re
 from urllib.parse import quote_plus
 from pageGeneration import (
+    load_notifications,
     ROLE_FOLDERS,
     generateSpecNav, make_jinja_env,
     generateDungeonNav,
@@ -2297,7 +2298,7 @@ def main(template_path, output_dir, debug=False, spec=None):
         f"[{datetime.now(timezone.utc).isoformat()}] Current season ID: {current_season_id}"
     )
 
-    notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    notifications = load_notifications(LOOKUP_DIR)
 
     # Latest per-spec hotfix notes, keyed by spec id (str). Produced by
     # fetchDungeonHotfixes.py (it parses the article's Classes section into a

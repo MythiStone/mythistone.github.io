@@ -23,6 +23,25 @@ def make_jinja_env(template_dir, extensions=None):
     )
 
 
+def load_notifications(lookup_dir):
+    """Split notifications.json: returns the non-dismissible entries for the static
+    template and writes the dismissible ones to assets/json/notifications.json, which
+    notifications.js fetches so they never flash when already dismissed and stay out
+    of the crawled HTML.
+    """
+    with open(os.path.join(lookup_dir, "notifications.json"), "r", encoding="utf-8") as f:
+        notifications = json.load(f)
+    dismissible = []
+    for n in notifications:
+        if n.get("dismissible"):
+            # Key rule must stay stable: it is what visitors' localStorage dismissals match.
+            dismissible.append({**n, "key": n.get("id") or f"{n['message']}|{n.get('link') or ''}"})
+    os.makedirs("assets/json", exist_ok=True)
+    with open("assets/json/notifications.json", "w", encoding="utf-8") as f:
+        json.dump(dismissible, f, separators=(",", ":"))
+    return [n for n in notifications if not n.get("dismissible")]
+
+
 ROLE_FOLDERS = {
     "0": "Tank",
     "1": "Healer",

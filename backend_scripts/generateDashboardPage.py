@@ -6,7 +6,7 @@ from contextlib import closing
 import argparse
 import databaseConnector
 from collections import defaultdict, Counter
-from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, build_global_trends
+from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, build_global_trends, load_notifications
 from generateSpecPages import (
     LOOKUP_DIR,
     humanize_number,
@@ -887,7 +887,7 @@ def main(template_path, output_dir):
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
-    notifications = load_json(os.path.join(LOOKUP_DIR, "notifications.json"))
+    notifications = load_notifications(LOOKUP_DIR)
     season_info = load_season_info(LOOKUP_DIR)
     # raider.io-derived top-1% key bracket (written by fetchMythicPlusCutoffs.py).
     cutoffs = load_json(os.path.join(LOOKUP_DIR, "mythicPlusCutoffs.json"))
