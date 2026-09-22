@@ -82,7 +82,7 @@
       {% call fm.finder_card('compForm', 'Search for specific VODs', 'Pick dungeons, comp, POV spec, source, spells or NPCs', icon='smart_display', submit_label='Search VODs') %}
         <div class="row gx-3">
           {{ fm.dungeon_filter(dungeon_lookup) }}
-          {{ fm.spec_filter(specs, class_lookup) }}
+          {{ fm.spec_filter(specs, class_lookup, multiset=true) }}
         </div>
         <div class="row gx-3 mt-2">
           {{ fm.spec_filter(specs, class_lookup, id='povSpecSelect', label='POV', title='Any POV spec…', max_options=0, col='col-12 col-md-6 col-lg-4') }}

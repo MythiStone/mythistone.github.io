@@ -19,10 +19,22 @@
 let meta = new Map(); // id -> item object
 let allIds = new Set(); // every item id
 let indexes = new Map(); // field -> Map(value(string) -> Set(id))
+// Per-item occurrence counts, so allRelax can require a value more than once
+// (a group can run the same spec twice). anyOf/noneOf stay Set-based on `indexes`.
+let countIndexes = new Map(); // field -> Map(value(string) -> Map(id -> count))
 
 function addToIndex(indexMap, key, id) {
   if (!indexMap.has(key)) indexMap.set(key, new Set());
   indexMap.get(key).add(id);
+}
+
+function addToCount(countMap, key, id) {
+  let m = countMap.get(key);
+  if (!m) {
+    m = new Map();
+    countMap.set(key, m);
+  }
+  m.set(id, (m.get(id) || 0) + 1);
 }
 
 function asValues(v) {
@@ -34,7 +46,11 @@ function buildIndexes(items, indexFields) {
   meta.clear();
   allIds.clear();
   indexes.clear();
-  for (const field of indexFields) indexes.set(field, new Map());
+  countIndexes.clear();
+  for (const field of indexFields) {
+    indexes.set(field, new Map());
+    countIndexes.set(field, new Map());
+  }
 
   for (const [id, item] of Object.entries(items)) {
     if (!item) continue;
@@ -42,9 +58,48 @@ function buildIndexes(items, indexFields) {
     allIds.add(id);
     for (const field of indexFields) {
       const idx = indexes.get(field);
-      for (const val of asValues(item[field])) addToIndex(idx, String(val), id);
+      const cidx = countIndexes.get(field);
+      for (const val of asValues(item[field])) {
+        const key = String(val);
+        addToIndex(idx, key, id);
+        addToCount(cidx, key, id);
+      }
     }
   }
+}
+
+// Set of ids whose count for (field, value) is >= n. For n <= 1 this is plain
+// membership, so reuse the Set index directly.
+function idsWithAtLeast(field, value, n) {
+  const key = String(value);
+  if (n <= 1) {
+    const idx = indexes.get(field);
+    return idx ? idx.get(key) || null : null;
+  }
+  const cidx = countIndexes.get(field);
+  const m = cidx ? cidx.get(key) : null;
+  if (!m) return null;
+  const out = new Set();
+  for (const [id, c] of m) if (c >= n) out.add(id);
+  return out.size ? out : null;
+}
+
+// Candidate Sets for a multiset of relax values (duplicates = required count).
+// Returns null if any (value, count) has no items, marking the comp unmatchable
+// so the caller can relax it.
+function relaxCandidateSets(field, values) {
+  const required = new Map();
+  for (const v of values) {
+    const k = String(v);
+    required.set(k, (required.get(k) || 0) + 1);
+  }
+  const sets = [];
+  for (const [v, n] of required) {
+    const s = idsWithAtLeast(field, v, n);
+    if (!s || s.size === 0) return null;
+    sets.push(s);
+  }
+  return sets;
 }
 
 function intersectSets(sets) {
@@ -155,41 +210,31 @@ self.onmessage = (ev) => {
   }
 
   // The relax (team-comp) filter is intersected in, but kept separate so an
-  // over-specific comp can be relaxed to its largest matching subset.
+  // over-specific comp can be relaxed to its largest matching subset. Its values
+  // are a multiset: a repeated spec requires that many copies on the run.
   const relaxValues = relaxClause ? relaxClause.values.map(String) : [];
-  let relaxSets = [];
-  let relaxMissing = false;
-  for (const v of relaxValues) {
-    const idx = indexes.get(relaxClause.field);
-    if (idx && idx.has(v)) relaxSets.push(idx.get(v));
-    else {
-      relaxMissing = true;
-      break;
-    }
-  }
+  const relaxSets = relaxValues.length
+    ? relaxCandidateSets(relaxClause.field, relaxValues)
+    : [];
 
-  let matchesSet = relaxMissing
-    ? new Set()
-    : matchesFor(
-        candidateSets.concat(
-          relaxSets.length ? [intersectSets(relaxSets.slice())] : []
-        )
-      );
+  let matchesSet =
+    relaxSets === null
+      ? new Set()
+      : matchesFor(candidateSets.concat(relaxSets));
 
   let relaxHint = null;
   if (relaxClause && matchesSet.size === 0 && relaxValues.length > 1) {
-    const idx = indexes.get(relaxClause.field);
-    const known = new Set(relaxValues.filter((v) => idx.has(v)));
+    const cidx = countIndexes.get(relaxClause.field);
+    const known = (v) => cidx && cidx.has(v);
     const priority = (relaxClause.priority || []).map(String);
-    const ordered = priority.length
-      ? priority.filter((v) => known.has(v))
-      : relaxValues.filter((v) => known.has(v));
+    const ordered = (priority.length ? priority : relaxValues).filter(known);
     const maxK =
       ordered.length < relaxValues.length ? ordered.length : ordered.length - 1;
     for (let k = maxK; k >= 1 && !relaxHint; --k) {
       const subset = ordered.slice(0, k);
-      const sets = subset.map((v) => idx.get(v));
-      const hits = matchesFor(candidateSets.concat([intersectSets(sets)]));
+      const sets = relaxCandidateSets(relaxClause.field, subset);
+      if (sets === null) continue;
+      const hits = matchesFor(candidateSets.concat(sets));
       if (hits.size > 0) relaxHint = { values: subset, total: hits.size };
     }
   }

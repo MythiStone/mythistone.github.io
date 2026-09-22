@@ -123,7 +123,7 @@
       {% call fm.finder_card('compForm', 'Search for specific routes', 'Pick dungeons, specs, spells or NPCs', submit_label='Search Routes') %}
         <div class="row gx-3">
           {{ fm.dungeon_filter(dungeon_lookup) }}
-          {{ fm.spec_filter(specs, class_lookup) }}
+          {{ fm.spec_filter(specs, class_lookup, multiset=true) }}
         </div>
         <div class="row gx-3 mt-2">
           {{ fm.spell_filter(spell_lookup, bloodlust_id_strs, bloodlust_icon) }}

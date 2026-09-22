@@ -3526,7 +3526,7 @@ def fetch_route_specs_map(connection, cursor):
         sid = int(r[1])
         out.setdefault(rk, []).append(sid)
     for rk in out:
-        out[rk] = sorted(list(set(out[rk])))
+        out[rk] = sorted(out[rk])
     return out
 
 

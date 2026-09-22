@@ -149,7 +149,7 @@
     autoQueryOnLoad: true,
     filters: [
       { id: "dungeonSelect", param: "dungeons", field: "dungeon", mode: "anyOf" },
-      { id: "specSelect", param: "specs", field: "specs", mode: "allRelax", priorityByRole: true, label: specLabel },
+      { id: "specSelect", param: "specs", field: "specs", mode: "allRelax", priorityByRole: true, multiset: true, max: 5, label: specLabel },
       { id: "povSpecSelect", param: "povSpecs", field: "pov_spec", mode: "anyOf", label: specLabel },
       { id: "videoTypeSelect", param: "videoTypes", field: "video_type", mode: "anyOf" },
       { id: "spellSelect", param: "spells", field: "spells", mode: "anyOf", expand: expandLust },

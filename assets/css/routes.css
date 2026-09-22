@@ -66,3 +66,97 @@
   margin: 0.25rem 0;
   opacity: 0.5;
 }
+
+/* "No route matches, relax to N" notice. Styled to match the page (dark card +
+   gold left-accent) instead of the stock grey Bootstrap alert gradient. */
+.route-relax-notice {
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--bs-border-color);
+  border-left: 3px solid var(--bs-primary);
+  border-radius: 0.5rem;
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+}
+
+/* Multiset spec count chips: sit under the team-comp picker and set how many
+   copies of each spec the comp requires (e.g. two of the same spec). */
+.spec-count-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+.spec-count-row:empty {
+  margin-top: 0;
+}
+.spec-count-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.375rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  background: var(--bs-tertiary-bg);
+  font-size: 0.8rem;
+}
+.spec-count-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+.spec-count-name {
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spec-count-steps {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.spec-count-badge {
+  min-width: 1.75rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--bs-primary);
+}
+.spec-count-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  padding: 0;
+  line-height: 1;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.375rem;
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  cursor: pointer;
+}
+.spec-count-step:hover:not(:disabled) {
+  border-color: var(--bs-primary);
+  color: var(--bs-primary);
+}
+.spec-count-step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* On phones each chip takes a full row with the stepper pinned right, so the
+   picked comp reads as a clean stacked list instead of narrow floating pills. */
+@media (max-width: 575.98px) {
+  .spec-count-row {
+    flex-direction: column;
+  }
+  .spec-count-chip {
+    width: 100%;
+  }
+  .spec-count-chip .spec-count-steps {
+    margin-left: auto;
+  }
+}

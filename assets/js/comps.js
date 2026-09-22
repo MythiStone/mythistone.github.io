@@ -16,9 +16,37 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
       })
       .catch(err => console.error("Error loading comp data", err));
 
-    const selectedSpecs = new Set();
+    // Ordered multiset of selected spec ids (numbers), capped at 5, duplicates
+    // allowed so a comp can include the same spec twice (e.g. two Blood DKs).
+    let selected = [];
+    function selCount(s) {
+      const n = Number(s);
+      let c = 0;
+      for (const x of selected) if (x === n) c++;
+      return c;
+    }
+    function countMapOf(list) {
+      const m = new Map();
+      for (const x of list) m.set(Number(x), (m.get(Number(x)) || 0) + 1);
+      return m;
+    }
+    // Sorted-ascending multiset key, matching the DB `comp` string (so it lines up
+    // with isMetaComp / comp keys, which keep duplicates).
+    function selSortedKey() {
+      return selected.slice().sort((a, b) => a - b);
+    }
     const specIcons = document.querySelectorAll('.spec-icon');
     const suggestionsContainer = document.getElementById('suggestions-container');
+    const selectedCompRow = document.getElementById('selected-comp');
+
+    // A broken game icon (e.g. an unresolved spec falling back to a missing
+    // placeholder file) should quietly hide rather than show a broken box.
+    document.addEventListener('error', (e) => {
+      const t = e.target;
+      if (t && t.tagName === 'IMG' && typeof t.src === 'string' && t.src.indexOf('/data/icons/') !== -1) {
+        t.style.visibility = 'hidden';
+      }
+    }, true);
 
     const roleMap = { 0: 'Tank', 1: 'Healer', 2: 'Dps' };
     const dungeonLookup = PAGE.dungeonLookup;
@@ -80,11 +108,11 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
     function renderBuffCoverage() {
       const el = document.getElementById('buff-coverage');
       if (!el) return;
-      if (selectedSpecs.size === 0) {
+      if (selected.length === 0) {
         el.innerHTML = '<p class="text-sm text-secondary mb-0">Select specs to see which raid buffs, Bloodlust and Battle Rez your group covers.</p>';
         return;
       }
-      const { covered, missing } = computeBuffCoverage(selectedSpecs);
+      const { covered, missing } = computeBuffCoverage(selected);
       const criticalMissing = missing.filter(b => CRITICAL_BUFF_IDS.has(b.id));
       const chips = GROUP_BUFFS
         .map(b => buffChip(b, covered.includes(b)))
@@ -118,8 +146,8 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
     }
     // True when every selected spec is part of the meta comp, so adding more of
     // its specs keeps the user on the path toward building the meta comp.
-    function onMetaPath(selected) {
-      return META_COMP_SPECS.length > 0 && Array.from(selected).every(s => META_COMP_SPECS.includes(Number(s)));
+    function onMetaPath(specList) {
+      return META_COMP_SPECS.length > 0 && Array.from(specList).every(s => META_COMP_SPECS.includes(Number(s)));
     }
 
     // Deep-link into the routes page. Both pages use the same spec ids, so the
@@ -161,26 +189,25 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
 
       const sParams = sp.get('specs') || sp.get('spec');
       if (sParams) {
-        const sIds = sParams.split(',');
-        sIds.forEach(sid => {
+        sParams.split(',').forEach(sid => {
           const id = parseInt(sid);
-          if (!isNaN(id)) {
+          if (!isNaN(id) && selected.length < 5) {
             const icon = document.querySelector(`.spec-icon[data-spec="${id}"]`);
-            if (icon && !selectedSpecs.has(id)) {
-              selectedSpecs.add(id);
-              icon.classList.add('selected');
+            if (icon) {
+              selected.push(id);
               changed = true;
             }
           }
         });
+        renderSelectedComp();
       }
       return changed;
     }
 
     function writeUrlParams() {
       const sp = new URLSearchParams(window.location.search);
-      if (selectedSpecs.size > 0) {
-        sp.set('specs', Array.from(selectedSpecs).join(','));
+      if (selected.length > 0) {
+        sp.set('specs', selSortedKey().join(','));
         sp.delete('spec');
       } else {
         sp.delete('specs');
@@ -209,22 +236,76 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
       }
     });
 
+    // Clicking a grid icon TOGGLES the spec (adds it, or removes all its copies).
+    // A second copy for a duplicate-spec comp is added with the chip stepper below.
     specIcons.forEach(icon => {
       icon.addEventListener('click', (e) => {
-        const specId = parseInt(e.target.dataset.spec);
-        if (selectedSpecs.has(specId)) {
-          selectedSpecs.delete(specId);
-          e.target.classList.remove('selected');
+        const specId = parseInt(e.currentTarget.dataset.spec);
+        if (selCount(specId) > 0) {
+          selected = selected.filter(s => s !== specId);
         } else {
-          if (selectedSpecs.size < 5) {
-            selectedSpecs.add(specId);
-            e.target.classList.add('selected');
-          }
+          if (selected.length >= 5) return;
+          selected.push(specId);
         }
+        renderSelectedComp();
         writeUrlParams();
         updateSuggestions();
       });
     });
+
+    // Render the picked comp as one stepper chip per distinct spec (same -/xN/+
+    // control as the routes/VOD finders); the icon grid handles select/unselect.
+    function renderSelectedComp() {
+      specIcons.forEach(icon => {
+        icon.classList.toggle('selected', selCount(icon.dataset.spec) > 0);
+      });
+      if (!selectedCompRow) return;
+      const distinct = [];
+      selected.forEach(s => { if (!distinct.includes(s)) distinct.push(s); });
+      if (distinct.length === 0) {
+        selectedCompRow.innerHTML = '';
+        return;
+      }
+      const total = selected.length;
+      const frag = document.createDocumentFragment();
+      distinct.forEach(sid => {
+        const count = selCount(sid);
+        const info = specLookup[sid] || { icon: 'inv_misc_questionmark', name: 'Unknown' };
+        const chip = document.createElement('div');
+        chip.className = 'spec-count-chip';
+        chip.innerHTML =
+          `<img src="/data/icons/${info.icon}.jpg" alt="" class="spec-count-icon">` +
+          `<span class="spec-count-name">${info.name}</span>` +
+          `<span class="spec-count-steps">` +
+          `<button type="button" class="spec-count-step" data-dir="-1"${count <= 1 ? ' disabled' : ''} aria-label="One fewer">&minus;</button>` +
+          `<span class="spec-count-badge">&times;${count}</span>` +
+          `<button type="button" class="spec-count-step" data-dir="1"${total >= 5 ? ' disabled' : ''} aria-label="One more">+</button>` +
+          `</span>`;
+        chip.querySelectorAll('.spec-count-step').forEach(btn => {
+          btn.addEventListener('click', () => stepSelected(sid, Number(btn.getAttribute('data-dir'))));
+        });
+        frag.appendChild(chip);
+      });
+      selectedCompRow.innerHTML = '';
+      selectedCompRow.appendChild(frag);
+    }
+
+    // Stepper only adjusts multiplicity (1..5). Dropping the last copy is done by
+    // clicking the grid icon, so the minus button stops at 1.
+    function stepSelected(specId, dir) {
+      const s = Number(specId);
+      if (dir > 0) {
+        if (selected.length >= 5) return;
+        selected.push(s);
+      } else {
+        if (selCount(s) <= 1) return;
+        const idx = selected.lastIndexOf(s);
+        if (idx !== -1) selected.splice(idx, 1);
+      }
+      renderSelectedComp();
+      writeUrlParams();
+      updateSuggestions();
+    }
 
     const dungeonFilter = document.getElementById('dungeonFilter');
     dungeonFilter.addEventListener('change', () => {
@@ -235,7 +316,7 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
     function updateSuggestions() {
       renderBuffCoverage();
       const headerTitle = document.querySelector('.card-header h6');
-      if (selectedSpecs.size === 0) {
+      if (selected.length === 0) {
         suggestionsContainer.innerHTML = '<p class="text-sm text-secondary">Select 1 to 5 specs to see suggestions.</p>';
         if (headerTitle) headerTitle.innerText = 'The Perfect Fit';
         return;
@@ -243,11 +324,13 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
 
       const selectedDungeonId = dungeonFilter.value; // 'all' or dungeon ID as string
 
-      // Filter comps that contain all selected specs
-      // And also filter out comps that have 0 runs in the selected dungeon, if a specific dungeon is selected
-      const arr = Array.from(selectedSpecs);
+      // Keep comps that contain the selection as a SUB-MULTISET (a spec picked
+      // twice needs two copies in the comp), and drop comps with 0 runs in the
+      // selected dungeon when a specific dungeon is chosen.
+      const selCounts = countMapOf(selected);
       const possibleComps = compsData.filter(comp => {
-        if (!arr.every(s => comp.c.includes(s))) return false;
+        const compCounts = countMapOf(comp.c);
+        for (const [s, c] of selCounts) if ((compCounts.get(s) || 0) < c) return false;
 
         if (selectedDungeonId !== 'all') {
           const did = parseInt(selectedDungeonId);
@@ -267,12 +350,12 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
         possibleComps.sort((a, b) => b.w - a.w);
       }
 
-      if (selectedSpecs.size === 5) {
+      if (selected.length === 5) {
         if (headerTitle) headerTitle.innerText = 'Composition Analysis';
         if (possibleComps.length === 0) {
           // No aggregate stats for this exact team, but routes may still exist.
           suggestionsContainer.innerHTML = '<div class="alert alert-secondary text-sm"><i class="material-symbols-rounded align-middle me-2">info</i>We don\'t have enough top-tier data matching this exact 5-man team.</div>'
-            + routesLinkHtml(Array.from(selectedSpecs), false);
+            + routesLinkHtml(selSortedKey(), false);
         } else {
           const comp = possibleComps[0];
 
@@ -363,19 +446,21 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
         }
 
         if (compWt > 0) {
-          comp.c.forEach(s => {
-            if (!selectedSpecs.has(s)) {
-              if (!specStats[s]) {
-                specStats[s] = { t: 0, d: 0, mk: 0, w: 0 };
-              }
-              specStats[s].t += compT;
-              specStats[s].d += compD;
-              specStats[s].w += compWt;
-              if (compMK > specStats[s].mk) {
-                specStats[s].mk = compMK;
-              }
+          // Suggest each distinct spec the comp still has headroom for: a spec
+          // already picked once is still suggestable if the comp uses it twice.
+          const compCounts = countMapOf(comp.c);
+          for (const [s, cCount] of compCounts) {
+            if (selCount(s) >= cCount) continue;
+            if (!specStats[s]) {
+              specStats[s] = { t: 0, d: 0, mk: 0, w: 0 };
             }
-          });
+            specStats[s].t += compT;
+            specStats[s].d += compD;
+            specStats[s].w += compWt;
+            if (compMK > specStats[s].mk) {
+              specStats[s].mk = compMK;
+            }
+          }
         }
       });
 
@@ -384,7 +469,7 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
         .slice(0, 10);
 
       // Suggestions that complete the meta comp (only when still on its path)
-      const metaPath = onMetaPath(selectedSpecs);
+      const metaPath = onMetaPath(selected);
 
       let html = '<div class="w-100"><ul class="list-group mb-0">';
       sortedSuggestions.forEach(([specId, stats]) => {
@@ -394,7 +479,7 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
         const isMetaSpec = metaPath && META_COMP_SPECS.includes(Number(specId));
 
         // Buffs this suggestion would newly bring to the current group.
-        const buffGains = buffGainForSpec(specId, selectedSpecs);
+        const buffGains = buffGainForSpec(specId, selected);
         const buffGainBadges = buffGains.map(b => {
           const critical = CRITICAL_BUFF_IDS.has(b.id);
           return `<span class="buff-gain-badge${critical ? ' buff-gain-badge--critical' : ''}" title="Adds ${b.name}">+${b.name}</span>`;
@@ -428,21 +513,16 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
     }
 
     function addSuggestedSpec(specId) {
-      if (selectedSpecs.has(specId)) return;
-      if (selectedSpecs.size >= 5) return;
-
-      const icon = document.querySelector(`.spec-icon[data-spec="${specId}"]`);
-      if (icon) {
-        selectedSpecs.add(specId);
-        icon.classList.add('selected');
-        writeUrlParams();
-        updateSuggestions();
-      }
+      if (selected.length >= 5) return;
+      selected.push(Number(specId));
+      renderSelectedComp();
+      writeUrlParams();
+      updateSuggestions();
     }
 
     function clearSelection() {
-      selectedSpecs.clear();
-      specIcons.forEach(icon => icon.classList.remove('selected'));
+      selected = [];
+      renderSelectedComp();
       writeUrlParams();
       updateSuggestions();
     }

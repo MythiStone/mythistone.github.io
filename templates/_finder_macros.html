@@ -70,7 +70,7 @@
 
 {#- Class-grouped spec picker. Reused for the team-comp filter (id specSelect,
     capped at 5) and the VOD POV filter (id povSpecSelect, uncapped). -#}
-{% macro spec_filter(specs, class_lookup, id='specSelect', label='Specs (pick 1–5)', title='Select Spec(s)…', max_options=5, col='col-12 col-lg-6') %}
+{% macro spec_filter(specs, class_lookup, id='specSelect', label='Specs (pick 1–5)', title='Select Spec(s)…', max_options=5, col='col-12 col-lg-6', multiset=false) %}
 <div class="{{ col }}">
   <label class="form-label">{{ label }}</label>
   <select id="{{ id }}" class="selectpicker form-control" data-style="btn-outline-primary"
@@ -88,6 +88,9 @@
     {% endif %}
     {% endfor %}
   </select>
+  {#- Multiset stepper row: finder.js fills it with one chip per picked spec so a
+      comp can require the same spec twice (a slot the selectpicker cannot express). -#}
+  {% if multiset %}<div id="{{ id }}Counts" class="spec-count-row"></div>{% endif %}
 </div>
 {% endmacro %}
 

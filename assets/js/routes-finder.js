@@ -153,7 +153,7 @@
     relaxFilterId: "specSelect",
     filters: [
       { id: "dungeonSelect", param: "dungeons", field: "dungeon", mode: "anyOf" },
-      { id: "specSelect", param: "specs", field: "specs", mode: "allRelax", priorityByRole: true, label: specLabel },
+      { id: "specSelect", param: "specs", field: "specs", mode: "allRelax", priorityByRole: true, multiset: true, max: 5, label: specLabel },
       { id: "spellSelect", param: "spells", field: "spells", mode: "anyOf", expand: expandLust },
       { id: "npcIncludeSelect", param: "npcInclude", field: "npcs", mode: "anyOf" },
       { id: "npcExcludeSelect", param: "npcExclude", field: "npcs", mode: "noneOf" },
