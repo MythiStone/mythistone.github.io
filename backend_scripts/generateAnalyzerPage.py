@@ -13,9 +13,8 @@ import json
 import shutil
 import argparse
 from datetime import datetime, timezone
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import databaseConnector
-from pageGeneration import generateSpecNav, generateDungeonNav, build_global_trends
+from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, build_global_trends
 from commonUtils import (
     LOOKUP_DIR,
     load_json,
@@ -241,10 +240,7 @@ def main(template_path, output_dir):
     write_bonus_quality_map()
     write_talent_trees()
 
-    env = Environment(
-        loader=FileSystemLoader(os.path.dirname(template_path) or TEMPLATE_PATH),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = make_jinja_env(os.path.dirname(template_path) or TEMPLATE_PATH)
     template = env.get_template(os.path.basename(template_path))
     output_html = template.render(
         trends=build_global_trends(),

@@ -1,12 +1,11 @@
 import os
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import databaseConnector
 from datetime import datetime, timezone
 import argparse
 from tierMath import build_buff_tiers, build_ckmeans_tiers, build_spec_tiers
 from contextlib import closing
 from pageGeneration import (
-    generateSpecNav,
+    generateSpecNav, make_jinja_env,
     ROLE_FOLDERS,
     generateDungeonNav,
     build_trends,
@@ -36,10 +35,7 @@ def main(template_path, output_dir):
     # local import: keeps matplotlib/PIL out of the import path until actually rendering
     from image_generation.spec_popularity_performance import create_spec_popularity_vs_performance_img
     print("Generating index page...")
-    env = Environment(
-        loader=FileSystemLoader(os.path.dirname(template_path)),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = make_jinja_env(os.path.dirname(template_path))
     env.filters["humanize"] = humanize_number
     env.filters["duration"] = format_duration
     env.filters["format_ts"] = format_utc_timestamp

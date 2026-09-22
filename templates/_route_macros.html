@@ -55,7 +55,7 @@
               <i class="material-symbols-rounded text-primary" style="font-size:16px;line-height:1;">smart_display</i>
               {% for pov_sid in videos|map(attribute='pov_spec')|reject('none')|unique %}
               {% set pov = spec_lookup[pov_sid|string] %}
-              {% if pov %}<img src="/data/icons/{{ pov.SpellIconFileId }}.jpg" alt="{{ pov.name }}" title="{{ pov.name }} POV" style="width:16px;height:16px;object-fit:cover;border-radius:3px;">{% endif %}
+              {% if pov %}<img src="/data/icons/{{ pov.SpellIconFileId }}.jpg" alt="{{ pov.name }}" title="{{ pov.name }} POV" style="width:16px;height:16px;object-fit:cover;border-radius:3px;">{% endif +%}
               {% endfor %}
             </span>
             {% endif %}

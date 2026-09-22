@@ -9,12 +9,11 @@ from contextlib import closing
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import databaseConnector
 import commonUtils
 from pageGeneration import (
-    generateSpecNav, generateDungeonNav, build_item_slug_map, build_source_lookups,
+    generateSpecNav, make_jinja_env, generateDungeonNav, build_item_slug_map, build_source_lookups,
     build_trends, trend_feeds_for_items, trend_feeds_for_item, BROWSE_SSR_PAGE_SIZE,
 )
 from generateSpecPages import (
@@ -1261,10 +1260,7 @@ def main(template_path, output_dir, items_dir="items", debug=False, target_item=
         by_slot[m["slotKey"]].append(m)
 
     # ---- render templates ----------------------------------------------
-    env = Environment(
-        loader=FileSystemLoader(os.path.dirname(template_path)),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = make_jinja_env(os.path.dirname(template_path))
     spec_nav = generateSpecNav(spec_lookup, class_lookup)
     dungeon_nav = generateDungeonNav(dungeon_lookup)
 

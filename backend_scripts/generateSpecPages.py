@@ -2,7 +2,6 @@ import os
 import json
 import argparse
 import traceback
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import databaseConnector
 import compArchetypes
 import aggregateData
@@ -14,7 +13,7 @@ import re
 from urllib.parse import quote_plus
 from pageGeneration import (
     ROLE_FOLDERS,
-    generateSpecNav,
+    generateSpecNav, make_jinja_env,
     generateDungeonNav,
     build_item_slug_map,
     build_consumable_slug_map,
@@ -2154,11 +2153,7 @@ def main(template_path, output_dir, debug=False, spec=None):
     # modules that only need this file's helpers
     from image_generation.spec_overview import createSpecOverviewImg
     # Prepare Jinja2 environment
-    env = Environment(
-        loader=FileSystemLoader(os.path.dirname(template_path)),
-        autoescape=select_autoescape(["html", "xml"]),
-        extensions=["jinja2.ext.loopcontrols"],
-    )
+    env = make_jinja_env(os.path.dirname(template_path), extensions=["jinja2.ext.loopcontrols"])
     env.filters["humanize"] = humanize_number
     env.filters["duration"] = format_duration
     env.filters["format_ts"] = format_utc_timestamp

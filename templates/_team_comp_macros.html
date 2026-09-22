@@ -17,7 +17,7 @@
       <img src="/data/icons/{{ slot.top_alt.icon }}.jpg" class="arch-alt-icon"
         style="border-bottom: 2px solid {{ slot.top_alt.color }}"
         title="{{ slot.top_alt.name }} ({{ slot.top_alt.pct }}%)">
-      {% if slot.more %}<span class="arch-more">+{{ slot.more }}</span>{% endif %}
+      {% if slot.more %}<span class="arch-more">+{{ slot.more }}</span>{% endif +%}
       {% endif %}
     </div>
     {% if slot.alts %}

@@ -2,9 +2,8 @@ import os
 import re
 import json
 import argparse
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from datetime import datetime, timezone
-from pageGeneration import generateSpecNav, generateDungeonNav, ROLE_FOLDERS
+from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, ROLE_FOLDERS
 from generateSpecPages import (
     LOOKUP_DIR,
     humanize_number,
@@ -192,10 +191,7 @@ def main():
     )
     args = parser.parse_args()
 
-    env = Environment(
-        loader=FileSystemLoader(TEMPLATE_PATH),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = make_jinja_env(TEMPLATE_PATH)
     env.filters["humanize"] = humanize_number
     env.filters["duration"] = format_duration
     env.filters["format_ts"] = format_utc_timestamp

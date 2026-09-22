@@ -5,10 +5,9 @@ import argparse
 import math
 from datetime import datetime, timezone
 from contextlib import closing
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import databaseConnector
 from compArchetypes import build_dungeon_archetypes
-from pageGeneration import generateSpecNav, generateDungeonNav, build_trends, trend_feeds_for_comps
+from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, build_trends, trend_feeds_for_comps
 from generateSpecPages import LOOKUP_DIR, load_json, load_season_info
 from image_generation.comp_overview import createCompOverviewImg
 
@@ -577,10 +576,7 @@ def main(template_path, output_dir):
         specs_ui_map = {s['id']: s for s in specs_ui}
             
         print("Rendering template...")
-        env = Environment(
-            loader=FileSystemLoader(os.path.dirname(template_path)),
-            autoescape=select_autoescape(["html", "xml"]),
-        )
+        env = make_jinja_env(os.path.dirname(template_path))
         
         template = env.get_template(os.path.basename(template_path))
         # Cache-buster for the per-page comps.js/inline JSON (matches the other pages).

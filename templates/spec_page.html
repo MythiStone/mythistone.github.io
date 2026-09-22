@@ -18,7 +18,7 @@
 {# Shown at the top of a per-hero-tree section that fell back to combined data
    because the tree had too few runs for its own breakdown. #}
 {% macro hero_fallback_note(sec) -%}
-{% if sec.fallback %}<p class="text-sm mb-2 d-inline-flex align-items-center gap-1" style="color: var(--bs-info-text-emphasis);"><i class="material-symbols-rounded" style="font-size: 1.1rem;">info</i><span>This hero tree doesn't have enough data on its own yet. The numbers below cover all builds combined.</span></p>{% endif %}
+{% if sec.fallback %}<p class="text-sm mb-2 d-inline-flex align-items-center gap-1" style="color: var(--bs-info-text-emphasis);"><i class="material-symbols-rounded" style="font-size: 1.1rem;">info</i><span>This hero tree doesn't have enough data on its own yet. The numbers below cover all builds combined.</span></p>{% endif +%}
 {%- endmacro %}
 {% macro render_slot(entry, slot_count=0, is_button=false, slug="") -%}
 {# choose tag and base classes #}
@@ -53,7 +53,7 @@
       <img src="/data/icons/{{ item_lookup[entry.id].icon }}.png"
         class="item-icon-img" />
     </a>
-    {% if entry.is_bis %}<span class="badge bis-badge item-icon-top-badge" data-bs-toggle="tooltip" data-bs-container="body" title="Used by {{ '%.0f' % (entry.bis_pct) if entry.bis_pct else 'N/A' }}% of the top 50 {{ spec.name }} {{ class_info.name }} players according to Raider.io verified Loadouts.">TOP</span>{% endif %}
+    {% if entry.is_bis %}<span class="badge bis-badge item-icon-top-badge" data-bs-toggle="tooltip" data-bs-container="body" title="Used by {{ '%.0f' % (entry.bis_pct) if entry.bis_pct else 'N/A' }}% of the top 50 {{ spec.name }} {{ class_info.name }} players according to Raider.io verified Loadouts.">TOP</span>{% endif +%}
     {% if entry.is_simc_bis %}<span class="badge simc-badge item-icon-sim-badge" data-bs-toggle="tooltip" data-bs-container="body" title="Best item for this slot according to SimulationCraft{% if entry.simc_dps_pct is not none and entry.simc_dps_pct >= 0.05 %} (+{{ '%.1f' % entry.simc_dps_pct }}% DPS over the most-equipped item){% endif %}.">SIM</span>{% endif %}
   </div>
   <!-- Name & secondary icons -->
@@ -225,7 +225,7 @@
       <div class="stat-chip-name" style="color: var(--stat-{{ stat|lower }}, var(--bs-emphasis-color));">{{ label }}</div>
       <div class="stat-chip-value text-body-emphasis small">
         {% if pct is not none %}
-          {% if pct > 0 and pct < 1 %}&lt;1%{% else %}{{ '%.1f' % pct }}%{% endif %}
+          {% if pct > 0 and pct < 1 %}&lt;1%{% else %}{{ '%.1f' % pct }}%{% endif +%}
         {% else %}
           {{ s.avg_raw | humanize }}
         {% endif %}
@@ -266,7 +266,7 @@
     <div class="tt-icon-container {% if n.type == 'tiered' %}tt-choice-wrapper{% endif %}" style="position: relative; display: inline-flex;">
       {% if n.type == 'tiered' %}<span style="cursor:default;">{% else %}<a href="https://www.wowhead.com/spell={{n.spellId}}" target="_blank">{% endif %}
         <img src="/data/icons/{{n.icon}}.png" alt="Icon" width="32" height="32" style="border-radius: {% if n.type == 'passive' or n.type == 'tiered' %}50%{% else %}10%{% endif %}; border: 1px solid #ffb000; filter: grayscale({{ 100 - n.pct_val }}%);" onerror="this.src='/data/icons/inv_misc_questionmark.png'">
-      {% if n.type == 'tiered' %}</span>{% else %}</a>{% endif %}
+      {% if n.type == 'tiered' %}</span>{% else %}</a>{% endif +%}
       {% if n.type == 'tiered' %}
       <div class="tt-custom-tooltip" style="display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #111; border: 1px solid #444; border-radius: 6px; padding: 8px; white-space: nowrap; z-index: 1050; box-shadow: 0 4px 10px rgba(0,0,0,0.5); flex-direction: column; gap: 5px;">
         {% set rank_counter = namespace(value=0) %}
@@ -292,8 +292,8 @@
       {% endif %}
     </div>
   {% endif %}
-  {% if n.is_top %}<div class="tt-top-badge" data-bs-toggle="tooltip" title="{% if n.top_choice_name %}Top 50 {{ spec.name }} {{ class_info.name }} players pick {{ n.top_choice_name }}: {{ '{:.0f}'.format(n.top_pct_val) }}% vs {{ '{:.0f}'.format(n.top_choice_pct_val) }}% of the general population.{% else %}Used by {{ '{:.0f}'.format(n.top_pct_val) }}% of the top 50 {{ spec.name }} {{ class_info.name }} players vs {{ '{:.0f}'.format(n.pct_val) }}% of the general population.{% endif %}">TOP</div>{% endif %}
-  {% if not n.isFreeNode %}<div class="tt-badge" style="position: absolute; left: auto; bottom: -8px; right: -8px; transform: none; white-space: nowrap; background: var(--mythi-overlay-bg); color: var(--mythi-overlay-color); font-size: 10px; padding: 1px 4px; border-radius: 4px; border: 1px solid {{ pct_color(n.pct_val) }}; z-index: 5;" title="{{ '{:.1f}'.format(n.pct_val) }}%">{{n.pct_val | round | int}}%</div>{% endif %}
+  {% if n.is_top %}<div class="tt-top-badge" data-bs-toggle="tooltip" title="{% if n.top_choice_name %}Top 50 {{ spec.name }} {{ class_info.name }} players pick {{ n.top_choice_name }}: {{ '{:.0f}'.format(n.top_pct_val) }}% vs {{ '{:.0f}'.format(n.top_choice_pct_val) }}% of the general population.{% else %}Used by {{ '{:.0f}'.format(n.top_pct_val) }}% of the top 50 {{ spec.name }} {{ class_info.name }} players vs {{ '{:.0f}'.format(n.pct_val) }}% of the general population.{% endif %}">TOP</div>{% endif +%}
+  {% if not n.isFreeNode %}<div class="tt-badge" style="position: absolute; left: auto; bottom: -8px; right: -8px; transform: none; white-space: nowrap; background: var(--mythi-overlay-bg); color: var(--mythi-overlay-color); font-size: 10px; padding: 1px 4px; border-radius: 4px; border: 1px solid {{ pct_color(n.pct_val) }}; z-index: 5;" title="{{ '{:.1f}'.format(n.pct_val) }}%">{{n.pct_val | round | int}}%</div>{% endif +%}
   {% if n.maxRanks > 1 %}
     <div class="tt-maxrank" style="position: absolute; top: -6px; right: -6px; background: var(--mythi-surface-raised); border: 1px solid var(--mythi-border-strong); color: var(--bs-emphasis-color); font-size: 10px; padding: 0px 3px; border-radius: 3px; z-index: 5; cursor: default;" title="Average points spent: {{ n.avgRank | round(2) }}/{{ n.maxRanks }}">
       {{ n.avgRank | round | int }}
@@ -437,9 +437,9 @@
             "@type": "SiteNavigationElement",
             "name": "{{ nav.name | e }}",
             "url": "{{ nav.url }}"
-          }{% if not loop.last %},{% endif %}
+          }{% if not loop.last %},{% endif +%}
           {% endfor %}
-          {% if not loop.last %},{% endif %}
+          {% if not loop.last %},{% endif +%}
           {% endfor %}
       ]
     }
@@ -2597,7 +2597,7 @@
             The two large icons in the middle are the <strong>hero trees</strong>, the spec's big talent-branch choice.
             {% if default_ht and default_ht.name %}Most players build into <strong>{{ default_ht.name }}</strong>{% if
             hero_variants | length > 1 and default_ht.pct %} ({{ default_ht.pct | round | int }}%){% endif %}{% if
-            hero_variants | length > 1 %}, and you can click the hero icon to view the other branch{% endif %}.{% endif %}
+            hero_variants | length > 1 %}, and you can click the hero icon to view the other branch{% endif %}.{% endif +%}
             {% if top_hero_tree_name %} The top&nbsp;50 ranked players most often prefer
             <strong>{{ top_hero_tree_name }}</strong>{% if top_hero_tree_pct %} ({{ '{:.0f}'.format(top_hero_tree_pct)
             }}%){% endif %}, which can differ from the wider field's favourite.{% endif %}

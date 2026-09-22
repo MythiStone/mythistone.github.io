@@ -2,13 +2,12 @@ import os
 import sys
 import json
 import argparse
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from collections import defaultdict
 from datetime import datetime, timezone
 
 # project imports (adjust paths if necessary)
 from pageGeneration import (
-    generateSpecNav,
+    generateSpecNav, make_jinja_env,
     generateDungeonNav,
     build_global_trends,
     rank_run_entries,
@@ -45,10 +44,7 @@ def main(template_path, output_dir, limit):
         )
 
     # jinja env
-    env = Environment(
-        loader=FileSystemLoader(os.path.dirname(template_path)),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = make_jinja_env(os.path.dirname(template_path))
     env.filters["humanize"] = humanize_number
     env.filters["duration"] = format_duration
     env.filters["format_ts"] = format_utc_timestamp

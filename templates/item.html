@@ -39,8 +39,8 @@
   title="{{ s.name if s else 'Spec ' ~ r.spec_id }}{% if s %} {{ s.className }}{% endif %}{% if r.is_sim %} · SimulationCraft best-in-slot{% if r.simc_dps_pct is not none and r.simc_dps_pct >= 0.05 %} (+{{ '%.1f'|format(r.simc_dps_pct) }}% DPS){% endif %}{% endif %}{% if r.is_top %} · Used by {{ r.top_pct }}% of top players{% endif %}">
   <img class="spec-icon" src="{{ spec_icon(r.spec_id) }}" alt="">
   <span class="rec-chip-name">{{ s.name if s else "Spec " ~ r.spec_id }}</span>
-  {% if r.is_sim %}<span class="badge rec-badge rec-badge-sim">SIM</span>{% endif %}
-  {% if r.is_top %}<span class="badge rec-badge rec-badge-top">TOP{% if r.top_pct is not none %} {{ r.top_pct|round|int }}%{% endif %}</span>{% endif %}
+  {% if r.is_sim %}<span class="badge rec-badge rec-badge-sim">SIM</span>{% endif +%}
+  {% if r.is_top %}<span class="badge rec-badge rec-badge-top">TOP{% if r.top_pct is not none %} {{ r.top_pct|round|int }}%{% endif %}</span>{% endif +%}
 </a>
 {% endmacro %}
 
@@ -65,8 +65,8 @@
   <div class="spec-card-meta">
     <div class="spec-card-name"{% if spec and spec.color %} style="color: {{ spec.color }}"{% endif %}>{{ spec.name if spec else "Spec " ~ s.spec_id }}</div>
     <div class="spec-card-sub d-flex align-items-center gap-1">
-      {% if s.adoption is not none %}<span>{{ s.adoption }}%</span>{% endif %}
-      {% if s.is_sim %}<span class="rec-badge rec-badge-sim">SIM</span>{% endif %}
+      {% if s.adoption is not none %}<span>{{ s.adoption }}%</span>{% endif +%}
+      {% if s.is_sim %}<span class="rec-badge rec-badge-sim">SIM</span>{% endif +%}
       {% if s.is_top %}<span class="rec-badge rec-badge-top">TOP</span>{% endif %}
     </div>
   </div>
@@ -80,7 +80,7 @@
   data-content="<span class='dropdown-icon-item'><img src='{{ spec_icon(s.spec_id) }}' class='dropdown-icon' alt=''><span class='dropdown-icon-label'>{{ spec.name if spec else 'Spec ' ~ s.spec_id }}{% if spec and spec.className %} <small{% if spec.color %} style='color:{{ spec.color }}'{% endif %}>{{ spec.className }}</small>{% endif %}</span>{% if s.adoption is not none %}<small class='spec-opt-pct'>{{ s.adoption }}%</small>{% endif %}</span>">{{ spec.name if spec else "Spec " ~ s.spec_id }}{% if spec and spec.className %} {{ spec.className }}{% endif %}{% if s.adoption is not none %} · {{ s.adoption }}%{% endif %}</option>{% endmacro %}
 
 {# One option row for an enhancement / gem DataTable. Mirrors optRow() in item.js. #}
-{% macro opt_name_class(o, kind) %}{% if kind == 'enchant' %}enchant-name{% elif o.quality is not none %}item-quality-{{ o.quality }}{% endif %}{% endmacro %}
+{% macro opt_name_class(o, kind) %}{% if kind == 'enchant' %}enchant-name{% elif o.quality is not none %}item-quality-{{ o.quality }}{% endif %}{% endmacro +%}
 {% macro opt_row(o, kind) %}
 <tr>
   <td>
@@ -235,7 +235,7 @@
                 </p>
                 {% endif %}
                 <div id="item-stats" class="d-flex flex-wrap gap-1">
-                  {% for s in item.stats %}<span class="badge stat-{{ s.type }}">{{ s.type }}</span>{% endfor %}
+                  {% for s in item.stats %}<span class="badge stat-{{ s.type }}">{{ s.type }}</span>{% endfor +%}
                   {% for s in item.sockets %}<span class="badge bg-secondary">◆ Socket</span>{% endfor %}
                 </div>
                 <div id="item-scope-note" class="text-xs opacity-7 mt-1"></div>
@@ -358,11 +358,11 @@
                 data-width="100%" data-sanitize="false" aria-label="Select spec">
                 <option value="">All specs</option>
                 {% if sim_specs or top_specs %}
-                {% if top_specs %}<optgroup label="Top players' pick">{% for s in top_specs %}{{ spec_select_option(s) }}{% endfor %}</optgroup>{% endif %}
-                {% if sim_specs %}<optgroup label="SimulationCraft best-in-slot">{% for s in sim_specs %}{{ spec_select_option(s) }}{% endfor %}</optgroup>{% endif %}
-                {% if other_specs %}<optgroup label="By adoption">{% for s in other_specs %}{{ spec_select_option(s) }}{% endfor %}</optgroup>{% endif %}
+                {% if top_specs %}<optgroup label="Top players' pick">{% for s in top_specs %}{{ spec_select_option(s) }}{% endfor %}</optgroup>{% endif +%}
+                {% if sim_specs %}<optgroup label="SimulationCraft best-in-slot">{% for s in sim_specs %}{{ spec_select_option(s) }}{% endfor %}</optgroup>{% endif +%}
+                {% if other_specs %}<optgroup label="By adoption">{% for s in other_specs %}{{ spec_select_option(s) }}{% endfor %}</optgroup>{% endif +%}
                 {% else %}
-                {% for s in item.spec_overview %}{{ spec_select_option(s) }}{% endfor %}
+                {% for s in item.spec_overview %}{{ spec_select_option(s) }}{% endfor +%}
                 {% endif %}
               </select>
             </div>
@@ -478,10 +478,10 @@
                 <div class="mb-2 pb-2 border-bottom border-secondary">
                   <div class="d-flex justify-content-between">
                     <div>
-                      {% for t in v.tags %}<span class="tier-badge {{ tier_class(t) | trim }} variant-tag">{{ t }}</span>{% endfor %}
-                      {% if v.ilvl %}<span class="tier-badge tier-ilvl variant-tag">ilvl {{ v.ilvl }}</span>{% endif %}
-                      {% if v.sockets %}<span class="badge bg-secondary variant-tag">+{{ v.sockets }} socket{{ "s" if v.sockets > 1 else "" }}</span>{% endif %}
-                      {% for cs in v.crafted_stats %}<span class="badge stat-{{ cs }} variant-tag">{{ cs }}</span>{% endfor %}
+                      {% for t in v.tags %}<span class="tier-badge {{ tier_class(t) | trim }} variant-tag">{{ t }}</span>{% endfor +%}
+                      {% if v.ilvl %}<span class="tier-badge tier-ilvl variant-tag">ilvl {{ v.ilvl }}</span>{% endif +%}
+                      {% if v.sockets %}<span class="badge bg-secondary variant-tag">+{{ v.sockets }} socket{{ "s" if v.sockets > 1 else "" }}</span>{% endif +%}
+                      {% for cs in v.crafted_stats %}<span class="badge stat-{{ cs }} variant-tag">{{ cs }}</span>{% endfor +%}
                       {% if not v.tags and not v.ilvl and not v.sockets and not v.crafted_stats %}<span class="tier-badge tier-standard variant-tag">Standard</span>{% endif %}
                     </div>
                     <span class="usage-label">{{ v.pct }}% · {{ "{:,}".format(v.runs) }}</span>

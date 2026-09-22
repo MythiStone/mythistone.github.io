@@ -32,12 +32,11 @@ from contextlib import closing
 from collections import defaultdict
 from datetime import datetime, timezone
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import databaseConnector
 import commonUtils
 from pageGeneration import (
-    generateSpecNav, generateDungeonNav, build_consumable_slug_map,
+    generateSpecNav, make_jinja_env, generateDungeonNav, build_consumable_slug_map,
     build_trends, trend_feeds_for_consumables, trend_feeds_for_consumable,
     BROWSE_SSR_PAGE_SIZE,
 )
@@ -388,10 +387,7 @@ def main(template_path, output_dir, consumables_dir="consumables", debug=False,
     for m in manifest:
         by_category[m["category"]].append(m)
 
-    env = Environment(
-        loader=FileSystemLoader(os.path.dirname(template_path)),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = make_jinja_env(os.path.dirname(template_path))
     spec_nav = generateSpecNav(spec_lookup, class_lookup)
     dungeon_nav = generateDungeonNav(dungeon_lookup)
 

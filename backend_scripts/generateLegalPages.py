@@ -1,10 +1,9 @@
 import os
 import json
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from collections import OrderedDict, defaultdict
 from datetime import datetime, timezone
 import argparse
-from pageGeneration import generateSpecNav, generateDungeonNav
+from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav
 from generateSpecPages import (
     LOOKUP_DIR,
     humanize_number,
@@ -45,10 +44,7 @@ LEGAL_PAGES = {
 
 
 def main():
-    env = Environment(
-        loader=FileSystemLoader(TEMPLATE_PATH),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = make_jinja_env(TEMPLATE_PATH)
     env.filters["humanize"] = humanize_number
     env.filters["duration"] = format_duration
     env.filters["format_ts"] = format_utc_timestamp

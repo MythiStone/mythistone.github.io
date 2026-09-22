@@ -1,13 +1,12 @@
 import os
 import json
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from collections import OrderedDict, defaultdict
 from datetime import datetime, timezone
 from contextlib import closing
 import argparse
 import databaseConnector
 from collections import defaultdict, Counter
-from pageGeneration import generateSpecNav, generateDungeonNav, build_global_trends
+from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, build_global_trends
 from generateSpecPages import (
     LOOKUP_DIR,
     humanize_number,
@@ -880,10 +879,7 @@ def main(template_path, output_dir):
 
     from image_generation.dungeon_popularity_ease import create_dungeon_popularity_vs_ease_img
     print("Generating Dashboard page...")
-    env = Environment(
-        loader=FileSystemLoader(os.path.dirname(template_path)),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = make_jinja_env(os.path.dirname(template_path))
     env.filters["humanize"] = humanize_number
     env.filters["duration"] = format_duration
     env.filters["format_ts"] = format_utc_timestamp

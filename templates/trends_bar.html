@@ -82,7 +82,7 @@
              dungeon lusted pull, a boxed [portrait | count x name] table — else a
              plain-text title tooltip. Captured as one attr string; a block set is
              already-safe under autoescape so it isn't re-escaped here. #}
-          {% set tip_attrs %}{% if t.tooltip_html %}data-bs-toggle="tooltip" data-bs-html="true" data-bs-container="body" data-bs-custom-class="trends-pull-tooltip" data-bs-title="{{ t.tooltip_html }}"{% else %}title="{{ t.tooltip or t.label }}"{% endif %}{% endset %}
+          {% set tip_attrs %}{% if t.tooltip_html %}data-bs-toggle="tooltip" data-bs-html="true" data-bs-container="body" data-bs-custom-class="trends-pull-tooltip" data-bs-title="{{ t.tooltip_html }}"{% else %}title="{{ t.tooltip or t.label }}"{% endif %}{% endset +%}
           {% if t.href %}
           <a class="trends-item {{ t.css or '' }}" href="{{ t.href }}" {{ tip_attrs }}{% if t.wowhead %} data-wowhead="{{ t.wowhead }}"{% endif %}{% if t.href.startswith('http') %} target="_blank" rel="noopener"{% endif %}>{{ inner }}</a>
           {% else %}

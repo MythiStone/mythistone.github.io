@@ -6,12 +6,11 @@ import argparse
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import databaseConnector
 import commonUtils
 import compArchetypes
 from pageGeneration import (
-    generateSpecNav,
+    generateSpecNav, make_jinja_env,
     generateDungeonNav,
     build_item_slug_map,
     ROLE_FOLDERS,
@@ -227,10 +226,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
     spec_nav = generateSpecNav(spec_lookup, class_lookup)
     dungeon_nav = generateDungeonNav(dungeon_lookup)
 
-    env = Environment(
-        loader=FileSystemLoader(os.path.dirname(template_path)),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = make_jinja_env(os.path.dirname(template_path))
     env.filters["duration"] = format_duration
     env.filters["format_ts"] = format_utc_timestamp
     env.filters["iso_ts"] = format_iso_timestamp

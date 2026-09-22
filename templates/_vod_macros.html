@@ -45,7 +45,7 @@
             <span class="{{ badge_cls }} text-success">+{{ vod.highest_key }}</span>
             {% if pov or vod.pov_character_name %}
             <span class="{{ badge_cls }} text-white" data-bs-toggle="tooltip" title="POV: {{ vod.pov_character_name if vod.pov_character_name else (pov.name if pov else '') }}">
-              {% if pov %}<img src="/data/icons/{{ pov.SpellIconFileId }}.jpg" alt="{{ pov.name }}" title="{{ pov.name }} POV" style="width:16px;height:16px;object-fit:cover;border-radius:3px;">{% endif %}
+              {% if pov %}<img src="/data/icons/{{ pov.SpellIconFileId }}.jpg" alt="{{ pov.name }}" title="{{ pov.name }} POV" style="width:16px;height:16px;object-fit:cover;border-radius:3px;">{% endif +%}
               {% if vod.pov_character_name %}<span class="rt-name">{{ vod.pov_character_name }}</span>{% endif %}
             </span>
             {% endif %}

@@ -92,7 +92,7 @@
             "@type": "SiteNavigationElement",
             "name": "{{ nav.name | e }}",
             "url": "{{ nav.url }}"
-          }{% if not loop.last %},{% endif %}
+          }{% if not loop.last %},{% endif +%}
           {% endfor %}
         ]
       }

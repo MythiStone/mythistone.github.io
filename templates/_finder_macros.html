@@ -90,7 +90,7 @@
   </select>
   {#- Multiset stepper row: finder.js fills it with one chip per picked spec so a
       comp can require the same spec twice (a slot the selectpicker cannot express). -#}
-  {% if multiset %}<div id="{{ id }}Counts" class="spec-count-row"></div>{% endif %}
+  {% if multiset %}<div id="{{ id }}Counts" class="spec-count-row"></div>{% endif +%}
 </div>
 {% endmacro %}
 

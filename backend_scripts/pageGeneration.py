@@ -3,7 +3,25 @@ import json
 import os
 import re
 
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
 import databaseConnector
+
+def make_jinja_env(template_dir, extensions=None):
+    """Shared Environment for every page generator.
+
+    trim_blocks/lstrip_blocks keep block tags from leaving blank lines and stray
+    indentation in the output. A block tag now eats the newline after it, so inline
+    text that continues after a tag needs an explicit space.
+    """
+    return Environment(
+        loader=FileSystemLoader(template_dir),
+        autoescape=select_autoescape(["html", "xml"]),
+        trim_blocks=True,
+        lstrip_blocks=True,
+        extensions=extensions or [],
+    )
+
 
 ROLE_FOLDERS = {
     "0": "Tank",

@@ -27,10 +27,9 @@ import json
 import argparse
 import tempfile
 from datetime import datetime, timedelta, timezone
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import databaseConnector
 from pageGeneration import (
-    generateSpecNav, generateDungeonNav, build_trends,
+    generateSpecNav, make_jinja_env, generateDungeonNav, build_trends,
 )
 from image_generation.tierlist_preview import PREVIEW_URL, PREVIEW_TARGETS, generate_preview_image
 
@@ -495,10 +494,7 @@ def main(template_path, output_dir, sim_results_dir, debug=False):
         )
     )
 
-    env = Environment(
-        loader=FileSystemLoader(os.path.dirname(template_path)),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = make_jinja_env(os.path.dirname(template_path))
     template = env.get_template(os.path.basename(template_path))
     output_html = template.render(
         trends=build_sim_trends(season_info, tabs, spec_lookup, class_lookup),
