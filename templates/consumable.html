@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{# ----- helpers -------------------------------------------------------- #}
+{% macro spec_icon(spec_id) %}{% set s = specs_map[spec_id|string] %}{% if s and s.icon %}/data/icons/{{ s.icon }}.jpg{% else %}/data/icons/inv_misc_questionmark.png{% endif %}{% endmacro %}
+
+{# One horizontal usage row: spec icon · name · bar · count. bar_pct is the spec's
+   share within this consumable's category (clamped to a visible minimum). #}
+{% macro usage_row(spec_id, bar_pct, count_text) %}
+{% set s = specs_map[spec_id|string] %}
+{% set w = [[bar_pct or 0, 100] | min, 2] | max %}
+<a class="usage-row" href="{{ s.page if s else '#' }}" title="{{ s.name if s else 'Spec ' ~ spec_id }}{% if s %} {{ s.className }}{% endif %}">
+  <img class="spec-icon" src="{{ spec_icon(spec_id) }}" alt="">
+  <div class="usage-row-body">
+    <div class="usage-label"{% if s and s.color %} style="color: {{ s.color }}"{% endif %}>{{ s.name if s else "Spec " ~ spec_id }}{% if s %} <span class="opacity-7">{{ s.className }}</span>{% endif %}</div>
+    <div class="usage-bar"><span style="width: {{ w }}%"></span></div>
+  </div>
+  <div class="usage-count text-end">{{ count_text }}</div>
+</a>
+{% endmacro %}
+
+<head>
+  {% include "header_imports.html" %}
+  <link rel="stylesheet" href="/assets/css/stat-colors.css" />
+  <link rel="stylesheet" href="/assets/css/consumables.css" />
+
+  {% set wh_url = "https://www.wowhead.com/item=" ~ consumable.id %}
+
+  <!-- Primary SEO -->
+  <title>{{ consumable.name }} Mythic+ Usage in {{ season_info.name }} | MythiStone</title>
+  <meta name="description"
+    content="{% if meta_description %}{{ meta_description }}{% else %}See how {{ consumable.name }} is used in {{ season_info.name }} Mythic+: which specs run it and its share of the {{ consumable.category_label | lower }} category.{% endif %}">
+  <meta name="keywords"
+    content="MythiStone, Mythic+, {{ consumable.name }}, {{ consumable.category_label }}, consumable usage, {{ season_info.name }}">
+  <link rel="canonical" href="https://mythistone.com/consumables/{{ slug }}">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="MythiStone">
+  <meta property="og:url" content="https://mythistone.com/consumables/{{ slug }}">
+  <meta property="og:title" content="{{ consumable.name }} Mythic+ Usage in {{ season_info.name }} | MythiStone">
+  <meta property="og:description"
+    content="Which specs run {{ consumable.name }} in {{ season_info.name }} Mythic+, and its share of the {{ consumable.category_label | lower }} category.">
+  {% if has_preview %}
+  <meta property="og:image" content="https://mythistone.com/assets/img/previews/consumables/{{ slug }}.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="675">
+  {% else %}
+  <meta property="og:image" content="https://mythistone.com/data/icons/{{ consumable.icon }}.png">
+  {% endif %}
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="{{ 'summary_large_image' if has_preview else 'summary' }}">
+  <meta name="twitter:site" content="@MythiStone">
+  <meta name="twitter:title" content="{{ consumable.name }} Mythic+ Usage in {{ season_info.name }} | MythiStone">
+  <meta name="twitter:description"
+    content="Which specs run {{ consumable.name }} in {{ season_info.name }} Mythic+.">
+  <meta name="twitter:image" content="{% if has_preview %}https://mythistone.com/assets/img/previews/consumables/{{ slug }}.jpg{% else %}https://mythistone.com/data/icons/{{ consumable.icon }}.png{% endif %}">
+
+  <meta name="theme-color" content="#1a202c">
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": {{ consumable.name | tojson }},
+  "image": "https://mythistone.com/data/icons/{{ consumable.icon }}.png",
+  "url": "https://mythistone.com/consumables/{{ slug }}",
+  "category": {{ consumable.category_label | tojson }},
+  "description": "{{ consumable.name }} Mythic+ Usage in {{ season_info.name }} | MythiStone",
+  "brand": { "@type": "Brand", "name": "World of Warcraft" }
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mythistone.com" },
+    { "@type": "ListItem", "position": 2, "name": "Consumables", "item": "https://mythistone.com/pages/consumables" },
+    { "@type": "ListItem", "position": 3, "name": {{ consumable.name | tojson }}, "item": "https://mythistone.com/consumables/{{ slug }}" }
+  ]
+}
+  </script>
+</head>
+
+<body class="g-sidenav-show g-sidenav-show-right">
+  {% include "sidenav.html" %}
+  <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg consumables-browse consumable-page">
+    {% include "navbar.html" %}
+    {% include "notifications.html" %}
+    {% include "trends_bar.html" %}
+
+    <div class="container-fluid py-2 mx-3 w-auto">
+      <a href="/pages/consumables" class="btn btn-sm btn-outline-secondary mb-2">
+        <i class="material-symbols-rounded text-sm">arrow_back</i> All consumables
+      </a>
+
+      <div id="consumable-content">
+
+        <!-- Page title (icon · name · category · run/share stat box) -->
+        <div class="row mb-4 mt-2">
+          <div class="col-12 d-flex align-items-center justify-content-between flex-wrap gap-3 px-3 px-md-4">
+            <div class="d-flex align-items-center">
+              <div class="avatar avatar-xl position-relative me-3">
+                <a href="{{ wh_url }}" target="_blank" rel="noopener" data-wowhead="item={{ consumable.id }}">
+                  <img src="/data/icons/{{ consumable.icon }}.png" alt="{{ consumable.name }}"
+                    class="w-100 rounded border-radius-lg shadow-sm border border-2 border-grey-100">
+                </a>
+              </div>
+              <div>
+                <h1 class="h3 mb-0 font-weight-bolder">
+                  <a href="{{ wh_url }}" target="_blank" rel="noopener"
+                    data-wowhead="item={{ consumable.id }}">{{ consumable.name }}</a>
+                </h1>
+                <p class="mb-1 text-md opacity-8">
+                  <span class="badge bg-gradient-dark">{{ consumable.category_label }}</span>
+                </p>
+                <a href="/pages/consumables?category={{ consumable.category }}" class="text-sm opacity-8">
+                  <i class="material-symbols-rounded text-sm align-middle">category</i>
+                  Browse all {{ consumable.category_label | lower }}s
+                </a>
+              </div>
+            </div>
+            <div class="d-none d-md-flex bg-body-tertiary border border-secondary rounded shadow-sm">
+              <div class="text-center p-3 border-end border-secondary"
+                title="{{ '{:,}'.format(consumable.total_runs) }} tracked runs used this consumable">
+                <span class="d-block text-xs text-uppercase text-secondary font-weight-bolder">Total Runs</span>
+                <span class="font-weight-bold">{{ "{:,}".format(consumable.total_runs) }}</span>
+              </div>
+              {% if consumable.category_share is not none %}
+              <div class="text-center p-3 border-end border-secondary"
+                title="Share of all {{ consumable.category_label | lower }} usage this season">
+                <span class="d-block text-xs text-uppercase text-secondary font-weight-bolder">{{ consumable.category_label }} Share</span>
+                <span class="font-weight-bold text-success">{{ consumable.category_share }}%</span>
+              </div>
+              {% endif %}
+              <div class="text-center p-3 d-flex align-items-center">
+                <a href="{{ wh_url }}"
+                  class="btn btn-sm bg-gradient-primary text-white mb-0 d-inline-flex align-items-center gap-1 shadow"
+                  target="_blank" rel="noopener">
+                  <i class="material-symbols-rounded text-sm">open_in_new</i> Wowhead
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Intro prose -->
+        {% if intro %}
+        <div class="row mb-4">
+          <div class="col-12 px-3 px-md-4">
+            <p class="text-md opacity-9 mb-0">{{ intro }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="row mb-4">
+          <!-- Used by specs -->
+          <div class="col-12 col-lg-7 mb-4 mb-lg-0">
+            <div class="card h-100">
+              <div class="card-header pb-0"><h6 class="mb-0">Used by</h6>
+                <p class="text-sm mb-0 opacity-8">
+                  Specs that run {{ consumable.name }}, ranked by tracked usage. The percentage is each
+                  spec's share of its own {{ consumable.category_label | lower }} picks.
+                </p>
+              </div>
+              <div class="card-body pt-3 card-scroll-body">
+                <div class="card-scroll custom-scrollbar" style="--card-scroll-max: 520px;">
+                  {% for s in consumable.specs %}
+                  {{ usage_row(s.spec_id, s.share, (s.share ~ '% · ' ~ '{:,}'.format(s.runs) ~ ' runs') if s.share is not none else ('{:,}'.format(s.runs) ~ ' runs')) }}
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Other consumables in the same category -->
+          <div class="col-12 col-lg-5">
+            <div class="card h-100">
+              <div class="card-header pb-0"><h6 class="mb-0">Other {{ consumable.category_label | lower }}s</h6></div>
+              <div class="card-body pt-3">
+                {% if siblings %}
+                <div class="d-flex flex-column gap-2">
+                  {% for sib in siblings %}
+                  <a class="sibling-row" href="/consumables/{{ sib.slug }}" data-wowhead="item={{ sib.id }}">
+                    <img src="/data/icons/{{ sib.icon }}.png" alt="" width="32" height="32"
+                      class="rounded border border-grey-100">
+                    <span class="sibling-name flex-grow-1">{{ sib.name }}</span>
+                    <span class="text-xs opacity-7">{{ "{:,}".format(sib.runs) }} runs</span>
+                  </a>
+                  {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm opacity-6 mb-0">No other {{ consumable.category_label | lower }}s tracked this season.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {% include "footer.html" %}
+    </div>
+  </main>
+  {% include "right_aside.html" %}
+  {% include "fixed_plugin.html" %}
+  {% include "javascript_imports.html" %}
+
+  <!-- Wowhead tooltips (Klaro consent-gated, same as item pages) -->
+  <script type="text/plain" data-type="application/javascript" data-name="wowhead"
+    data-src='https://wow.zamimg.com/widgets/power.js'></script>
+
+  <script src="/assets/js/consumable.js"></script>
+</body>
+
+</html>

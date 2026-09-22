@@ -72,6 +72,23 @@ def build_item_slug_map(item_lookup):
     }
 
 
+def build_consumable_slug_map(entities):
+    """Map every consumable item id to a URL slug from its name, with the same
+    collision handling as build_item_slug_map. ``entities`` is {item_id: {"name":
+    ...}} covering both the aura consumables and the weapon-enchant oils, so the
+    consumable-page generator and the spec-page cross-links derive identical slugs
+    from the identical entity set (build it from the same two lookups on both sides)."""
+    base, counts = {}, {}
+    for iid, e in entities.items():
+        slug = slugify(e.get("name", "")) or str(iid)
+        base[iid] = slug
+        counts[slug] = counts.get(slug, 0) + 1
+    return {
+        iid: (f"{slug}-{iid}" if counts[slug] > 1 else slug)
+        for iid, slug in base.items()
+    }
+
+
 # Synthetic Raidbots instance ids shared by every item of their kind rather than
 # pointing at a real journal instance.
 TIER_SET_INSTANCE_ID = -87  # tier set pieces
@@ -325,6 +342,18 @@ def trend_feeds_for_item(item_id):
     ]
 
 
+def trend_feeds_for_consumables():
+    """Global per-category consumable share movement (the consumables list-page
+    bar)."""
+    return [("consumable", "")]
+
+
+def trend_feeds_for_consumable(item_id):
+    """A single consumable's used-by-specs movement (the consumable subpage bar).
+    Resolves to nothing and self-hides for a consumable with no snapshot rows."""
+    return [("consumable_spec", str(item_id))]
+
+
 def _maybe_int(value):
     try:
         return int(value)
@@ -503,9 +532,7 @@ def _resolve_entry(feed, entity_key, label, lookups):
     out = {"label": label or str(entity_key), "icon": None, "href": None,
            "css": None, "icons": None}
 
-    # sim (sim tierlist) and item_spec (item subpage "used by specs") both key on a
-    # spec id and render like the spec feed.
-    if feed in ("spec", "sim", "item_spec"):
+    if feed in ("spec", "sim", "item_spec", "consumable_spec"):
         meta = specs.get(str(entity_key)) or {}
         name = _name_str(meta.get("name"), str(entity_key))
         cls = classes.get(str(meta.get("classID"))) or {}
@@ -575,6 +602,16 @@ def _resolve_entry(feed, entity_key, label, lookups):
         out["icon"] = _icon_src(meta.get("icon") or meta.get("itemIcon"), ext="png")
         if meta.get("name") or meta.get("itemName"):
             out["href"] = f"/items/{slugify(name)}"
+        if str(item_id).isdigit():
+            out["wowhead"] = f"item={item_id}"
+    elif feed == "consumable":
+        consumables = lookups.get("consumables", {})
+        item_id = str(entity_key).split(":")[-1]
+        meta = consumables.get(item_id) or consumables.get(_maybe_int(item_id)) or {}
+        out["label"] = _name_str(meta.get("name"), f"Item {item_id}")
+        out["icon"] = _icon_src(meta.get("icon"), ext="png")
+        if meta.get("slug"):
+            out["href"] = f"/consumables/{meta['slug']}"
         if str(item_id).isdigit():
             out["wowhead"] = f"item={item_id}"
     elif feed == "item_variant":

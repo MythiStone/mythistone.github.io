@@ -17,6 +17,7 @@ from pageGeneration import (
     generateSpecNav,
     generateDungeonNav,
     build_item_slug_map,
+    build_consumable_slug_map,
     build_item_source_map,
     build_trends,
     trend_feeds_for_spec,
@@ -143,7 +144,8 @@ CONSUMABLE_CATEGORY_LABELS = [
 ]
 
 
-def build_consumable_sections(rows, consumable_index, consumable_lookup, extra_sections=None):
+def build_consumable_sections(rows, consumable_index, consumable_lookup, extra_sections=None,
+                              slug_map=None):
     """Group per-spec consumable usage rows into display sections, one per category.
 
     ``rows`` are (spell_id, name, icon, run_count) tuples from
@@ -175,6 +177,7 @@ def build_consumable_sections(rows, consumable_index, consumable_lookup, extra_s
             "name": meta.get("name"),
             "icon_url": f"/data/icons/{meta.get('icon')}.png",
             "quality": meta.get("quality"),
+            "slug": (slug_map or {}).get(item_id),
             "count": int(run_count),  # SUM() over trees returns Decimal; per-tree is int
         })
 
@@ -197,7 +200,7 @@ def build_consumable_sections(rows, consumable_index, consumable_lookup, extra_s
     return [sections_by_key[k] for k in sorted(sections_by_key, key=lambda k: order.get(k, len(order)))]
 
 
-def build_weapon_enchant_section(rows, temp_enchant_index):
+def build_weapon_enchant_section(rows, temp_enchant_index, slug_map=None):
     """Build the "Weapon Enchant" consumable section from WEAPON-slot enchant usage.
 
     Temp weapon enchants (oils/whetstones) are weapon enchantments, not aura
@@ -216,6 +219,7 @@ def build_weapon_enchant_section(rows, temp_enchant_index):
             "name": meta.get("name"),
             "icon_url": f"/data/icons/{meta.get('icon')}.png",
             "quality": meta.get("quality"),
+            "slug": (slug_map or {}).get(meta.get("item_id")),
             "count": int(run_count),
         })
     total = sum(e["count"] for e in entries)
@@ -2260,6 +2264,13 @@ def main(template_path, output_dir, debug=False, spec=None):
     }
     temp_enchant_index = commonUtils.load_temp_enchant_index(LOOKUP_DIR)
     temp_enchant_effect_ids = list(temp_enchant_index.keys())
+    _consumable_names = {c["item_id"]: {"name": c.get("name")}
+                         for c in commonUtils.load_consumables(LOOKUP_DIR)
+                         if c.get("item_id") is not None}
+    for _m in temp_enchant_index.values():
+        if _m.get("item_id") is not None:
+            _consumable_names[int(_m["item_id"])] = {"name": _m.get("name")}
+    consumable_slug_map = build_consumable_slug_map(_consumable_names)
     season_info = load_season_info(LOOKUP_DIR)
     os.makedirs(output_dir, exist_ok=True)
 
@@ -2494,7 +2505,9 @@ def main(template_path, output_dir, debug=False, spec=None):
                             conn, cursor, spec_id, current_season_id, temp_enchant_effect_ids
                         ),
                         temp_enchant_index,
+                        slug_map=consumable_slug_map,
                     )],
+                    slug_map=consumable_slug_map,
                 )
                 print(
                     f"[{datetime.now(timezone.utc).isoformat()}] fetching enchants..."
@@ -3314,7 +3327,9 @@ def main(template_path, output_dir, debug=False, spec=None):
                             conn, cursor, spec_id, current_season_id, temp_enchant_effect_ids, hero_id
                         ),
                         temp_enchant_index,
+                        slug_map=consumable_slug_map,
                     )],
+                    slug_map=consumable_slug_map,
                 )
 
                 return {

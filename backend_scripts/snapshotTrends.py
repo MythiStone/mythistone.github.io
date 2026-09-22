@@ -514,6 +514,42 @@ def build_item_rows(week_id, season):
     return rows
 
 
+def build_consumable_rows(week_id, season):
+    """Global consumable feed (consumables-list bar) + bounded per-consumable subpage
+    feeds, both off one generateConsumablePages sweep so the displayed numbers match
+    the consumable pages exactly. build_payloads opens/closes its own pooled connection.
+
+    Global feed: top-N consumables site-wide by total tracked runs, entity_key
+    "<category>:<item_id>", popularity = the consumable's share of its category. Per
+    consumable, a bounded "used by specs" feed (consumable_spec) keyed by spec id,
+    popularity = that spec's share of its category picks."""
+    import generateConsumablePages
+    ctx = generateConsumablePages.load_static_lookups()
+    payloads, manifest = generateConsumablePages.build_payloads(season, ctx)
+
+    rows = []
+    top = manifest[:TOP_N_ITEM_GLOBAL]
+    for pos, m in enumerate(top, start=1):
+        pl = payloads.get(m["id"]) or {}
+        rows.append(_row(
+            week_id, "consumable", "", f"{m['category']}:{m['id']}", None,
+            None, pos, None, round(float(pl.get("category_share") or 0.0), 4),
+            int(m.get("runs", 0)),
+        ))
+
+    for m in top:
+        pl = payloads.get(m["id"]) or {}
+        gk = str(m["id"])
+        specs = [s for s in pl.get("specs", []) if s.get("share") is not None]
+        specs.sort(key=lambda s: s["share"], reverse=True)
+        for pos, s in enumerate(specs[:TOP_N_ITEM_SUB], start=1):
+            rows.append(_row(
+                week_id, "consumable_spec", gk, s["spec_id"], None,
+                None, pos, None, float(s["share"]), int(s.get("runs", 0)),
+            ))
+    return rows
+
+
 def main():
     parser = argparse.ArgumentParser(description="Write the weekly Top Trends snapshot.")
     parser.add_argument("--season", type=int, default=None, help="override season id")
@@ -589,6 +625,8 @@ def main():
         # Global item + bounded per-item feeds. build_payloads opens its OWN pooled
         # connection, so it runs outside this cursor's read session.
         records += build_item_rows(week_id, season)
+        print(f"  + item feeds: {len(records)} records")
+        records += build_consumable_rows(week_id, season)
         print(f"  total live records: {len(records)}")
 
         # 1) Current "now" -> build-local JSON, refreshed every build (NOT the DB).

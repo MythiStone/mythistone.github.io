@@ -1,0 +1,148 @@
+/* Styling for the dedicated consumable pages (consumable.html) and the consumable
+   browse page (consumables.html). Mirrors items.css patterns, scoped to the
+   consumable page classes. Consumables carry no item rarity, so icons use neutral
+   grey borders (like the spec-page consumable section) rather than quality colours. */
+
+/* ----- detail: used-by-spec usage rows ----- */
+.consumable-page .spec-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 0.25rem;
+  flex: 0 0 auto;
+}
+.consumable-page .usage-row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.25rem;
+  border-radius: 0.4rem;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s;
+}
+.consumable-page .usage-row:hover { background: var(--mythi-chip-bg); }
+.consumable-page .usage-row-body { min-width: 0; }
+.consumable-page .usage-bar {
+  position: relative;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--mythi-chip-bg);
+  overflow: hidden;
+  margin-top: 0.15rem;
+}
+.consumable-page .usage-bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #5e72e4, #825ee4);
+  border-radius: 4px;
+}
+.consumable-page .usage-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.consumable-page .usage-count {
+  font-size: 0.75rem;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+/* ----- detail: sibling rows (other consumables in the category) ----- */
+.consumable-page .sibling-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--mythi-border-subtle);
+  background: var(--mythi-chip-bg);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.12s, transform 0.12s;
+}
+.consumable-page .sibling-row:hover {
+  border-color: var(--quality-4);
+  transform: translateY(-1px);
+}
+.consumable-page .sibling-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+  .consumable-page .usage-label { white-space: normal; font-size: 0.72rem; }
+}
+
+/* ----- browse page grid (mirrors .items-browse .item-card) ----- */
+.consumables-browse .consumable-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--mythi-border-subtle);
+  background: var(--mythi-chip-bg);
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+}
+.consumables-browse .consumable-card:hover {
+  border-color: var(--quality-4);
+  background: var(--mythi-chip-bg);
+}
+.consumables-browse .consumable-card img {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.35rem;
+  flex: 0 0 auto;
+}
+.consumables-browse .consumable-card .meta { min-width: 0; }
+.consumables-browse .consumable-card .name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.consumables-browse .consumable-card .sub {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+/* Match the search box to the outline-primary selectpicker toggles beside it
+   (same fix as items.css). */
+.consumables-browse #consumable-search.form-control {
+  height: 38px;
+  padding: 0.5rem 1rem;
+  line-height: 1.4;
+  border: 1px solid var(--bs-primary);
+  border-radius: 0.375rem;
+  color: var(--bs-body-color);
+}
+.consumables-browse #consumable-search.form-control:focus {
+  border-color: var(--bs-primary);
+  box-shadow: none;
+}
+.consumables-browse #consumable-search.form-control::placeholder {
+  color: var(--mythi-text-muted);
+  opacity: 1;
+}
+
+/* Filter row: only four controls, so the md grid fits them onto one line from xl
+   up without the elaborate 1850px collapse the item page needs. */
+@media (min-width: 1200px) {
+  .consumables-browse .consumables-filter-row { flex-wrap: nowrap; }
+  .consumables-browse .consumables-filter-row > [class*="col-"] {
+    flex: 1 1 0;
+    width: auto;
+    max-width: none;
+    min-width: 8.5rem;
+  }
+  .consumables-browse .consumables-filter-row > .filter-search { flex-grow: 2; min-width: 10rem; }
+  .consumables-browse .consumables-filter-row > .filter-class { flex-grow: 2; min-width: 10rem; }
+}

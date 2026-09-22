@@ -28,6 +28,8 @@ EXCLUDE_DIRS = {
     # Item pages are added as lightweight entries from the manifest below, so we
     # skip the full-content walk of items/ (it would bloat the index massively).
     "items",
+    # Consumable pages are added the same way from consumables_index.json.
+    "consumables",
 }
 SKIP_FILES = {"404.html", "impressum.html", "privacy.html", "about.html"}
 
@@ -270,6 +272,53 @@ def append_item_entries(items):
     return items
 
 
+def append_consumable_entries(items):
+    """Append the dedicated consumable pages to the search index.
+
+    Like append_item_entries: the consumables/ dir is excluded from the full-content
+    walk, so we read the compact manifest generateConsumablePages.py writes and inject
+    one lightweight entry per consumable so site search finds it by name.
+    """
+    manifest_path = os.path.join("assets", "json", "consumables_index.json")
+    if not os.path.isfile(manifest_path):
+        print("No consumables_index.json found; skipping consumable search entries.")
+        return items
+    try:
+        manifest = load_json(manifest_path)
+    except Exception as e:
+        print(f"Warning: could not read consumables manifest: {e}")
+        return items
+
+    existing_urls = {it.get("url") for it in items}
+    added = 0
+    for m in manifest:
+        slug = m.get("slug")
+        if not slug:
+            continue
+        url = f"/consumables/{slug}"
+        if url in existing_urls:
+            continue
+        label = m.get("category_label", "")
+        tags = ["consumable"]
+        if m.get("category"):
+            tags.append(m["category"])
+        entry = {
+            "title": m["name"],
+            "url": url,
+            "path": f"consumables/{slug}.html",
+            "content": f"{m['name']} {label} Mythic+ consumable usage flask potion food",
+            "excerpt": f"{m['name']} — {label} used in {m.get('runs', 0)} Mythic+ runs.",
+            "tags": tags,
+            "last_modified": None,
+        }
+        if m.get("icon"):
+            entry["icon"] = f"/data/icons/{m['icon']}.png"
+        items.append(entry)
+        added += 1
+    print(f"Added {added} consumable entries to search index.")
+    return items
+
+
 def write_output(items, targets):
     data = items
     json_text = json.dumps(data, ensure_ascii=False, indent=2)
@@ -301,6 +350,7 @@ def main():
         print("No .html files found in the specified site directories.")
     items = build_index_for_paths(collected)
     items = append_item_entries(items)
+    items = append_consumable_entries(items)
 
     # targets: write into every found site root, and one copy to repo root (cwd)
     write_targets = list(found_dirs) + [os.path.join(os.getcwd(), OUTPUT_FILENAME)]

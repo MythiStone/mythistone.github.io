@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  {% include "header_imports.html" %}
+  <link rel="stylesheet" href="/assets/css/stat-colors.css" />
+  <link rel="stylesheet" href="/assets/css/consumables.css" />
+
+  <title>Mythic+ Consumable Usage in {{ season_info.name }} | MythiStone</title>
+  <meta name="description"
+    content="Browse every flask, potion, food, weapon enchant and augment rune used in Mythic+ in {{ season_info.name }}. Filter by category and spec to see who runs each one.">
+  <meta name="keywords" content="MythiStone, Mythic+, consumables, flask, potion, food, augment rune, WoW meta, {{ season_info.name }}">
+  <link rel="canonical" href="https://mythistone.com/pages/consumables">
+  <meta name="robots" content="index, follow">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="MythiStone">
+  <meta property="og:url" content="https://mythistone.com/pages/consumables">
+  <meta property="og:title" content="Mythic+ Consumable Usage in {{ season_info.name }}">
+  <meta property="og:description"
+    content="Browse every consumable used in {{ season_info.name }} Mythic+ and see who runs it.">
+  {% if overview_url %}
+  <meta property="og:image" content="{{ overview_url }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="675">
+  <meta property="og:image:alt" content="Most-used Mythic+ consumables in {{ season_info.name }}">
+  {% endif %}
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="{{ 'summary_large_image' if overview_url else 'summary' }}">
+  <meta name="twitter:site" content="@MythiStone">
+  <meta name="twitter:title" content="Mythic+ Consumable Usage in {{ season_info.name }}">
+  <meta name="twitter:description"
+    content="Browse every consumable used in {{ season_info.name }} Mythic+ and see who runs it.">
+  {% if overview_url %}
+  <meta name="twitter:image" content="{{ overview_url }}">
+  <meta name="twitter:image:alt" content="Most-used Mythic+ consumables in {{ season_info.name }}">
+  {% endif %}
+  <meta name="theme-color" content="#1a202c">
+</head>
+
+<body class="g-sidenav-show g-sidenav-show-right">
+  {% include "sidenav.html" %}
+  <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg consumables-browse consumable-page">
+    {% include "navbar.html" %}
+    {% include "notifications.html" %}
+    {% include "trends_bar.html" %}
+
+    <div class="container-fluid py-2 mx-3 w-auto">
+
+      <!-- ============ BROWSE VIEW ============ -->
+      <div id="browse-view">
+        <div class="card mb-3">
+          <div class="card-body">
+            <h1 class="h4 mb-1">Mythic+ Consumables</h1>
+            <p class="text-sm opacity-8 mb-3">
+              {{ consumable_count }} consumables seen in {{ season_info.name }} Mythic+ runs. Click one for full usage details.
+            </p>
+            <div class="row g-2 align-items-end consumables-filter-row">
+              <div class="col-12 col-md-5 filter-search">
+                <label class="form-label text-xs opacity-7 mb-1">Search</label>
+                <input type="search" id="consumable-search" class="form-control" placeholder="Search consumables by name…"
+                  aria-label="Search consumables by name" autocomplete="off" />
+              </div>
+              <div class="col-6 col-md-3 filter-category">
+                <label class="form-label text-xs opacity-7 mb-1">Category</label>
+                <select id="category-filter" class="selectpicker form-control" data-style="btn-outline-primary"
+                  data-width="100%" title="All categories" aria-label="Filter by category">
+                </select>
+              </div>
+              <div class="col-12 col-md-6 filter-class">
+                <label class="form-label text-xs opacity-7 mb-1">Used by</label>
+                <select id="class-filter" class="selectpicker form-control" data-style="btn-outline-primary"
+                  data-width="100%" multiple data-live-search="true" data-actions-box="true"
+                  data-selected-text-format="count > 1" data-sanitize="false"
+                  title="All specs" aria-label="Filter by spec or class">
+                </select>
+              </div>
+              <div class="col-6 col-md-2 filter-sort">
+                <label class="form-label text-xs opacity-7 mb-1">Sort</label>
+                <select id="sort-by" class="selectpicker form-control" data-style="btn-outline-primary"
+                  data-width="100%" aria-label="Sort">
+                  <option value="runs">Most used</option>
+                  <option value="name">Name (A–Z)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="consumables-grid" class="row g-2"></div>
+        <p id="consumables-empty" class="text-center opacity-6 py-4 d-none">No consumables match your filters.</p>
+        <!-- Infinite-scroll sentinel: MythiInfinite watches this and appends the
+             next batch as it nears the fold. -->
+        <div id="consumables-sentinel" class="py-3" aria-hidden="true"></div>
+      </div>
+
+      {% include "footer.html" %}
+    </div>
+  </main>
+  {% include "right_aside.html" %}
+  {% include "fixed_plugin.html" %}
+  {% include "javascript_imports.html" %}
+
+  <!-- Wowhead tooltips (Klaro consent-gated, same as item pages) -->
+  <script type="text/plain" data-type="application/javascript" data-name="wowhead"
+    data-src='https://wow.zamimg.com/widgets/power.js'></script>
+
+  <script>
+    window.specs_map = {{ specs_map | tojson | safe }};
+  </script>
+  <script src="/assets/js/consumables.js"></script>
+</body>
+
+</html>

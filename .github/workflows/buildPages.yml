@@ -19,6 +19,7 @@ on:
       - 'backend_scripts/generateRoutesPage.py'
       - 'backend_scripts/generateVodsPage.py'
       - 'backend_scripts/generateItemPages.py'
+      - 'backend_scripts/generateConsumablePages.py'
       - 'backend_scripts/generateBlogPage.py'
       - 'backend_scripts/generateLegalPages.py'
       - 'backend_scripts/generateDungeonPages.py'
@@ -549,6 +550,21 @@ jobs:
             --output_dir pages \
             --items_dir items
 
+      - name: Generate Consumable pages
+        env:
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORT }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+        run: |
+          rm -rf consumables
+          mkdir -p consumables
+          python backend_scripts/generateConsumablePages.py \
+            --template templates/consumables.html \
+            --output_dir pages \
+            --consumables_dir consumables
+
       - name: Generate Search index
         run: |
           python backend_scripts/generateSearchIndex.py
@@ -576,6 +592,7 @@ jobs:
             pages
             dungeons
             items
+            consumables
             classes
             index.html
             404.html
@@ -668,7 +685,7 @@ jobs:
         run: |
           set -e
           mkdir -p _site/data
-          cp -r pages dungeons items classes assets _site/
+          cp -r pages dungeons items consumables classes assets _site/
           cp -r data/icons data/creature_img _site/data/
           mkdir -p _site/data/social
           if compgen -G "social-images/*.png" > /dev/null; then

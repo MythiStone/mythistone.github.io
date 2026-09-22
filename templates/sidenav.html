@@ -65,6 +65,12 @@
           </a>
         </li>
         <li class="nav-item">
+          <a class="nav-link {% if active_page == 'consumables' %}active bg-gradient-dark text-white{% endif %}" href="/pages/consumables">
+            <i class="material-symbols-rounded {% if active_page == 'consumables' %}text-white{% else %}text-body-emphasis{% endif %} opacity-5">emoji_food_beverage</i>
+            <span class="nav-link-text {% if active_page == 'consumables' %}text-white{% else %}text-body-emphasis{% endif %} ms-1">Consumables</span>
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link {% if active_page == 'analyzer' %}active bg-gradient-dark text-white{% endif %}" href="/pages/analyzer">
             <i class="material-symbols-rounded {% if active_page == 'analyzer' %}text-white{% else %}text-body-emphasis{% endif %} opacity-5">checklist</i>
             <span class="nav-link-text {% if active_page == 'analyzer' %}text-white{% else %}text-body-emphasis{% endif %} ms-1">Am I Meta?</span>

@@ -869,7 +869,9 @@
                       <img src="{{ top.icon_url }}" alt="{{ top.name }}" width="40" height="40" class="rounded border border-grey-100">
                       {% endif %}
                       <p class="text-sm font-weight-bold mb-0 mt-2">
-                        {% if top.item_id %}
+                        {% if top.slug %}
+                        <a href="/consumables/{{ top.slug }}">{{ top.name }}</a>
+                        {% elif top.item_id %}
                         <a target="_blank" href="https://www.wowhead.com/item={{ top.item_id }}&spec={{ spec_id }}">{{ top.name }}</a>
                         {% else %}{{ top.name }}{% endif %}
                       </p>
@@ -2176,7 +2178,11 @@
                         <div class="row align-items-center mb-2">
                           <div class="col-auto">
                             {% if entry.icon_url %}
-                            {% if entry.item_id %}
+                            {% if entry.slug %}
+                            <a href="/consumables/{{ entry.slug }}" class="icon-link position-relative detail-row-icon">
+                              <img src="{{ entry.icon_url }}" alt="" class="base-icon border border-grey-100">
+                            </a>
+                            {% elif entry.item_id %}
                             <a target="_blank" href="https://www.wowhead.com/item={{ entry.item_id }}&spec={{ spec_id }}"
                               class="icon-link position-relative detail-row-icon">
                               <img src="{{ entry.icon_url }}" alt="" class="base-icon border border-grey-100">
@@ -2187,7 +2193,9 @@
                             {% endif %}
                           </div>
                           <div class="col">
-                            {% if entry.item_id %}
+                            {% if entry.slug %}
+                            <a href="/consumables/{{ entry.slug }}"><p class="mb-1">{{ entry.name }}</p></a>
+                            {% elif entry.item_id %}
                             <a target="_blank" href="https://www.wowhead.com/item={{ entry.item_id }}&spec={{ spec_id }}">
                               <p class="mb-1">{{ entry.name }}</p>
                             </a>
