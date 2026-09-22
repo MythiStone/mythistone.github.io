@@ -552,13 +552,26 @@ def load_consumable_overrides(static_dir=LOOKUP_DIR):
         return {}
 
 
-def build_consumable_index(consumables=None, overrides=None, static_dir=LOOKUP_DIR):
+def load_food_buffs(static_dir=LOOKUP_DIR):
+    """The well-fed-buff -> food item map (``data/static/food_buffs.json``, written by
+    processFoodBuffs.py from SimC + overrides). Keys are spell-id strings, values item
+    ids. Food's aura is a generic buff with no declarative item link, so this SimC-
+    derived map is the only way to name the food; returns ``{}`` when absent."""
+    try:
+        return load_json(os.path.join(static_dir, "food_buffs.json"))
+    except (OSError, ValueError):
+        return {}
+
+
+def build_consumable_index(consumables=None, overrides=None, food_buffs=None, static_dir=LOOKUP_DIR):
     """Build the lookup indexes ``match_consumable_aura`` needs. Loads from
-    ``static_dir`` when ``consumables``/``overrides`` are not passed."""
+    ``static_dir`` when ``consumables``/``overrides``/``food_buffs`` are not passed."""
     if consumables is None:
         consumables = load_consumables(static_dir)
     if overrides is None:
         overrides = load_consumable_overrides(static_dir)
+    if food_buffs is None:
+        food_buffs = load_food_buffs(static_dir)
     by_name, by_short, by_item, by_value = {}, {}, {}, {}
     for e in consumables:
         by_value[e.get("value")] = e
@@ -574,35 +587,32 @@ def build_consumable_index(consumables=None, overrides=None, static_dir=LOOKUP_D
         "by_item": by_item,
         "by_value": by_value,
         "overrides": overrides or {},
+        "food_buffs": {str(k): v for k, v in (food_buffs or {}).items()},
     }
 
 
 def match_consumable_aura(aura, index):
     """Resolve one ``interestingAuras`` entry (``{id, name, icon, ...}``) to a
     consumable entry, or ``None`` when it is not a tracked consumable (raid buff,
-    class aura, etc.). Match order: spell-id override -> item name -> shortName ->
-    generic "well fed" food heuristic (no item id).
+    class aura, etc.). Match order: spell-id override -> item name -> shortName.
 
-    A food match returns a synthetic entry carrying the aura's own name/icon,
-    since well-fed buffs map to no single food item."""
+    Food's aura is a generic server-scripted "Well Fed" buff with no declarative item
+    link, so it is resolved via the SimC-derived ``food_buffs`` map (buff spell id ->
+    item id); a food buff not in that map (a feast or quality tier SimC omits, unless
+    added to food_buff_overrides.json) is left unmatched. The well-fed spell ids are
+    still recorded in interesting_aura regardless."""
     spell_id = aura.get("id")
     override = index["overrides"].get(str(spell_id)) if spell_id is not None else None
     if override is not None:
         return index["by_value"].get(override)
+    food_item = index["food_buffs"].get(str(spell_id)) if spell_id is not None else None
+    if food_item is not None:
+        return {"category": "food", "item_id": int(food_item)}
     norm = normalize_consumable_name(aura.get("name"))
     if norm in index["by_name"]:
         return index["by_name"][norm]
     if norm in index["by_short"]:
         return index["by_short"][norm]
-    if "well fed" in norm:
-        return {
-            "category": "food",
-            "item_id": None,
-            "name": aura.get("name"),
-            "icon": aura.get("icon"),
-            "value": None,
-            "quality": None,
-        }
     return None
 
 

@@ -3373,14 +3373,15 @@ def insert_aura_roster_batch(connection, cursor, roster_vals):
 
 INSERT_AURA_CONSUMABLE_SQL = """
 INSERT IGNORE INTO Mythistone.aura_consumable
-  (`rio_run_id`, `roster_index`, `spell_id`, `category`, `item_id`)
-VALUES (%s, %s, %s, %s, %s);
+  (`rio_run_id`, `roster_index`, `spell_id`)
+VALUES (%s, %s, %s);
 """
 
 
 def insert_aura_consumable_batch(connection, cursor, consumable_vals):
-    """Batch-insert resolved consumable auras. `consumable_vals` are
-    (rio_run_id, roster_index, spell_id, category, item_id) tuples (item_id may be None)."""
+    """Batch-insert consumable aura buff ids only. `consumable_vals` are
+    (rio_run_id, roster_index, spell_id) tuples. The spell -> item/category resolution
+    happens at build time, not here."""
     if not consumable_vals:
         return
     executemany_with_retry(connection, cursor, INSERT_AURA_CONSUMABLE_SQL, consumable_vals)
@@ -3388,15 +3389,17 @@ def insert_aura_consumable_batch(connection, cursor, consumable_vals):
 
 UPSERT_INTERESTING_AURA_SQL = """
 INSERT INTO Mythistone.interesting_aura
-  (`spell_id`, `school`, `has_cooldown`, `first_seen_ts`, `times_seen`)
-VALUES (%s, %s, %s, %s, 1)
-ON DUPLICATE KEY UPDATE times_seen = times_seen + 1;
+  (`spell_id`, `name`, `icon`, `school`, `has_cooldown`, `first_seen_ts`, `times_seen`)
+VALUES (%s, %s, %s, %s, %s, %s, 1)
+ON DUPLICATE KEY UPDATE times_seen = times_seen + 1,
+  name = COALESCE(VALUES(name), name), icon = COALESCE(VALUES(icon), icon);
 """
 
 
 def upsert_interesting_aura_batch(connection, cursor, aura_vals):
-    """Record every observed aura id once (dev dictionary), bumping times_seen on
-    repeats. `aura_vals` are (spell_id, school, has_cooldown, first_seen_ts) tuples."""
+    """Record every observed aura once (dev dictionary + the raw name/icon the
+    build-time resolver name-matches non-food consumables on), bumping times_seen on
+    repeats. `aura_vals` are (spell_id, name, icon, school, has_cooldown, first_seen_ts)."""
     if not aura_vals:
         return
     executemany_with_retry(connection, cursor, UPSERT_INTERESTING_AURA_SQL, aura_vals)

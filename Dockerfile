@@ -53,6 +53,7 @@ COPY data/static/enchantments.json ${APP_DIR}/data/static/enchantments.json
 # literals), so this COPY is not build-guarded -- keep it by hand.
 COPY data/static/item-sets.json ${APP_DIR}/data/static/item-sets.json
 COPY data/static/consumables.json ${APP_DIR}/data/static/consumables.json
+COPY data/static/food_buffs.json ${APP_DIR}/data/static/food_buffs.json
 
 # entrypoint and executable
 COPY entrypoint.sh /entrypoint.sh

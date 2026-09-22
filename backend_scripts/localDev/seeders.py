@@ -682,18 +682,25 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
     route_videos = []
     route_deaths, route_encounters = [], []
     aura_run, aura_roster, aura_consumable, interesting_aura = [], [], [], []
-    # Consumable pools grouped by category, drawn from the derived consumables.json
-    # (item categories use item_id as a stand-in aura spell id; food is the generic
-    # well-fed buff with no item). Lets the seeded rosters produce real per-spec
-    # consumable aggregates the spec page can render.
+    # Consumable aura pools by category, as (spell_id, name, icon) so seeded rows match
+    # the real pipeline: aura_consumable stores only the buff spell id, and the spell ->
+    # item resolution happens at build time (name-match via interesting_aura for
+    # flask/potion/augment/weapon; the food_buffs map by spell id for food).
     cons_by_cat = {}
     try:
         for c in load_json(os.path.join(static.dir, "consumables.json")):
-            if c.get("item_id") is not None:
-                cons_by_cat.setdefault(c["category"], []).append((c["item_id"], c["item_id"]))
+            # item categories: use item_id as a stand-in buff spell id; the aura name
+            # is what the build-time name-match keys on, so seed it verbatim.
+            if c.get("category") != "food" and c.get("item_id") is not None:
+                cons_by_cat.setdefault(c["category"], []).append((c["item_id"], c.get("name"), c.get("icon")))
     except (OSError, ValueError):
         pass
-    cons_by_cat.setdefault("food", []).append((1285644, None))  # Hearty Well Fed
+    # Food auras use the real SimC-derived well-fed buff spell ids (resolved by spell id).
+    try:
+        for buff_spell in load_json(os.path.join(static.dir, "food_buffs.json")):
+            cons_by_cat.setdefault("food", []).append((int(buff_spell), "Hearty Well Fed", "spell_misc_food"))
+    except (OSError, ValueError):
+        pass
     regions = ["us", "eu", "kr", "tw"]
     realms = ["illidan", "silvermoon", "area-52", "tarren-mill", "stormrage"]
     rio = 1
@@ -722,9 +729,9 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
                 for cat, pool in cons_by_cat.items():
                     if not pool:
                         continue
-                    spell_id, item_id = rng.choice(pool)
-                    aura_consumable.append((rio, idx, spell_id, cat, item_id))
-                    interesting_aura.append((spell_id, None, 0, ts_s))
+                    spell_id, name, icon = rng.choice(pool)
+                    aura_consumable.append((rio, idx, spell_id))
+                    interesting_aura.append((spell_id, name, icon, None, 0, ts_s))
             # deaths: a few timings spread across the run duration
             for seq in range(rng.randint(0, 8)):
                 route_deaths.append((route_key, seq, rio, rng.randint(0, duration_ms)))
@@ -804,11 +811,11 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
     _insert_many(conn, cursor,
         "INSERT IGNORE INTO aura_roster (rio_run_id, roster_index, spec_id) VALUES (%s,%s,%s)", aura_roster)
     _insert_many(conn, cursor,
-        "INSERT IGNORE INTO aura_consumable (rio_run_id, roster_index, spell_id, category, item_id) "
-        "VALUES (%s,%s,%s,%s,%s)", aura_consumable)
+        "INSERT IGNORE INTO aura_consumable (rio_run_id, roster_index, spell_id) "
+        "VALUES (%s,%s,%s)", aura_consumable)
     _insert_many(conn, cursor,
-        "INSERT INTO interesting_aura (spell_id, school, has_cooldown, first_seen_ts, times_seen) "
-        "VALUES (%s,%s,%s,%s,1) ON DUPLICATE KEY UPDATE times_seen = times_seen + 1", interesting_aura)
+        "INSERT INTO interesting_aura (spell_id, name, icon, school, has_cooldown, first_seen_ts, times_seen) "
+        "VALUES (%s,%s,%s,%s,%s,%s,1) ON DUPLICATE KEY UPDATE times_seen = times_seen + 1", interesting_aura)
 
 
 # --------------------------------------------------------------------------------------

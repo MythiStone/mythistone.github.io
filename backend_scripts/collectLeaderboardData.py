@@ -425,9 +425,11 @@ def get_consumable_index():
 
 def build_aura_rows(full: dict) -> list[dict]:
     """Per-roster-entry auras from a run-detail's top-level roster. One dict per
-    player: spec_id, every observed aura (feeds the interesting_aura dictionary),
-    and the subset resolved to a tracked consumable (flask/potion/food/augment/
-    weapon). Names/icons are never stored; only ids."""
+    player: spec_id, every observed aura for the interesting_aura dictionary
+    (spell id + the raw name/icon raider.io reported), and the spell ids that are a
+    tracked consumable. The DB stores only these buff spell ids; the spell -> item
+    resolution happens at build time from the static maps + interesting_aura names,
+    so a re-map never needs re-collection."""
     idx = get_consumable_index()
     rows = []
     for i, member in enumerate(full.get("roster") or []):
@@ -439,10 +441,10 @@ def build_aura_rows(full: dict) -> list[dict]:
             sid = a.get("id")
             if sid is None:
                 continue
-            auras.append((int(sid), a.get("school"), 1 if a.get("hasCooldown") else 0))
-            match = commonUtils.match_consumable_aura(a, idx)
-            if match is not None:
-                consumables.append((int(sid), match.get("category"), match.get("item_id")))
+            auras.append((int(sid), a.get("name"), a.get("icon"), a.get("school"),
+                          1 if a.get("hasCooldown") else 0))
+            if commonUtils.match_consumable_aura(a, idx) is not None:
+                consumables.append(int(sid))
         rows.append({
             "roster_index": i,
             "spec_id": int(spec_id),
@@ -684,8 +686,10 @@ def persist_run_auras(conn, cursor, rio_run_id, roster, season_id, dungeon_id, k
         rowcount = databaseConnector.insert_aura_run(
             conn, cursor, rio_run_id, season_id, dungeon_id, keystone_level, timestamp, region
         )
-        # Record every observed aura id once regardless of dedup (dev dictionary).
-        aura_vals = [(sid, school, hc, timestamp) for e in roster for (sid, school, hc) in e["auras"]]
+        # Record every observed aura id once regardless of dedup (dev dictionary +
+        # the raw name/icon the build-time resolver name-matches non-food consumables on).
+        aura_vals = [(sid, name, icon, school, hc, timestamp)
+                     for e in roster for (sid, name, icon, school, hc) in e["auras"]]
         databaseConnector.upsert_interesting_aura_batch(conn, cursor, aura_vals)
         if rowcount == 0:
             conn.commit()  # already collected this run's rosters; keep the dictionary bump
@@ -693,8 +697,8 @@ def persist_run_auras(conn, cursor, rio_run_id, roster, season_id, dungeon_id, k
         roster_vals = [(rio_run_id, e["roster_index"], e["spec_id"]) for e in roster]
         databaseConnector.insert_aura_roster_batch(conn, cursor, roster_vals)
         cons_vals = [
-            (rio_run_id, e["roster_index"], sid, cat, item_id)
-            for e in roster for (sid, cat, item_id) in e["consumables"]
+            (rio_run_id, e["roster_index"], sid)
+            for e in roster for sid in e["consumables"]
         ]
         databaseConnector.insert_aura_consumable_batch(conn, cursor, cons_vals)
         conn.commit()

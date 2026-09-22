@@ -55,6 +55,9 @@ jobs:
       - name: Build consumable catalog
         run: |
           python backend_scripts/processConsumables.py
+      - name: Build food buff map
+        run: |
+          python backend_scripts/processFoodBuffs.py
       - name: Download consumable icons
         run: |
           python backend_scripts/downloadConsumableIcons.py
