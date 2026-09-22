@@ -40,6 +40,9 @@ COPY data/static/periods.json    ${APP_DIR}/data/static/periods.json
 COPY data/static/npcs.json       ${APP_DIR}/data/static/npcs.json
 # per-spec talent shards for /spec talents (hero-tree + talent names).
 COPY data/static/talents/        ${APP_DIR}/data/static/talents/
+COPY data/static/consumables.json ${APP_DIR}/data/static/consumables.json
+COPY data/static/food_buffs.json  ${APP_DIR}/data/static/food_buffs.json
+COPY data/static/item-sets.json   ${APP_DIR}/data/static/item-sets.json
 
 COPY entrypoint_bot.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
