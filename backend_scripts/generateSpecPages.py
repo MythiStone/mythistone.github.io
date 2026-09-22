@@ -132,8 +132,8 @@ HERO_SECTION_MIN_SHARE = 0.05    # and this fraction of the spec's hero-tree run
 # not a preference, so only shifts of this many points are worth a row.
 HERO_TREE_DIFF_MIN_PCT_POINTS = 5.0
 
-CONSUMABLE_MIN_TOTAL = 1
-CONSUMABLE_MIN_SHARE = 0.0001
+CONSUMABLE_MIN_TOTAL = 20
+CONSUMABLE_MIN_SHARE = 0.01
 CONSUMABLE_CATEGORY_LABELS = [
     ("flask", "Flask"),
     ("potion", "Potion"),
