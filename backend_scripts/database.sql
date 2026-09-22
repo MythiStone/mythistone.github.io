@@ -109,9 +109,10 @@ CREATE TABLE `aggregated_completion_heatmap` (
 CREATE TABLE `aggregated_consumables` (
   `spec_id` int NOT NULL,
   `season` int NOT NULL DEFAULT '0',
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   `spell_id` int NOT NULL,
   `run_count` bigint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`spec_id`,`season`,`spell_id`),
+  PRIMARY KEY (`spec_id`,`season`,`hero_talent_id`,`spell_id`),
   KEY `idx_agg_consumables_spec_season` (`spec_id`,`season`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -803,6 +804,7 @@ CREATE TABLE `aura_roster` (
   `rio_run_id` bigint unsigned NOT NULL,
   `roster_index` tinyint unsigned NOT NULL,
   `spec_id` int NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`rio_run_id`,`roster_index`),
   KEY `idx_aura_roster_spec` (`spec_id`),
   CONSTRAINT `aura_roster_run_FK` FOREIGN KEY (`rio_run_id`) REFERENCES `aura_run` (`rio_run_id`) ON DELETE CASCADE ON UPDATE CASCADE
@@ -1409,14 +1411,14 @@ BEGIN
   CREATE TABLE Mythistone.aggregated_consumables_new LIKE Mythistone.aggregated_consumables;
 
   INSERT INTO Mythistone.aggregated_consumables_new
-    (spec_id, season, spell_id, run_count)
-  SELECT AR.spec_id, RN.season, AC.spell_id, COUNT(*) AS run_count
+    (spec_id, season, hero_talent_id, spell_id, run_count)
+  SELECT AR.spec_id, RN.season, COALESCE(AR.hero_talent_id, 0), AC.spell_id, COUNT(*) AS run_count
   FROM Mythistone.aura_run RN
     JOIN Mythistone.aura_roster AR      ON AR.rio_run_id = RN.rio_run_id
     JOIN Mythistone.aura_consumable AC  ON AC.rio_run_id = AR.rio_run_id
                                        AND AC.roster_index = AR.roster_index
   WHERE RN.`timestamp` > v_cutoff_s
-  GROUP BY AR.spec_id, RN.season, AC.spell_id;
+  GROUP BY AR.spec_id, RN.season, COALESCE(AR.hero_talent_id, 0), AC.spell_id;
 
   CALL sp_swap_public_table('aggregated_consumables');
 END;

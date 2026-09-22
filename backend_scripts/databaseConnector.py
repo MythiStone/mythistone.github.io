@@ -3359,13 +3359,15 @@ def insert_aura_run(connection, cursor, rio_run_id, season, dungeon_id, keystone
 
 
 INSERT_AURA_ROSTER_SQL = """
-INSERT IGNORE INTO Mythistone.aura_roster (`rio_run_id`, `roster_index`, `spec_id`)
-VALUES (%s, %s, %s);
+INSERT IGNORE INTO Mythistone.aura_roster (`rio_run_id`, `roster_index`, `spec_id`, `hero_talent_id`)
+VALUES (%s, %s, %s, %s);
 """
 
 
 def insert_aura_roster_batch(connection, cursor, roster_vals):
-    """Batch-insert roster entries. `roster_vals` are (rio_run_id, roster_index, spec_id) tuples."""
+    """Batch-insert roster entries. `roster_vals` are
+    (rio_run_id, roster_index, spec_id, hero_talent_id) tuples (hero_talent_id from the
+    run-detail's talentLoadout.heroSubTreeId; 0 when unknown)."""
     if not roster_vals:
         return
     executemany_with_retry(connection, cursor, INSERT_AURA_ROSTER_SQL, roster_vals)
@@ -3405,6 +3407,50 @@ def upsert_interesting_aura_batch(connection, cursor, aura_vals):
     executemany_with_retry(connection, cursor, UPSERT_INTERESTING_AURA_SQL, aura_vals)
 
 
+FETCH_INTERESTING_AURA_IDS_SQL = "SELECT spell_id FROM Mythistone.interesting_aura;"
+
+
+def fetch_interesting_aura_ids(connection, cursor):
+    """All observed aura spell ids (feeds spells.json name/icon resolution)."""
+    rows = fetch_with_retry(connection, cursor, FETCH_INTERESTING_AURA_IDS_SQL, None)
+    return [int(r[0]) for r in rows]
+
+
+# aggregated_consumables is keyed per hero tree (hero_talent_id), so the combined
+# view must SUM across trees or a spell used under two trees returns twice and
+# double-counts. The BY_HERO twin filters a single tree (PK-unique per spell).
+FETCH_CONSUMABLE_COUNT_SQL = """
+SELECT ac.spell_id, ia.name, ia.icon, SUM(ac.run_count) AS run_count
+FROM Mythistone.aggregated_consumables ac
+LEFT JOIN Mythistone.interesting_aura ia ON ia.spell_id = ac.spell_id
+WHERE ac.spec_id = %s
+  AND ac.season = %s
+GROUP BY ac.spell_id, ia.name, ia.icon
+ORDER BY run_count DESC
+"""
+
+FETCH_CONSUMABLE_COUNT_BY_HERO_SQL = """
+SELECT ac.spell_id, ia.name, ia.icon, ac.run_count
+FROM Mythistone.aggregated_consumables ac
+LEFT JOIN Mythistone.interesting_aura ia ON ia.spell_id = ac.spell_id
+WHERE ac.spec_id = %s
+  AND ac.season = %s
+  AND ac.hero_talent_id = %s
+ORDER BY ac.run_count DESC
+"""
+
+
+def fetch_consumable_count(connection, cursor, spec_id, season, hero_talent_id=None):
+    """Consumable usage rows (spell_id, name, icon, run_count), most-used first.
+    With ``hero_talent_id`` the rows are that hero tree's only; without it they are
+    summed across trees (spec-wide). name/icon come from interesting_aura so the
+    generator can resolve each buff spell id to its item/category at build time (no
+    item id is stored in the DB)."""
+    if hero_talent_id is None:
+        return fetch_with_retry(connection, cursor, FETCH_CONSUMABLE_COUNT_SQL, (spec_id, season))
+    return fetch_with_retry(
+        connection, cursor, FETCH_CONSUMABLE_COUNT_BY_HERO_SQL, (spec_id, season, hero_talent_id)
+    )
 
 
 FETCH_ROUTES_MISSING_TELEMETRY_SQL = """

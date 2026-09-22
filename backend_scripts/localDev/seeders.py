@@ -725,7 +725,11 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
             # keyed on rio_run_id like the collector's Flow-B harvest
             aura_run.append((rio, static.season, cmid, keystone_level, ts_s, rng.choice(regions)))
             for idx, sid in enumerate(comp):
-                aura_roster.append((rio, idx, sid))
+                # hero_talent_id mirrors the collector reading talentLoadout.heroSubTreeId:
+                # a valid subtree for this spec so per-hero-tree consumables have data.
+                _, _sub_ids = static.processed_talents_for(sid)
+                hero_tid = rng.choice(list(_sub_ids)) if _sub_ids else 0
+                aura_roster.append((rio, idx, sid, hero_tid))
                 for cat, pool in cons_by_cat.items():
                     if not pool:
                         continue
@@ -809,7 +813,7 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
         "INSERT IGNORE INTO aura_run (rio_run_id, season, dungeon_id, keystone_level, timestamp, region) "
         "VALUES (%s,%s,%s,%s,%s,%s)", aura_run)
     _insert_many(conn, cursor,
-        "INSERT IGNORE INTO aura_roster (rio_run_id, roster_index, spec_id) VALUES (%s,%s,%s)", aura_roster)
+        "INSERT IGNORE INTO aura_roster (rio_run_id, roster_index, spec_id, hero_talent_id) VALUES (%s,%s,%s,%s)", aura_roster)
     _insert_many(conn, cursor,
         "INSERT IGNORE INTO aura_consumable (rio_run_id, roster_index, spell_id) "
         "VALUES (%s,%s,%s)", aura_consumable)

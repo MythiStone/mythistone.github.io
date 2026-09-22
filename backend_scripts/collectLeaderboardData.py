@@ -433,9 +433,11 @@ def build_aura_rows(full: dict) -> list[dict]:
     idx = get_consumable_index()
     rows = []
     for i, member in enumerate(full.get("roster") or []):
-        spec_id = ((member.get("character") or {}).get("spec") or {}).get("id")
+        character = member.get("character") or {}
+        spec_id = (character.get("spec") or {}).get("id")
         if spec_id is None:
             continue
+        hero_talent_id = int((character.get("talentLoadout") or {}).get("heroSubTreeId") or 0)
         auras, consumables = [], []
         for a in member.get("interestingAuras") or []:
             sid = a.get("id")
@@ -448,6 +450,7 @@ def build_aura_rows(full: dict) -> list[dict]:
         rows.append({
             "roster_index": i,
             "spec_id": int(spec_id),
+            "hero_talent_id": hero_talent_id,
             "auras": auras,
             "consumables": consumables,
         })
@@ -694,7 +697,7 @@ def persist_run_auras(conn, cursor, rio_run_id, roster, season_id, dungeon_id, k
         if rowcount == 0:
             conn.commit()  # already collected this run's rosters; keep the dictionary bump
             return
-        roster_vals = [(rio_run_id, e["roster_index"], e["spec_id"]) for e in roster]
+        roster_vals = [(rio_run_id, e["roster_index"], e["spec_id"], e["hero_talent_id"]) for e in roster]
         databaseConnector.insert_aura_roster_batch(conn, cursor, roster_vals)
         cons_vals = [
             (rio_run_id, e["roster_index"], sid)
