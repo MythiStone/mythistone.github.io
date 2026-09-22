@@ -8,9 +8,11 @@ data/static/hotfixes.json
 /classes/
 /dungeons/
 /items/
+/consumables/
 assets/img/previews/
 assets/json/search_index.json
 assets/json/items_index.json
+assets/json/consumables_index.json
 assets/json/blog_index.json
 assets/json/compRoutes.json
 assets/json/compVods.json
