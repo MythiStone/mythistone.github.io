@@ -49,7 +49,8 @@ _last_call = {}
 
 
 def require_env(name):
-    value = os.environ.get(name)
+    # Strip: a secret pasted with a trailing newline/space is rejected by the API.
+    value = (os.environ.get(name) or "").strip()
     if not value:
         raise RuntimeError(f"Missing required environment variable {name}")
     return value
@@ -113,7 +114,10 @@ def twitch_headers():
         },
         timeout=REQUEST_TIMEOUT,
     )
-    resp.raise_for_status()
+    if not resp.ok:
+        # Twitch names the cause in the body (e.g. "invalid client secret"): 400 is a
+        # bad client id, 403 a bad secret or a Public app (needs Confidential).
+        raise RuntimeError(f"Twitch token request failed ({resp.status_code}): {resp.text}")
     return {"Client-Id": client_id, "Authorization": f"Bearer {resp.json()['access_token']}"}
 
 
