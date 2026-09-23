@@ -1316,6 +1316,23 @@ def build_vod_watch_url(video_ref, video_type, start_seconds=None):
     return ""
 
 
+def rank_run_entries(entries):
+    """Sort run-like dicts (routes or vods) best-first, in place: most used,
+    then highest key, then shortest duration, then most recent. Shared by the
+    routes and vods finder pages and the Discord bot's /vods find so "pick the
+    default per dungeon" stays one definition. Vod dicts carry no usage_count, so
+    they simply tie on that field and fall through to level/duration/timestamp."""
+    entries.sort(
+        key=lambda r: (
+            r.get("usage_count", 0),
+            r.get("level", 0),
+            -(r.get("duration") or 0),
+            r.get("timestamp", 0),
+        ),
+        reverse=True,
+    )
+
+
 # Personas below this many POV videos get no streamer page (thin pages hurt SEO).
 MIN_STREAMER_VODS = 3
 

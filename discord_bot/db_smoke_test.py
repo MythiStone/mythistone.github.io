@@ -39,7 +39,7 @@ import databaseConnector
 import discord
 
 from . import charts, config, db, embeds, lookups
-from .cogs import analyze, comps, consumables, dungeon, items, routes, season, spec, stats
+from .cogs import analyze, comps, consumables, dungeon, items, routes, season, spec, stats, vods
 from .errors import SiteDataError, ValidationError
 from .site_data import SiteData
 
@@ -350,6 +350,25 @@ async def test_consumables_site(site):
         assert_embed(consumables.build_consumable_top_embed(idx, choice.value), f"consumable.top ({choice.value})")
 
 
+async def test_vods_site(site):
+    assert_embed(vods.build_vods_embed([], A_DUNGEON, A_SPEC, [A_SPEC]), "vods.find (empty)")
+    cv = await _try_site("comp_vods", site.comp_vods())
+    if not cv:
+        return
+    every = vods.filter_vods(cv)
+    check(len(every) == len(cv), "filter_vods without filters dropped entries")
+    assert_embed(vods.build_vods_embed(every), "vods.find")
+    top = every[0]
+    did, group = top["dungeon"], [str(s) for s in (top.get("specs") or [])[:2]]
+    pov = str(top["pov_spec"]) if top.get("pov_spec") else None
+    hits = vods.filter_vods(cv, did, pov, group)
+    check(top in hits, "filter_vods lost the VOD its own filters describe")
+    check(all(h["dungeon"] == did and (not pov or str(h["pov_spec"]) == pov) for h in hits),
+          "filter_vods leaked other VODs")
+    assert_embed(vods.build_vods_embed(hits, did, pov, group), "vods.find (filtered)")
+    check(bool(vods.watch_url(top)), "watch_url empty for a published VOD")
+
+
 async def test_routes_site(site):
     idx = await _try_site("comp_routes", site.comp_routes_indexes())
     if idx is None:
@@ -373,7 +392,7 @@ async def test_spec_gear_site(site):
 
 PURE_TESTS = [test_helpers, test_support_nudge, test_resolvers, test_analyze_parse]
 DB_TESTS = [test_season_db, test_spec_db, test_dungeon_db, test_stats_db, test_charts_db]
-SITE_TESTS = [test_comps_site, test_items_site, test_consumables_site, test_routes_site, test_spec_gear_site]
+SITE_TESTS = [test_comps_site, test_items_site, test_consumables_site, test_vods_site, test_routes_site, test_spec_gear_site]
 
 
 async def _amain():

@@ -11,6 +11,7 @@ COG_MODULES = [
     "dungeon",
     "comps",
     "routes",
+    "vods",
     "items",
     "consumables",
     "stats",

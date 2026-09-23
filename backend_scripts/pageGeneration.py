@@ -6,7 +6,7 @@ import re
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import databaseConnector
-from commonUtils import slugify, build_consumable_slug_map  # noqa: F401 - re-exported
+from commonUtils import slugify, build_consumable_slug_map, rank_run_entries  # noqa: F401 - re-exported
 
 def make_jinja_env(template_dir, extensions=None):
     """Shared Environment for every page generator.
@@ -80,23 +80,6 @@ ITEM_SUB_MIN_POP = 0.5
 # SEO/no-JS. KEEP IN SYNC with PAGE_SIZE in assets/js/items.js and
 # assets/js/consumables.js (no build step, so this can't be a shared constant).
 BROWSE_SSR_PAGE_SIZE = 60
-
-
-def rank_run_entries(entries):
-    """Sort run-like dicts (routes or vods) best-first, in place: most used,
-    then highest key, then shortest duration, then most recent. Shared by the
-    routes and vods finder pages so "pick the default per dungeon" stays one
-    definition. Vod dicts carry no usage_count, so they simply tie on that
-    field and fall through to level/duration/timestamp."""
-    entries.sort(
-        key=lambda r: (
-            r.get("usage_count", 0),
-            r.get("level", 0),
-            -(r.get("duration") or 0),
-            r.get("timestamp", 0),
-        ),
-        reverse=True,
-    )
 
 
 def build_item_slug_map(item_lookup):

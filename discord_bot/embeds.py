@@ -330,7 +330,7 @@ def keystone_guru_route_url(route_key, dungeon_id) -> str:
     return f"https://keystone.guru/route/{slug}/{route_key}/{slug}"
 
 
-def _upgrade_text(dungeon_id, duration, keystone_level) -> str:
+def upgrade_text(dungeon_id, duration, keystone_level) -> str:
     upgrade_map = lookups.DUNGEONS.get(str(dungeon_id), {}).get("keystone_upgrades", {})
     if not upgrade_map:
         return f"+{keystone_level}" if keystone_level is not None else ""
@@ -351,7 +351,7 @@ def run_lines(top_run: dict, icon_comp: bool = False) -> str:
     run_id = top_run.get("run_id")
     spec_ids = [m.get("spec_id") for m in top_run.get("members", []) if m.get("spec_id")]
 
-    key = _upgrade_text(did, duration, level)
+    key = upgrade_text(did, duration, level)
     parts = [f"**{key} {lookups.dungeon_name(did)}** — {commonUtils.format_duration(duration)}"]
     if region:
         parts[0] += f" · {region}"

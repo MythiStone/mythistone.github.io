@@ -123,6 +123,7 @@ ARTIFACTS = {
     "gem_enchant_index": (SITE_BASE + "/assets/json/gem_enchant_index.json", 24 * 3600),
     "simdps_tierlist": (SITE_BASE + "/assets/json/simdps_tierlist.json", 6 * 3600),
     "consumables_index": (SITE_BASE + "/assets/json/consumables_index.json", 6 * 3600),
+    "comp_vods": (SITE_BASE + "/assets/json/compVods.json", 6 * 3600),
 }
 SPEC_META_TTL = 6 * 3600
 

@@ -112,6 +112,9 @@ class SiteData:
     async def consumables_index(self) -> list:
         return await self.get("consumables_index")
 
+    async def comp_vods(self) -> dict:
+        return await self.get("comp_vods")
+
     async def spec_meta(self, spec_id) -> dict:
         return await self.get(f"spec_meta/{spec_id}")
 
