@@ -129,7 +129,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
             try:
                 npc_name_cache["data"] = get_npc_names_retail()
             except Exception as e:
-                print(f"  WARNING: could not fetch live NPC names to self-heal npcs.json: {e}")
+                print(f"[{datetime.now(timezone.utc).isoformat()}]  WARNING: could not fetch live NPC names to self-heal npcs.json: {e}")
                 npc_name_cache["data"] = {}
             npc_name_cache["loaded"] = True
 
@@ -148,7 +148,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
         if changed:
             with open(npcs_path, "w", encoding="utf-8") as f:
                 json.dump(npcs_lookup, f, indent=2, ensure_ascii=False)
-            print(f"  Self-healed npcs.json with {len(resolved)} newly-resolved npc name(s).")
+            print(f"[{datetime.now(timezone.utc).isoformat()}]  Self-healed npcs.json with {len(resolved)} newly-resolved npc name(s).")
         return set(missing_ids) - resolved
 
     def resolve_missing_npc_icons(missing_ids, icon_set):
@@ -165,7 +165,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                 npc_icon_cache["display_map"] = _icons.build_display_map(None)
                 npc_icon_cache["prev"] = _icons.load_json(_icons.DISPLAY_IDS_PATH, {})
             except Exception as e:
-                print(f"  WARNING: could not load MDT display map to self-heal npc icons: {e}")
+                print(f"[{datetime.now(timezone.utc).isoformat()}]  WARNING: could not load MDT display map to self-heal npc icons: {e}")
                 npc_icon_cache["mod"] = None
 
         icons = npc_icon_cache["mod"]
@@ -179,7 +179,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
         try:
             asyncio.run(icons.download_images(subset, prev))
         except Exception as e:
-            print(f"  WARNING: npc icon download failed during self-heal: {e}")
+            print(f"[{datetime.now(timezone.utc).isoformat()}]  WARNING: npc icon download failed during self-heal: {e}")
             return
 
         healed = 0
@@ -190,7 +190,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                 healed += 1
         if healed:
             icons.save_display_ids(prev)
-            print(f"  Self-healed {healed} newly-downloaded npc icon(s).")
+            print(f"[{datetime.now(timezone.utc).isoformat()}]  Self-healed {healed} newly-downloaded npc icon(s).")
 
     # Item metadata (from Raidbots) drives the "Best Loot" card: name/icon/ilvl/slot
     # plus the "sources" array that says which dungeon each item drops in.
@@ -254,7 +254,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                     "bloodlust_spells is empty — the lust timeline and the heatmap link both depend on it."
                 )
 
-            print("Pre-fetching global dungeon success rates...")
+            print(f"[{datetime.now(timezone.utc).isoformat()}] Pre-fetching global dungeon success rates...")
             all_dungeon_runs = databaseConnector.fetch_runs_per_dungeon(conn, cursor, current_season)
             dungeon_runs_lookup = {str(d['dungeon_id']): d for d in all_dungeon_runs}
             
@@ -278,7 +278,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
             for dungeon_id, dungeon_data in dungeon_lookup.items():
                 if target_dungeon and str(dungeon_id) != str(target_dungeon):
                     continue
-                print(f"Fetching top routes for {dungeon_data['name']['en_US']} ({dungeon_id})")
+                print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching top routes for {dungeon_data['name']['en_US']} ({dungeon_id})")
                 top_routes = databaseConnector.fetch_dungeon_top_routes(conn, cursor, dungeon_id)
                 _upgrades = dungeon_data.get("keystone_upgrades") or {}
                 for _r in top_routes:
@@ -290,7 +290,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                     _r["upgrade_text"] = _up["text"]
                 top_routes_by_dungeon[dungeon_id] = top_routes
                 if top_routes and top_routes[0].get('route_key'):
-                    print(f"Requesting thumbnail for top route: {top_routes[0]['route_key']}")
+                    print(f"[{datetime.now(timezone.utc).isoformat()}] Requesting thumbnail for top route: {top_routes[0]['route_key']}")
                     thumbnail_futures[dungeon_id] = thumbnail_executor.submit(
                         fetch_route_thumbnail, dungeon_id, top_routes[0]['route_key']
                     )
@@ -298,7 +298,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
             # Team-comp families per dungeon (same clustering as the comps page), so each
             # dungeon's popular comps are grouped with their flexible alternates. One scan
             # + one clustering pass, indexed by dungeon.
-            print("Clustering team comps for dungeon pages...")
+            print(f"[{datetime.now(timezone.utc).isoformat()}] Clustering team comps for dungeon pages...")
             team_families_by_dungeon = compArchetypes.build_dungeon_archetypes(
                 compArchetypes.collapse_comps(
                     databaseConnector.fetch_all_comps(conn, cursor, current_season),
@@ -311,7 +311,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
             # Reuses the per-spec indexed query the item pages use (fast path);
             # summed across specs = total equipping runs, and the spec with the most
             # runs on an item is the "most used by" credit shown on the card.
-            print("Pre-fetching item usage for dungeon loot ranking...")
+            print(f"[{datetime.now(timezone.utc).isoformat()}] Pre-fetching item usage for dungeon loot ranking...")
             item_total_runs = defaultdict(int)
             item_top_spec = {}  # item_id -> (spec_id str, runs)
             item_bonus_runs = defaultdict(lambda: defaultdict(int))
@@ -354,10 +354,11 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
             }
 
             for dungeon_id, dungeon_data in dungeon_lookup.items():
+                print(f"[{datetime.now(timezone.utc).isoformat()}] Processing dungeon: {dungeon_data['name']['en_US']} ({dungeon_id})")
                 if target_dungeon and str(dungeon_id) != str(target_dungeon):
                     continue
 
-                print(f"Generating dungeon page for {dungeon_data['name']['en_US']} ({dungeon_id})")
+                print(f"[{datetime.now(timezone.utc).isoformat()}]Generating dungeon page for {dungeon_data['name']['en_US']} ({dungeon_id})")
 
                 # Overall run totals for this dungeon, consumed by the social overview
                 # image (createDungeonOverviewImg dungeon_totals=...).
@@ -589,7 +590,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                         route_thumbnail=route_thumbnail,
                     )
                 except Exception as e:
-                    print(f"Failed to generate preview for {slug}: {e}")
+                    print(f"[{datetime.now(timezone.utc).isoformat()}]Failed to generate preview for {slug}: {e}")
                 
                 if debug:
                     break
