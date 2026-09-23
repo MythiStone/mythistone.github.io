@@ -6,7 +6,7 @@ DOMAIN = "https://mythistone.com"
 SITEMAP_FILE = "sitemap.xml"
 
 # Directories containing output html files
-SEARCH_DIRECTORIES = ["classes", "dungeons", "items", "consumables", "pages"]
+SEARCH_DIRECTORIES = ["classes", "dungeons", "items", "consumables", "streamers", "pages"]
 ROOT_FILES = ["index.html"]
 
 def generate_sitemap():
@@ -70,6 +70,8 @@ def generate_sitemap():
                 elif url_path.startswith("items/"):
                     priority = "0.70"
                 elif url_path.startswith("consumables/"):
+                    priority = "0.70"
+                elif url_path.startswith("streamers/"):
                     priority = "0.70"
                 else:
                     priority = "0.80"

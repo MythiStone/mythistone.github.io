@@ -23,6 +23,7 @@ them server-side (only the client analyzer does), and the spec-page talent trees
 by the seeded class/spec/hero_talents aggregates, not by that string.
 """
 
+import json
 import os
 import random
 
@@ -774,17 +775,17 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
                 ))
             # POV videos: attach one to some routes, POV = a spec from the comp
             if rng.random() < 0.4:
-                is_yt = rng.random() < 0.5
+                persona, char_id, char_name, realm, region, platform = rng.choice(POV_POOL)
+                is_yt = platform == "youtube"
                 route_videos.append((
                     route_key, rio, rio,
-                    "youtube" if is_yt else "twitch",
+                    platform,
                     f"vid{rio}",
                     None if is_yt else rng.randint(60, 3000),
                     rng.randint(900, 3600),
                     None if is_yt else f"https://example.invalid/thumb-{rio}.jpg",
                     "season-mn-2", rng.randint(1000, 999999),
-                    f"Povchar{rio}", rng.choice(realms), rng.choice(regions),
-                    rng.randint(10**8, 10**9), rng.randint(10**7, 10**8),
+                    char_name, realm, region, char_id, persona,
                     rng.choice(comp),
                 ))
             # pulls. The last pull is a "boss pull": it carries a dungeon boss npc AND a
@@ -841,6 +842,116 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
     _insert_many(conn, cursor,
         "INSERT INTO interesting_aura (spell_id, name, icon, school, has_cooldown, first_seen_ts, times_seen) "
         "VALUES (%s,%s,%s,%s,%s,%s,1) ON DUPLICATE KEY UPDATE times_seen = times_seen + 1", interesting_aura)
+
+
+# POV players the route seed draws from, so several reach commonUtils.MIN_STREAMER_VODS
+# and get a streamer page: one with an alt, one without a persona (character-key
+# fallback), one with no cached channel (name falls back to the character).
+POV_POOL = [
+    # persona_id, character_id, name, realm, region, platform
+    (7001, 9001, "Seedstreamer", "illidan", "us", "twitch"),
+    (7001, 9002, "Seedstreameralt", "illidan", "us", "twitch"),
+    (7002, 9003, "Tubekeys", "tarren-mill", "eu", "youtube"),
+    (7003, 9004, "Pumperpov", "stormrage", "us", "twitch"),
+    (None, 9005, "Nopersona", "silvermoon", "eu", "youtube"),
+    (7004, 9006, "Unlinkedpov", "area-52", "us", "twitch"),
+]
+
+
+def _seed_profile_details(static, rng, pools, spec_id, now_s, short_names):
+    """A synthetic raider.io `details` payload (fetchStreamerProfiles.build_details
+    shape): real item ids from the gear pools, a decodable talent string from the
+    member build variants, and one best run per season dungeon."""
+    items_by_id = {int(it["id"]): it for it in static.items}
+    slots = {}
+    for slot, pool in pools["items"].items():
+        if not pool:
+            continue
+        it = items_by_id[pool[0]]
+        epool = pools["enchants"].get(SLOT_GROUP_MAP.get(slot)) or []
+        slots[slot] = {
+            "id": int(it["id"]), "name": it["name"], "icon": it.get("icon"),
+            "quality": it.get("quality"), "item_level": rng.randint(300, 330),
+            "bonus": [], "enchant": int(epool[0]) if epool else None,
+            "gems": [int(g) for g in pools["gems"][:1]] if slot in ("NECK", "FINGER_1") else [],
+        }
+    variants = pools["variants"].get(int(spec_id)) or []
+    runs = []
+    for d in static.dungeons:
+        timer_ms = int(d["keystone_timer_seconds"]) * 1000
+        upgrades = rng.choice([0, 1, 1, 2, 3])
+        level = rng.randint(14, 21)
+        cmid = int(d["challenge_mode_id"])
+        runs.append({
+            "cmid": cmid, "dungeon": None, "short_name": short_names.get(str(cmid)),
+            "level": level, "clear_ms": int(timer_ms * (1.05 if not upgrades else 0.95 - 0.1 * upgrades)),
+            "par_ms": timer_ms, "upgrades": upgrades, "score": round(300 + level * 10 + upgrades * 5, 1),
+            "url": f"https://raider.io/mythic-plus-runs/season-mn-2/{rng.randint(10**6, 10**7)}",
+            "completed_at": now_s - rng.randint(3600, 10 * 86400), "spec_id": int(spec_id),
+        })
+    recent = sorted(rng.sample(runs, min(6, len(runs))), key=lambda r: r["completed_at"], reverse=True)
+    return {
+        "spec_id": int(spec_id), "role": None, "ilvl": round(rng.uniform(310, 325), 1),
+        # Spread across the rarity tiers so every rank colour shows up locally.
+        "world_ranks": {
+            "overall": rng.choice([2228, 40000, 250000]),
+            "class": rng.choice([55, 900]),
+            "specs": {str(spec_id): rng.choice([2, 7])},
+        },
+        "best_runs": runs,
+        "recent_runs": recent,
+        "run_counts": [
+            {"short_name": r["short_name"], "dungeon": None,
+             "total": rng.randint(5, 30), "timed": rng.randint(1, 5)} for r in runs
+        ],
+        "talents": variants[0]["loadout"] if variants else None,
+        "slots": slots,
+    }
+
+
+def seed_streamer_caches(conn, cursor, static, rng, pools):
+    """What fetchStreamerProfiles.py would cache: a channel per video, channel profiles
+    and raider.io profiles with details. Persona 7004 gets no channel (name falls back
+    to the character) and character 9006 no profile. Images point at a local asset so
+    the render has no broken images."""
+    print("  seeding streamer caches...")
+    avatar = "/assets/img/logos/Jods_logo.png"
+    videos = db.fetch_with_retry(
+        conn, cursor,
+        "SELECT video_type, video_ref, pov_character_id, pov_spec_id FROM route_videos", None)
+    channel_of = {9001: "tw-100", 9002: "tw-100", 9003: "yt-200", 9004: "tw-300", 9005: "yt-400"}
+    _insert_many(conn, cursor,
+        "INSERT IGNORE INTO video_channels (video_type, video_ref, channel_id, status) "
+        "VALUES (%s,%s,%s,%s)",
+        [(vt, vr, channel_of[cid], "ok") for vt, vr, cid, _ in videos if cid in channel_of])
+    _insert_many(conn, cursor,
+        "INSERT IGNORE INTO streamer_channels (platform, channel_id, login, display_name, "
+        "avatar_url, description) VALUES (%s,%s,%s,%s,%s,%s)", [
+            ("twitch", "tw-100", "seedstreamer", "SeedStreamer", avatar,
+             "Pushing keys every day. Seeded channel for local renders."),
+            ("youtube", "yt-200", "@tubekeys", "Tube Keys", avatar, "Weekly M+ guides and POVs."),
+            ("twitch", "tw-300", "pumperpov", "PumperPOV", None, None),
+            ("youtube", "yt-400", None, "No Persona Channel", avatar, ""),
+        ])
+    spec_of = {}
+    for _vt, _vr, cid, sid in videos:
+        spec_of.setdefault(cid, sid)
+    short_names = {cmid: d.get("raiderio_short_name")
+                   for cmid, d in load_json(os.path.join(static.dir, "dungeons.json")).items()}
+    classes = ["Mage", "Death Knight", "Priest", "Monk", "Evoker", "Demon Hunter"]
+    now_s = _now_ms() // _MS
+    rows = []
+    for i, (_p, char_id, name, realm, region, _pl) in enumerate(POV_POOL):
+        if char_id == 9006 or char_id not in spec_of:
+            continue
+        details = _seed_profile_details(static, rng, pools, spec_of[char_id], now_s, short_names)
+        rows.append((char_id, region, realm, name, classes[i], "Seed", 3000 + i * 55.5,
+                     avatar, f"https://raider.io/characters/{region}/{realm}/{name}",
+                     json.dumps(details, separators=(",", ":"))))
+    _insert_many(conn, cursor,
+        "INSERT IGNORE INTO pov_character_profiles (pov_character_id, region, realm_slug, name, "
+        "class_name, active_spec_name, score, thumbnail_url, profile_url, details) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", rows)
 
 
 # --------------------------------------------------------------------------------------

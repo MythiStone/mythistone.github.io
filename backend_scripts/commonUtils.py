@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import re
+from collections import Counter
 
 import databaseConnector
 
@@ -1313,6 +1314,82 @@ def build_vod_watch_url(video_ref, video_type, start_seconds=None):
         return url
 
     return ""
+
+
+# Personas below this many POV videos get no streamer page (thin pages hurt SEO).
+MIN_STREAMER_VODS = 3
+
+
+def load_score_tiers(lookup_dir=LOOKUP_DIR):
+    """raider.io's season score colour ramp, highest first (fetchMythicPlusCutoffs.py)."""
+    with open(os.path.join(lookup_dir, "scoreTiers.json"), encoding="utf-8") as f:
+        tiers = json.load(f)
+    if not tiers:
+        raise RuntimeError("scoreTiers.json is empty")
+    return tiers
+
+
+def score_color(score, tiers):
+    """raider.io colour for an M+ score: the first tier it reaches, else the lowest tier."""
+    for tier in tiers:
+        if (score or 0) >= tier["score"]:
+            return tier["color"]
+    return tiers[-1]["color"]
+
+
+def build_channel_url(platform, channel_id, login):
+    if platform == "twitch" and login:
+        return f"https://www.twitch.tv/{login}"
+    if platform == "youtube":
+        if login and login.startswith("@"):
+            return f"https://www.youtube.com/{login}"
+        return f"https://www.youtube.com/channel/{channel_id}"
+    return None
+
+
+def resolve_streamers(candidates, video_channels, channels):
+    """{streamer_key: {slug, name, channel}} from fetch_streamer_candidates plus the
+    video/channel caches. The channel is the one that published most of the persona's
+    resolved videos. Name is the channel display name, else the most-used character.
+    Colliding slugs all get `-<streamer_key>` so the map is order-independent."""
+    out = {}
+    for key, cand in candidates.items():
+        counts = Counter(
+            (vtype, video_channels[(vtype, vref)][0])
+            for vtype, vref in cand["videos"]
+            if video_channels.get((vtype, vref), (None, None))[1] == "ok"
+        )
+        channel = None
+        if counts:
+            platform, channel_id = counts.most_common(1)[0][0]
+            info = channels.get((platform, channel_id))
+            if info:
+                channel = dict(info, platform=platform, channel_id=channel_id,
+                               url=build_channel_url(platform, channel_id, info["login"]))
+        chars = cand["characters"]
+        top_char = max(chars.values(), key=lambda c: c["vods"])["name"] if chars else None
+        name = (channel and channel["display_name"]) or top_char or f"Streamer {key}"
+        out[key] = {"name": name, "channel": channel, "slug": slugify(name) or key}
+    slug_counts = Counter(s["slug"] for s in out.values())
+    for key, s in out.items():
+        if slug_counts[s["slug"]] > 1:
+            s["slug"] = f"{s['slug']}-{key}"
+    return out
+
+
+def load_streamers(conn, cursor, min_vods=MIN_STREAMER_VODS):
+    """DB-only streamer identities (see resolve_streamers), plus each candidate's
+    characters. Any generator that links to streamer pages must use this so slugs
+    cannot drift between pages."""
+    candidates = databaseConnector.fetch_streamer_candidates(conn, cursor, min_vods)
+    streamers = resolve_streamers(
+        candidates,
+        databaseConnector.fetch_video_channels(conn, cursor),
+        databaseConnector.fetch_streamer_channels(conn, cursor),
+    )
+    for key, s in streamers.items():
+        s["characters"] = candidates[key]["characters"]
+    return streamers
 
 
 def fetch_route_videos(conn, cursor):

@@ -295,6 +295,7 @@ def main():
     seeders.seed_runs(conn, cur, static, rng, cfg, pools)
     seeders.seed_routes(conn, cur, static, rng, cfg, ref)
     seeders.seed_standalone(conn, cur, static, rng, cfg, pools)
+    seeders.seed_streamer_caches(conn, cur, static, rng, pools)
     seeders.seed_control(conn, cur, static)
 
     # Optional real-data slice for one spec, pulled from the live read DB BEFORE

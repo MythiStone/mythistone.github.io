@@ -4,6 +4,8 @@
 <head>
   {% include "header_imports.html" %}
   <link rel="stylesheet" href="/assets/css/routes.css" />
+  <link rel="stylesheet" href="/assets/css/stat-colors.css" />
+  <link rel="stylesheet" href="/assets/css/streamer.css?v={{ generated_at | int }}" />
   <!-- Primary SEO -->
   <title>VOD Finder - Find Mythic+ POV Videos in {{ season_info.name }} | MythiStone</title>
   <meta name="description"
@@ -80,6 +82,25 @@
         </div>
       </div>
 
+      {# Segmented switch, not .nav-pills (material-dashboard.js hijacks those with its
+         moving-tab animation). mb-5: the finder card's mt-4 collapses with this margin
+         and its ribbon's mt-n4 would otherwise sit flush against the switch. #}
+      <div class="mt-3 mb-5 ms-3">
+        <div class="vod-view-switch" id="vodTabs" role="tablist">
+          <button class="vod-view-btn active" id="vods-list-tab" data-bs-toggle="tab" data-bs-target="#vods-list"
+            type="button" role="tab" aria-controls="vods-list" aria-selected="true">
+            <i class="material-symbols-rounded">smart_display</i> VODs
+          </button>
+          <button class="vod-view-btn" id="vods-streamers-tab" data-bs-toggle="tab" data-bs-target="#vods-streamers"
+            type="button" role="tab" aria-controls="vods-streamers" aria-selected="false">
+            <i class="material-symbols-rounded">person_play</i> Streamers
+            <span class="vod-view-count">{{ streamer_pages | length }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="tab-content" id="vodTabsContent">
+      <div class="tab-pane fade show active" id="vods-list" role="tabpanel" aria-labelledby="vods-list-tab">
       {% import "_finder_macros.html" as fm %}
       {% call fm.finder_card('compForm', 'Search for specific VODs', 'Pick dungeons, comp, POV spec, source, spells or NPCs', icon='smart_display', submit_label='Search VODs') %}
         <div class="row gx-3">
@@ -113,6 +134,86 @@
         </div>
       </div>
       <div id="route-sentinel" class="py-3" aria-hidden="true"></div>
+      </div>
+
+      <div class="tab-pane fade" id="vods-streamers" role="tabpanel" aria-labelledby="vods-streamers-tab">
+        <p class="text-sm text-secondary ms-3 mt-3 mb-3">
+          Players with at least {{ min_streamer_vods }} timed POV VODs in {{ season_info.name }}.
+          Filter by the classes and specs they have VODs on, and sort by VODs, raider.io world rank or key.
+        </p>
+        {% if streamer_pages %}
+        {# vods-streamers.js filters and reorders the cards below from their data-* attributes. #}
+        <div class="row g-3 mx-0 mb-3 align-items-end" id="streamerFilters">
+          <div class="col-12 col-md-4">
+            <label class="form-label" for="streamerClassSelect">Class</label>
+            <select id="streamerClassSelect" class="selectpicker form-control" data-style="btn-outline-primary"
+              multiple title="Any class…" data-selected-text-format="count >1" data-actions-box="true" data-sanitize="false">
+              {% for cid, cls in class_lookup.items()|sort(attribute='1.name', case_sensitive=false) %}
+              <option value="{{ cid }}" data-content="<span class='dropdown-icon-label' style='color: rgb({{ cls.color.r }}, {{ cls.color.g }}, {{ cls.color.b }})'>{{ cls.name }}</span>">{{ cls.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {{ fm.spec_filter(specs, class_lookup, id='streamerSpecSelect', label='Spec', title='Any spec…', max_options=0, col='col-12 col-md-4') }}
+          <div class="col-12 col-md-4">
+            <label class="form-label" for="streamerSortSelect">Sort by</label>
+            <select id="streamerSortSelect" class="selectpicker form-control" data-style="btn-outline-primary">
+              <option value="vods" selected>Most VODs</option>
+              <option value="overall">Overall world rank</option>
+              <option value="class">Class world rank</option>
+              <option value="spec">Spec world rank</option>
+              <option value="key">Highest key</option>
+              <option value="latest">Latest VOD</option>
+              <option value="name">Name</option>
+            </select>
+          </div>
+        </div>
+        <div class="row g-3 mx-0" id="streamerGrid">
+          {% for s in streamer_pages %}
+          <div class="col-12 col-sm-6 col-lg-4 col-xxl-3 streamer-grid-item"
+            data-name="{{ s.name | lower }}" data-vods="{{ s.vod_count }}" data-key="{{ s.highest_key }}"
+            data-latest="{{ s.latest | int }}" data-classes="{{ s.classes | join(' ') }}" data-specs="{{ s.specs | join(' ') }}"
+            data-rank-overall="{{ s.sort_ranks.overall or '' }}" data-rank-class="{{ s.sort_ranks['class'] or '' }}"
+            data-rank-specs="{{ s.sort_ranks.specs | tojson | forceescape }}">
+            <a class="card streamer-card h-100" href="/streamers/{{ s.slug }}">
+              <div class="card-body d-flex align-items-center gap-3 p-3">
+                {% if s.avatar %}
+                {# no-referrer: yt3.ggpht.com refuses YouTube avatars hotlinked with a foreign referrer. #}
+                <img class="streamer-avatar" src="{{ s.avatar }}" alt="" loading="lazy" referrerpolicy="no-referrer">
+                {% else %}
+                <span class="streamer-avatar streamer-avatar-empty"><i class="material-symbols-rounded">person</i></span>
+                {% endif %}
+                <div class="streamer-card-text">
+                  <div class="h6 mb-1 text-truncate">{{ s.name }}</div>
+                  <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+                    {% if s.channel %}<span class="streamer-platform streamer-platform-{{ s.channel.platform }}">{{ 'Twitch' if s.channel.platform == 'twitch' else 'YouTube' }}</span>{% endif %}
+                    <span class="rt-pill text-white">{{ s.vod_count }} VODs</span>
+                    <span class="rt-pill text-success">+{{ s.highest_key }}</span>
+                  </div>
+                  {% if s.world_ranks %}
+                  {# One badge per world rank of the streamer's best-ranked character. #}
+                  <div class="d-flex flex-wrap gap-1 mb-1" title="raider.io world ranks of this streamer's best-ranked character">
+                    {% for r in s.world_ranks %}
+                    <span class="rt-pill text-white">{{ r.label }} <b class="item-quality-{{ r.quality }}">#{{ '{:,}'.format(r.rank) }}</b></span>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                  <div class="d-flex gap-1">
+                    {% for sid in s.specs[:5] %}{% set sp = spec_lookup[sid] %}
+                    <img src="/data/icons/{{ sp.SpellIconFileId }}.jpg" alt="{{ sp.name }}" title="{{ sp.name }}" class="streamer-spec-icon">
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        <p id="streamerEmpty" class="text-sm ms-3 d-none">No streamer matches these filters.</p>
+        {% else %}
+        <p class="text-sm ms-3">No streamer has reached {{ min_streamer_vods }} VODs this season yet.</p>
+        {% endif %}
+      </div>
+      </div>
 
       {% include "footer.html" %}
     </div>
@@ -133,8 +234,9 @@
     // panels it renders itself once the worker replaces the skeleton.
     MythiConsent.wireAccordionEmbeds('#vodDungeonAccordion');
   </script>
-  <script src="/assets/js/finder.js"></script>
-  <script src="/assets/js/vods-finder.js"></script>
+  <script src="/assets/js/finder.js?v={{ generated_at | int }}"></script>
+  <script src="/assets/js/vods-finder.js?v={{ generated_at | int }}"></script>
+  <script src="/assets/js/vods-streamers.js?v={{ generated_at | int }}"></script>
 
   <div id="route-search-overlay" role="status" aria-hidden="true" aria-live="polite">
     <div class="overlay-backdrop" aria-hidden="true"></div>

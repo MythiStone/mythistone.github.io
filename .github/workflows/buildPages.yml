@@ -18,6 +18,7 @@ on:
       - 'backend_scripts/generateIndexPage.py'
       - 'backend_scripts/generateRoutesPage.py'
       - 'backend_scripts/generateVodsPage.py'
+      - 'backend_scripts/fetchStreamerProfiles.py'
       - 'backend_scripts/generateItemPages.py'
       - 'backend_scripts/generateConsumablePages.py'
       - 'backend_scripts/generateBlogPage.py'
@@ -457,6 +458,22 @@ jobs:
           --template templates/index.html \
           --output_dir .
 
+      # Caches each streamer's Twitch/YouTube channel and raider.io profiles in the
+      # DB so generateVodsPage.py stays credential-free.
+      - name: Fetch streamer profiles
+        env:
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORT }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+          RAIDERIO_API_KEY: ${{ secrets.RAIDERIO_API_KEY }}
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          python backend_scripts/fetchStreamerProfiles.py
+
       - name: Generate Routes HTML page
         env:
           DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
@@ -467,10 +484,6 @@ jobs:
         run: |
           python backend_scripts/generateRoutesPage.py \
             --template templates/find_routes.html  \
-            --output_dir pages
-
-          python backend_scripts/generateVodsPage.py \
-            --template templates/find_vods.html  \
             --output_dir pages
 
       - name: Generate Comp Analysis HTML page
@@ -565,6 +578,23 @@ jobs:
             --output_dir pages \
             --consumables_dir consumables
 
+      # After Item pages: the streamer pages link gear to /items pages, resolved from
+      # the items_index.json that step writes.
+      - name: Generate VOD and streamer pages
+        env:
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORT }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+        run: |
+          rm -rf streamers
+          mkdir -p streamers
+          python backend_scripts/generateVodsPage.py \
+            --template templates/find_vods.html \
+            --output_dir pages \
+            --streamers_dir streamers
+
       - name: Generate Search index
         run: |
           python backend_scripts/generateSearchIndex.py
@@ -593,6 +623,7 @@ jobs:
             dungeons
             items
             consumables
+            streamers
             classes
             index.html
             404.html
@@ -685,7 +716,7 @@ jobs:
         run: |
           set -e
           mkdir -p _site/data
-          cp -r pages dungeons items consumables classes assets _site/
+          cp -r pages dungeons items consumables streamers classes assets _site/
           cp -r data/icons data/creature_img _site/data/
           mkdir -p _site/data/social
           if compgen -G "social-images/*.png" > /dev/null; then

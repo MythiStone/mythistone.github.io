@@ -78,6 +78,9 @@ STANDALONE_TABLES = {
     "simc_bis_progress",
     "trend_snapshot",
     "interesting_aura",
+    "video_channels",
+    "streamer_channels",
+    "pov_character_profiles",
 }
 
 CONTROL_TABLES = {

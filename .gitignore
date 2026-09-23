@@ -9,6 +9,7 @@ data/static/hotfixes.json
 /dungeons/
 /items/
 /consumables/
+/streamers/
 assets/img/previews/
 assets/json/search_index.json
 assets/json/items_index.json

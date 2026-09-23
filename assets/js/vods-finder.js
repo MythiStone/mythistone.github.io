@@ -63,6 +63,10 @@
         ? `<span class="${BADGE} text-white" data-bs-toggle="tooltip" title="POV: ${v.pov_character_name || (pov ? pov.name : "")}">${pov ? `<img src="/data/icons/${pov.SpellIconFileId}.jpg" alt="${pov.name || ""}" title="${(pov.name || "")} POV" style="width:16px;height:16px;object-fit:cover;border-radius:3px;">` : ""}${v.pov_character_name ? `<span class="rt-name">${v.pov_character_name}</span>` : ""}</span>`
         : "";
 
+    const streamerLink = v.streamer_slug
+      ? `<a href="/streamers/${v.streamer_slug}" class="btn btn-sm btn-outline-primary mb-0 d-inline-flex align-items-center gap-2"><i class="material-symbols-rounded text-sm">person_play</i><span>All VODs from this streamer</span></a>`
+      : "";
+
     // Team comp icons (role-sorted), same as the route accordion.
     let specIcons = "";
     ["0", "1", "2"].forEach((role) => {
@@ -105,12 +109,13 @@
     class="accordion-collapse collapse" aria-labelledby="vodheading-${key}" data-bs-parent="#vodDungeonAccordion">
     <div class="accordion-body p-0">
       <div class="route-run-details">
-        <div class="route-run-head px-3 pt-2 pb-2">
+        <div class="route-run-head px-3 pt-2 pb-2 d-flex flex-wrap gap-2">
           <a href="${runUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mb-0 d-inline-flex align-items-center gap-2">
             <img src="/assets/img/logos/RaiderIOLogo.png" alt="" width="18" height="18" class="rounded">
             <span>View full run details on Raider.io</span>
             <i class="material-symbols-rounded text-sm">open_in_new</i>
           </a>
+          ${streamerLink}
         </div>
         <div class="iframe-container position-relative">
           <div class="iframe-spinner position-absolute top-50 start-50 translate-middle d-none">

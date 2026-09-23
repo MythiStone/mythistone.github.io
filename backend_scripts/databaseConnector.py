@@ -1,3 +1,4 @@
+import json
 import mysql.connector
 import time
 from mysql.connector import errorcode
@@ -3813,7 +3814,8 @@ def fetch_comp_vods(connection, cursor, recent_only_days=None, min_level=0, limi
     sql = f"""
     SELECT rv.route_key, rv.video_id, rv.rio_run_id, rv.video_type, rv.video_ref,
            rv.start_seconds, rv.pov_spec_id, rv.pov_character_name,
-           rd.dungeon_id, rd.keystone_level, rd.duration, rd.timestamp
+           rd.dungeon_id, rd.keystone_level, rd.duration, rd.timestamp,
+           {STREAMER_KEY_EXPR} AS streamer_key, rv.pov_character_id
     FROM Mythistone.route_videos rv
     JOIN Mythistone.route_data rd ON rd.route_key = rv.route_key
     JOIN Mythistone.dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
@@ -3847,11 +3849,177 @@ def fetch_comp_vods(connection, cursor, recent_only_days=None, min_level=0, limi
             "level": int(row[9]) if row[9] is not None else None,
             "duration": int(row[10]) if row[10] is not None else None,
             "timestamp": int(row[11]) if row[11] is not None else None,
+            "streamer_key": row[12],
+            "pov_character_id": int(row[13]) if row[13] is not None else None,
             "specs": route_specs_map.get(route_key, []),
             "npcs": route_npcs_map.get(route_key, []),
             "spells": route_spells_map.get(route_key, []),
         }
     return out
+
+
+# A streamer is a raider.io persona (the POV player, alts grouped). A video with no
+# persona falls back to 'c<character_id>' so the two id spaces never collide.
+STREAMER_KEY_EXPR = (
+    "COALESCE(CAST(rv.pov_persona_id AS CHAR), CONCAT('c', rv.pov_character_id))"
+)
+
+# Same timed-run filter as fetch_comp_vods, so every candidate's VODs are the ones
+# the VOD pages actually render.
+_TIMED_VIDEOS_SQL = f"""
+  SELECT {STREAMER_KEY_EXPR} AS streamer_key, rv.video_type, rv.video_ref,
+         rv.pov_character_id, rv.pov_character_name, rv.pov_realm_slug, rv.pov_region
+  FROM Mythistone.route_videos rv
+  JOIN Mythistone.route_data rd ON rd.route_key = rv.route_key
+  JOIN Mythistone.dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
+  WHERE rd.duration <= dd.upgrade_1_duration
+"""
+
+FETCH_STREAMER_VIDEOS_SQL = f"""
+SELECT s.streamer_key, s.video_type, s.video_ref, s.pov_character_id,
+       s.pov_character_name, s.pov_realm_slug, s.pov_region
+FROM ({_TIMED_VIDEOS_SQL}) s
+JOIN (
+  SELECT t.streamer_key FROM ({_TIMED_VIDEOS_SQL}) t
+  WHERE t.streamer_key IS NOT NULL
+  GROUP BY t.streamer_key
+  HAVING COUNT(*) >= %s
+) q ON q.streamer_key = s.streamer_key;
+"""
+
+
+def fetch_streamer_candidates(connection, cursor, min_vods):
+    """Personas with at least `min_vods` POV videos: {streamer_key: {"videos":
+    [(video_type, video_ref), ...], "characters": {character_id: {name, realm_slug,
+    region, vods}}}}. Shared by fetchStreamerProfiles.py and the VOD generator so
+    both agree on who gets a streamer page."""
+    rows = fetch_with_retry(connection, cursor, FETCH_STREAMER_VIDEOS_SQL, (int(min_vods),))
+    out = {}
+    for key, vtype, vref, char_id, name, realm, region in rows:
+        s = out.setdefault(key, {"videos": [], "characters": {}})
+        s["videos"].append((vtype, vref))
+        if char_id is None:
+            continue
+        c = s["characters"].setdefault(int(char_id), {
+            "name": name, "realm_slug": realm, "region": region, "vods": 0,
+        })
+        c["vods"] += 1
+    return out
+
+
+FETCH_VIDEO_CHANNELS_SQL = """
+SELECT video_type, video_ref, channel_id, status FROM Mythistone.video_channels;
+"""
+
+
+def fetch_video_channels(connection, cursor):
+    """{(video_type, video_ref): (channel_id, status)} for every resolved video."""
+    rows = fetch_with_retry(connection, cursor, FETCH_VIDEO_CHANNELS_SQL, None)
+    return {(r[0], r[1]): (r[2], r[3]) for r in rows}
+
+
+UPSERT_VIDEO_CHANNEL_SQL = """
+INSERT INTO Mythistone.video_channels (video_type, video_ref, channel_id, status)
+VALUES (%s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE channel_id = VALUES(channel_id), status = VALUES(status),
+  resolved_at = CURRENT_TIMESTAMP;
+"""
+
+
+def upsert_video_channels(connection, cursor, rows):
+    """rows: [(video_type, video_ref, channel_id | None, 'ok' | 'gone')]."""
+    if rows:
+        executemany_with_retry(connection, cursor, UPSERT_VIDEO_CHANNEL_SQL, rows)
+
+
+FETCH_FRESH_STREAMER_CHANNEL_IDS_SQL = """
+SELECT platform, channel_id FROM Mythistone.streamer_channels
+WHERE fetched_at >= NOW() - INTERVAL %s DAY;
+"""
+
+
+def fetch_fresh_streamer_channel_ids(connection, cursor, max_age_days):
+    """{(platform, channel_id)} fetched within `max_age_days`; older rows get refreshed."""
+    rows = fetch_with_retry(
+        connection, cursor, FETCH_FRESH_STREAMER_CHANNEL_IDS_SQL, (int(max_age_days),)
+    )
+    return {(r[0], r[1]) for r in rows}
+
+
+UPSERT_STREAMER_CHANNEL_SQL = """
+INSERT INTO Mythistone.streamer_channels
+  (platform, channel_id, login, display_name, avatar_url, description)
+VALUES (%s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE login = VALUES(login), display_name = VALUES(display_name),
+  avatar_url = VALUES(avatar_url), description = VALUES(description),
+  fetched_at = CURRENT_TIMESTAMP;
+"""
+
+
+def upsert_streamer_channels(connection, cursor, rows):
+    """rows: [(platform, channel_id, login, display_name, avatar_url, description)]."""
+    if rows:
+        executemany_with_retry(connection, cursor, UPSERT_STREAMER_CHANNEL_SQL, rows)
+
+
+FETCH_STREAMER_CHANNELS_SQL = """
+SELECT platform, channel_id, login, display_name, avatar_url, description
+FROM Mythistone.streamer_channels;
+"""
+
+
+def fetch_streamer_channels(connection, cursor):
+    """{(platform, channel_id): {login, display_name, avatar_url, description}}."""
+    rows = fetch_with_retry(connection, cursor, FETCH_STREAMER_CHANNELS_SQL, None)
+    return {
+        (r[0], r[1]): {
+            "login": r[2], "display_name": r[3], "avatar_url": r[4], "description": r[5],
+        }
+        for r in rows
+    }
+
+
+UPSERT_POV_CHARACTER_PROFILE_SQL = """
+INSERT INTO Mythistone.pov_character_profiles
+  (pov_character_id, region, realm_slug, name, class_name, active_spec_name, score,
+   thumbnail_url, profile_url, details)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE region = VALUES(region), realm_slug = VALUES(realm_slug),
+  name = VALUES(name), class_name = VALUES(class_name),
+  active_spec_name = VALUES(active_spec_name), score = VALUES(score),
+  thumbnail_url = VALUES(thumbnail_url), profile_url = VALUES(profile_url),
+  details = VALUES(details), fetched_at = CURRENT_TIMESTAMP;
+"""
+
+
+def upsert_pov_character_profiles(connection, cursor, rows):
+    """rows: [(character_id, region, realm_slug, name, class_name, active_spec_name,
+    score, thumbnail_url, profile_url, details_dict)]."""
+    if rows:
+        rows = [(*r[:9], json.dumps(r[9], separators=(",", ":"))) for r in rows]
+        executemany_with_retry(connection, cursor, UPSERT_POV_CHARACTER_PROFILE_SQL, rows)
+
+
+FETCH_POV_CHARACTER_PROFILES_SQL = """
+SELECT pov_character_id, region, realm_slug, name, class_name, active_spec_name, score,
+       thumbnail_url, profile_url, details
+FROM Mythistone.pov_character_profiles;
+"""
+
+
+def fetch_pov_character_profiles(connection, cursor):
+    """{character_id: {region, realm_slug, name, class_name, active_spec_name, score,
+    thumbnail_url, profile_url, details}}."""
+    rows = fetch_with_retry(connection, cursor, FETCH_POV_CHARACTER_PROFILES_SQL, None)
+    return {
+        int(r[0]): {
+            "region": r[1], "realm_slug": r[2], "name": r[3], "class_name": r[4],
+            "active_spec_name": r[5], "score": float(r[6]) if r[6] is not None else None,
+            "thumbnail_url": r[7], "profile_url": r[8],
+            "details": json.loads(r[9]) if r[9] else None,
+        }
+        for r in rows
+    }
 
 
 FETCH_DISTINCT_SPELL_IDS_SQL = """

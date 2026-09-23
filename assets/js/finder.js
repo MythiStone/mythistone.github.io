@@ -160,7 +160,9 @@
       for (const f of filters) {
         if ((p[f.param] || []).length) sp.set(f.param, p[f.param].join(","));
       }
-      const url = window.location.pathname + (sp.toString() ? "?" + sp.toString() : "");
+      // Keep the hash: deep-link.js owns it (e.g. #vods-streamers), and this runs at
+      // boot, possibly before deep-link has read it.
+      const url = window.location.pathname + (sp.toString() ? "?" + sp.toString() : "") + window.location.hash;
       if (replace) history.replaceState(p, "", url);
       else history.pushState(p, "", url);
     }

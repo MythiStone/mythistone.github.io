@@ -1,0 +1,214 @@
+/* Streamer pages (streamers/<slug>.html) and the Streamers tab on pages/vods. */
+
+:root {
+  --streamer-twitch: #9146ff;
+  --streamer-youtube: #ff3333;
+}
+
+.streamer-card {
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.streamer-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px var(--bs-primary);
+}
+
+.streamer-card-text {
+  min-width: 0;
+}
+
+.streamer-avatar {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--bs-primary);
+}
+
+.streamer-avatar-xl {
+  width: 96px;
+  height: 96px;
+}
+
+.streamer-avatar-empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-secondary-color);
+}
+
+.streamer-avatar-xl.streamer-avatar-empty .material-symbols-rounded {
+  font-size: 3rem;
+}
+
+.streamer-spec-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.streamer-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.streamer-platform-twitch {
+  background: var(--streamer-twitch);
+}
+
+.streamer-platform-youtube {
+  background: var(--streamer-youtube);
+}
+
+.streamer-platform-link:hover {
+  color: #fff;
+  filter: brightness(1.1);
+}
+
+.streamer-bio {
+  max-width: 60ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  opacity: 0.8;
+}
+
+.streamer-stat {
+  height: 100%;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  background: var(--bs-tertiary-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+}
+
+.streamer-stat-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}
+
+.streamer-stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.streamer-char-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.streamer-char-thumb-lg {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+}
+
+.streamer-score {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.streamer-dungeon-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.streamer-runs td,
+.streamer-runs th {
+  white-space: nowrap;
+}
+
+.table.streamer-runs > :not(caption) > * > * {
+  padding: 0.35rem 0.4rem;
+}
+
+/* VODs | Streamers segmented switch on pages/vods. */
+.vod-view-switch {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--bs-tertiary-bg);
+  border: 1px solid var(--bs-border-color);
+}
+
+.vod-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1.1rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--bs-body-color);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.vod-view-btn .material-symbols-rounded {
+  font-size: 1.1rem;
+}
+
+.vod-view-btn:hover {
+  background: var(--bs-secondary-bg);
+}
+
+/* Content on a gold fill uses near-black (AGENTS.md design tokens). */
+.vod-view-btn.active {
+  background: var(--bs-primary);
+  color: #241700;
+}
+
+.vod-view-count {
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+
+/* Recent runs: fixed Key / When columns so rows line up however long the key
+   ("+++21") or relative time ("59 minutes ago") is; long dungeon names truncate. */
+.streamer-recent-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.streamer-recent-table th:nth-child(2) {
+  width: 4rem;
+}
+
+.streamer-recent-table th:nth-child(3) {
+  width: 7.5rem;
+}
+
+.streamer-recent-dungeon {
+  min-width: 0;
+}
+
+/* One row height for Best runs and Recent runs so their rows line up side by side. */
+.streamer-runs tbody tr {
+  height: 2.8rem;
+}

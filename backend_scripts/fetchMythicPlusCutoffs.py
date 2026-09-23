@@ -20,6 +20,10 @@ CUTOFFS_JSON = os.path.join("data", "static", "mythicPlusCutoffs.json")
 
 CUTOFFS_URL = "https://raider.io/api/v1/mythic-plus/season-cutoffs"
 
+# raider.io's score colour ramp for the season (commonUtils.score_color reads it).
+SCORE_TIERS_JSON = os.path.join("data", "static", "scoreTiers.json")
+SCORE_TIERS_URL = "https://raider.io/api/v1/mythic-plus/score-tiers"
+
 # allTimed keys look like "allTimed17"; capture the numeric key level.
 ALL_TIMED_RE = re.compile(r"^allTimed(\d+)$")
 
@@ -58,8 +62,24 @@ def resolve_threshold_level(all_timed, top1pct_score):
     return min(qualifying)
 
 
+def write_score_tiers(season_slug):
+    """[{score, color}] highest first: a score takes the colour of the first tier it reaches."""
+    resp = requests.get(
+        SCORE_TIERS_URL, {"season": season_slug, "access_key": RAIDERIO_API_KEY}
+    )
+    resp.raise_for_status()
+    tiers = [{"score": t["score"], "color": t["rgbHex"]} for t in resp.json()]
+    if not tiers:
+        raise RuntimeError(f"raider.io returned no score tiers for season {season_slug}")
+    tiers.sort(key=lambda t: t["score"], reverse=True)
+    with open(SCORE_TIERS_JSON, "w", encoding="utf-8") as f:
+        json.dump(tiers, f, indent=2)
+    print(f"Wrote {SCORE_TIERS_JSON}: {len(tiers)} tiers")
+
+
 def main():
     season_slug = commonUtils.load_season_info()["slug"]
+    write_score_tiers(season_slug)
 
     region_scores = {}
     all_timed = {}

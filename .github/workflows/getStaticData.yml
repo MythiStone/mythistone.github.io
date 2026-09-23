@@ -175,7 +175,7 @@ jobs:
         run: |
           python backend_scripts/fetchSeasonAndPeriodInfo.py
 
-      - name: Fetch Mythic+ season cutoffs
+      - name: Fetch Mythic+ season cutoffs and score tiers
         run: |
           python backend_scripts/fetchMythicPlusCutoffs.py
 

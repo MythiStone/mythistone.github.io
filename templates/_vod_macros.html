@@ -6,8 +6,8 @@
 
     Kept in its OWN file (not _route_macros.html) because it uses the `vod_embed`
     Jinja filter: an imported macro file is compiled as a whole, so any generator
-    importing it must register that filter. Only the spec generator does, so only the
-    spec page imports this; the dungeon/routes generators import _route_macros alone.
+    importing it must register that filter. The spec and vods generators do (spec page,
+    VOD finder, streamer pages); the dungeon/routes generators import _route_macros alone.
 
     Params:
       dungeon      = dungeon dict (needs name.en_US, slug, icon)
@@ -18,6 +18,10 @@
       season_slug  = season_info.slug (for the raider.io permalink)
       iframe_height= CSS height for the embed
       item_class   = extra class(es) on .accordion-item
+      link_streamer= show the "Streamer page" button when vod.streamer_slug is set
+                     (off on the streamer page itself). It lives in the body, not on
+                     the POV pill, because the header is a <button> and a nested <a>
+                     is invalid and would toggle the accordion.
 
     Uses its own #vodDungeonAccordion parent and vod- id namespace so it coexists
     with a route accordion on the same page. Embed src is built by the `vod_embed`
@@ -27,7 +31,7 @@
     KEEP IN SYNC: assets/js/vods-finder.js renderVodItem() builds this SAME markup
     client-side and mirrors build_vod_embed_src in JS (Klaro never sees client-added
     iframes, so consent is handled per-iframe via MythiConsent.loadEmbed). -#}
-{% macro vod_accordion_item(dungeon, vod, spec_lookup, season_slug, iframe_height='calc(80vh - 3rem)', item_class='') %}
+{% macro vod_accordion_item(dungeon, vod, spec_lookup, season_slug, iframe_height='calc(80vh - 3rem)', item_class='', link_streamer=true) %}
 {% set vodKey = dungeon.slug ~ '-' ~ vod.video_ref %}
 {% set run_url = 'https://raider.io/mythic-plus-runs/' ~ season_slug ~ '/' ~ vod.run_id %}
 {% set pov = spec_lookup[vod.pov_spec_id|string] %}
@@ -79,12 +83,18 @@
     class="accordion-collapse collapse" aria-labelledby="vodheading-{{ vodKey }}" data-bs-parent="#vodDungeonAccordion">
     <div class="accordion-body p-0">
       <div class="route-run-details">
-        <div class="route-run-head px-3 pt-2 pb-2">
+        <div class="route-run-head px-3 pt-2 pb-2 d-flex flex-wrap gap-2">
           <a href="{{ run_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mb-0 d-inline-flex align-items-center gap-2">
             <img src="/assets/img/logos/RaiderIOLogo.png" alt="" width="18" height="18" class="rounded">
             <span>View full run details on Raider.io</span>
             <i class="material-symbols-rounded text-sm">open_in_new</i>
           </a>
+          {% if link_streamer and vod.streamer_slug %}
+          <a href="/streamers/{{ vod.streamer_slug }}" class="btn btn-sm btn-outline-primary mb-0 d-inline-flex align-items-center gap-2">
+            <i class="material-symbols-rounded text-sm">person_play</i>
+            <span>All VODs from this streamer</span>
+          </a>
+          {% endif %}
         </div>
         <div class="iframe-container position-relative">
           <div class="iframe-spinner position-absolute top-50 start-50 translate-middle d-none">

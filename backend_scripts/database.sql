@@ -948,6 +948,55 @@ CREATE TABLE `route_videos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.video_channels definition
+-- Which Twitch/YouTube channel published a POV video (fetchStreamerProfiles.py).
+-- status 'gone' = the platform no longer knows the video; it is never retried.
+
+CREATE TABLE `video_channels` (
+  `video_type` varchar(32) NOT NULL,
+  `video_ref` varchar(128) NOT NULL,
+  `channel_id` varchar(64) DEFAULT NULL,
+  `status` varchar(8) NOT NULL,
+  `resolved_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`video_type`,`video_ref`),
+  KEY `idx_video_channels_channel` (`video_type`,`channel_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.streamer_channels definition
+
+CREATE TABLE `streamer_channels` (
+  `platform` varchar(32) NOT NULL,
+  `channel_id` varchar(64) NOT NULL,
+  `login` varchar(128) DEFAULT NULL,
+  `display_name` varchar(128) DEFAULT NULL,
+  `avatar_url` varchar(512) DEFAULT NULL,
+  `description` text,
+  `fetched_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`platform`,`channel_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.pov_character_profiles definition
+-- raider.io profile of a POV character; season-specific, cleared by sp_season_wipe.
+-- details = trimmed ranks/runs/run counts/gear/talents (fetchStreamerProfiles.build_details).
+
+CREATE TABLE `pov_character_profiles` (
+  `pov_character_id` bigint unsigned NOT NULL,
+  `region` varchar(8) NOT NULL,
+  `realm_slug` varchar(100) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  `class_name` varchar(32) DEFAULT NULL,
+  `active_spec_name` varchar(32) DEFAULT NULL,
+  `score` decimal(7,1) DEFAULT NULL,
+  `thumbnail_url` varchar(512) DEFAULT NULL,
+  `profile_url` varchar(512) DEFAULT NULL,
+  `details` json DEFAULT NULL,
+  `fetched_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`pov_character_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.runs definition
 
 CREATE TABLE `runs` (
@@ -2994,6 +3043,9 @@ BEGIN
   CALL `Mythistone`.`sp_truncate_with_retry`('pull_enemies');
   CALL `Mythistone`.`sp_truncate_with_retry`('pull_spells');
   CALL `Mythistone`.`sp_truncate_with_retry`('route_videos');
+  -- raider.io scores are per season; video_channels/streamer_channels are
+  -- keyed by video/channel and deliberately preserved.
+  CALL `Mythistone`.`sp_truncate_with_retry`('pov_character_profiles');
   CALL `Mythistone`.`sp_truncate_with_retry`('route_deaths');
   CALL `Mythistone`.`sp_truncate_with_retry`('route_encounters');
   -- consumable collection (Flow B); interesting_aura is a cross-season dev
