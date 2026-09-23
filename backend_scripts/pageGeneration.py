@@ -6,6 +6,7 @@ import re
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import databaseConnector
+from commonUtils import slugify, build_consumable_slug_map  # noqa: F401 - re-exported
 
 def make_jinja_env(template_dir, extensions=None):
     """Shared Environment for every page generator.
@@ -98,18 +99,6 @@ def rank_run_entries(entries):
     )
 
 
-def slugify(text):
-    """Turn an item name into a URL slug (lowercase, hyphen-separated).
-
-    Mirrors the dungeon slug style: apostrophes are dropped (so "Flarendo's"
-    -> "flarendos"), every other run of non-alphanumeric characters collapses
-    to a single hyphen, and leading/trailing hyphens are trimmed.
-    """
-    text = (text or "").lower().replace("'", "").replace("’", "")
-    text = re.sub(r"[^a-z0-9]+", "-", text)
-    return text.strip("-")
-
-
 def build_item_slug_map(item_lookup):
     """Map every item id to a URL slug derived from its name.
 
@@ -123,23 +112,6 @@ def build_item_slug_map(item_lookup):
     counts = {}
     for iid, item in item_lookup.items():
         slug = slugify(item.get("name", "")) or str(iid)
-        base[iid] = slug
-        counts[slug] = counts.get(slug, 0) + 1
-    return {
-        iid: (f"{slug}-{iid}" if counts[slug] > 1 else slug)
-        for iid, slug in base.items()
-    }
-
-
-def build_consumable_slug_map(entities):
-    """Map every consumable item id to a URL slug from its name, with the same
-    collision handling as build_item_slug_map. ``entities`` is {item_id: {"name":
-    ...}} covering both the aura consumables and the weapon-enchant oils, so the
-    consumable-page generator and the spec-page cross-links derive identical slugs
-    from the identical entity set (build it from the same two lookups on both sides)."""
-    base, counts = {}, {}
-    for iid, e in entities.items():
-        slug = slugify(e.get("name", "")) or str(iid)
         base[iid] = slug
         counts[slug] = counts.get(slug, 0) + 1
     return {

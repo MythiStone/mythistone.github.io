@@ -37,6 +37,34 @@ def _load_group_buffs() -> list:
 GROUP_BUFFS = _load_group_buffs()          # [{id, icon, name, classIDs[], specIDs[]}]
 CRITICAL_BUFF_IDS = {2825, 20484}          # Bloodlust, Battle Rez (see templates/comps.html)
 
+
+def _load_consumable_context() -> dict:
+    # The loaders degrade to empty on a missing file, which would silently drop
+    # whole categories from /spec consumables, so an image missing them must not start.
+    ctx = commonUtils.load_consumable_context(config.STATIC_DIR)
+    if not ctx["consumable_lookup"] or not ctx["temp_enchant_index"]:
+        raise RuntimeError(
+            f"consumables.json / temp-enchants.json missing or empty in {config.STATIC_DIR}"
+        )
+    return ctx
+
+
+CONSUMABLES = _load_consumable_context()   # see commonUtils.load_consumable_context
+CONSUMABLE_CATEGORY_LABEL = dict(commonUtils.CONSUMABLE_CATEGORY_LABELS)
+
+
+def _load_hero_trees() -> dict:
+    out = {}
+    for sid in SPECS:
+        path = os.path.join(config.STATIC_DIR, "talents", f"{sid}.json")
+        with open(path, "r", encoding="utf-8") as fh:
+            sub_trees = json.load(fh).get("subTrees") or {}
+        out[sid] = {str(tid): t.get("name", f"Hero tree {tid}") for tid, t in sub_trees.items()}
+    return out
+
+
+HERO_TREES_BY_SPEC = _load_hero_trees()    # {spec_id: {tree_id: name}}
+
 # --- derived indexes -------------------------------------------------------
 PLAYABLE_CLASS_IDS = sorted(
     {str(meta["classID"]) for meta in SPECS.values()}, key=int
@@ -119,6 +147,19 @@ def resolve_spec_full(name: str) -> str:
     if _SPEC_BY_NAME_COUNT.get(key) == 1:
         return _SPEC_BY_NAME[key]
     raise ValidationError("Pick a spec from the suggestions (e.g. 'Frost Mage').")
+
+
+def resolve_hero_tree(spec_id: str, value: str) -> str:
+    """Accept a hero tree id or name, but only one that belongs to ``spec_id``."""
+    trees = HERO_TREES_BY_SPEC.get(str(spec_id), {})
+    key = str(value).strip()
+    if key in trees:
+        return key
+    for tid, name in trees.items():
+        if name.casefold() == key.casefold():
+            return tid
+    options = ", ".join(trees.values())
+    raise ValidationError(f"Unknown hero tree for {spec_full_name(spec_id)}. Choose one of: {options}.")
 
 
 def resolve_dungeon(dungeon_id: str) -> str:
@@ -245,6 +286,37 @@ async def spec_full_autocomplete(interaction, current: str):
         ]
         out.sort(key=lambda c: c.name)
         return _limit(out)
+    except Exception:
+        return []
+
+
+async def hero_tree_autocomplete(interaction, current: str):
+    """Suggest the hero trees of the class+spec already chosen in the same command."""
+    try:
+        ns = interaction.namespace
+        spec_id = resolve_spec(getattr(ns, "class_name", None) or getattr(ns, "class", None),
+                               getattr(ns, "spec_name", None) or getattr(ns, "spec", None))
+        current = (current or "").casefold()
+        return _limit([
+            app_commands.Choice(name=name, value=tid)
+            for tid, name in HERO_TREES_BY_SPEC.get(spec_id, {}).items()
+            if current in name.casefold()
+        ])
+    except Exception:
+        return []
+
+
+async def consumable_autocomplete(interaction, current: str):
+    """Suggest consumables from the published consumables index, most-used first."""
+    try:
+        index = await interaction.client.site_data.consumables_index()
+        current = (current or "").casefold()
+        matches = [c for c in index if current in c["name"].casefold()]
+        matches.sort(key=lambda c: c.get("runs", 0), reverse=True)
+        return _limit([
+            app_commands.Choice(name=c["name"][:100], value=str(c["id"]))
+            for c in matches
+        ])
     except Exception:
         return []
 

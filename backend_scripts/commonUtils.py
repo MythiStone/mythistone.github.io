@@ -664,6 +664,177 @@ def match_consumable_aura(aura, index):
     return None
 
 
+def slugify(text):
+    """Turn an item name into a URL slug (lowercase, hyphen-separated).
+
+    Mirrors the dungeon slug style: apostrophes are dropped (so "Flarendo's"
+    -> "flarendos"), every other run of non-alphanumeric characters collapses
+    to a single hyphen, and leading/trailing hyphens are trimmed.
+    """
+    text = (text or "").lower().replace("'", "").replace("’", "")
+    text = re.sub(r"[^a-z0-9]+", "-", text)
+    return text.strip("-")
+
+
+def build_consumable_slug_map(entities):
+    """Map every consumable item id to a URL slug from its name, with the same
+    collision handling as pageGeneration.build_item_slug_map. ``entities`` is
+    {item_id: {"name": ...}} covering both the aura consumables and the
+    weapon-enchant oils; build it with load_consumable_context so the consumable
+    pages, the spec-page cross-links and the Discord bot derive identical slugs."""
+    base, counts = {}, {}
+    for iid, e in entities.items():
+        slug = slugify(e.get("name", "")) or str(iid)
+        base[iid] = slug
+        counts[slug] = counts.get(slug, 0) + 1
+    return {
+        iid: (f"{slug}-{iid}" if counts[slug] > 1 else slug)
+        for iid, slug in base.items()
+    }
+
+
+def load_consumable_context(static_dir=LOOKUP_DIR):
+    """Every DB-free static lookup needed to turn consumable usage rows into
+    sections or pages. ``entities`` is the merged catalog keyed by int item id:
+    aura consumables from consumables.json plus weapon-enchant oils from
+    temp-enchants.json (category ``weapon``). ``temp_enchant_index`` is keyed by
+    effectId, which is how oils appear in the enchant aggregation."""
+    consumables = load_consumables(static_dir)
+    temp_enchant_index = load_temp_enchant_index(static_dir)
+    entities = {}
+    for c in consumables:
+        iid = c.get("item_id")
+        if iid is None:
+            continue
+        entities[int(iid)] = {
+            "item_id": int(iid),
+            "name": c.get("name") or f"Item {iid}",
+            "icon": c.get("icon"),
+            "quality": c.get("quality"),
+            "category": c.get("category"),
+        }
+    for meta in temp_enchant_index.values():
+        iid = meta.get("item_id")
+        if iid is None:
+            continue
+        entities[int(iid)] = {
+            "item_id": int(iid),
+            "name": meta.get("name") or f"Item {iid}",
+            "icon": meta.get("icon"),
+            "quality": meta.get("quality"),
+            "category": "weapon",
+        }
+    return {
+        "consumable_index": build_consumable_index(consumables=consumables, static_dir=static_dir),
+        "consumable_lookup": {c["item_id"]: c for c in consumables if c.get("item_id") is not None},
+        "temp_enchant_index": temp_enchant_index,
+        "temp_enchant_effect_ids": list(temp_enchant_index.keys()),
+        "entities": entities,
+        "slug_map": build_consumable_slug_map(entities),
+    }
+
+
+CONSUMABLE_MIN_TOTAL = 20
+CONSUMABLE_MIN_SHARE = 0.01
+CONSUMABLE_CATEGORY_LABELS = [
+    ("flask", "Flask"),
+    ("potion", "Potion"),
+    ("food", "Food"),
+    ("weapon", "Weapon Enchant"),
+    ("augment", "Augment Rune"),
+]
+
+
+def build_consumable_sections(rows, consumable_index, consumable_lookup, extra_sections=None,
+                              slug_map=None):
+    """Group per-spec consumable usage rows into display sections, one per category.
+
+    ``rows`` are (spell_id, name, icon, run_count) tuples from
+    ``fetch_consumable_count`` -- the DB stores only the buff spell id, so the
+    spell -> item/category resolution happens HERE via ``match_consumable_aura``
+    (name-match for flask/potion/augment using the stored raw aura name; the SimC
+    food_buffs map for food). The resolved item then supplies name/icon from
+    consumables.json. A buff that resolves to no item (a food SimC/overrides don't
+    cover) is skipped, as is a category below CONSUMABLE_MIN_TOTAL observations.
+    Usage ``pct`` is the share of the category's own observations.
+
+    ``extra_sections`` are pre-built sections (same shape) from a different data
+    source -- the "Weapon Enchant" section is sourced from the enchant aggregation,
+    not auras (see build_weapon_enchant_section). They are merged in and the whole
+    list is ordered by CONSUMABLE_CATEGORY_LABELS so the display order is stable.
+    Shared by the spec pages and the Discord bot's /spec consumables."""
+    by_cat = {}
+    for spell_id, name, icon, run_count in rows:
+        matched = match_consumable_aura({"id": spell_id, "name": name, "icon": icon}, consumable_index)
+        if not matched:
+            continue
+        item_id = matched.get("item_id")
+        meta = consumable_lookup.get(item_id) if item_id is not None else None
+        if not meta:
+            continue  # buff resolved to no shipped item (uncovered food, stale catalog)
+        by_cat.setdefault(matched["category"], []).append({
+            "spell_id": spell_id,
+            "item_id": item_id,
+            "name": meta.get("name"),
+            "icon_url": f"/data/icons/{meta.get('icon')}.png",
+            "quality": meta.get("quality"),
+            "slug": (slug_map or {}).get(item_id),
+            "count": int(run_count),  # SUM() over trees returns Decimal; per-tree is int
+        })
+
+    sections_by_key = {}
+    for key, label in CONSUMABLE_CATEGORY_LABELS:
+        raw = by_cat.get(key, [])
+        total = sum(e["count"] for e in raw)
+        if total < CONSUMABLE_MIN_TOTAL:
+            continue
+        threshold = max(1, int(total * CONSUMABLE_MIN_SHARE))
+        entries = sorted((e for e in raw if e["count"] >= threshold), key=lambda e: e["count"], reverse=True)
+        for e in entries:
+            e["pct"] = round(e["count"] / total * 100)
+        if entries:
+            sections_by_key[key] = {"key": key, "label": label, "total": total, "entries": entries}
+    for sec in extra_sections or []:
+        if sec:
+            sections_by_key[sec["key"]] = sec
+    order = {key: i for i, (key, _) in enumerate(CONSUMABLE_CATEGORY_LABELS)}
+    return [sections_by_key[k] for k in sorted(sections_by_key, key=lambda k: order.get(k, len(order)))]
+
+
+def build_weapon_enchant_section(rows, temp_enchant_index, slug_map=None):
+    """Build the "Weapon Enchant" consumable section from WEAPON-slot enchant usage.
+
+    Temp weapon enchants (oils/whetstones) are weapon enchantments, not aura
+    consumables, so they come from ``fetch_weapon_temp_enchant_usage`` (rows of
+    ``(enchantment_id, run_count)``) rather than the aura path, resolved to their item
+    via ``temp_enchant_index`` (effectId -> item). Each crafting quality is its own
+    row. Returns a section in the same shape as build_consumable_sections, or None
+    when nothing qualifies (so it can be dropped from extra_sections)."""
+    entries = []
+    for enchantment_id, run_count in rows:
+        meta = temp_enchant_index.get(int(enchantment_id))
+        if not meta:
+            continue
+        entries.append({
+            "item_id": meta.get("item_id"),
+            "name": meta.get("name"),
+            "icon_url": f"/data/icons/{meta.get('icon')}.png",
+            "quality": meta.get("quality"),
+            "slug": (slug_map or {}).get(meta.get("item_id")),
+            "count": int(run_count),
+        })
+    total = sum(e["count"] for e in entries)
+    if total < CONSUMABLE_MIN_TOTAL:
+        return None
+    threshold = max(1, int(total * CONSUMABLE_MIN_SHARE))
+    entries = sorted((e for e in entries if e["count"] >= threshold), key=lambda e: e["count"], reverse=True)
+    for e in entries:
+        e["pct"] = round(e["count"] / total * 100)
+    if not entries:
+        return None
+    return {"key": "weapon", "label": "Weapon Enchant", "total": total, "entries": entries}
+
+
 SEASON_INFO_ENV = "MYTHISTONE_SEASON_INFO"
 
 

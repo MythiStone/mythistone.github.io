@@ -17,7 +17,6 @@ from pageGeneration import (
     generateSpecNav, make_jinja_env,
     generateDungeonNav,
     build_item_slug_map,
-    build_consumable_slug_map,
     build_item_source_map,
     build_trends,
     trend_feeds_for_spec,
@@ -132,106 +131,6 @@ HERO_SECTION_MIN_SHARE = 0.05    # and this fraction of the spec's hero-tree run
 # Hero-tree preference shifts per dungeon: a couple of tenths of a percent is
 # not a preference, so only shifts of this many points are worth a row.
 HERO_TREE_DIFF_MIN_PCT_POINTS = 5.0
-
-CONSUMABLE_MIN_TOTAL = 20
-CONSUMABLE_MIN_SHARE = 0.01
-CONSUMABLE_CATEGORY_LABELS = [
-    ("flask", "Flask"),
-    ("potion", "Potion"),
-    ("food", "Food"),
-    ("weapon", "Weapon Enchant"),
-    ("augment", "Augment Rune"),
-]
-
-
-def build_consumable_sections(rows, consumable_index, consumable_lookup, extra_sections=None,
-                              slug_map=None):
-    """Group per-spec consumable usage rows into display sections, one per category.
-
-    ``rows`` are (spell_id, name, icon, run_count) tuples from
-    ``fetch_consumable_count`` -- the DB stores only the buff spell id, so the
-    spell -> item/category resolution happens HERE at build time via
-    ``commonUtils.match_consumable_aura`` (name-match for flask/potion/augment
-    using the stored raw aura name; the SimC food_buffs map for food). The resolved
-    item then supplies name/icon from consumables.json. A buff that resolves to no
-    item (a food SimC/overrides don't cover) is skipped, as is a category below
-    CONSUMABLE_MIN_TOTAL observations. Usage ``pct`` is the share of the category's
-    own observations, like the missive/embellishment lists.
-
-    ``extra_sections`` are pre-built sections (same shape) from a different data
-    source -- the "Weapon Enchant" section is sourced from the enchant aggregation,
-    not auras (see build_weapon_enchant_section). They are merged in and the whole
-    list is ordered by CONSUMABLE_CATEGORY_LABELS so the display order is stable."""
-    by_cat = defaultdict(list)
-    for spell_id, name, icon, run_count in rows:
-        matched = commonUtils.match_consumable_aura({"id": spell_id, "name": name, "icon": icon}, consumable_index)
-        if not matched:
-            continue
-        item_id = matched.get("item_id")
-        meta = consumable_lookup.get(item_id) if item_id is not None else None
-        if not meta:
-            continue  # buff resolved to no shipped item (uncovered food, stale catalog)
-        by_cat[matched["category"]].append({
-            "spell_id": spell_id,
-            "item_id": item_id,
-            "name": meta.get("name"),
-            "icon_url": f"/data/icons/{meta.get('icon')}.png",
-            "quality": meta.get("quality"),
-            "slug": (slug_map or {}).get(item_id),
-            "count": int(run_count),  # SUM() over trees returns Decimal; per-tree is int
-        })
-
-    sections_by_key = {}
-    for key, label in CONSUMABLE_CATEGORY_LABELS:
-        raw = by_cat.get(key, [])
-        total = sum(e["count"] for e in raw)
-        if total < CONSUMABLE_MIN_TOTAL:
-            continue
-        threshold = max(1, int(total * CONSUMABLE_MIN_SHARE))
-        entries = sorted((e for e in raw if e["count"] >= threshold), key=lambda e: e["count"], reverse=True)
-        for e in entries:
-            e["pct"] = round(e["count"] / total * 100)
-        if entries:
-            sections_by_key[key] = {"key": key, "label": label, "total": total, "entries": entries}
-    for sec in extra_sections or []:
-        if sec:
-            sections_by_key[sec["key"]] = sec
-    order = {key: i for i, (key, _) in enumerate(CONSUMABLE_CATEGORY_LABELS)}
-    return [sections_by_key[k] for k in sorted(sections_by_key, key=lambda k: order.get(k, len(order)))]
-
-
-def build_weapon_enchant_section(rows, temp_enchant_index, slug_map=None):
-    """Build the "Weapon Enchant" consumable section from WEAPON-slot enchant usage.
-
-    Temp weapon enchants (oils/whetstones) are weapon enchantments, not aura
-    consumables, so they come from ``fetch_weapon_temp_enchant_usage`` (rows of
-    ``(enchantment_id, run_count)``) rather than the aura path, resolved to their item
-    via ``temp_enchant_index`` (effectId -> item). Each crafting quality is its own
-    row. Returns a section in the same shape as build_consumable_sections, or None
-    when nothing qualifies (so it can be dropped from extra_sections)."""
-    entries = []
-    for enchantment_id, run_count in rows:
-        meta = temp_enchant_index.get(int(enchantment_id))
-        if not meta:
-            continue
-        entries.append({
-            "item_id": meta.get("item_id"),
-            "name": meta.get("name"),
-            "icon_url": f"/data/icons/{meta.get('icon')}.png",
-            "quality": meta.get("quality"),
-            "slug": (slug_map or {}).get(meta.get("item_id")),
-            "count": int(run_count),
-        })
-    total = sum(e["count"] for e in entries)
-    if total < CONSUMABLE_MIN_TOTAL:
-        return None
-    threshold = max(1, int(total * CONSUMABLE_MIN_SHARE))
-    entries = sorted((e for e in entries if e["count"] >= threshold), key=lambda e: e["count"], reverse=True)
-    for e in entries:
-        e["pct"] = round(e["count"] / total * 100)
-    if not entries:
-        return None
-    return {"key": "weapon", "label": "Weapon Enchant", "total": total, "entries": entries}
 
 # Enchant slot groups in gear-overview order (LEFT_ORDER + RIGHT_ORDER, then
 # weapons and trinkets), which is the order the Enchantment Details accordion
@@ -2252,21 +2151,12 @@ def main(template_path, output_dir, debug=False, spec=None):
             _r["stats"] = normalized
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
-    consumable_index = commonUtils.build_consumable_index(static_dir=LOOKUP_DIR)
-    consumable_lookup = {
-        c["item_id"]: c
-        for c in commonUtils.load_consumables(LOOKUP_DIR)
-        if c.get("item_id") is not None
-    }
-    temp_enchant_index = commonUtils.load_temp_enchant_index(LOOKUP_DIR)
-    temp_enchant_effect_ids = list(temp_enchant_index.keys())
-    _consumable_names = {c["item_id"]: {"name": c.get("name")}
-                         for c in commonUtils.load_consumables(LOOKUP_DIR)
-                         if c.get("item_id") is not None}
-    for _m in temp_enchant_index.values():
-        if _m.get("item_id") is not None:
-            _consumable_names[int(_m["item_id"])] = {"name": _m.get("name")}
-    consumable_slug_map = build_consumable_slug_map(_consumable_names)
+    consumable_ctx = commonUtils.load_consumable_context(LOOKUP_DIR)
+    consumable_index = consumable_ctx["consumable_index"]
+    consumable_lookup = consumable_ctx["consumable_lookup"]
+    temp_enchant_index = consumable_ctx["temp_enchant_index"]
+    temp_enchant_effect_ids = consumable_ctx["temp_enchant_effect_ids"]
+    consumable_slug_map = consumable_ctx["slug_map"]
     season_info = load_season_info(LOOKUP_DIR)
     os.makedirs(output_dir, exist_ok=True)
 
@@ -2492,11 +2382,11 @@ def main(template_path, output_dir, debug=False, spec=None):
                 spec_sample_size = databaseConnector.fetch_spec_sample_size(
                     conn, cursor, spec_id, current_season_id
                 )
-                consumable_sections = build_consumable_sections(
+                consumable_sections = commonUtils.build_consumable_sections(
                     databaseConnector.fetch_consumable_count(conn, cursor, spec_id, current_season_id),
                     consumable_index,
                     consumable_lookup,
-                    extra_sections=[build_weapon_enchant_section(
+                    extra_sections=[commonUtils.build_weapon_enchant_section(
                         databaseConnector.fetch_weapon_temp_enchant_usage(
                             conn, cursor, spec_id, current_season_id, temp_enchant_effect_ids
                         ),
@@ -3312,13 +3202,13 @@ def main(template_path, output_dir, debug=False, spec=None):
                     conn, cursor, spec_id, current_season_id, spec_lookup, hero_id
                 )
 
-                t_consumable_sections = build_consumable_sections(
+                t_consumable_sections = commonUtils.build_consumable_sections(
                     databaseConnector.fetch_consumable_count(
                         conn, cursor, spec_id, current_season_id, hero_id
                     ),
                     consumable_index,
                     consumable_lookup,
-                    extra_sections=[build_weapon_enchant_section(
+                    extra_sections=[commonUtils.build_weapon_enchant_section(
                         databaseConnector.fetch_weapon_temp_enchant_usage(
                             conn, cursor, spec_id, current_season_id, temp_enchant_effect_ids, hero_id
                         ),

@@ -12,6 +12,7 @@ COG_MODULES = [
     "comps",
     "routes",
     "items",
+    "consumables",
     "stats",
     "analyze",
 ]

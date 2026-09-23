@@ -109,6 +109,9 @@ class SiteData:
     async def simdps_tierlist(self) -> dict:
         return await self.get("simdps_tierlist")
 
+    async def consumables_index(self) -> list:
+        return await self.get("consumables_index")
+
     async def spec_meta(self, spec_id) -> dict:
         return await self.get(f"spec_meta/{spec_id}")
 

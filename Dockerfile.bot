@@ -42,6 +42,8 @@ COPY data/static/npcs.json       ${APP_DIR}/data/static/npcs.json
 COPY data/static/talents/        ${APP_DIR}/data/static/talents/
 COPY data/static/consumables.json ${APP_DIR}/data/static/consumables.json
 COPY data/static/food_buffs.json  ${APP_DIR}/data/static/food_buffs.json
+# Weapon oils for /spec consumables (lookups.CONSUMABLES refuses to start without it).
+COPY data/static/temp-enchants.json ${APP_DIR}/data/static/temp-enchants.json
 COPY data/static/item-sets.json   ${APP_DIR}/data/static/item-sets.json
 
 COPY entrypoint_bot.sh /entrypoint.sh
@@ -65,6 +67,6 @@ RUN python ${APP_DIR}/verifyImageImports.py ${APP_DIR}
 # loads seasonInfo.json at import, so a missing lookup file fails here too). Also
 # imports db_smoke_test so its imports are validated here (the test itself needs a
 # seeded DB and runs in CI, not in the image build — see buildBotImage.yml).
-RUN python -c "import discord_bot.bot, discord_bot.charts, discord_bot.db_smoke_test; import discord_bot.cogs.season, discord_bot.cogs.meta, discord_bot.cogs.spec, discord_bot.cogs.dungeon, discord_bot.cogs.comps, discord_bot.cogs.routes, discord_bot.cogs.items, discord_bot.cogs.stats, discord_bot.cogs.analyze"
+RUN python -c "import discord_bot.bot, discord_bot.charts, discord_bot.db_smoke_test; import discord_bot.cogs.season, discord_bot.cogs.meta, discord_bot.cogs.spec, discord_bot.cogs.dungeon, discord_bot.cogs.comps, discord_bot.cogs.routes, discord_bot.cogs.items, discord_bot.cogs.consumables, discord_bot.cogs.stats, discord_bot.cogs.analyze"
 
 ENTRYPOINT ["/entrypoint.sh"]

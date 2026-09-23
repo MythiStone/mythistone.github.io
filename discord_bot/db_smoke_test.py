@@ -39,7 +39,7 @@ import databaseConnector
 import discord
 
 from . import charts, config, db, embeds, lookups
-from .cogs import analyze, comps, dungeon, items, routes, season, spec, stats
+from .cogs import analyze, comps, consumables, dungeon, items, routes, season, spec, stats
 from .errors import SiteDataError, ValidationError
 from .site_data import SiteData
 
@@ -158,6 +158,15 @@ def test_resolvers():
         FAILURES.append("resolve_dungeon accepted bad input")
     except ValidationError:
         pass
+    tree_id, tree_name = next(iter(lookups.HERO_TREES_BY_SPEC[A_SPEC].items()))
+    check(lookups.resolve_hero_tree(A_SPEC, tree_id) == tree_id, "resolve_hero_tree by id failed")
+    check(lookups.resolve_hero_tree(A_SPEC, tree_name.upper()) == tree_id, "resolve_hero_tree by name failed")
+    other = next(s for s in lookups.SPECS if set(lookups.HERO_TREES_BY_SPEC[s]).isdisjoint({tree_id}))
+    try:
+        lookups.resolve_hero_tree(other, tree_id)
+        FAILURES.append("resolve_hero_tree accepted another spec's tree")
+    except ValidationError:
+        pass
     check(len(lookups.CLASS_CHOICES) <= 25, "CLASS_CHOICES > 25")
     check(len(lookups.DUNGEON_CHOICES) <= 25, "DUNGEON_CHOICES > 25")
 
@@ -197,6 +206,14 @@ async def test_spec_db(site):
     assert_embed(spec.build_talents_embed(sid, []), "spec.talents (empty)")
     stat_info = await db.run(commonUtils.fetch_stat_info, sid, config.SEASON, lookups.SPECS)
     assert_embed(spec.build_stats_embed(sid, stat_info), "spec.stats")
+    sections = await spec._get_consumable_sections(sid)
+    check(bool(sections), "consumable sections empty (seed thin?)")
+    assert_embed(spec.build_consumables_embed(sid, sections), "spec.consumables")
+    assert_embed(spec.build_consumables_embed(sid, []), "spec.consumables (empty)")
+    hero_id = next(iter(lookups.HERO_TREES_BY_SPEC[sid]))
+    hero_sections = await spec._get_consumable_sections(sid, hero_id)
+    assert_embed(spec.build_consumables_embed(sid, hero_sections or sections, hero_id, not hero_sections),
+                 "spec.consumables (hero)")
 
 
 async def test_dungeon_db(site):
@@ -313,6 +330,26 @@ async def test_items_site(site):
         pass
 
 
+async def test_consumables_site(site):
+    idx = await _try_site("consumables_index", site.consumables_index())
+    assert_embed(consumables.build_consumable_top_embed([]), "consumable.top (empty)")
+    if not idx:
+        return
+    first = idx[0]
+    entry = consumables.resolve_consumable(str(first["id"]), idx)
+    assert_embed(consumables.build_consumable_embed(entry), "consumable.info")
+    check(consumables.resolve_consumable(first["name"], idx)["id"] == first["id"],
+          "resolve_consumable by name failed")
+    try:
+        consumables.resolve_consumable("no such consumable zzz", idx)
+        FAILURES.append("resolve_consumable accepted bad name")
+    except ValidationError:
+        pass
+    assert_embed(consumables.build_consumable_top_embed(idx), "consumable.top")
+    for choice in consumables.CATEGORY_CHOICES:
+        assert_embed(consumables.build_consumable_top_embed(idx, choice.value), f"consumable.top ({choice.value})")
+
+
 async def test_routes_site(site):
     idx = await _try_site("comp_routes", site.comp_routes_indexes())
     if idx is None:
@@ -336,7 +373,7 @@ async def test_spec_gear_site(site):
 
 PURE_TESTS = [test_helpers, test_support_nudge, test_resolvers, test_analyze_parse]
 DB_TESTS = [test_season_db, test_spec_db, test_dungeon_db, test_stats_db, test_charts_db]
-SITE_TESTS = [test_comps_site, test_items_site, test_routes_site, test_spec_gear_site]
+SITE_TESTS = [test_comps_site, test_items_site, test_consumables_site, test_routes_site, test_spec_gear_site]
 
 
 async def _amain():

@@ -105,6 +105,10 @@ def expected() -> list[dict]:
         icon = b.get("icon")
         if icon:
             entries.append({"name": _buff_name(b["id"]), "url": f"{config.SITE_BASE}/data/icons/{icon}"})
+    # Consumables share the item_ namespace so emojis.item(id) resolves them too.
+    for iid, c in lookups.CONSUMABLES["entities"].items():
+        if c.get("icon"):
+            entries.append({"name": _item_name(iid), "url": lookups.asset_icon_url(c["icon"])})
     for role_name in ROLE_EMOJI_NAMES.values():
         entries.append({"name": role_name, "path": os.path.join(EMOJI_ASSET_DIR, f"{role_name}.png")})
     entries.append({"name": META_EMOJI_NAME, "path": os.path.join(EMOJI_ASSET_DIR, f"{META_EMOJI_NAME}.png")})

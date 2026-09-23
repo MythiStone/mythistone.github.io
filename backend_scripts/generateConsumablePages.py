@@ -37,22 +37,14 @@ import databaseConnector
 import commonUtils
 from pageGeneration import (
     load_notifications,
-    generateSpecNav, make_jinja_env, generateDungeonNav, build_consumable_slug_map,
+    generateSpecNav, make_jinja_env, generateDungeonNav,
     build_trends, trend_feeds_for_consumables, trend_feeds_for_consumable,
     BROWSE_SSR_PAGE_SIZE,
 )
 from generateSpecPages import LOOKUP_DIR, load_json, load_season_info
 
-# Category display labels + order, mirroring CONSUMABLE_CATEGORY_LABELS in
-# generateSpecPages so the browse filter and detail siblings read in the same
-# order as the spec-page consumable sections.
-CATEGORY_LABELS = [
-    ("flask", "Flask"),
-    ("potion", "Potion"),
-    ("food", "Food"),
-    ("weapon", "Weapon Enchant"),
-    ("augment", "Augment Rune"),
-]
+# Shared with the spec-page consumable sections so both read in the same order.
+CATEGORY_LABELS = commonUtils.CONSUMABLE_CATEGORY_LABELS
 CATEGORY_LABEL = {k: v for k, v in CATEGORY_LABELS}
 CATEGORY_ORDER = {k: i for i, (k, _) in enumerate(CATEGORY_LABELS)}
 # Readable noun for the intro copy.
@@ -91,35 +83,11 @@ def load_static_lookups():
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
     notifications = load_notifications(LOOKUP_DIR)
 
-    # spell -> consumable resolver (name / shortName / food-buff map).
-    consumable_index = commonUtils.build_consumable_index(static_dir=LOOKUP_DIR)
-
-    entities = {}
-    for c in commonUtils.load_consumables(LOOKUP_DIR):
-        iid = c.get("item_id")
-        if iid is None:
-            continue
-        entities[int(iid)] = {
-            "item_id": int(iid),
-            "name": c.get("name") or f"Item {iid}",
-            "icon": c.get("icon"),
-            "quality": c.get("quality"),
-            "category": c.get("category"),
-        }
-    temp_enchant_index = commonUtils.load_temp_enchant_index(LOOKUP_DIR)
-    for meta in temp_enchant_index.values():
-        iid = meta.get("item_id")
-        if iid is None:
-            continue
-        entities[int(iid)] = {
-            "item_id": int(iid),
-            "name": meta.get("name") or f"Item {iid}",
-            "icon": meta.get("icon"),
-            "quality": meta.get("quality"),
-            "category": "weapon",
-        }
-
-    slug_map = build_consumable_slug_map(entities)
+    consumable_ctx = commonUtils.load_consumable_context(LOOKUP_DIR)
+    consumable_index = consumable_ctx["consumable_index"]
+    entities = consumable_ctx["entities"]
+    temp_enchant_index = consumable_ctx["temp_enchant_index"]
+    slug_map = consumable_ctx["slug_map"]
 
     # Role int -> the /classes/<folder>/ page bucket (mirrors ROLE_FOLDERS in
     # pageGeneration.generateSpecNav so consumable-page spec links hit the same URLs).
@@ -278,6 +246,7 @@ def build_payloads(season, ctx):
             "category_label": CATEGORY_LABEL.get(cat, cat.title()),
             "slug": slug_map[item_id],
             "runs": int(total_runs),
+            "category_share": category_share,
             "top_spec": top_spec,
             "specs": equipped_specs,
         })
