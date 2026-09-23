@@ -1835,5 +1835,14 @@
         "blog": "1.7 M Arcane Mage keys are in the books this season. The Sunfury hero tree leads at 100% of builds, with Spellslinger (0%) trailing.\n\nGroups time keys with the spec 88% of the time and three-chest 5% of them. The stat priority skews toward Haste > Crit > Mastery > Versatility. Its top run this season is +22 Den of Nalorakk in 30:01.746.",
         "post": "Arcane Mage: 1.7 M runs show Sunfury (99.68%) dominates; Spellslinger (0%) is just a suggestion. 88% timed, +22 Den of Nalorakk in 30:01.746. Stat priority Haste > Crit > Mastery > Versatility. #WoW #MythicPlus https://mythistone.com/classes/Dps/Arcane_Mage",
         "timestamp": 1790111546636
+    },
+    "data/social/spec_overview_577_2026-09.png": {
+        "title": "Havoc Demon Hunter Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Dps/Havoc_Demon%20Hunter",
+        "social": "Fel-Scarred at 98.9% pick rate? Aldrachi Reaver didn't just lose the meta, it got yeeted into the Twisting Nether. 340.7K runs agree: Crit > Mastery > Haste > Vers. #WoW #MythicPlus https://mythistone.com/classes/Dps/Havoc_Demon%20Hunter",
+        "blog": "340.7 K Havoc Demon Hunter keys are in the books this season. The Fel-Scarred hero tree leads at 99% of builds, with Aldrachi Reaver (1%) trailing.\n\n88% of tracked runs beat the timer, and 6% earn all three chests. Most builds prioritise Crit > Mastery > Haste > Versatility. The best key so far: +21 Murder Row in 31:38.962.",
+        "post": "Fel-Scarred at 98.9% pick rate? Aldrachi Reaver didn't just lose the meta, it got yeeted into the Twisting Nether. 340.7K runs agree: Crit > Mastery > Haste > Vers. #WoW #MythicPlus https://mythistone.com/classes/Dps/Havoc_Demon%20Hunter",
+        "timestamp": 1790198687480
     }
 }
