@@ -87,10 +87,12 @@ def wait_for_mysql(name, timeout=120):
     print("Waiting for MySQL to accept connections...")
     deadline = time.time() + timeout
     while time.time() < deadline:
-        proc = _run(["docker", "exec", name, "mysqladmin", "ping", f"-p{ROOT_PW}", "--silent"],
+        # Ping over TCP: the image's first-boot init server runs with networking
+        # disabled and then restarts, so a socket ping can hit it and race the restart.
+        proc = _run(["docker", "exec", name, "mysqladmin", "ping", "--protocol=TCP",
+                     "-h", "127.0.0.1", f"-p{ROOT_PW}", "--silent"],
                     check=False)
         if proc.returncode == 0 and "alive" in proc.stdout.lower():
-            time.sleep(2)  # a beat past first ping so the server is fully ready for TCP
             print("MySQL is up.")
             return
         time.sleep(2)

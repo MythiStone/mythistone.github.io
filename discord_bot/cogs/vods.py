@@ -142,10 +142,12 @@ class VodsCog(commands.Cog):
         group = [lookups.resolve_spec_full(s) for s in (spec1, spec2, spec3, spec4) if s]
         comp_vods = await self.bot.site_data.comp_vods()
         matches = filter_vods(comp_vods, did, pov, group)
-        embed = build_vods_embed(matches, did, pov, group)
-        # A bare URL in the message text makes Discord show the top VOD's player preview.
+        await embeds.respond(interaction, build_vods_embed(matches, did, pov, group))
+        # Discord only unfurls a link preview in a message without bot embeds, so the
+        # top VOD's player goes in its own link-only followup.
         top_url = watch_url(matches[0]) if matches else ""
-        await embeds.respond(interaction, embed, content=top_url or None)
+        if top_url:
+            await interaction.followup.send(top_url)
 
 
 async def setup(bot):
