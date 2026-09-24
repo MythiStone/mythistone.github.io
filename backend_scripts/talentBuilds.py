@@ -43,6 +43,11 @@ def canonical_build(code, spec_id, hero_tree_id, full_node_order, nodes):
     for nid, sel in decoded.items():
         node = nodes.get(str(nid))
         if node is None:
+            # Exports also flag granted, unpurchased nodes of hero trees the spec
+            # cannot pick (Windwalker strings carry Master of Harmony's free entry
+            # node). They spend no points, so only a purchased unknown node is stale data.
+            if not sel["purchased"]:
+                continue
             return "unknown_node", None, None, None
         if node.get("g") == "sub":
             entries = node.get("entries") or []
