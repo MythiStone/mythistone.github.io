@@ -1844,5 +1844,14 @@
         "blog": "340.7 K Havoc Demon Hunter keys are in the books this season. The Fel-Scarred hero tree leads at 99% of builds, with Aldrachi Reaver (1%) trailing.\n\n88% of tracked runs beat the timer, and 6% earn all three chests. Most builds prioritise Crit > Mastery > Haste > Versatility. The best key so far: +21 Murder Row in 31:38.962.",
         "post": "Fel-Scarred at 98.9% pick rate? Aldrachi Reaver didn't just lose the meta, it got yeeted into the Twisting Nether. 340.7K runs agree: Crit > Mastery > Haste > Vers. #WoW #MythicPlus https://mythistone.com/classes/Dps/Havoc_Demon%20Hunter",
         "timestamp": 1790198687480
+    },
+    "data/social/spec_overview_256_2026-09.png": {
+        "title": "Discipline Priest Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Healer/Discipline_Priest",
+        "social": "Discipline Priest: 213.5 K runs, 86% timed yet only 6% three\u2011chest - fast timer low loot. Oracle (84.77%), Voidweaver (15%). +20 Murder Row in 29:40.199 Haste > Mastery > Crit > Versatility. #WoW #MythicPlus #DiscPriest https://mythistone.com/classes/Healer/Discipline_Priest",
+        "blog": "This season MythiStone has logged 213.5 K Discipline Priest runs. The Oracle hero tree leads at 85% of builds, with Voidweaver (15%) trailing.\n\nGroups time keys with the spec 86% of the time and three-chest 6% of them. Most builds prioritise Haste > Mastery > Crit > Versatility. Its top run this season is +20 Murder Row in 29:40.199.",
+        "post": "Discipline Priest: 213.5 K runs, 86% timed yet only 6% three\u2011chest - fast timer low loot. Oracle (84.77%), Voidweaver (15%). +20 Murder Row in 29:40.199 Haste > Mastery > Crit > Versatility. #WoW #MythicPlus #DiscPriest https://mythistone.com/classes/Healer/Discipline_Priest",
+        "timestamp": 1790285364930
     }
 }
