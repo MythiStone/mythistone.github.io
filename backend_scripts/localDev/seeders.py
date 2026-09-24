@@ -212,7 +212,7 @@ def _skewed_tree_assignment(trees, n, rng):
 
     ~70% of slots go to a dominant tree; the rest spread over the others. When that still
     lands on an even split (e.g. 2 trees, n even), one slot is shifted so a 50/50 is
-    impossible. Used for both the raw member build variants and the top-50 loadouts.
+    impossible. Used for the top-50 loadouts.
     """
     trees = list(trees) or [0]
     k = len(trees)
@@ -240,66 +240,117 @@ def _synthetic_loadout(spec_id, variant_idx, hero_tree, selected):
     return f"SEEDBUILD-{spec_id}-{int(hero_tree)}-{variant_idx}-{node_sig}"[:255]
 
 
-def _build_variants(static, spec_id, rng, count=4):
-    """A few fixed talent builds per spec so talent aggregates concentrate.
+def _build_variants(static, spec_id, rng):
+    """Weighted talent builds per spec, shaped for the spec page's build paths.
 
-    Every node id is filtered through the spec's processed talent map (the render lookup)
-    so the template can always resolve it; hero trees come from that map's subTrees.
+    Per hero tree (skewed ~70/30, never even): two core families with 2-3 class variants
+    each; for the dominant family, 1-point neighbours that talentBuilds must merge (a node
+    swap, a partial-rank shift, a choice flip, and a popular choice flip that merges despite
+    the ratio guard), a popular one-swap alternative that guard must keep separate, and a
+    node swap plus choice flip (a row with add, swap and drop chips). Some strings also carry the inactive hero tree's picks (real
+    exports do) and one incomplete build must drop. Every build spends the same points per
+    section, since talentBuilds drops strings below the most common total. Node ids come
+    from the processed talent map (the render lookup); ``weight`` drives add_member.
+    ``role`` lets seed_standalone pick top-50 strings: a ``top_only`` build per hero tree
+    (weight 0, members never run it) becomes the modal's extra "Top 50 build" row.
     """
     t = static.talents_for(spec_id)
     if not t:
         return []
     valid, sub_ids = static.processed_talents_for(spec_id)
-    class_ids = [int(n["id"]) for n in (t.get("classNodes") or []) if int(n["id"]) in valid]
-    spec_ids = [int(n["id"]) for n in (t.get("specNodes") or []) if int(n["id"]) in valid]
-    # hero nodes grouped by subtree, keeping only ids the render lookup knows
+    full_node_order, node_meta = static.tree_geometry_for(spec_id)
+
+    def meta(nid):
+        return node_meta.get(str(nid)) or {}
+
+    def max_ranks(nid):
+        return int(meta(nid).get("maxRanks") or 1)
+
+    def buyable(nodes):
+        return [int(n["id"]) for n in nodes if int(n["id"]) in valid and not meta(n["id"]).get("free")]
+
+    class_ids = buyable(t.get("classNodes") or [])
+    spec_ids = buyable(t.get("specNodes") or [])
     subtrees = {}
     for n in (t.get("heroNodes") or []):
         if int(n["id"]) in valid and n.get("subTreeId") in sub_ids:
             subtrees.setdefault(n["subTreeId"], []).append(int(n["id"]))
     sub_list = [s for s in sub_ids if s in subtrees] or list(sub_ids) or [0]
+    rng.shuffle(sub_list)
 
-    # Skew the hero-tree assignment across variants so members never come out an even
-    # 50/50 across trees: ~70% of variants take the dominant tree, the rest split the others.
-    tree_assign = _skewed_tree_assignment(sub_list, count, rng)
+    one_class = [n for n in class_ids if max_ranks(n) == 1]
+    one_spec = [n for n in spec_ids if max_ranks(n) == 1]
+    multi_spec = [n for n in spec_ids if max_ranks(n) > 1][:1]
+    n_class = max(2, len(one_class) * 6 // 10)
+    n_spec = max(4, len(one_spec) // 2)
 
-    # Tree geometry for the real Blizzard v2 loadout string. Entries let us pick a
-    # valid choice index per selected choice node; free nodes the encoder forces in.
-    full_node_order, node_meta = static.tree_geometry_for(spec_id)
+    entry_of = {}
 
-    def _entry_index(nid):
-        entries = (node_meta.get(str(nid)) or {}).get("entries") or []
-        return rng.randrange(len(entries)) if len(entries) > 1 else 0
+    def entry(nid):
+        if nid not in entry_of:
+            entries = meta(nid).get("entries") or []
+            entry_of[nid] = rng.randrange(len(entries)) if len(entries) > 1 else 0
+        return entry_of[nid]
+
+    sub_node = next((int(k) for k, v in node_meta.items() if v.get("g") == "sub"), None)
+
+    def sub_entry(tree):
+        for i, e in enumerate(meta(sub_node).get("entries") or []):
+            if e.get("subTreeId") == tree:
+                return i
+        return None
 
     variants = []
-    for i in range(count):
-        hero_tree = tree_assign[i]
-        hero_nodes = subtrees.get(hero_tree, [])
-        class_sample = rng.sample(class_ids, max(1, int(len(class_ids) * 0.7))) if class_ids else []
-        spec_sample = rng.sample(spec_ids, max(1, int(len(spec_ids) * 0.6))) if spec_ids else []
-        # Real v2 loadout string over the sampled build: {node_id: entry_index}
-        # for every purchased node (free nodes the encoder adds itself). Decodes
-        # through analyzer.js so members.loadout is the meta build the analyzer
-        # compares a pasted export against.
-        selected = {int(nid): _entry_index(nid)
-                    for nid in (class_sample + spec_sample + hero_nodes)}
+
+    def add(tree, cls, spc, weight, ranks=None, flip=None, inactive=None, role="core"):
+        hero_nodes = subtrees.get(tree, [])
+        selected = {nid: entry(nid) for nid in cls + spc + hero_nodes}
+        if flip is not None:
+            n_entries = len(meta(flip).get("entries") or [])
+            selected[flip] = (entry(flip) + 1) % n_entries
+        for nid in subtrees.get(inactive, []):
+            selected[nid] = entry(nid)
+        if sub_node is not None and sub_entry(tree) is not None:
+            selected[sub_node] = sub_entry(tree)
         if full_node_order and node_meta:
-            loadout = encode_loadout(spec_id, selected, full_node_order, node_meta)
+            loadout = encode_loadout(spec_id, selected, full_node_order, node_meta, ranks=ranks)
         else:
-            # No processed tree geometry (fullNodeOrder/nodes) in the committed
-            # data/static/talents/<spec>.json, so we can't emit a real Blizzard v2
-            # string. Fall back to a deterministic synthetic placeholder so the loadout
-            # aggregates still populate -- the bot's /spec talents fetch_top_loadout path
-            # and the spec page's meta-by-hero read them. Same non-decodable synthetic
-            # string the README already flags for the analyzer meta build.
-            loadout = _synthetic_loadout(spec_id, i, hero_tree, selected)
-        variants.append({
-            "class": class_sample,
-            "spec": spec_sample,
-            "hero_tree": int(hero_tree),
-            "hero": hero_nodes,
-            "loadout": loadout,
-        })
+            # No processed tree geometry: a stable, non-decodable token so the loadout
+            # aggregates still populate (the build paths then drop it as spec_mismatch).
+            loadout = _synthetic_loadout(spec_id, len(variants), tree, selected)
+        variants.append({"class": cls, "spec": spc, "hero_tree": int(tree), "hero": hero_nodes,
+                         "loadout": loadout, "weight": weight, "role": role})
+
+    tree_weights = [0.7] + [0.3 / max(1, len(sub_list) - 1)] * (len(sub_list) - 1)
+    for tree, tw in zip(sub_list, tree_weights):
+        inactive = next((s for s in sub_list if s != tree), None)
+        for fam, fam_w in enumerate((0.6, 0.4)):
+            spc = rng.sample(one_spec, min(n_spec, len(one_spec))) + multi_spec
+            class_vars = [rng.sample(one_class, min(n_class, len(one_class))) for _ in range(3 - fam)]
+            class_w = (0.55, 0.3, 0.15) if fam == 0 else (0.65, 0.35)
+            base = tw * fam_w
+            for i, (cls, cw) in enumerate(zip(class_vars, class_w)):
+                add(tree, cls, spc, base * cw * 0.7, inactive=inactive if i == 0 else None)
+            spare = [n for n in one_spec if n not in spc]
+            if fam or len(spare) < 3:
+                continue
+            leader_cls = class_vars[0]
+            add(tree, leader_cls, spc[1:] + [spare[0]], base * 0.05, role="neighbour")  # node swap
+            if multi_spec:  # one point moved off a multi-rank node
+                m = multi_spec[0]
+                add(tree, leader_cls, spc + [spare[1]], base * 0.05, ranks={m: max_ranks(m) - 1},
+                    role="neighbour")
+            flips = [n for n in spc if len(meta(n).get("entries") or []) > 1]
+            if flips:
+                add(tree, leader_cls, spc, base * 0.05, flip=flips[0], role="neighbour")
+            if len(flips) > 1:  # popular choice flip: merges anyway, a flex choice on the leader
+                add(tree, leader_cls, spc, base * 0.15, flip=flips[1], role="flip")
+            if flips and flips[0] != spc[0]:  # node swap plus a choice flip: add, swap and drop chips
+                add(tree, leader_cls, spc[1:] + [spare[1]], base * 0.1, flip=flips[0], role="swap")
+            add(tree, leader_cls, spc[:2] + spc[3:] + [spare[2]], base * 0.2, role="alt")  # popular alternative
+            add(tree, leader_cls, spc[: len(spc) // 2], base * 0.02, role="incomplete")  # must drop
+            add(tree, leader_cls, rng.sample(one_spec, min(n_spec, len(one_spec))) + multi_spec, 0.0,
+                role="top_only")
     return variants
 
 
@@ -450,7 +501,8 @@ def seed_runs(conn, cursor, static, rng, cfg, pools):
         nonlocal member_id, equip_id
         member_id += 1
         m = member_id
-        variant = rng.choice(variants.get(spec_id) or [None])
+        spec_variants = variants.get(spec_id)
+        variant = rng.choices(spec_variants, weights=[v["weight"] for v in spec_variants])[0] if spec_variants else None
         hero_tree = variant["hero_tree"] if variant else 0
         loadout = variant["loadout"] if variant else None
 
@@ -1037,6 +1089,21 @@ def seed_standalone(conn, cursor, static, rng, cfg, pools):
         # is a synthetic production-style token (see below), NOT a talent code;
         # loadout_text is the real export string generateSimcProfiles feeds simc.
         full_node_order, node_meta = static.tree_geometry_for(sid)
+        spec_variants = variants.get(sid) or []
+
+        def _top50_string(rank, tree):
+            """A member build string for this ranked player: ranks 1-5 run the
+            top_only build (the extra "Top 50 build" row), 6-8 the popular
+            alternative (TOP badge), the rest a weighted normal build."""
+            mine = [v for v in spec_variants if v["hero_tree"] == int(tree)]
+            role = "top_only" if rank <= 5 else "alt" if rank <= 8 else None
+            fixed = [v for v in mine if role and v["role"] == role]
+            if fixed:
+                return fixed[0]["loadout"]
+            normal = [v for v in mine if v["weight"] > 0 and v["role"] != "incomplete"]
+            if not normal:
+                return None
+            return rng.choices(normal, weights=[v["weight"] for v in normal])[0]["loadout"]
 
         def _entry_idx(nid):
             entries = (node_meta.get(str(nid)) or {}).get("entries") or []
@@ -1061,17 +1128,18 @@ def seed_standalone(conn, cursor, static, rng, cfg, pools):
                 # NOT a Blizzard talent code. loadout_text mirrors the OTHER
                 # production column: the real Blizzard v2 export string the player
                 # used in game, which is what generateSimcProfiles._top50_talents now
-                # feeds simc verbatim. We synthesize a valid v2 string over this
-                # loadout's selected build via encode_loadout (the seeder-test-only
-                # encoder) so the local top50 modal decodes it and the local simc
+                # feeds simc verbatim. We store a valid v2 string (a member build, see
+                # below) so the local top50 modal decodes it and the local simc
                 # validation exercises the real "use the stored string" path. Missing
                 # geometry leaves the column NULL, exactly as production does when
                 # raider.io exposes no string.
                 loadout_key = f"logged-mplus__{rng.randint(10**8, 10**9)}"
-                if full_node_order and node_meta:
+                # loadout_text reuses a member build string (_top50_string) so the Talent
+                # Builds modal can match top-50 players to listed builds; the per-node
+                # talent rows below keep this plan's per-dungeon flex picks.
+                loadout_text = _top50_string(rank, tree)
+                if loadout_text is None and full_node_order and node_meta:
                     loadout_text = encode_loadout(sid, selected, full_node_order, node_meta)
-                else:
-                    loadout_text = None
                 tpl.append((sid, season, rank, cmid, rng.choice(REGIONS),
                             rng.randint(10**6, 10**9), f"Player{sid}r{rank}", "TestRealm",
                             loadout_key, now_dt, rng.randint(12, 22), loadout_text,

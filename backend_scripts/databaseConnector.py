@@ -1480,6 +1480,29 @@ def fetch_top_loadout_per_dungeon(connection, cursor, spec_id, season):
     )
 
 
+FETCH_LOADOUT_KEY_LEVELS_SQL = """
+SELECT
+  hero_talent_id_key AS hero_talent_id,
+  loadout,
+  keystone_level,
+  upgrade_tier <> 'depleted' AS timed,
+  SUM(run_count) AS runs
+FROM Mythistone.aggregated_loadout_data
+WHERE spec_id = %s
+  AND season  = %s
+  AND loadout IS NOT NULL
+GROUP BY hero_talent_id_key, loadout, keystone_level, timed;
+"""
+
+
+def fetch_loadout_key_levels(connection, cursor, spec_id, season):
+    """Runs per (hero tree, loadout string, key level, timed) for a spec: the
+    input of the talent build paths (talentBuilds.build_hero_tree_builds)."""
+    return fetch_with_retry(
+        connection, cursor, FETCH_LOADOUT_KEY_LEVELS_SQL, (spec_id, season)
+    )
+
+
 FETCH_HERO_TREE_OVERVIEW_SQL = """
 SELECT
   hero_talent_id,

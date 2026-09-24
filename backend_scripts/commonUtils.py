@@ -335,6 +335,10 @@ def is_choice_node(node):
         return False
     if node.get("type") == "tiered":
         return False
+    # The hero-tree selection node's entries carry only a subTreeId, yet real
+    # exports store its choice index (which hero tree is active).
+    if node.get("type") == "subtree":
+        return len(node.get("entries") or []) > 1
     real = [e for e in (node.get("entries") or []) if _talent_entry_has_identity(e)]
     return len(real) > 1
 
@@ -444,6 +448,23 @@ def decode_loadout(code, full_node_order, nodes):
             "purchased": bool(is_purchased),
         }
     return selected
+
+
+def loadout_spec_id(code):
+    """Spec id from a v2 loadout string's header, or None when malformed.
+    ``decode_loadout`` skips it, so callers use this to reject a string pasted
+    under the wrong spec (it would decode misaligned without failing)."""
+    if not code or len(code) < 4:
+        return None
+    bits = []
+    for ch in code[:4]:
+        v = _TALENT_CHAR_IDX.get(ch)
+        if v is None:
+            return None
+        bits.extend((v >> b) & 1 for b in range(6))
+    if sum(bits[i] << i for i in range(8)) != LOADOUT_VERSION:
+        return None
+    return sum(bits[8 + i] << i for i in range(16))
 
 
 def load_talent_tree_geometry(spec_id, static_dir=LOOKUP_DIR):

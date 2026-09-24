@@ -39,8 +39,8 @@ After seeding, export the printed `DATABASE_*` and run `python -m discord_bot.db
 
 | flag | default | meaning |
 |------|---------|---------|
-| `--runs-per-dungeon N` | 150 | runs generated per dungeon (5 members each) |
 | `--routes-per-dungeon N` | 20 | route rows per dungeon |
+| `--runs-per-dungeon N` | 150 | runs generated per dungeon (5 members each). Use 600 to test the spec page talent build paths: at 150 a spec's second hero tree has too few runs for any build card |
 | `--top-player-ranks N` | 12 | top-player loadout ranks per spec |
 | `--simc-bis-ranks N` | 3 | SimC BiS ranks per slot per spec |
 | `--seed N` | 1337 | RNG seed (reproducible data) |

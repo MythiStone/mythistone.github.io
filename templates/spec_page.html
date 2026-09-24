@@ -243,7 +243,7 @@
 
 {# Class / Spec talent tree node (positioned). Shared by both columns. #}
 {% macro render_tree_node(n) -%}
-<div class="tt-node{% if n.pct_val == 0 %} inactive{% endif %}" data-nodeid="{{n.id}}" data-spellid="{{n.spellId}}" data-ntype="{{n.type}}" style="position: absolute; left: {{n.left}}%; top: {{n.top}}%; transform: translate(-50%, -50%); z-index: 2;">
+<div class="tt-node{% if n.pct_val == 0 %} inactive{% endif %}" data-nodeid="{{n.id}}" data-spellid="{{n.spellId}}" data-ntype="{{n.type}}" data-maxranks="{{ n.maxRanks }}"{% if n.isFreeNode %} data-free="1"{% endif %} style="position: absolute; left: {{n.left}}%; top: {{n.top}}%; transform: translate(-50%, -50%); z-index: 2;">
   {% if n.type == 'choice' %}
       <div class="tt-choice-wrapper" style="position: relative; display: inline-flex; --border-color: #ffb000; width: 100%; height: 100%;">
         <div class="arrow-left"></div>
@@ -325,6 +325,68 @@
         {% endfor %}
       </div>
     </div>
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{# Talent Builds modal pieces. key_badge mirrors the item max-key badge (render_slot). #}
+{% macro key_badge(b) -%}
+{% if b.max_timed_key or b.max_depleted_key %}
+<span class="badge py-1 px-2 max-key-badge" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-html="true"
+  title="{% if b.max_timed_key %}Highest Timed: +{{ b.max_timed_key }}{% endif %}{% if b.max_timed_key and b.max_depleted_key %}<br>{% endif %}{% if b.max_depleted_key %}Highest Depleted: +{{ b.max_depleted_key }}{% endif %}">
+  {% if b.max_timed_key %}+{{ b.max_timed_key }}{% else %}+{{ b.max_depleted_key }} (D){% endif %}
+</span>
+{% endif %}
+{%- endmacro %}
+
+{# Added talents, swapped choices, then dropped ones, a divider between groups, each in tree order (build_path_view). #}
+{% macro diff_chips(b) -%}
+<span class="tt-build-chips">
+  {% for group in [b.adds, b.swaps, b.drops] | select %}
+  {% if not loop.first %}<span class="tt-diff-divider" aria-hidden="true"></span>{% endif %}
+  {% for c in group %}
+  {# A real link: Wowhead power.js only tooltips <a href=".../spell=ID">, never a
+     data-wowhead span. A plain click selects the row (spec-page.js). #}
+  {% if c.sign == 'swap' %}{% set chip_label = 'Picks ' ~ c.name ~ ' instead of ' ~ c.from_name %}
+  {% else %}{% set chip_label = {'+': 'Adds', '-': 'Drops', '~': 'Points in'}[c.sign] ~ ' ' ~ c.name ~ ((': ' ~ c.rank ~ '/' ~ c.maxRanks) if c.sign == '~' else '') %}{% endif %}
+  {% if c.spellId %}<a href="https://www.wowhead.com/spell={{ c.spellId }}" target="_blank" rel="noopener"{% else %}<span title="{{ c.name }}"{% endif %}
+    class="tt-diff-chip {{ {'+': 'is-plus', '-': 'is-minus', '~': 'is-rank', 'swap': 'is-swap'}[c.sign] }}" aria-label="{{ chip_label }}">
+    <img src="/data/icons/{{ c.icon }}.png" alt="{{ c.name }}" width="20" height="20" loading="lazy" onerror="this.src='/data/icons/inv_misc_questionmark.png'">
+    <span class="tt-diff-sign" aria-hidden="true">{{ c.rank if c.sign == '~' else ('&#8644;' | safe if c.sign == 'swap' else ('+' if c.sign == '+' else '&minus;' | safe)) }}</span>
+  {% if c.spellId %}</a>{% else %}</span>{% endif %}
+  {% endfor %}
+  {% endfor %}
+  {# spec-page.js hides the chips that do not fit and fills this in #}
+  <span class="tt-build-more" hidden></span>
+</span>
+{%- endmacro %}
+
+{% macro flex_note(b) -%}
+{% if b.flex_count %}<span class="tt-build-flex" title="Talents some players of this build swap. They are ringed on the tree.">{{ b.flex_count }} flexible</span>{% endif %}
+{%- endmacro %}
+
+{# One row of the Talent Builds list. A <button> (not a link) so the whole row is one
+   control, and chips are spans because nothing interactive may nest in it. #}
+{# A div with role="button", not a <button>: the change chips inside are links. #}
+{# ``top_total`` / ``top_parent``: the top-50 loadouts the row's count is out of. #}
+{% macro build_card(b, title, parent, top_total, top_parent) -%}
+<div class="tt-build-card" role="button" tabindex="0" data-build="{{ b.id }}" aria-pressed="false">
+  <span class="tt-build-head">
+    <span class="tt-build-label">{{ title }}</span>
+    {# One badge for the top-50 share: solid gold when the build earns TOP, outlined otherwise. #}
+    {% if b.top50_count %}<span class="badge tt-build-top50{% if b.top50 %} is-top{% endif %}" data-bs-toggle="tooltip" data-bs-placement="top"
+      title="Used in {{ b.top50_count }} of {{ top_total }} top 50 {{ spec.name }} {{ class_info.name }} loadouts on {{ top_parent }}{% if b.top50 %}, a top 50 favourite{% endif %}">{{ '{:.0f}'.format(b.top50_count / top_total * 100) if b.top50_count / top_total >= 0.01 else '<1' }}%</span>{% endif %}
+    <span class="tt-build-end">
+      {{ key_badge(b) }}
+      <span class="tt-build-share" data-bs-toggle="tooltip" data-bs-placement="top"
+        title="{% if b.runs %}{{ '{:.1f}'.format(b.share) }}% of {{ parent }} ({{ b.runs | humanize }} runs){% else %}Not seen in the general population sample, only in top-50 loadouts{% endif %}">{{ '{:.0f}'.format(b.share) if b.share >= 1 or not b.runs else '<1' }}%</span>
+    </span>
+  </span>
+  {% if b.adds or b.swaps or b.drops or b.flex_count %}
+  <span class="tt-build-sub">
+    {% if b.adds or b.swaps or b.drops %}{{ diff_chips(b) }}{% endif %}
+    {{ flex_note(b) }}
+  </span>
   {% endif %}
 </div>
 {%- endmacro %}
@@ -698,7 +760,7 @@
                 <div class="tt-column tt-class tt-tree-column">
                   <svg class="tt-edges">
                     {% for e in v.ui_class_tree.edges %}
-                    <line x1="{{e.x1}}%" y1="{{e.y1}}%" x2="{{e.x2}}%" y2="{{e.y2}}%" style="stroke: {% if e.active %}#ffb000{% else %}#555{% endif %}; stroke-width: 2px;"></line>
+                    <line data-from="{{ e.from }}" data-to="{{ e.to }}" x1="{{e.x1}}%" y1="{{e.y1}}%" x2="{{e.x2}}%" y2="{{e.y2}}%" style="stroke: {% if e.active %}#ffb000{% else %}#555{% endif %}; stroke-width: 2px;"></line>
                     {% endfor %}
                   </svg>
                   {% for n in v.ui_class_tree.nodes %}
@@ -746,7 +808,7 @@
                 <div class="tt-column tt-spec tt-tree-column">
                   <svg class="tt-edges">
                     {% for e in v.ui_spec_tree.edges %}
-                    <line x1="{{e.x1}}%" y1="{{e.y1}}%" x2="{{e.x2}}%" y2="{{e.y2}}%" style="stroke: {% if e.active %}#ffb000{% else %}#555{% endif %}; stroke-width: 2px;"></line>
+                    <line data-from="{{ e.from }}" data-to="{{ e.to }}" x1="{{e.x1}}%" y1="{{e.y1}}%" x2="{{e.x2}}%" y2="{{e.y2}}%" style="stroke: {% if e.active %}#ffb000{% else %}#555{% endif %}; stroke-width: 2px;"></line>
                     {% endfor %}
                   </svg>
                   {% for n in v.ui_spec_tree.nodes %}
@@ -793,6 +855,14 @@
                 Talents per Dungeon
               </button>
             </div>
+            {% if hero_variants | selectattr('build_paths') | list %}
+            <div class="col-12 col-md-auto d-flex justify-content-center mb-2 mb-md-0">
+              <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
+                data-bs-target="#talentBuildsModal">
+                Talent Builds
+              </button>
+            </div>
+            {% endif %}
 
             <!-- Gear Overview -->
             {# data-share: deep-link.js pins a copy-link button to the corner (assets/js/deep-link.js). #}
@@ -2256,6 +2326,72 @@
         </div>
         {% include "footer.html" %}
   </main>
+  {# Talent build paths (talentBuilds.py). One .hero-section-variant per hero tree, so the
+     page's hero switcher swaps them; spec-page.js paints the picked build onto a clone of
+     that tree's talent tree in .tt-build-tree-mount. #}
+  <div class="modal fade" id="talentBuildsModal" tabindex="-1" aria-labelledby="talentBuildsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl modal-dialog-centered tt-builds-dialog">
+      <div class="modal-content card">
+        <div class="modal-header">
+          <h5 class="modal-title" id="talentBuildsModalLabel">Talent Builds</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-sm mb-3">
+            The complete talent builds {{ spec.name }} {{ class_info.name }} players run, most played first. Builds that
+            differ by a single talent point count as one build. Pick a build to see it on the tree and copy it.
+          </p>
+          {% for v in hero_variants %}
+          <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
+            {% set bp = v.build_paths %}
+            {% if bp %}
+            <div class="tt-builds row g-4" data-hero-tree-id="{{ v.id }}">
+              <div class="col-12 col-xl-4 tt-build-list-col">
+                <div class="tt-build-list">
+                  <div class="tt-build-list-title">Builds on {{ v.name }}</div>
+                  {% for b in bp.cores + ([bp.extra] if bp.extra else []) %}
+                  {% set core_title = 'Top 50 build' if b.id == 't1' else 'Build ' ~ loop.index %}
+                  {{ build_card(b, core_title, 'runs on ' ~ v.name, bp.top50_total, v.name) }}
+                  {% if b.variants | length > 1 %}
+                  <div class="tt-build-variants" data-core="{{ b.id }}" hidden>
+                    <div class="tt-build-list-title">Class tree variants of {{ core_title }}</div>
+                    {% for c in b.variants %}{{ build_card(c, 'Variant ' ~ loop.index, core_title ~ "'s runs", b.top50_count, core_title) }}{% endfor %}
+                    {% if b.other_variant_share >= 1 %}<div class="tt-build-other">Other variants: {{ '{:.0f}'.format(b.other_variant_share) }}%</div>{% endif %}
+                  </div>
+                  {% endif %}
+                  {% endfor %}
+                  {% if bp.other_share >= 1 %}<div class="tt-build-other">Other builds: {{ '{:.0f}'.format(bp.other_share) }}% of runs, each too rare to list</div>{% endif %}
+                  {% if bp.low_coverage %}<div class="tt-build-other">No dominant build: players spread across many small variations.</div>{% endif %}
+                </div>
+              </div>
+              <div class="col-12 col-xl-8">
+                <div class="tt-build-toolbar">
+                  <ul class="tt-build-legend">
+                    <li><span class="tt-legend-icon"></span>Taken</li>
+                    <li><span class="tt-legend-icon is-off"></span>Not taken</li>
+                    <li title="Share of this build's runs that take the talent"><span class="tt-legend-icon is-flex"></span><span class="tt-legend-pct">60%</span>Flexible</li>
+                    <li><span class="tt-legend-rank">1/2</span>Points spent</li>
+                    <li title="Builds are compared to Build 1 on the spec and hero trees, class tree variants to Variant 1 on the class tree"><span class="tt-build-change is-plus">+</span><span class="tt-build-change is-minus">&minus;</span>Added / dropped</li>
+                  </ul>
+                  <button type="button" class="btn btn-sm btn-primary d-flex align-items-center mb-0 js-copy-build"
+                    data-loadout="{{ bp.cores[0].code }}">
+                    <i class="fas fa-copy me-2"></i>
+                    <span class="js-copy-build-text" data-text="Copy this build">Copy this build</span>
+                  </button>
+                </div>
+                <div class="tt-build-tree-mount tt-build-view"></div>
+              </div>
+            </div>
+            {% else %}
+            <p class="text-sm text-secondary mb-0">Not enough recorded runs on {{ v.name }} yet to show its builds.</p>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal fade" id="talentModal" tabindex="-1" aria-labelledby="talentModalLabel" aria-hidden="true">
     {# xl: the per-dungeon talent tree needs the room the diff lists never did #}
     <div class="modal-dialog modal-dialog-scrollable modal-xl modal-dialog-centered">
@@ -2603,6 +2739,19 @@
             }}%){% endif %}, which can differ from the wider field's favourite.{% endif %}
           </p>
           <p>
+            <strong>Talent Builds</strong> groups whole talent builds on the shown hero tree. Builds that
+            differ by a single talent point count as one build, and the talents they disagree on are ringed as
+            flexible. Each build shows its share of runs, its run count and the highest key it was timed in. The small
+            icons list the talents a build adds or drops compared to Build 1. Click a build to see it on the tree and
+            copy exactly that build, or pick one of its class tree variants below it.
+          </p>
+          <p>
+            In <strong>Talent Builds</strong>, the gold percentage next to a build is its share of the top&nbsp;50
+            players' loadouts (one per player per dungeon). It is filled in when at least a quarter of them use the
+            build. When the top&nbsp;50's favourite build is not among the most played ones, it is listed as
+            <strong>Top 50 build</strong>.
+          </p>
+          <p>
             A <span class="badge tt-top-badge tt-top-badge-inline">TOP</span> badge marks the picks favoured by the
             top&nbsp;50 Raider.io-ranked players, so you can quickly spot where the very best players differ from
             everyone else.
@@ -2642,7 +2791,7 @@
 
 
   <!-- Per-spec data for spec-page.js -->
-  <script type="application/json" id="spec-page-data">{"levelStats": {{ level_stats | tojson }}}</script>
+  <script type="application/json" id="spec-page-data">{"levelStats": {{ level_stats | tojson }}, "buildPaths": {{ build_payload | tojson }}}</script>
   <script src="/assets/js/spec-page.js?v={{ generated_at | int }}"></script>
 </body>
 

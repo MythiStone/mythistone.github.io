@@ -222,6 +222,258 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
       }
     })();
 
+    // A copy of one hero tree's page talent tree for a modal to repaint, with the
+    // season-wide badges and the page-only hero switcher stripped.
+    function cloneTalentTree(treeId) {
+      const source = document.querySelector(
+        '#static-talent-tree .tt-variant[data-hero-tree-id="' + treeId + '"] .talent-tree-wrapper'
+      );
+      if (!source) return null;
+      const clone = source.cloneNode(true);
+      clone.querySelectorAll(
+        '.tt-top-badge, .tt-choice-pct, .tt-choice-badge, .tt-hero-top-hint, .tt-hero-switch-label, .tt-hero-switch-hint'
+      ).forEach((el) => el.remove());
+      clone.querySelectorAll('.tt-hero-switch').forEach((el) => {
+        el.classList.remove('tt-hero-switch-active');
+        el.removeAttribute('role');
+        el.removeAttribute('tabindex');
+        el.removeAttribute('title');
+      });
+      // Bootstrap moves initialised tooltips' text into data-bs-original-title
+      // and the clone is not registered with it, so fall back to plain titles.
+      clone.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
+        const text = el.getAttribute('data-bs-original-title');
+        if (text) el.setAttribute('title', text);
+        el.removeAttribute('data-bs-toggle');
+      });
+      return clone;
+    }
+
+    // Talent Builds modal: a build card paints that exact build onto a clone of
+    // its hero tree's talent tree and points "Copy this build" at its (real,
+    // collected) string. The paint is class-driven (.tt-build-view, see
+    // spec-page.css), so repainting another build needs no saved node state.
+    (function () {
+      const modal = document.getElementById('talentBuildsModal');
+      const paths = SPEC.buildPaths || {};
+      const choiceSpells = paths.choiceSpells || {};
+      const buildsByTree = paths.builds || {};
+      const panels = modal ? Array.from(modal.querySelectorAll('.tt-builds')) : [];
+      if (!panels.length) return;
+      const selected = {};  // hero tree id -> build id
+
+      function clearTree(mount) {
+        mount.querySelectorAll('.tt-build-rank, .tt-build-flex-badge, .tt-build-change, .tt-build-choice-pct').forEach((el) => el.remove());
+        mount.querySelectorAll('.is-picked, .is-flex').forEach((el) => el.classList.remove('is-picked', 'is-flex'));
+        mount.querySelectorAll('img[data-orig-src]').forEach((img) => {
+          img.setAttribute('src', img.getAttribute('data-orig-src'));
+          img.removeAttribute('data-orig-src');
+        });
+      }
+
+      function addBadge(node, cls, text, title) {
+        const el = document.createElement('span');
+        el.className = cls;
+        el.textContent = text;
+        el.title = title;
+        (node.querySelector('.tt-choice-wrapper') || node).appendChild(el);
+      }
+
+      function paintTree(mount, build, lead) {
+        clearTree(mount);
+        const picked = new Set();
+        mount.querySelectorAll('[data-nodeid]').forEach((node) => {
+          const id = node.getAttribute('data-nodeid');
+          const pick = build.picks[id];
+          if (pick || node.hasAttribute('data-free')) {
+            picked.add(id);
+            node.classList.add('is-picked');
+          }
+          if (pick && choiceSpells[id]) {
+            // show the chosen entry's icon, not the most popular one
+            const row = node.querySelector('.tt-choice-row[href$="spell=' + choiceSpells[id][pick[0]] + '"]');
+            const icon = node.querySelector('img.tt-octagon');
+            if (row) {
+              row.classList.add('is-picked');
+              const rowIcon = row.querySelector('img');
+              if (icon && rowIcon) {
+                icon.setAttribute('data-orig-src', icon.getAttribute('src'));
+                icon.setAttribute('src', rowIcon.getAttribute('src'));
+              }
+            }
+          }
+          const maxRanks = Number(node.getAttribute('data-maxranks') || 1);
+          if (pick && maxRanks > 1) {
+            addBadge(node, 'tt-build-rank', pick[1] + '/' + maxRanks, 'Points spent: ' + pick[1] + '/' + maxRanks);
+          }
+          const flex = build.flex[id];
+          if (flex !== undefined) {
+            node.classList.add('is-flex');
+            addBadge(node, 'tt-build-flex-badge', Math.round(flex) + '%',
+              'Flexible: ' + flex + '% of this build\'s runs take this talent');
+          }
+          // a flexible choice node lists each option's share in its choice list
+          const choiceFlex = (build.choiceFlex || {})[id];
+          if (choiceFlex && choiceSpells[id]) {
+            Object.keys(choiceFlex).forEach((entry) => {
+              const row = node.querySelector('.tt-choice-row[href$="spell=' + choiceSpells[id][entry] + '"]');
+              if (!row) return;
+              const pct = document.createElement('span');
+              pct.className = 'tt-build-choice-pct';
+              pct.textContent = Math.round(choiceFlex[entry]) + '%';
+              pct.title = choiceFlex[entry] + '% of this build\'s runs pick this option';
+              row.appendChild(pct);
+            });
+          }
+          const change = (build.changed || {})[id];
+          if (change) {
+            addBadge(node, 'tt-build-change ' + (change === '+' ? 'is-plus' : 'is-minus'),
+              change === '+' ? '+' : '\u2212', (change === '+' ? 'Added or changed vs ' : 'Dropped vs ') + lead);
+          }
+        });
+        mount.querySelectorAll('line[data-from]').forEach((line) => {
+          line.classList.toggle('is-picked',
+            picked.has(line.getAttribute('data-from')) && picked.has(line.getAttribute('data-to')));
+        });
+      }
+
+      function syncCards(panel, id) {
+        const core = id.split('.')[0];
+        const variantId = id.indexOf('.') >= 0 ? id : id + '.v1';
+        panel.querySelectorAll('[data-build]').forEach((btn) => {
+          const b = btn.getAttribute('data-build');
+          const on = b === core || b === variantId;
+          btn.classList.toggle('is-active', on);
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        panel.querySelectorAll('.tt-build-variants').forEach((row) => {
+          row.hidden = row.getAttribute('data-core') !== core;
+        });
+        fitChips(panel);
+      }
+
+      // Shows as many change chips as fit on one line and counts the rest in
+      // "+N more", so wide screens show every change. Chips are hidden from the
+      // ends of the dropped, added and swapped groups in turn, so a narrow row
+      // still shows every side. Hidden rows measure 0 and are fitted when they appear.
+      function fitChips(root) {
+        root.querySelectorAll('.tt-build-chips').forEach((row) => {
+          if (!row.offsetWidth) return;
+          const chips = Array.from(row.querySelectorAll('.tt-diff-chip'));
+          const groups = [
+            chips.filter((c) => c.classList.contains('is-minus')),
+            chips.filter((c) => c.classList.contains('is-plus') || c.classList.contains('is-rank')),
+            chips.filter((c) => c.classList.contains('is-swap')),
+          ];
+          const dividers = Array.from(row.querySelectorAll('.tt-diff-divider'));
+          const more = row.querySelector('.tt-build-more');
+          chips.forEach((c) => { c.hidden = false; });
+          dividers.forEach((d) => { d.hidden = false; });
+          more.hidden = true;
+          let hiddenCount = 0;
+          let turn = 0;
+          while (row.scrollWidth > row.clientWidth && groups.some((g) => g.length)) {
+            while (!groups[turn % groups.length].length) turn += 1;
+            groups[turn % groups.length].pop().hidden = true;
+            turn += 1;
+            hiddenCount += 1;
+            more.textContent = '+' + hiddenCount + ' more';
+            more.hidden = false;
+            syncDividers(row);
+          }
+        });
+      }
+
+      // A divider shows only between two groups that still have a visible chip,
+      // so an emptied middle group leaves one divider, not two.
+      function syncDividers(row) {
+        let chipBefore = false;
+        let lastDivider = null;
+        Array.from(row.children).forEach((el) => {
+          if (el.classList.contains('tt-diff-divider')) {
+            el.hidden = true;
+            if (chipBefore) lastDivider = el;
+          } else if (el.classList.contains('tt-diff-chip') && !el.hidden) {
+            if (lastDivider) lastDivider.hidden = false;
+            lastDivider = null;
+            chipBefore = true;
+          }
+        });
+      }
+
+      // Returns false for an id this hero tree does not have.
+      function select(panel, id) {
+        const treeId = panel.getAttribute('data-hero-tree-id');
+        const build = (buildsByTree[treeId] || {})[id];
+        const mount = panel.querySelector('.tt-build-tree-mount');
+        if (!build || !mount) return false;
+        if (!mount.firstChild) {
+          const clone = cloneTalentTree(treeId);
+          if (!clone) return false;
+          mount.appendChild(clone);
+        }
+        paintTree(mount, build, id.indexOf('.') >= 0 ? 'Variant 1' : 'Build 1');
+        panel.querySelector('.js-copy-build').setAttribute('data-loadout', build.code);
+        selected[treeId] = id;
+        syncCards(panel, id);
+        return true;
+      }
+
+      function visiblePanel() {
+        return panels.find((p) => p.closest('.hero-section-variant').style.display !== 'none');
+      }
+
+      panels.forEach((panel) => {
+        panel.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-build]');
+          if (!btn) return;
+          // Chips are Wowhead links for the hover tooltip; a plain click picks the
+          // row instead, while Ctrl/Cmd/Shift-click still opens Wowhead.
+          if (e.target.closest('.tt-diff-chip') && !(e.ctrlKey || e.metaKey || e.shiftKey)) e.preventDefault();
+          select(panel, btn.getAttribute('data-build'));
+          if (window.MythiLink) MythiLink.sync();
+        });
+        panel.addEventListener('keydown', (e) => {
+          const btn = e.target.closest('.tt-build-card');
+          if (!btn || e.target !== btn || (e.key !== 'Enter' && e.key !== ' ')) return;
+          e.preventDefault();
+          btn.click();
+        });
+      });
+
+      modal.addEventListener('shown.bs.modal', () => fitChips(modal));
+      // Observes the body, not the window, so any width change (scrollbar, zoom) refits.
+      let resizeTimer;
+      new ResizeObserver(() => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          if (modal.classList.contains('show')) fitChips(modal);
+        }, 150);
+      }).observe(modal.querySelector('.modal-body'));
+
+      // Trees are cloned on first open, not at load, since most visitors never open the modal.
+      modal.addEventListener('show.bs.modal', () => {
+        panels.forEach((panel) => {
+          if (!selected[panel.getAttribute('data-hero-tree-id')]) select(panel, 'b1');
+        });
+      });
+
+      // Registered after 'hero', so a link's hero tree is shown before its build applies.
+      if (window.MythiLink) {
+        MythiLink.registerState('build', {
+          read: function () {
+            const panel = visiblePanel();
+            const id = panel && selected[panel.getAttribute('data-hero-tree-id')];
+            return modal.classList.contains('show') && id && id !== 'b1' ? id : null;
+          },
+          apply: function (id) {
+            const panel = visiblePanel();
+            if (panel) select(panel, id);
+          }
+        });
+      }
+    })();
+
     // Talent Differences modal: the per-dungeon tree views are clones of the
     // page's talent tree, repainted from the per-dungeon usage JSON. Rendering
     // a tree per dungeon server-side would add megabytes to every spec page, so
@@ -271,30 +523,10 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
         if (mount.dataset.hydrated) return;
         const treeId = mount.getAttribute('data-hero-tree-id');
         const data = (usageByTree[treeId] || {})[mount.getAttribute('data-dungeon')];
-        const source = document.querySelector(
-          '#static-talent-tree .tt-variant[data-hero-tree-id="' + treeId + '"] .talent-tree-wrapper'
-        );
-        if (!data || !source) return;
+        const clone = data && cloneTalentTree(treeId);
+        if (!clone) return;
         mount.dataset.hydrated = '1';
 
-        const clone = source.cloneNode(true);
-        // Season-wide numbers and the page-only hero switcher have no meaning here.
-        clone.querySelectorAll(
-          '.tt-top-badge, .tt-choice-pct, .tt-choice-badge, .tt-hero-top-hint, .tt-hero-switch-label, .tt-hero-switch-hint'
-        ).forEach((el) => el.remove());
-        clone.querySelectorAll('.tt-hero-switch').forEach((el) => {
-          el.classList.remove('tt-hero-switch-active');
-          el.removeAttribute('role');
-          el.removeAttribute('tabindex');
-          el.removeAttribute('title');
-        });
-        // Bootstrap moves initialised tooltips' text into data-bs-original-title
-        // and the clone is not registered with it, so fall back to plain titles.
-        clone.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
-          const text = el.getAttribute('data-bs-original-title');
-          if (text) el.setAttribute('title', text);
-          el.removeAttribute('data-bs-toggle');
-        });
         const share = clone.querySelector('.tt-hero-share');
         if (share) {
           share.textContent = Math.round(data.tree_pct || 0) + '%';

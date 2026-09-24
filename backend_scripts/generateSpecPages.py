@@ -6,7 +6,8 @@ import databaseConnector
 import compArchetypes
 import aggregateData
 import commonUtils
-from collections import defaultdict
+import talentBuilds
+from collections import Counter, defaultdict
 from datetime import datetime, timezone, timedelta
 from contextlib import closing
 import re
@@ -492,12 +493,123 @@ def build_ui_tree(nodes, pop_data, is_hero=False, pop_hero_tree_id=None, top_pct
                 is_active = (start_pct >= 1.0 and child_pct >= 1.0)
                 
                 ui_edges.append({
+                    "from": n["id"], "to": child_id,
                     "x1": start_x, "y1": start_y,
                     "x2": end_x, "y2": end_y,
                     "active": is_active
                 })
 
     return {"nodes": ui_nodes, "edges": ui_edges}
+
+
+def choice_spell_ids(nodes):
+    """{node_id: [spellId per entry]} for choice nodes, so the page can tell
+    which choice a build's entry index points at (rows carry spell ids)."""
+    return {
+        nid: [e.get("spellId") for e in node["entries"]]
+        for nid, node in nodes.items()
+        if commonUtils.is_choice_node(node) and node.get("g") != "sub"
+    }
+
+
+def build_path_view(tree, nodes, payload):
+    """Template view of one hero tree's build paths (talentBuilds output).
+
+    Fills ``payload`` ({build_id: {code, picks, flex}}) for spec-page.js, which
+    repaints the talent tree to a clicked build. Returns None without builds.
+    """
+    if not tree or not tree["cores"]:
+        return None
+
+    def entry_view(nid, entry):
+        node = nodes[str(nid)]
+        entries = node.get("entries") or [{}]
+        e = entries[entry] if entry < len(entries) else entries[0]
+        return {
+            "name": e.get("name") or node.get("name"),
+            "icon": e.get("icon") or "inv_misc_questionmark",
+            "spellId": e.get("spellId"),
+            "maxRanks": int(node.get("maxRanks") or 1),
+        }
+
+    section_order = {"class": 0, "spec": 1, "hero": 2}
+
+    sign_order = {"+": 0, "~": 0, "swap": 1, "-": 2}
+
+    def chip_order(sign, nid):
+        # adds (and rank changes), then swaps, then drops, each by tree section,
+        # then top-to-bottom, left-to-right
+        node = nodes[str(nid)]
+        return (sign_order[sign], section_order.get(node.get("g"), 3), node.get("y") or 0, node.get("x") or 0)
+
+    def card(b, scope):
+        # A choice node that only changed its option is one "swap" chip (the new
+        # option, old one in the label) instead of an add plus a drop of one node.
+        signs = Counter(nid for _sign, nid, _entry, _rank in b["diff"])
+        dropped = {nid: entry for sign, nid, entry, _rank in b["diff"] if sign == "-"}
+        ordered = []
+        for sign, nid, entry, rank in b["diff"]:
+            if signs[nid] == 2:
+                if sign == "-":
+                    continue
+                sign = "swap"
+            ordered.append((chip_order(sign, nid), sign, nid, entry, rank))
+        chips = []
+        for _order, sign, nid, entry, rank in sorted(ordered, key=lambda o: o[0]):
+            chip = {"sign": sign, "rank": rank, **entry_view(nid, entry)}
+            if sign == "swap":
+                chip["from_name"] = entry_view(nid, dropped[nid])["name"]
+            chips.append(chip)
+        flex = {}
+        for (nid, entry), pct in b["flex"].items():
+            picked = b["picks"].get(str(nid))
+            if picked is None:
+                flex[str(nid)] = round(flex.get(str(nid), 0.0) + pct, 1)
+            elif picked[0] == entry:
+                flex[str(nid)] = pct
+        # per-option shares for flexible choice nodes, shown in the node's choice list
+        choice_flex = {}
+        for (nid, entry), pct in b["flex"].items():
+            if commonUtils.is_choice_node(nodes[str(nid)]):
+                choice_flex.setdefault(str(nid), {})[str(entry)] = pct
+        # node -> "+" (added or changed) / "-" (dropped) vs the lead build, for the tree marks
+        changed = {}
+        for sign, nid, _entry, _rank in b["diff"]:
+            if sign == "-":
+                changed.setdefault(str(nid), "-")
+            else:
+                changed[str(nid)] = "+"
+        payload[b["id"]] = {
+            "code": b["code"], "picks": b["picks"], "flex": flex,
+            "choiceFlex": choice_flex, "changed": changed,
+        }
+        return {
+            "id": b["id"],
+            "share": b["share"],
+            "runs": b["runs"],
+            "max_timed_key": b["max_timed_key"],
+            "max_depleted_key": b["max_depleted_key"],
+            "adds": [c for c in chips if c["sign"] in ("+", "~")],
+            "swaps": [c for c in chips if c["sign"] == "swap"],
+            "drops": [c for c in chips if c["sign"] == "-"],
+            "flex_count": len(flex),
+            "top50_count": b["top50_count"],
+            "top50": b["top50"],
+        }
+
+    def core_card(c):
+        view = card(c, hero_id)
+        view["variants"] = [card(v, "class") for v in c["variants"]]
+        view["other_variant_share"] = c["other_variant_share"]
+        return view
+
+    return {
+        "cores": [core_card(c) for c in tree["cores"]],
+        "extra": core_card(tree["top50_extra"]) if tree["top50_extra"] else None,
+        "top50_total": tree["top50_total"],
+        "other_share": tree["other_share"],
+        "low_coverage": tree["low_coverage"],
+    }
 
 
 def escape_raidbot_code(code):
@@ -2539,6 +2651,9 @@ def main(template_path, output_dir, debug=False, spec=None):
                 dungeon_loadouts = aggregateData.get_loadout_per_dungeon(
                     conn, cursor, spec_id, current_season_id
                 )
+                loadout_key_levels = databaseConnector.fetch_loadout_key_levels(
+                    conn, cursor, spec_id, current_season_id
+                )
                 # Verified loadouts of the top 50 players (meta +
                 # items/gems/enchants/talents), one per dungeon each.
                 try:
@@ -2910,6 +3025,18 @@ def main(template_path, output_dir, debug=False, spec=None):
             for _rows in hero_tree_shifts.values():
                 _rows.sort(key=lambda r: r["diff"], reverse=True)
 
+            builds_by_tree, build_drops = talentBuilds.build_hero_tree_builds(
+                loadout_key_levels, spec_id,
+                talent_lookup["fullNodeOrder"], talent_lookup["nodes"],
+                top50=[
+                    (lo["loadout_text"], lo.get("keystone_level"))
+                    for lo in (top50_raw or []) if lo.get("loadout_text")
+                ],
+            )
+            if build_drops:
+                print(f"Talent builds: dropped loadout runs by reason: {build_drops}")
+            build_payload = {"choiceSpells": choice_spell_ids(talent_lookup["nodes"]), "builds": {}}
+
             hero_variants = []
             for ht in sorted(
                 hero_trees, key=lambda t: t.get("count", 0), reverse=True
@@ -2958,6 +3085,10 @@ def main(template_path, output_dir, debug=False, spec=None):
                     # for the tree view, plus the dungeon's most-run build.
                     "dungeon_tree_usage": top_dungeon_tree_usage(tid, variant_node_ids),
                     "dungeon_loadouts": dungeon_build_codes(tid),
+                    "build_paths": build_path_view(
+                        builds_by_tree.get(int(tid)), talent_lookup["nodes"],
+                        build_payload["builds"].setdefault(str(tid), {}),
+                    ),
                 })
 
             # One concrete "players swap this in for dungeon X" example for the
@@ -3312,6 +3443,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                 embellishment_lookup=embellishment_lookup,
                 missive_lookup=missive_lookup,
                 level_stats=level_stats,
+                build_payload=build_payload,
                 overall_stats=overall_stats,
                 socket_lookup=socket_lookup,
                 spec_lookup=spec_lookup,

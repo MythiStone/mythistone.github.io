@@ -164,7 +164,8 @@
   border: 1px solid transparent;
 }
 .tt-choice-name { flex: 1 1 auto; }
-.tt-choice-pct {
+.tt-choice-pct,
+.tt-build-choice-pct {
   color: var(--mythi-text-muted);
   font-variant-numeric: tabular-nums;
   min-width: 2.4em;
@@ -944,3 +945,174 @@ a.item-source-badge:hover {
     height: 240px !important;
   }
 }
+
+/* Talent Builds modal (see talentBuilds.py): core build rows on the left, class tree
+   variant pills plus the painted tree on the right, stacked below xl. */
+@media (min-width: 1200px) {
+  .tt-builds-dialog { max-width: min(1500px, 96vw); }
+  /* the tree sets the row height and the list scrolls inside it, so no empty space
+     is left under the tree */
+  .tt-build-list-col { position: relative; }
+  .tt-build-list { position: absolute; inset: 0 0.75rem 0 calc(var(--bs-gutter-x) * 0.5); overflow-y: auto; padding-right: 0.25rem; }
+}
+.tt-build-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.tt-build-list-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mythi-text-muted);
+}
+.tt-build-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  border: 1px solid var(--mythi-border-strong);
+  border-radius: 0.5rem;
+  background: var(--mythi-surface-raised);
+  color: var(--bs-body-color);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.tt-build-card:hover,
+.tt-build-card:focus-visible { border-color: var(--bs-primary); }
+.tt-build-card.is-active {
+  border-color: var(--bs-primary);
+  background: color-mix(in srgb, var(--bs-primary) 10%, var(--mythi-surface-raised));
+}
+.tt-build-head { display: flex; align-items: center; gap: 0.5rem; }
+.tt-build-label { font-size: 0.85rem; font-weight: 700; }
+.tt-build-end { display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; }
+.tt-build-share { min-width: 2.6em; text-align: right; font-size: 0.9rem; font-weight: 700; color: var(--bs-primary); cursor: help; }
+.tt-build-head .max-key-badge { font-size: 0.7rem; }
+/* top-50 share; gold like .tt-top-badge, filled when the build earns TOP */
+.tt-build-top50 {
+  padding: 2px 6px;
+  border: 1px solid #ffd100;
+  border-radius: 5px;
+  background: color-mix(in srgb, #ffd100 12%, transparent);
+  color: var(--bs-body-color);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: help;
+}
+.tt-build-top50.is-top { background: #ffd100; color: #000; }
+.tt-build-sub { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+/* one line; spec-page.js fitChips hides what does not fit behind "+N more" */
+.tt-build-chips { display: flex; flex: 1 1 auto; min-width: 0; align-items: center; gap: 0.35rem; overflow: hidden; padding: 0 5px 5px 0; }
+.tt-build-chips > * { flex-shrink: 0; }
+.tt-diff-divider { flex-shrink: 0; width: 1px; height: 18px; margin: 0 0.15rem; background: var(--mythi-border-strong); }
+.tt-diff-divider[hidden],
+.tt-diff-chip[hidden],
+.tt-build-more[hidden] { display: none; }
+.tt-build-flex { flex-shrink: 0; }
+.tt-build-more,
+.tt-build-flex { font-size: 0.7rem; color: var(--mythi-text-muted); }
+.tt-diff-chip { position: relative; display: inline-flex; text-decoration: none; }
+.tt-diff-chip img { border-radius: 4px; border: 1px solid var(--mythi-border-strong); }
+.tt-diff-chip.is-plus img { border-color: var(--mythi-text-success); }
+.tt-diff-chip.is-minus img { border-color: var(--mythi-text-danger); filter: grayscale(100%); }
+.tt-diff-sign {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  min-width: 12px;
+  padding: 0 2px;
+  border-radius: 3px;
+  background: var(--mythi-overlay-bg);
+  color: var(--mythi-overlay-color);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+}
+.tt-diff-chip.is-plus .tt-diff-sign { color: var(--mythi-text-success); }
+.tt-diff-chip.is-minus .tt-diff-sign { color: var(--mythi-text-danger); }
+/* a choice node that only changed option: the new option, old one in the label */
+.tt-diff-chip.is-swap img { border-color: var(--mythi-text-info); }
+.tt-diff-chip.is-swap .tt-diff-sign { color: var(--mythi-text-info); }
+.tt-build-other { font-size: 0.72rem; color: var(--mythi-text-muted); }
+
+.tt-build-variants { display: flex; flex-direction: column; gap: 0.4rem; margin-left: 0.75rem; padding-left: 0.65rem; border-left: 2px solid var(--bs-primary); }
+.tt-build-variants[hidden] { display: none; }
+
+.tt-build-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.5rem; }
+.tt-build-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--mythi-text-muted); }
+.tt-build-legend li { display: inline-flex; align-items: center; gap: 0.4rem; }
+.tt-legend-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid #ffb000;
+  background: var(--bs-primary);
+}
+.tt-legend-icon.is-off { border-color: var(--mythi-border-strong); background: var(--mythi-text-muted); opacity: 0.5; }
+.tt-legend-icon.is-flex { outline: 2px dashed var(--bs-primary); outline-offset: 2px; }
+.tt-legend-pct,
+.tt-legend-rank {
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--mythi-overlay-bg);
+  color: var(--mythi-overlay-color);
+  font-size: 10px;
+}
+.tt-legend-pct { border: 1px dashed var(--bs-primary); }
+.tt-legend-rank { border: 1px solid #ffb000; }
+.tt-build-tree-mount .talent-tree-wrapper { gap: 1rem !important; padding: 0.5rem 0; }
+.tt-build-tree-mount .tt-hero-switch { cursor: default; }
+
+/* A build painted onto the modal's tree clone: pick-rate badges hide, unpicked
+   nodes go dim grey, picked edges light up. The !important rules beat the inline
+   grayscale/stroke the cloned pick-rate tree is rendered with. */
+.tt-build-view .tt-badge,
+.tt-build-view .tt-hero-share,
+.tt-build-view .tt-hero-node-pct,
+.tt-build-view .tt-maxrank,
+.tt-build-view .tt-top-badge,
+.tt-build-view .tt-choice-pct,
+.tt-build-view .tt-choice-badge { display: none !important; }
+.tt-build-view [data-nodeid] img,
+.tt-build-view .tt-octagon-border { filter: grayscale(100%) brightness(0.6) !important; }
+.tt-build-view .is-picked img,
+.tt-build-view .is-picked .tt-octagon-border { filter: none !important; }
+.tt-build-view .is-picked .tt-choice-row img { filter: grayscale(100%) !important; }
+.tt-build-view .tt-choice-row.is-picked img { filter: none !important; }
+.tt-build-view .tt-choice-row.is-picked { background: var(--mythi-hover-bg); }
+.tt-build-view .tt-choice-row.is-picked .tt-choice-name { color: var(--bs-primary); font-weight: 700; }
+.tt-build-view line { stroke: #555 !important; }
+.tt-build-view line.is-picked { stroke: #ffb000 !important; }
+.tt-build-view .is-flex .tt-octagon-border,
+.tt-build-view .tt-node.is-flex img { outline: 2px dashed var(--bs-primary); outline-offset: 2px; }
+.tt-build-rank,
+.tt-build-flex-badge {
+  position: absolute;
+  z-index: 5;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--mythi-overlay-bg);
+  color: var(--mythi-overlay-color);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.tt-build-rank { top: -6px; right: -6px; border: 1px solid #ffb000; }
+/* added / dropped vs Build 1 (or Variant 1); also the legend sample */
+.tt-build-change {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+}
+.tt-build-change.is-plus { background: var(--mythi-text-success); }
+.tt-build-change.is-minus { background: var(--mythi-text-danger); }
+.tt-build-tree-mount .tt-build-change { position: absolute; top: -6px; left: -6px; z-index: 5; cursor: help; }
+.tt-build-legend .tt-build-change + .tt-build-change { margin-left: -0.2rem; }
+.tt-build-flex-badge { bottom: -8px; right: -8px; border: 1px dashed var(--bs-primary); cursor: help; }
