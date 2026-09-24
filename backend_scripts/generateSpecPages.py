@@ -542,7 +542,7 @@ def build_path_view(tree, nodes, payload):
         node = nodes[str(nid)]
         return (sign_order[sign], section_order.get(node.get("g"), 3), node.get("y") or 0, node.get("x") or 0)
 
-    def card(b, scope):
+    def card(b):
         # A choice node that only changed its option is one "swap" chip (the new
         # option, old one in the label) instead of an add plus a drop of one node.
         signs = Counter(nid for _sign, nid, _entry, _rank in b["diff"])
@@ -598,8 +598,8 @@ def build_path_view(tree, nodes, payload):
         }
 
     def core_card(c):
-        view = card(c, hero_id)
-        view["variants"] = [card(v, "class") for v in c["variants"]]
+        view = card(c)
+        view["variants"] = [card(v) for v in c["variants"]]
         view["other_variant_share"] = c["other_variant_share"]
         return view
 
