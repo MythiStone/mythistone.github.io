@@ -1853,5 +1853,16 @@
         "blog": "This season MythiStone has logged 213.5 K Discipline Priest runs. The Oracle hero tree leads at 85% of builds, with Voidweaver (15%) trailing.\n\nGroups time keys with the spec 86% of the time and three-chest 6% of them. Most builds prioritise Haste > Mastery > Crit > Versatility. Its top run this season is +20 Murder Row in 29:40.199.",
         "post": "Discipline Priest: 213.5 K runs, 86% timed yet only 6% three\u2011chest - fast timer low loot. Oracle (84.77%), Voidweaver (15%). +20 Murder Row in 29:40.199 Haste > Mastery > Crit > Versatility. #WoW #MythicPlus #DiscPriest https://mythistone.com/classes/Healer/Discipline_Priest",
         "timestamp": 1790285364930
+    },
+    "data/social/dungeon_tierlist_2026-09.png": {
+        "title": "Dungeon Tier List",
+        "post_type": "dungeon_tierlist",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Murder Row 90% timed. Altar of Fangs 84%. The verdict is in and Fangs is guilty. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "Murder Row leads the dungeon tier list this season and Altar of Fangs anchors the bottom, across 4.1 M tracked runs.\n\nTemple of Sethraliss follows near the top, and Ruby Life Pools is not far off the bottom. Tiers reflect how cleanly groups are timing each dungeon at higher keys.",
+        "post": "Murder Row 90% timed. Altar of Fangs 84%. The verdict is in and Fangs is guilty. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "snarky_analyst",
+        "judge_score": null,
+        "timestamp": 1790371857969
     }
 }
