@@ -53,6 +53,10 @@ def build_static_title(post_type, data):
         return "Dungeon Popularity Across Key Levels"
     if post_type == "spec_popularity_vs_performance":
         return "Spec Popularity vs Performance"
+    if post_type == "weekly_mover":
+        return f"Weekly Mover: {data.get('name', '')}".strip()
+    if post_type == "underdog_spotlight":
+        return f"Underdog Spotlight: {data.get('spec', '')}".strip()
     return "Mythic+ Data Spotlight"
 
 
@@ -229,18 +233,18 @@ def build_static_blog(post_type, data):
         return _join_paragraphs([p1, " ".join(facts)])
 
     if post_type == "spec_popularity_tierlist":
-        most = data.get("most_popular_spec") or {}
-        least = data.get("least_popular_spec") or {}
+        best = data.get("best_spec")
+        worst = data.get("worst_spec")
         runs = data.get("total_runs")
-        rng = _blog_rng("spec_popularity_tierlist", runs, most.get("name"))
+        rng = _blog_rng("spec_popularity_tierlist", runs, best, worst)
 
         p1 = rng.choice([
-            f"Across {runs} tracked Mythic+ runs this season, {most.get('name')} is the most-played spec with {most.get('runs')} runs.",
-            f"{most.get('name')} tops the popularity tier list this season at {most.get('runs')} runs, out of {runs} tracked overall.",
+            f"Across {runs} tracked Mythic+ runs this season, {best} tops the spec tier list and {worst} sits at the bottom.",
+            f"{best} leads this season's spec tier list while {worst} anchors the bottom, based on {runs} tracked runs.",
         ])
         p2 = rng.choice([
-            f"At the other end, {least.get('name')} is the least represented with {least.get('runs')} runs. Popularity is not the same as power, but it shows what the community is actually bringing.",
-            f"{least.get('name')} brings up the rear at {least.get('runs')} runs. What is popular is not always what is strongest, but it does reflect what players pick.",
+            "Tiers weigh how often each spec times keys, with higher keys counting for more.",
+            "The ranking rewards timed keys and weighs higher key levels more heavily.",
         ])
         return _join_paragraphs([p1, p2])
 
@@ -291,6 +295,31 @@ def build_static_blog(post_type, data):
             f"On the flip side, {under} is played more than its results justify.",
             f"{under}, meanwhile, is more popular than its performance would predict.",
         ])
+        return _join_paragraphs([p1, p2])
+
+    if post_type == "weekly_mover":
+        name = data.get("name")
+        changes = data.get("changes") or []
+        rng = _blog_rng("weekly_mover", name, *(c.get("new") for c in changes))
+        moves = " and ".join(f"{c['label'].lower()} from {c['old']} to {c['new']}" for c in changes)
+        p1 = rng.choice([
+            f"{name} had the biggest move of the week: {moves}.",
+            f"Nothing moved more over the last seven days than {name}: {moves}.",
+        ])
+        p2 = "Most of the ladder barely shifts week to week this deep into a season, so a jump like this stands out."
+        return _join_paragraphs([p1, p2])
+
+    if post_type == "underdog_spotlight":
+        spec = data.get("spec")
+        rng = _blog_rng("underdog_spotlight", spec, data.get("tier"))
+        p1 = rng.choice([
+            f"{spec} sits in {data.get('tier')} tier on the MythiStone spec tier list, yet ranks only {data.get('popularity')} by popularity.",
+            f"By popularity {spec} is only {data.get('popularity')}, but its results put it in {data.get('tier')} tier.",
+        ])
+        p2 = (
+            f"Across {data.get('runs')} tracked runs it times {data.get('timed_pct')} of its keys, "
+            f"against a role average of {data.get('role_avg_timed_pct')}."
+        )
         return _join_paragraphs([p1, p2])
 
     # unknown type: no static copy, blog card just shows the title + image

@@ -30,6 +30,8 @@ POST_TYPE_META = {
     "shortest_run": ("Run Highlight", "bg-gradient-danger"),
     "season_countdown": ("Season Countdown", "bg-gradient-primary"),
     "season_launch": ("Season Launch", "bg-gradient-success"),
+    "weekly_mover": ("Weekly Mover", "bg-gradient-danger"),
+    "underdog_spotlight": ("Underdog Spotlight", "bg-gradient-success"),
 }
 DEFAULT_TYPE_META = ("Data Spotlight", "bg-gradient-secondary")
 
@@ -49,6 +51,8 @@ FILENAME_TYPE_PATTERNS = [
     ("shortest_run_mplus_", "shortest_run"),
     ("season_countdown_", "season_countdown"),
     ("season_launch_", "season_launch"),
+    ("weekly_mover_", "weekly_mover"),
+    ("underdog_spotlight_", "underdog_spotlight"),
 ]
 
 STATIC_TITLES = {
