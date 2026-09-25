@@ -9,7 +9,7 @@ from contextlib import closing
 from datetime import datetime, timezone
 
 import databaseConnector
-from commonUtils import format_comp_names, get_spec_lookup
+from commonUtils import find_dungeon_meta, format_comp_names, get_spec_lookup, humanize_number
 from image_generation.comp_overview import createCompOverviewImg
 from image_generation.dungeon_overview import createDungeonOverviewImg
 from image_generation.dungeon_popularity_ease import create_dungeon_popularity_vs_ease_img
@@ -23,6 +23,12 @@ from image_generation.season_countdown import (
     create_season_launch_img,
 )
 from image_generation.spec_popularity_tierlist import create_spec_tierlist_img
+from image_generation.spotlight_card import render_spotlight_card
+from image_generation import config
+from image_generation.pil_helpers import spec_icon_path
+from social_posts.context import load_season_context, underdog_candidates
+from social_posts.hooks import ordinal, pct, spec_hooks
+from social_posts.snapshot import mover_hooks
 from social_posts.links import build_site_link, dungeon_page_link, spec_page_link, time_ago
 from social_posts.llm import build_bundle, get_openai_client
 
@@ -201,7 +207,10 @@ def create_MplusRun(run, season, donesocials, api_key, url):
     }
     print(post_data)
     link = build_site_link(url, "pages/dashboard")
-    bundle = build_bundle(client, post_data, link, run, run.replace("_", " "))
+    bundle = build_bundle(
+        client, post_data, link, run, run.replace("_", " "),
+        donesocials=donesocials, ctx=load_season_context(season),
+    )
     return {
         "out_path": mplus_image["out_path"],
         "bundle": bundle,
@@ -227,7 +236,8 @@ def create_overall_spec_popularity(
     client = get_openai_client(api_key)
     link = build_site_link(url)
     bundle = build_bundle(
-        client, post_data, link, "spec_popularity_tierlist", "spec performance tier list"
+        client, post_data, link, "spec_popularity_tierlist", "spec performance tier list",
+        donesocials=donesocials, ctx=load_season_context(season),
     )
     return {
         "out_path": out_path,
@@ -251,7 +261,8 @@ def create_spec_popularity_by_level(
     client = get_openai_client(api_key)
     link = build_site_link(url, "pages/dashboard")
     bundle = build_bundle(
-        client, post_data, link, "spec_distribution_by_level", "spec distribution across key levels"
+        client, post_data, link, "spec_distribution_by_level", "spec distribution across key levels",
+        donesocials=donesocials, ctx=load_season_context(season),
     )
     return {
         "out_path": out_path,
@@ -274,7 +285,8 @@ def create_dungeon_popularity_vs_ease(output_dir, donesocials, api_key, url, sea
         print(post_data)
         client = get_openai_client(api_key)
         bundle = build_bundle(
-            client, post_data, link, "dungeon_popularity_by_level", "dungeon popularity across key levels"
+            client, post_data, link, "dungeon_popularity_by_level", "dungeon popularity across key levels",
+            donesocials=donesocials, ctx=load_season_context(season),
         )
         return {
             "out_path": out_path,
@@ -298,7 +310,8 @@ def create_spec_popularity_vs_performance(output_dir, donesocials, api_key, url,
         print(post_data)
         client = get_openai_client(api_key)
         bundle = build_bundle(
-            client, post_data, link, "spec_popularity_vs_performance", "spec popularity vs performance"
+            client, post_data, link, "spec_popularity_vs_performance", "spec popularity vs performance",
+            donesocials=donesocials, ctx=load_season_context(season),
         )
         return {
             "out_path": out_path,
@@ -323,7 +336,8 @@ def create_dungeon_tierlist(
         print(post_data)
         client = get_openai_client(api_key)
         bundle = build_bundle(
-            client, post_data, link, "dungeon_tierlist", "dungeon tier list"
+            client, post_data, link, "dungeon_tierlist", "dungeon tier list",
+            donesocials=donesocials, ctx=load_season_context(season),
         )
         return {
             "out_path": out_path,
@@ -347,7 +361,8 @@ def createSpecOverview(output_dir, donesocials, api_key, url, spec_id, season):
         print(result["post_data"])
         client = get_openai_client(api_key)
         bundle = build_bundle(
-            client, result["post_data"], link, "spec_overview", "spec overview"
+            client, result["post_data"], link, "spec_overview", "spec overview",
+            donesocials=donesocials, ctx=load_season_context(season),
         )
         return {
             "out_path": out_path,
@@ -372,7 +387,8 @@ def createDungeonOverview(output_dir, donesocials, api_key, url, dungeon_id, sea
         print(result["post_data"])
         client = get_openai_client(api_key)
         bundle = build_bundle(
-            client, result["post_data"], link, "dungeon_overview", "dungeon overview"
+            client, result["post_data"], link, "dungeon_overview", "dungeon overview",
+            donesocials=donesocials, ctx=load_season_context(season),
         )
         return {
             "out_path": out_path,
@@ -411,7 +427,8 @@ def createCompOverview(output_dir, donesocials, api_key, url, season):
         print(result["post_data"])
         client = get_openai_client(api_key)
         bundle = build_bundle(
-            client, result["post_data"], link, "comp_overview", "global comp overview"
+            client, result["post_data"], link, "comp_overview", "global comp overview",
+            donesocials=donesocials, ctx=load_season_context(season),
         )
         return {
             "out_path": out_path,
@@ -420,3 +437,107 @@ def createCompOverview(output_dir, donesocials, api_key, url, season):
             "link": link,
         }
     return {"out_path": out_path, "bundle": None, "post_type": "comp_overview", "link": link}
+
+
+def _subject_icon(kind, subject_id):
+    if kind == "spec":
+        meta = get_spec_lookup().get(str(subject_id))
+        return spec_icon_path(meta) if meta else None
+    meta = find_dungeon_meta(subject_id) or {}
+    return os.path.join(config.ICON_DIR, meta["icon"]) if meta.get("icon") else None
+
+
+def _subject_link(url, kind, subject_id):
+    return spec_page_link(url, subject_id) if kind == "spec" else dungeon_page_link(url, subject_id)
+
+
+def create_weekly_mover(output_dir, donesocials, api_key, url, season, mover):
+    """Post the biggest week-over-week move (snapshot.find_movers). Only offered by
+    the pipeline when a move crossed its threshold, so it fires rarely."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    out_path = os.path.join(output_dir, f"weekly_mover_{mover['kind']}_{mover['id']}_{today}.png")
+    if out_path in donesocials:
+        return None
+
+    render_spotlight_card(
+        out_path,
+        mover["name"],
+        "Biggest move of the week",
+        _subject_icon(mover["kind"], mover["id"]),
+        [(c["label"], c["old"], c["new"]) for c in mover["changes"]],
+        accent=mover["direction"],
+    )
+    facts = {"Subject": mover["name"]}
+    for c in mover["changes"]:
+        facts[f"{c['label']} a week ago"] = c["old"]
+        facts[f"{c['label']} now"] = c["new"]
+    post_data = {
+        "facts": facts,
+        "hooks": mover_hooks(mover),
+        "name": mover["name"],
+        "kind": mover["kind"],
+        "changes": mover["changes"],
+    }
+    link = _subject_link(url, mover["kind"], mover["id"])
+    bundle = build_bundle(
+        get_openai_client(api_key), post_data, link, "weekly_mover", "weekly mover",
+        donesocials=donesocials, ctx=load_season_context(season),
+    )
+    return {"out_path": out_path, "bundle": bundle, "post_type": "weekly_mover", "link": link}
+
+
+def create_underdog_spotlight(output_dir, donesocials, api_key, url, season):
+    """A high-tier spec that few people play; one per spec per month."""
+    ctx = load_season_context(season)
+    month = datetime.now().strftime("%Y-%m")
+    for spec in underdog_candidates(ctx):
+        out_path = os.path.join(output_dir, f"underdog_spotlight_{spec['spec_id']}_{month}.png")
+        if out_path not in donesocials:
+            break
+    else:
+        return None
+
+    role = spec["role_name"]
+    popularity = f"#{spec['role_rank']} of {spec['role_count']}"
+    render_spotlight_card(
+        out_path,
+        spec["name"],
+        "Underdog spotlight",
+        _subject_icon("spec", spec["spec_id"]),
+        [
+            ("Tier", spec["tier"]),
+            (f"Popularity among {role} specs", popularity),
+            ("Keys timed", pct(spec["timed_pct"])),
+            (f"{role} average keys timed", pct(spec["role_avg_timed_pct"])),
+        ],
+    )
+    facts = {
+        "Spec": spec["name"],
+        "Tier on the MythiStone spec tier list": spec["tier"],
+        f"Popularity rank among {role} specs": popularity,
+        "Runs tracked": humanize_number(spec["runs"]),
+        "Keys timed": pct(spec["timed_pct"]),
+        f"Average keys timed for {role} specs": pct(spec["role_avg_timed_pct"]),
+    }
+    hooks = [
+        f"{spec['name']} is in {spec['tier']} tier yet only the {ordinal(spec['role_rank'])} most-played "
+        f"of {spec['role_count']} {role} specs"
+        if spec["role_rank"] > 3 else
+        f"{spec['name']} is in {spec['tier']} tier yet sits in the less-played half of {role} specs"
+    ] + spec_hooks(spec)
+    post_data = {
+        "facts": facts,
+        "hooks": hooks,
+        "spec": spec["name"],
+        "tier": spec["tier"],
+        "popularity": f"{popularity} {role} specs",
+        "timed_pct": pct(spec["timed_pct"]),
+        "role_avg_timed_pct": pct(spec["role_avg_timed_pct"]),
+        "runs": humanize_number(spec["runs"]),
+    }
+    link = _subject_link(url, "spec", spec["spec_id"])
+    bundle = build_bundle(
+        get_openai_client(api_key), post_data, link, "underdog_spotlight", "underdog spotlight",
+        donesocials=donesocials, ctx=ctx,
+    )
+    return {"out_path": out_path, "bundle": bundle, "post_type": "underdog_spotlight", "link": link}

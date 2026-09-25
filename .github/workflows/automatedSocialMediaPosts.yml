@@ -38,8 +38,9 @@ jobs:
           pip install --upgrade pip
           pip install openai Pillow matplotlib pandas jinja2 mysql-connector-python requests
 
-      # Checked out BEFORE generation: socials.json (the text records) lives on
-      # this branch alongside the images, so the pipeline reads and updates it
+      # Checked out BEFORE generation: socials.json (the text records) and
+      # social_snapshot.json (weekly standings for the weekly-mover post) live on
+      # this branch alongside the images, so the pipeline reads and updates them
       # there instead of in the main repo.
       - name: Checkout social-images branch
         uses: actions/checkout@v4
@@ -65,7 +66,8 @@ jobs:
           python -u backend_scripts/generateSocialsPost.py \
             --api-key "${{ secrets.OPENROUTER_API_KEY }}" \
             --url "https://mythistone.com/" \
-            --socials-file social-images/socials.json
+            --socials-file social-images/socials.json \
+            --snapshot-file social-images/social_snapshot.json
 
           social_text=$(jq -r .post    "${{ env.OUTPUT_DIR }}/post.json")
           image_path=$(jq -r  .out_path "${{ env.OUTPUT_DIR }}/post.json")
@@ -97,7 +99,7 @@ jobs:
           cd social-images
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "$filename" socials.json
+          git add "$filename" socials.json social_snapshot.json
           git commit -m "chore: record socials for ${{ steps.get_time.outputs.start_date }}" || echo "no changes to commit"
           git push
 

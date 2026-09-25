@@ -19,6 +19,8 @@ from image_generation.pil_helpers import composite_chart_onto_bg, watermark_file
 TREND_UP_HEX = "#52d769"
 TREND_DOWN_HEX = "#ff7b7b"
 
+MIN_NEWSWORTHY_SHARE_DELTA = 0.5
+
 
 def _draw_week_trend_panel(fig, legend, dungeon_names, deltas_by_name, cmap):
     """Draw the week-over-week share-change rows in the free space below the
@@ -224,9 +226,12 @@ def create_dungeon_popularity_vs_ease_img(
         "bottom_dungeon": dungeon_names[-1],
     }
     if deltas_by_name:
+        # sub-0.5 point swings are noise, not news, so they stay off the post
         riser = max(deltas_by_name, key=deltas_by_name.get)
         faller = min(deltas_by_name, key=deltas_by_name.get)
-        post_data["weekly_share_riser"] = f"{riser} ({deltas_by_name[riser]:+.1f}%)"
-        post_data["weekly_share_faller"] = f"{faller} ({deltas_by_name[faller]:+.1f}%)"
+        if deltas_by_name[riser] >= MIN_NEWSWORTHY_SHARE_DELTA:
+            post_data["weekly_share_riser"] = f"{riser} ({deltas_by_name[riser]:+.1f}%)"
+        if deltas_by_name[faller] <= -MIN_NEWSWORTHY_SHARE_DELTA:
+            post_data["weekly_share_faller"] = f"{faller} ({deltas_by_name[faller]:+.1f}%)"
 
     return post_data

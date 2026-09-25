@@ -191,11 +191,20 @@ def create_spec_popularity_vs_performance_img(
     composite_chart_onto_bg(out_path)
     watermark_file(out_path, position="bottom_right", padding_x=30, padding_y=10)
 
+    # point labels are bare spec names ("Frost", "Holy"), so resolve the full
+    # "<Spec> <Class>" name through the icon, which is unique per spec
+    full_names = {}
+    for sdata in spec_lookup.values():
+        cdata = class_lookup.get(str(sdata.get("classID", "")), {})
+        full_names[f"/data/icons/{sdata.get('SpellIconFileId')}.jpg"] = (
+            f"{sdata.get('name', '')} {cdata.get('name', '')}".strip()
+        )
+
     most_overperforming = max(raw_points, key=lambda p: p["residual"])
     most_underperforming = min(raw_points, key=lambda p: p["residual"])
     post_data = {
-        "chart_type": "Dungeon Popularity across Keylevels",
-        "most_overperforming_spec": most_overperforming["label"],
-        "most_underperforming_spec": most_underperforming["label"],
+        "chart_type": "Spec Popularity vs Performance",
+        "most_overperforming_spec": full_names.get(most_overperforming["iconUrl"], most_overperforming["label"]),
+        "most_underperforming_spec": full_names.get(most_underperforming["iconUrl"], most_underperforming["label"]),
     }
     return post_data

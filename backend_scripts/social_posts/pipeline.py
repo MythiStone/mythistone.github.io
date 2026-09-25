@@ -11,7 +11,7 @@ import os
 import random
 import time
 from contextlib import closing
-from datetime import datetime
+from datetime import date, datetime
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -21,7 +21,17 @@ from commonUtils import get_dungeon_lookup, get_spec_lookup, load_json, load_sea
 from image_generation import config
 from image_generation.pil_helpers import apply_watermark_to_canvas
 from image_generation.season_countdown import in_launch_window
+from social_posts.context import load_season_context
 from social_posts.links import build_site_link
+from social_posts.snapshot import (
+    find_baseline,
+    find_movers,
+    load_snapshots,
+    record_snapshot,
+    save_snapshots,
+    snapshot_from_context,
+)
+from social_posts.voice import recent_records
 from social_posts.posts import (
     createCompOverview,
     createDungeonOverview,
@@ -34,6 +44,8 @@ from social_posts.posts import (
     create_season_launch,
     create_spec_popularity_by_level,
     create_spec_popularity_vs_performance,
+    create_underdog_spotlight,
+    create_weekly_mover,
 )
 
 # Default location of the text records. In CI this is overridden with
@@ -42,12 +54,85 @@ from social_posts.posts import (
 # keeps debug/test posts self-contained in the repo.
 SOCIALS_FILE = os.path.join("data", "socials.json")
 POST_FILE = os.path.join(config.OUTPUT_DIR, "post.json")
+# Weekly standings snapshots for the weekly-mover post; CI overrides it with
+# --snapshot-file so it lives on the social-images branch next to socials.json.
+SNAPSHOT_FILE = os.path.join("data", "social_snapshot.json")
+
+RUN_TYPES = ("highest_run", "longest_run", "shortest_run")
+# Relative pick weight per post group. All spec overviews share one slot (and
+# all dungeon overviews another), so the one-generator-per-spec fan-out no
+# longer drowns out every other post type.
+GROUP_WEIGHTS = {
+    "spec_overview": 25,
+    "dungeon_overview": 15,
+    "runs": 15,
+    "comp_overview": 10,
+    "underdog_spotlight": 10,
+    "dungeon_tierlist": 8,
+    "spec_popularity_tierlist": 8,
+    "spec_popularity_vs_performance": 7,
+    "dungeon_popularity_by_level": 6,
+    "spec_distribution_by_level": 6,
+    # only offered when snapshot.find_movers found a big move, so boosted
+    "weekly_mover": 30,
+}
+GROUP_POST_TYPES = {"runs": set(RUN_TYPES)}
+MAX_SPEC_OVERVIEWS_PER_WEEK = 2
+WEEKLY_MOVER_COOLDOWN_DAYS = 6
+UNDERDOG_COOLDOWN_DAYS = 7
 
 
-def create_socials_post(donesocials, api_key, url):
+def _posts_since(donesocials, post_type, days):
+    cutoff = (time.time() - days * 86400) * 1000
+    return sum(
+        1 for r in donesocials.values()
+        if isinstance(r, dict) and r.get("post_type") == post_type and r.get("timestamp", 0) >= cutoff
+    )
+
+
+def blocked_groups(donesocials):
+    """Groups the anti-repeat rules keep out today: whatever posted last, spec
+    overviews past their weekly cap, and cooled-down one-offs."""
+    blocked = set()
+    last = recent_records(donesocials, limit=1)
+    if last and last[0].get("post_type"):
+        last_type = last[0]["post_type"]
+        blocked |= {g for g, types in GROUP_POST_TYPES.items() if last_type in types}
+        blocked.add(last_type)
+    if _posts_since(donesocials, "spec_overview", 7) >= MAX_SPEC_OVERVIEWS_PER_WEEK:
+        blocked.add("spec_overview")
+    if _posts_since(donesocials, "underdog_spotlight", UNDERDOG_COOLDOWN_DAYS):
+        blocked.add("underdog_spotlight")
+    return blocked
+
+
+def select_post(groups, donesocials, rng=random):
+    """Weighted pick over {group: [generator, ...]} until one yields a new post.
+
+    Groups blocked by the anti-repeat rules are skipped unless nothing else is
+    left, in which case every group is tried again as a last resort."""
+    blocked = blocked_groups(donesocials)
+    allowed = {g: list(gens) for g, gens in groups.items() if gens and g not in blocked}
+    fallback = {g: list(gens) for g, gens in groups.items() if gens and g in blocked}
+    for pool in (allowed, fallback):
+        while pool:
+            names = list(pool)
+            group = rng.choices(names, weights=[GROUP_WEIGHTS.get(g, 1) for g in names], k=1)[0]
+            gens = pool[group]
+            gen = gens.pop(rng.randrange(len(gens)))
+            if not gens:
+                del pool[group]
+            post = gen()
+            if post and post.get("bundle") and post.get("out_path") not in donesocials:
+                return post
+    return None
+
+
+def create_socials_post(donesocials, api_key, url, snapshots=None):
     """
-    Randomly selects one of several post-generating routines, skipping any already done.
-    Gives each spec overview an equal chance, collectively outweighing other generators.
+    Picks one post type by group weight (GROUP_WEIGHTS) under the anti-repeat
+    rules, skipping posts already done. ``snapshots`` (the weekly standings list)
+    gets today's snapshot appended and feeds the weekly-mover check.
     """
     print("Generating social media post...")
 
@@ -111,102 +196,57 @@ def create_socials_post(donesocials, api_key, url):
         # Countdown for today already recorded (or unbuildable): nothing new to post.
         return None
 
-    # Create spec-specific generators
-    spec_generators = []
-    for spec_id in specs or ["62"]:
+    ctx = load_season_context(current_season_id)
+    movers = []
+    if snapshots is not None:
+        today = date.today()
+        baseline = find_baseline(snapshots, current_season_id, today)
+        movers = find_movers(baseline, ctx) if baseline else []
+        record_snapshot(snapshots, snapshot_from_context(ctx, current_season_id, today), today)
 
-        def make_spec_gen(sid):
-            return lambda: createSpecOverview(
-                config.OUTPUT_DIR, donesocials, api_key, url, sid, current_season_id
+    def spec_gen(sid):
+        return lambda: createSpecOverview(
+            config.OUTPUT_DIR, donesocials, api_key, url, sid, current_season_id
+        )
+
+    def dungeon_gen(did):
+        return lambda: createDungeonOverview(
+            config.OUTPUT_DIR, donesocials, api_key, url, did, current_season_id
+        )
+
+    def run_gen(run_type):
+        return lambda: create_MplusRun(run_type, current_season_id, donesocials, api_key, url)
+
+    def season_gen(fn):
+        return lambda: fn(config.OUTPUT_DIR, donesocials, api_key, url, current_season_id)
+
+    groups = {
+        "spec_overview": [spec_gen(sid) for sid in specs or ["62"]],
+        "dungeon_overview": [dungeon_gen(did) for did in dungeons],
+        "runs": [run_gen(rt) for rt in RUN_TYPES],
+        "comp_overview": [season_gen(createCompOverview)],
+        "underdog_spotlight": [season_gen(create_underdog_spotlight)],
+        "dungeon_tierlist": [season_gen(create_dungeon_tierlist)],
+        "spec_popularity_tierlist": [season_gen(create_overall_spec_popularity)],
+        "spec_popularity_vs_performance": [season_gen(create_spec_popularity_vs_performance)],
+        "dungeon_popularity_by_level": [season_gen(create_dungeon_popularity_vs_ease)],
+        "spec_distribution_by_level": [season_gen(create_spec_popularity_by_level)],
+    }
+    if movers and not _posts_since(donesocials, "weekly_mover", WEEKLY_MOVER_COOLDOWN_DAYS):
+        print(f"Weekly mover eligible: {movers[0]['name']} {movers[0]['changes']}")
+        groups["weekly_mover"] = [
+            lambda: create_weekly_mover(
+                config.OUTPUT_DIR, donesocials, api_key, url, current_season_id, movers[0]
             )
+        ]
 
-        spec_generators.append(make_spec_gen(spec_id))
-
-    # Create dungeon-specific generators
-    dungeon_generators = []
-    for dungeon_id in dungeons:
-        def make_dungeon_gen(did):
-            return lambda: createDungeonOverview(
-                config.OUTPUT_DIR, donesocials, api_key, url, did, current_season_id
-            )
-
-        dungeon_generators.append(make_dungeon_gen(dungeon_id))
-
-    # Other generators
-    def gen_dungeon_tier():
-        return create_dungeon_tierlist(
-            config.OUTPUT_DIR, donesocials, api_key, url, current_season_id
-        )
-
-    def gen_spec_pop_vs_perf():
-        return create_spec_popularity_vs_performance(
-            config.OUTPUT_DIR, donesocials, api_key, url, current_season_id
-        )
-
-    def gen_dungeon_pop_vs_ease():
-        return create_dungeon_popularity_vs_ease(
-            config.OUTPUT_DIR, donesocials, api_key, url, current_season_id
-        )
-
-    def gen_overall_spec_popularity():
-        return create_overall_spec_popularity(
-            config.OUTPUT_DIR, donesocials, api_key, url, current_season_id
-        )
-
-    def gen_spec_pop_by_level():
-        return create_spec_popularity_by_level(
-            config.OUTPUT_DIR, donesocials, api_key, url, current_season_id
-        )
-
-    run_types = ["highest_run", "longest_run", "shortest_run"]
-
-    def make_run_gen(run_type):
-        return lambda: create_MplusRun(
-            run_type, current_season_id, donesocials, api_key, url
-        )
-
-    def gen_comp_overview():
-        return createCompOverview(
-            config.OUTPUT_DIR, donesocials, api_key, url, current_season_id
-        )
-
-    other_generators = [
-        gen_dungeon_tier,
-        gen_spec_pop_vs_perf,
-        gen_dungeon_pop_vs_ease,
-        gen_overall_spec_popularity,
-        gen_spec_pop_by_level,
-        gen_comp_overview,
-    ] + [make_run_gen(rt) for rt in run_types]
-
-    # Combine all generators
-    generators = spec_generators + other_generators + dungeon_generators
-
-    # Assign weight: each spec generator weight=1 (total spec weight = len(specs)), others weight=1
-    weights = [1] * len(generators)
-
-    # Create a list of available indices
-    available = list(range(len(generators)))
-    available_weights = weights.copy()
-
-    # Select until a valid, new post is found or exhausted
-    while available:
-        # pick index weighted
-        idx = random.choices(available, weights=available_weights, k=1)[0]
-        post = generators[idx]()
-        if post and post.get("bundle"):
-            out_path = post.get("out_path")
-            if out_path not in donesocials:
-                record = bundle_to_record(post)
-                donesocials[out_path] = record
-                return {"out_path": out_path, **record}
-        # remove tried generator
-        rem = available.index(idx)
-        available.pop(rem)
-        available_weights.pop(rem)
-
-    # All options exhausted
-    return None
+    post = select_post(groups, donesocials)
+    if not post:
+        # All options exhausted
+        return None
+    record = bundle_to_record(post)
+    donesocials[post["out_path"]] = record
+    return {"out_path": post["out_path"], **record}
 
 
 def bundle_to_record(post):
@@ -222,6 +262,8 @@ def bundle_to_record(post):
         "blog": bundle["blog"],
         # legacy field kept so the workflow (and older consumers) keep working
         "post": social,
+        "persona": bundle.get("persona", ""),
+        "judge_score": bundle.get("judge_score"),
         "timestamp": int(time.time() * 1000),
     }
 
@@ -297,6 +339,12 @@ def main():
         help="path to the socials.json text records to read and update "
         "(CI points this at the social-images branch checkout)",
     )
+    p.add_argument(
+        "--snapshot-file",
+        default=SNAPSHOT_FILE,
+        help="path to the weekly standings snapshots used for the weekly-mover post "
+        "(CI points this at the social-images branch checkout)",
+    )
     args = p.parse_args()
     if not args.debug and not args.api_key:
         p.error("--api-key is required unless --debug is set")
@@ -326,7 +374,9 @@ def main():
         post = {"out_path": result["out_path"], **record}
         print("DEBUG: offline test post created; do NOT commit this socials.json entry")
     else:
-        post = create_socials_post(donesocials, args.api_key, args.url)
+        snapshots = load_snapshots(args.snapshot_file)
+        post = create_socials_post(donesocials, args.api_key, args.url, snapshots)
+        save_snapshots(args.snapshot_file, snapshots)
     print(f"Generated post: {post}")
     os.makedirs(os.path.dirname(socials_file) or ".", exist_ok=True)
     with open(socials_file, "w") as f:
