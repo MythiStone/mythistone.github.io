@@ -1864,5 +1864,16 @@
         "persona": "snarky_analyst",
         "judge_score": null,
         "timestamp": 1790371857969
+    },
+    "data/social/underdog_spotlight_260_2026-09.png": {
+        "title": "Underdog Spotlight: Outlaw Rogue",
+        "post_type": "underdog_spotlight",
+        "link": "https://mythistone.com/classes/Dps/Outlaw_Rogue",
+        "social": "Outlaw Rogue sits proudly in A tier, yet only the 23rd most-played of 27 DPS specs. The pirate's loot is buried while the fleet sails elsewhere. Time to raise the Jolly Roger and roll those bones. #WoW #MythicPlus https://mythistone.com/classes/Dps/Outlaw_Rogue",
+        "blog": "Outlaw Rogue sits in A tier on the MythiStone spec tier list, yet ranks only #23 of 27 DPS specs by popularity.\n\nAcross 143.3 K tracked runs it times 88% of its keys, against a role average of 87%.",
+        "post": "Outlaw Rogue sits proudly in A tier, yet only the 23rd most-played of 27 DPS specs. The pirate's loot is buried while the fleet sails elsewhere. Time to raise the Jolly Roger and roll those bones. #WoW #MythicPlus https://mythistone.com/classes/Dps/Outlaw_Rogue",
+        "persona": "lore_nerd",
+        "judge_score": 33.0,
+        "timestamp": 1790456663291
     }
 }
