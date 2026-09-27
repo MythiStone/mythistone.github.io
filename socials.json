@@ -1875,5 +1875,16 @@
         "persona": "lore_nerd",
         "judge_score": 33.0,
         "timestamp": 1790456663291
+    },
+    "data/social/dungeon_overview_250_2026-09.png": {
+        "title": "Temple of Sethraliss Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/temple-of-sethraliss",
+        "social": "Temple of Sethraliss sits in A tier, the only thing more stable than its ranking is the community's denial about key timing. #WoW #MythicPlus https://mythistone.com/dungeons/temple-of-sethraliss",
+        "blog": "Temple of Sethraliss has 1.1 M Mythic+ runs tracked this season.\n\nThe most common group through it is Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. The most-used route right now is keystone.guru/AbrmkK8.",
+        "post": "Temple of Sethraliss sits in A tier, the only thing more stable than its ranking is the community's denial about key timing. #WoW #MythicPlus https://mythistone.com/dungeons/temple-of-sethraliss",
+        "persona": "snarky_analyst",
+        "judge_score": null,
+        "timestamp": 1790543922351
     }
 }
