@@ -1886,5 +1886,16 @@
         "persona": "snarky_analyst",
         "judge_score": null,
         "timestamp": 1790543922351
+    },
+    "data/social/spec_popularity_tierlist_2026-09.png": {
+        "title": "Spec Popularity Tier List",
+        "post_type": "spec_popularity_tierlist",
+        "link": "https://mythistone.com/",
+        "social": "Frost Mage sits at the bottom of the tier list yet still draws the 22nd largest crowd of 27 specs. Even the blue dragonflight would question this dedication to the cold #WoW #MythicPlus https://mythistone.com/",
+        "blog": "Assassination Rogue leads this season's spec tier list while Frost Mage anchors the bottom, based on 4.1 M tracked runs.\n\nTiers weigh how often each spec times keys, with higher keys counting for more.",
+        "post": "Frost Mage sits at the bottom of the tier list yet still draws the 22nd largest crowd of 27 specs. Even the blue dragonflight would question this dedication to the cold #WoW #MythicPlus https://mythistone.com/",
+        "persona": "lore_nerd",
+        "judge_score": null,
+        "timestamp": 1790637248483
     }
 }
