@@ -1897,5 +1897,16 @@
         "persona": "lore_nerd",
         "judge_score": null,
         "timestamp": 1790637248483
+    },
+    "data/social/dungeon_overview_584_2026-09.png": {
+        "title": "The Blinding Vale Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/the-blinding-vale",
+        "social": "Tonight we are doing The Blinding Vale, the least-run dungeon this season. If that feels quiet, good. That is the point. #WoW #MythicPlus https://mythistone.com/dungeons/the-blinding-vale",
+        "blog": "The Blinding Vale has 1 M Mythic+ runs tracked this season.\n\nThe most common group through it is Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. The most-used route right now is keystone.guru/lvNph0Q.",
+        "post": "Tonight we are doing The Blinding Vale, the least-run dungeon this season. If that feels quiet, good. That is the point. #WoW #MythicPlus https://mythistone.com/dungeons/the-blinding-vale",
+        "persona": "deadpan_raid_leader",
+        "judge_score": 31.0,
+        "timestamp": 1790720336490
     }
 }
