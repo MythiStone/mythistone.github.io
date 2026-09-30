@@ -1,615 +1,619 @@
 [
   {
-    "score": 4050,
+    "score": 4075,
     "color": "#ff8000"
   },
   {
+    "score": 4015,
+    "color": "#fe7e17"
+  },
+  {
     "score": 3990,
-    "color": "#fe7e16"
+    "color": "#fd7b24"
   },
   {
-    "score": 3965,
-    "color": "#fd7c23"
+    "score": 3970,
+    "color": "#fb792e"
   },
   {
-    "score": 3940,
-    "color": "#fb792d"
+    "score": 3945,
+    "color": "#fa7737"
   },
   {
     "score": 3920,
-    "color": "#fa7736"
+    "color": "#f9753f"
   },
   {
     "score": 3895,
-    "color": "#f9753e"
+    "color": "#f77246"
   },
   {
     "score": 3870,
-    "color": "#f77345"
+    "color": "#f6704d"
   },
   {
-    "score": 3845,
-    "color": "#f6704c"
+    "score": 3850,
+    "color": "#f46e54"
   },
   {
-    "score": 3820,
-    "color": "#f46e52"
+    "score": 3825,
+    "color": "#f26b5a"
   },
   {
     "score": 3800,
-    "color": "#f36c59"
+    "color": "#f16961"
   },
   {
     "score": 3775,
-    "color": "#f16a5f"
+    "color": "#ef6767"
   },
   {
     "score": 3750,
-    "color": "#f06765"
+    "color": "#ed646d"
   },
   {
-    "score": 3725,
-    "color": "#ee656b"
+    "score": 3730,
+    "color": "#eb6273"
   },
   {
-    "score": 3700,
-    "color": "#ec6371"
+    "score": 3705,
+    "color": "#e96079"
   },
   {
     "score": 3680,
-    "color": "#ea6176"
+    "color": "#e75e7f"
   },
   {
     "score": 3655,
-    "color": "#e85f7c"
+    "color": "#e55b85"
   },
   {
     "score": 3630,
-    "color": "#e65c82"
+    "color": "#e3598b"
   },
   {
-    "score": 3605,
-    "color": "#e45a88"
+    "score": 3610,
+    "color": "#e05790"
   },
   {
-    "score": 3580,
-    "color": "#e1588d"
+    "score": 3585,
+    "color": "#de5496"
   },
   {
     "score": 3560,
-    "color": "#df5693"
+    "color": "#db529c"
   },
   {
     "score": 3535,
-    "color": "#dd5399"
+    "color": "#d850a2"
   },
   {
     "score": 3510,
-    "color": "#da519e"
+    "color": "#d54ea8"
   },
   {
-    "score": 3485,
-    "color": "#d74fa4"
+    "score": 3490,
+    "color": "#d24cad"
   },
   {
-    "score": 3460,
-    "color": "#d44daa"
+    "score": 3465,
+    "color": "#cf49b3"
   },
   {
     "score": 3440,
-    "color": "#d14baf"
+    "color": "#cc47b9"
   },
   {
     "score": 3415,
-    "color": "#ce49b5"
+    "color": "#c845bf"
   },
   {
     "score": 3390,
-    "color": "#cb47bb"
+    "color": "#c443c5"
   },
   {
-    "score": 3365,
-    "color": "#c744c0"
+    "score": 3370,
+    "color": "#c141cb"
   },
   {
-    "score": 3340,
-    "color": "#c442c6"
+    "score": 3345,
+    "color": "#bc3fd1"
   },
   {
     "score": 3320,
-    "color": "#c040cc"
+    "color": "#b83dd6"
   },
   {
     "score": 3295,
-    "color": "#bc3ed1"
+    "color": "#b33bdc"
   },
   {
     "score": 3270,
-    "color": "#b73cd7"
-  },
-  {
-    "score": 3245,
-    "color": "#b33add"
-  },
-  {
-    "score": 3220,
     "color": "#ae39e2"
   },
   {
-    "score": 3200,
+    "score": 3250,
     "color": "#a937e8"
   },
   {
-    "score": 3175,
+    "score": 3225,
     "color": "#a335ee"
   },
   {
+    "score": 3190,
+    "color": "#9a3fec"
+  },
+  {
+    "score": 3165,
+    "color": "#9148eb"
+  },
+  {
     "score": 3140,
-    "color": "#9b3eec"
+    "color": "#874fe9"
   },
   {
-    "score": 3115,
-    "color": "#9246eb"
+    "score": 3120,
+    "color": "#7c55e7"
   },
   {
-    "score": 3090,
-    "color": "#8a4de9"
+    "score": 3095,
+    "color": "#715be5"
   },
   {
-    "score": 3065,
-    "color": "#8053e8"
+    "score": 3070,
+    "color": "#6560e4"
   },
   {
     "score": 3045,
-    "color": "#7658e6"
+    "color": "#5764e2"
   },
   {
     "score": 3020,
-    "color": "#6c5de5"
+    "color": "#4769e0"
   },
   {
-    "score": 2995,
-    "color": "#6062e3"
+    "score": 3000,
+    "color": "#316cdf"
   },
   {
-    "score": 2970,
-    "color": "#5366e2"
-  },
-  {
-    "score": 2945,
-    "color": "#4369e0"
-  },
-  {
-    "score": 2925,
-    "color": "#2e6ddf"
-  },
-  {
-    "score": 2900,
+    "score": 2975,
     "color": "#0070dd"
   },
   {
-    "score": 2835,
+    "score": 2910,
     "color": "#1b74d9"
   },
   {
-    "score": 2815,
+    "score": 2890,
     "color": "#2977d5"
   },
   {
-    "score": 2790,
+    "score": 2865,
     "color": "#327bd2"
   },
   {
-    "score": 2765,
+    "score": 2840,
     "color": "#397ece"
   },
   {
-    "score": 2740,
+    "score": 2815,
     "color": "#4082ca"
   },
   {
-    "score": 2715,
+    "score": 2790,
     "color": "#4586c6"
   },
   {
-    "score": 2695,
+    "score": 2770,
     "color": "#4989c2"
   },
   {
-    "score": 2670,
+    "score": 2745,
     "color": "#4d8dbe"
   },
   {
-    "score": 2645,
+    "score": 2720,
     "color": "#5091bb"
   },
   {
-    "score": 2620,
+    "score": 2695,
     "color": "#5394b7"
   },
   {
-    "score": 2595,
+    "score": 2670,
     "color": "#5698b3"
   },
   {
-    "score": 2575,
+    "score": 2650,
     "color": "#589caf"
   },
   {
-    "score": 2550,
+    "score": 2625,
     "color": "#5a9fab"
   },
   {
-    "score": 2525,
+    "score": 2600,
     "color": "#5ba3a7"
   },
   {
-    "score": 2500,
+    "score": 2575,
     "color": "#5da7a3"
   },
   {
-    "score": 2475,
+    "score": 2550,
     "color": "#5eab9f"
   },
   {
-    "score": 2455,
+    "score": 2530,
     "color": "#5eae9a"
   },
   {
-    "score": 2430,
+    "score": 2505,
     "color": "#5fb296"
   },
   {
-    "score": 2405,
+    "score": 2480,
     "color": "#5fb692"
   },
   {
-    "score": 2380,
+    "score": 2455,
     "color": "#5fba8e"
   },
   {
-    "score": 2355,
+    "score": 2430,
     "color": "#5fbd89"
   },
   {
-    "score": 2335,
+    "score": 2410,
     "color": "#5fc185"
   },
   {
-    "score": 2310,
+    "score": 2385,
     "color": "#5ec580"
   },
   {
-    "score": 2285,
+    "score": 2360,
     "color": "#5dc97b"
   },
   {
-    "score": 2260,
+    "score": 2335,
     "color": "#5ccd77"
   },
   {
-    "score": 2235,
+    "score": 2310,
     "color": "#5bd072"
   },
   {
-    "score": 2215,
+    "score": 2290,
     "color": "#59d46c"
   },
   {
-    "score": 2190,
+    "score": 2265,
     "color": "#57d867"
   },
   {
-    "score": 2165,
+    "score": 2240,
     "color": "#54dc62"
   },
   {
-    "score": 2140,
+    "score": 2215,
     "color": "#52e05c"
   },
   {
-    "score": 2115,
+    "score": 2190,
     "color": "#4ee456"
   },
   {
-    "score": 2095,
+    "score": 2170,
     "color": "#4be84f"
   },
   {
-    "score": 2070,
+    "score": 2145,
     "color": "#46eb48"
   },
   {
-    "score": 2045,
+    "score": 2120,
     "color": "#41ef40"
   },
   {
-    "score": 2020,
+    "score": 2095,
     "color": "#3bf337"
   },
   {
-    "score": 1995,
+    "score": 2070,
     "color": "#34f72c"
   },
   {
-    "score": 1975,
+    "score": 2050,
     "color": "#2bfb1d"
   },
   {
-    "score": 1950,
+    "score": 2025,
     "color": "#1eff00"
   },
   {
+    "score": 2000,
+    "color": "#2aff10"
+  },
+  {
+    "score": 1975,
+    "color": "#34ff1b"
+  },
+  {
+    "score": 1950,
+    "color": "#3bff23"
+  },
+  {
     "score": 1925,
-    "color": "#2bff11"
+    "color": "#42ff29"
   },
   {
     "score": 1900,
-    "color": "#34ff1c"
+    "color": "#49ff2f"
   },
   {
     "score": 1875,
-    "color": "#3cff24"
+    "color": "#4eff34"
   },
   {
     "score": 1850,
-    "color": "#43ff2a"
+    "color": "#53ff39"
   },
   {
     "score": 1825,
-    "color": "#4aff30"
+    "color": "#58ff3e"
   },
   {
     "score": 1800,
-    "color": "#50ff36"
+    "color": "#5dff42"
   },
   {
     "score": 1775,
-    "color": "#55ff3b"
+    "color": "#62ff46"
   },
   {
     "score": 1750,
-    "color": "#5aff3f"
+    "color": "#66ff4a"
   },
   {
     "score": 1725,
-    "color": "#5fff44"
+    "color": "#6aff4e"
   },
   {
     "score": 1700,
-    "color": "#63ff48"
+    "color": "#6eff52"
   },
   {
     "score": 1675,
-    "color": "#68ff4c"
+    "color": "#71ff55"
   },
   {
     "score": 1650,
-    "color": "#6cff50"
+    "color": "#75ff59"
   },
   {
     "score": 1625,
-    "color": "#70ff54"
+    "color": "#79ff5c"
   },
   {
     "score": 1600,
-    "color": "#74ff57"
+    "color": "#7cff60"
   },
   {
     "score": 1575,
-    "color": "#77ff5b"
+    "color": "#7fff63"
   },
   {
     "score": 1550,
-    "color": "#7bff5f"
+    "color": "#83ff66"
   },
   {
     "score": 1525,
-    "color": "#7fff62"
+    "color": "#86ff69"
   },
   {
     "score": 1500,
-    "color": "#82ff65"
+    "color": "#89ff6d"
   },
   {
     "score": 1475,
-    "color": "#85ff69"
+    "color": "#8cff70"
   },
   {
     "score": 1450,
-    "color": "#89ff6c"
-  },
-  {
-    "score": 1425,
-    "color": "#8cff6f"
-  },
-  {
-    "score": 1400,
     "color": "#8fff73"
   },
   {
-    "score": 1375,
+    "score": 1425,
     "color": "#92ff76"
   },
   {
-    "score": 1350,
+    "score": 1400,
     "color": "#95ff79"
   },
   {
-    "score": 1325,
+    "score": 1375,
     "color": "#98ff7c"
   },
   {
+    "score": 1350,
+    "color": "#9aff7f"
+  },
+  {
+    "score": 1325,
+    "color": "#9dff82"
+  },
+  {
     "score": 1300,
-    "color": "#9bff7f"
-  },
-  {
-    "score": 1275,
-    "color": "#9eff82"
-  },
-  {
-    "score": 1250,
     "color": "#a0ff85"
   },
   {
+    "score": 1275,
+    "color": "#a2ff88"
+  },
+  {
+    "score": 1250,
+    "color": "#a5ff8b"
+  },
+  {
     "score": 1225,
-    "color": "#a3ff89"
+    "color": "#a8ff8e"
   },
   {
     "score": 1200,
-    "color": "#a6ff8c"
+    "color": "#aaff91"
   },
   {
     "score": 1175,
-    "color": "#a9ff8f"
+    "color": "#adff93"
   },
   {
     "score": 1150,
-    "color": "#abff92"
+    "color": "#afff96"
   },
   {
     "score": 1125,
-    "color": "#aeff95"
+    "color": "#b2ff99"
   },
   {
     "score": 1100,
-    "color": "#b0ff98"
+    "color": "#b4ff9c"
   },
   {
     "score": 1075,
-    "color": "#b3ff9b"
+    "color": "#b6ff9f"
   },
   {
     "score": 1050,
-    "color": "#b5ff9d"
+    "color": "#b9ffa2"
   },
   {
     "score": 1025,
-    "color": "#b8ffa0"
+    "color": "#bbffa4"
   },
   {
     "score": 1000,
-    "color": "#baffa3"
+    "color": "#beffa7"
   },
   {
     "score": 975,
-    "color": "#bdffa6"
+    "color": "#c0ffaa"
   },
   {
     "score": 950,
-    "color": "#bfffa9"
+    "color": "#c2ffad"
   },
   {
     "score": 925,
-    "color": "#c2ffac"
+    "color": "#c4ffb0"
   },
   {
     "score": 900,
-    "color": "#c4ffaf"
+    "color": "#c7ffb2"
   },
   {
     "score": 875,
-    "color": "#c6ffb2"
-  },
-  {
-    "score": 850,
     "color": "#c9ffb5"
   },
   {
-    "score": 825,
+    "score": 850,
     "color": "#cbffb8"
   },
   {
-    "score": 800,
+    "score": 825,
     "color": "#cdffbb"
   },
   {
-    "score": 775,
+    "score": 800,
     "color": "#cfffbd"
   },
   {
-    "score": 750,
-    "color": "#d2ffc0"
+    "score": 775,
+    "color": "#d1ffc0"
   },
   {
-    "score": 725,
+    "score": 750,
     "color": "#d4ffc3"
   },
   {
-    "score": 700,
+    "score": 725,
     "color": "#d6ffc6"
   },
   {
+    "score": 700,
+    "color": "#d8ffc8"
+  },
+  {
     "score": 675,
-    "color": "#d8ffc9"
+    "color": "#daffcb"
   },
   {
     "score": 650,
-    "color": "#daffcc"
+    "color": "#dcffce"
   },
   {
     "score": 625,
-    "color": "#ddffcf"
+    "color": "#deffd1"
   },
   {
     "score": 600,
-    "color": "#dfffd1"
+    "color": "#e0ffd3"
   },
   {
     "score": 575,
-    "color": "#e1ffd4"
+    "color": "#e2ffd6"
   },
   {
     "score": 550,
-    "color": "#e3ffd7"
+    "color": "#e4ffd9"
   },
   {
     "score": 525,
-    "color": "#e5ffda"
+    "color": "#e6ffdc"
   },
   {
     "score": 500,
-    "color": "#e7ffdd"
+    "color": "#e8ffde"
   },
   {
     "score": 475,
-    "color": "#e9ffe0"
+    "color": "#eaffe1"
   },
   {
     "score": 450,
-    "color": "#ebffe3"
+    "color": "#ecffe4"
   },
   {
     "score": 425,
-    "color": "#edffe5"
+    "color": "#eeffe6"
   },
   {
     "score": 400,
-    "color": "#efffe8"
+    "color": "#f0ffe9"
   },
   {
     "score": 375,
-    "color": "#f1ffeb"
+    "color": "#f2ffec"
   },
   {
     "score": 350,
-    "color": "#f3ffee"
+    "color": "#f4ffef"
   },
   {
     "score": 325,
-    "color": "#f5fff1"
+    "color": "#f6fff1"
   },
   {
     "score": 300,
-    "color": "#f7fff4"
+    "color": "#f8fff4"
   },
   {
     "score": 275,
-    "color": "#f9fff6"
+    "color": "#f9fff7"
   },
   {
     "score": 250,
-    "color": "#fbfff9"
+    "color": "#fbfffa"
   },
   {
     "score": 225,

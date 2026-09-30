@@ -68679,30 +68679,53 @@
       }
     }
   },
+  "11053": {
+    "id": 11053,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 2832
+    }
+  },
   "11054": {
     "id": 11054,
     "ilevel": "363 @plvl 55 - 554 @plvl 554",
     "curveId": 71409,
-    "quality": 3
+    "quality": 3,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 2832
+    }
   },
   "11055": {
     "id": 11055,
     "ilevel": "369 @plvl 55 - 554 @plvl 554",
     "curveId": 71410,
     "quality": 4,
-    "applyBonusId": 13616
+    "applyBonusId": 13616,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 2832
+    }
   },
   "11061": {
     "id": 11061,
     "ilevel": "363 @plvl 55 - 554 @plvl 554",
     "curveId": 71409,
-    "quality": 3
+    "quality": 3,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 2832
+    }
   },
   "11062": {
     "id": 11062,
     "ilevel": "232 @plvl 45 - 353 @plvl 353",
     "curveId": 30726,
-    "quality": 4
+    "quality": 4,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 2832
+    }
   },
   "11065": {
     "id": 11065,
@@ -96573,7 +96596,11 @@
       "priority": 290,
       "squishEra": 2
     },
-    "quality": 3
+    "quality": 3,
+    "requiredLevelCurve": {
+      "curve": 88583,
+      "val": 0
+    }
   },
   "13828": {
     "id": 13828,
