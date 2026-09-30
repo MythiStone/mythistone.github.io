@@ -1908,5 +1908,16 @@
         "persona": "deadpan_raid_leader",
         "judge_score": 31.0,
         "timestamp": 1790720336490
+    },
+    "data/social/spec_overview_1473_2026-09.png": {
+        "title": "Augmentation Evoker Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Dps/Augmentation_Evoker",
+        "social": "Augmentation Evoker times 82% of keys. Five points off the DPS average but nobody plays it. The three Chronowarden mains you find in LFG actually finish the run. #WoW #MythicPlus https://mythistone.com/classes/Dps/Augmentation_Evoker",
+        "blog": "38.2 K Augmentation Evoker keys are in the books this season. The Chronowarden hero tree leads at 66% of builds, with Scalecommander (34%) trailing.\n\nGroups time keys with the spec 82% of the time and three-chest 4% of them. The stat priority skews toward Mastery > Crit > Haste > Versatility. The best key so far: +19 Kings' Rest in 28:26.362.",
+        "post": "Augmentation Evoker times 82% of keys. Five points off the DPS average but nobody plays it. The three Chronowarden mains you find in LFG actually finish the run. #WoW #MythicPlus https://mythistone.com/classes/Dps/Augmentation_Evoker",
+        "persona": "snarky_analyst",
+        "judge_score": null,
+        "timestamp": 1790806650862
     }
 }
