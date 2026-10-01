@@ -1919,5 +1919,16 @@
         "persona": "snarky_analyst",
         "judge_score": null,
         "timestamp": 1790806650862
+    },
+    "data/social/dungeon_overview_588_2026-10.png": {
+        "title": "Altar of Fangs Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/altar-of-fangs",
+        "social": "Even in F tier, the Fangs do not care. The Altar of Fangs still gnashes its teeth for the stubborn. #WoW #MythicPlus https://mythistone.com/dungeons/altar-of-fangs",
+        "blog": "Altar of Fangs has 1.2 M Mythic+ runs tracked this season.\n\nGroups most often bring Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. The most-used route right now is keystone.guru/sbSTrQY.",
+        "post": "Even in F tier, the Fangs do not care. The Altar of Fangs still gnashes its teeth for the stubborn. #WoW #MythicPlus https://mythistone.com/dungeons/altar-of-fangs",
+        "persona": "lore_nerd",
+        "judge_score": null,
+        "timestamp": 1790894988976
     }
 }
