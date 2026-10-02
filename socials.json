@@ -1930,5 +1930,16 @@
         "persona": "lore_nerd",
         "judge_score": null,
         "timestamp": 1790894988976
+    },
+    "data/social/weekly_mover_dungeon_399_2026-10-02.png": {
+        "title": "Weekly Mover: Ruby Life Pools",
+        "post_type": "weekly_mover",
+        "link": "https://mythistone.com/dungeons/ruby-life-pools",
+        "social": "Remember when Ruby Life Pools felt impossible at +21? This week the group finder threw a +22 key up and suddenly everyone's busy again. Same old story, just a higher number. #WoW #MythicPlus https://mythistone.com/dungeons/ruby-life-pools",
+        "blog": "Nothing moved more over the last seven days than Ruby Life Pools: highest timed key from +21 to +22.\n\nMost of the ladder barely shifts week to week this deep into a season, so a jump like this stands out.",
+        "post": "Remember when Ruby Life Pools felt impossible at +21? This week the group finder threw a +22 key up and suddenly everyone's busy again. Same old story, just a higher number. #WoW #MythicPlus https://mythistone.com/dungeons/ruby-life-pools",
+        "persona": "pug_veteran",
+        "judge_score": 31.0,
+        "timestamp": 1790978885295
     }
 }
