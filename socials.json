@@ -1941,5 +1941,16 @@
         "persona": "pug_veteran",
         "judge_score": 31.0,
         "timestamp": 1790978885295
+    },
+    "data/social/spec_distribution_by_level_2026-10.png": {
+        "title": "Spec Distribution Across Key Levels",
+        "post_type": "spec_distribution_by_level",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Notes for +22: Holy Paladin Blood DK Ele Shaman. That is the meta now. Everyone else is content. Pull in five #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "Once keys reach level 22, the field narrows to a handful of specs: Holy - Paladin, Blood - Death Knight, Elemental - Shaman.\n\nThe spread is wide at low keys and tightens sharply toward the top.",
+        "post": "Notes for +22: Holy Paladin Blood DK Ele Shaman. That is the meta now. Everyone else is content. Pull in five #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "deadpan_raid_leader",
+        "judge_score": null,
+        "timestamp": 1791061129004
     }
 }
