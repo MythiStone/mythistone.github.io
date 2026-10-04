@@ -1952,5 +1952,16 @@
         "persona": "deadpan_raid_leader",
         "judge_score": null,
         "timestamp": 1791061129004
+    },
+    "data/social/dungeon_tierlist_2026-10.png": {
+        "title": "Dungeon Tier List",
+        "post_type": "dungeon_tierlist",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Murder Row timed 90% of the time. Altar of Fangs only 84%. The meta just got fanged. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "Murder Row leads the dungeon tier list this season and Altar of Fangs anchors the bottom, across 4.1 M tracked runs.\n\nTemple of Sethraliss follows near the top, and The Blinding Vale is not far off the bottom. Tiers reflect how cleanly groups are timing each dungeon at higher keys.",
+        "post": "Murder Row timed 90% of the time. Altar of Fangs only 84%. The meta just got fanged. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "hype_caster",
+        "judge_score": 28.0,
+        "timestamp": 1791148532173
     }
 }
