@@ -5,6 +5,7 @@
     "classId": 11,
     "specName": "Balance",
     "specId": 102,
+    "treeHash": "4330dca1f4084b8ff5e0acf316a7bc0c",
     "classNodes": [
       {
         "id": 82199,
@@ -3872,6 +3873,7 @@
     "classId": 11,
     "specName": "Feral",
     "specId": 103,
+    "treeHash": "4330dca1f4084b8ff5e0acf316a7bc0c",
     "classNodes": [
       {
         "id": 82199,
@@ -7726,6 +7728,7 @@
     "classId": 11,
     "specName": "Guardian",
     "specId": 104,
+    "treeHash": "4330dca1f4084b8ff5e0acf316a7bc0c",
     "classNodes": [
       {
         "id": 82199,
@@ -11642,6 +11645,7 @@
     "classId": 11,
     "specName": "Restoration",
     "specId": 105,
+    "treeHash": "4330dca1f4084b8ff5e0acf316a7bc0c",
     "classNodes": [
       {
         "id": 82199,
@@ -15691,6 +15695,7 @@
     "classId": 13,
     "specName": "Devastation",
     "specId": 1467,
+    "treeHash": "4fc2e1b5f071ac87d19b767a498d1c6b",
     "classNodes": [
       {
         "id": 93305,
@@ -19240,6 +19245,7 @@
     "classId": 13,
     "specName": "Preservation",
     "specId": 1468,
+    "treeHash": "4fc2e1b5f071ac87d19b767a498d1c6b",
     "classNodes": [
       {
         "id": 93305,
@@ -22885,6 +22891,7 @@
     "classId": 13,
     "specName": "Augmentation",
     "specId": 1473,
+    "treeHash": "4fc2e1b5f071ac87d19b767a498d1c6b",
     "classNodes": [
       {
         "id": 93305,
@@ -26631,6 +26638,7 @@
     "classId": 5,
     "specName": "Discipline",
     "specId": 256,
+    "treeHash": "117d1bed1e3f263734cec8da59b9ddb2",
     "classNodes": [
       {
         "id": 82717,
@@ -30364,6 +30372,7 @@
     "classId": 5,
     "specName": "Holy",
     "specId": 257,
+    "treeHash": "117d1bed1e3f263734cec8da59b9ddb2",
     "classNodes": [
       {
         "id": 82717,
@@ -34138,6 +34147,7 @@
     "classId": 5,
     "specName": "Shadow",
     "specId": 258,
+    "treeHash": "117d1bed1e3f263734cec8da59b9ddb2",
     "classNodes": [
       {
         "id": 82717,
@@ -37962,6 +37972,7 @@
     "classId": 6,
     "specName": "Blood",
     "specId": 250,
+    "treeHash": "e4155831297f712f6c8676a02701844b",
     "classNodes": [
       {
         "id": 76081,
@@ -41502,6 +41513,7 @@
     "classId": 6,
     "specName": "Frost",
     "specId": 251,
+    "treeHash": "e4155831297f712f6c8676a02701844b",
     "classNodes": [
       {
         "id": 76081,
@@ -44977,6 +44989,7 @@
     "classId": 6,
     "specName": "Unholy",
     "specId": 252,
+    "treeHash": "e4155831297f712f6c8676a02701844b",
     "classNodes": [
       {
         "id": 76081,
@@ -48427,6 +48440,7 @@
     "classId": 3,
     "specName": "Beast Mastery",
     "specId": 253,
+    "treeHash": "43becb22b128442bd7b8474e439b112a",
     "classNodes": [
       {
         "id": 102381,
@@ -52006,6 +52020,7 @@
     "classId": 3,
     "specName": "Marksmanship",
     "specId": 254,
+    "treeHash": "43becb22b128442bd7b8474e439b112a",
     "classNodes": [
       {
         "id": 102381,
@@ -55541,6 +55556,7 @@
     "classId": 3,
     "specName": "Survival",
     "specId": 255,
+    "treeHash": "43becb22b128442bd7b8474e439b112a",
     "classNodes": [
       {
         "id": 102381,
@@ -59020,6 +59036,7 @@
     "classId": 4,
     "specName": "Assassination",
     "specId": 259,
+    "treeHash": "f9610e73acf38a25afd6cf633b5f2ffb",
     "classNodes": [
       {
         "id": 90740,
@@ -62549,6 +62566,7 @@
     "classId": 4,
     "specName": "Outlaw",
     "specId": 260,
+    "treeHash": "f9610e73acf38a25afd6cf633b5f2ffb",
     "classNodes": [
       {
         "id": 90740,
@@ -66072,6 +66090,7 @@
     "classId": 4,
     "specName": "Subtlety",
     "specId": 261,
+    "treeHash": "f9610e73acf38a25afd6cf633b5f2ffb",
     "classNodes": [
       {
         "id": 90740,
@@ -69698,6 +69717,7 @@
     "classId": 7,
     "specName": "Elemental",
     "specId": 262,
+    "treeHash": "0b53ee006ce53563cdc6e9b90771b78f",
     "classNodes": [
       {
         "id": 103588,
@@ -73446,6 +73466,7 @@
     "classId": 7,
     "specName": "Enhancement",
     "specId": 263,
+    "treeHash": "0b53ee006ce53563cdc6e9b90771b78f",
     "classNodes": [
       {
         "id": 103588,
@@ -77017,6 +77038,7 @@
     "classId": 7,
     "specName": "Restoration",
     "specId": 264,
+    "treeHash": "0b53ee006ce53563cdc6e9b90771b78f",
     "classNodes": [
       {
         "id": 103588,
@@ -80768,6 +80790,7 @@
     "classId": 2,
     "specName": "Holy",
     "specId": 65,
+    "treeHash": "f376de1e28392d2ac1ef03d754fd4e0b",
     "classNodes": [
       {
         "id": 81597,
@@ -84825,6 +84848,7 @@
     "classId": 2,
     "specName": "Protection",
     "specId": 66,
+    "treeHash": "f376de1e28392d2ac1ef03d754fd4e0b",
     "classNodes": [
       {
         "id": 81597,
@@ -88693,6 +88717,7 @@
     "classId": 2,
     "specName": "Retribution",
     "specId": 70,
+    "treeHash": "f376de1e28392d2ac1ef03d754fd4e0b",
     "classNodes": [
       {
         "id": 81597,
@@ -92459,6 +92484,7 @@
     "classId": 8,
     "specName": "Arcane",
     "specId": 62,
+    "treeHash": "5ce8d17c7bcc78af48d5b78b4a71ca6e",
     "classNodes": [
       {
         "id": 62121,
@@ -95964,6 +95990,7 @@
     "classId": 8,
     "specName": "Fire",
     "specId": 63,
+    "treeHash": "5ce8d17c7bcc78af48d5b78b4a71ca6e",
     "classNodes": [
       {
         "id": 62119,
@@ -99481,6 +99508,7 @@
     "classId": 8,
     "specName": "Frost",
     "specId": 64,
+    "treeHash": "5ce8d17c7bcc78af48d5b78b4a71ca6e",
     "classNodes": [
       {
         "id": 62117,
@@ -103016,6 +103044,7 @@
     "classId": 1,
     "specName": "Arms",
     "specId": 71,
+    "treeHash": "92c50ed2d1c8cf709d5bec22e17167dd",
     "classNodes": [
       {
         "id": 90327,
@@ -106362,6 +106391,7 @@
     "classId": 1,
     "specName": "Fury",
     "specId": 72,
+    "treeHash": "92c50ed2d1c8cf709d5bec22e17167dd",
     "classNodes": [
       {
         "id": 90325,
@@ -109743,6 +109773,7 @@
     "classId": 1,
     "specName": "Protection",
     "specId": 73,
+    "treeHash": "92c50ed2d1c8cf709d5bec22e17167dd",
     "classNodes": [
       {
         "id": 90261,
@@ -113151,6 +113182,7 @@
     "classId": 9,
     "specName": "Affliction",
     "specId": 265,
+    "treeHash": "ccda3c39a9913e11a8cb476977c798be",
     "classNodes": [
       {
         "id": 71931,
@@ -116558,6 +116590,7 @@
     "classId": 9,
     "specName": "Demonology",
     "specId": 266,
+    "treeHash": "ccda3c39a9913e11a8cb476977c798be",
     "classNodes": [
       {
         "id": 71931,
@@ -120027,6 +120060,7 @@
     "classId": 9,
     "specName": "Destruction",
     "specId": 267,
+    "treeHash": "ccda3c39a9913e11a8cb476977c798be",
     "classNodes": [
       {
         "id": 71931,
@@ -123530,6 +123564,7 @@
     "classId": 10,
     "specName": "Brewmaster",
     "specId": 268,
+    "treeHash": "d069e4b554f7224b2568824e5ef223ca",
     "classNodes": [
       {
         "id": 101143,
@@ -127615,6 +127650,7 @@
     "classId": 10,
     "specName": "Windwalker",
     "specId": 269,
+    "treeHash": "d069e4b554f7224b2568824e5ef223ca",
     "classNodes": [
       {
         "id": 101143,
@@ -131684,6 +131720,7 @@
     "classId": 10,
     "specName": "Mistweaver",
     "specId": 270,
+    "treeHash": "d069e4b554f7224b2568824e5ef223ca",
     "classNodes": [
       {
         "id": 101143,
@@ -135720,6 +135757,7 @@
     "classId": 12,
     "specName": "Havoc",
     "specId": 577,
+    "treeHash": "e9efa55aeced030de0f4bdf8d34bd2a2",
     "classNodes": [
       {
         "id": 90942,
@@ -139214,6 +139252,7 @@
     "classId": 12,
     "specName": "Vengeance",
     "specId": 581,
+    "treeHash": "e9efa55aeced030de0f4bdf8d34bd2a2",
     "classNodes": [
       {
         "id": 90942,
@@ -142737,6 +142776,7 @@
     "classId": 12,
     "specName": "Devourer",
     "specId": 1480,
+    "treeHash": "e9efa55aeced030de0f4bdf8d34bd2a2",
     "classNodes": [
       {
         "id": 90942,
