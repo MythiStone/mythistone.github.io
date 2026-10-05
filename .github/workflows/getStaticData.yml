@@ -180,6 +180,30 @@ jobs:
           python backend_scripts/fetchMythicPlusCutoffs.py
 
 
+      # Weekly playstyle names for the spec page's talent builds (nameTalentBuilds.py),
+      # from a local Ollama model on the runner's CPU. Only new builds, or builds whose
+      # talent descriptions changed, are named; the run is time-boxed and the rest keep
+      # their "Build N" fallback until next week.
+      - name: Cache Ollama model
+        uses: actions/cache@v4
+        with:
+          path: ~/.ollama/models
+          key: ollama-qwen2.5-7b-instruct
+
+      - name: Start Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          # the installer starts a systemd service with its own model dir; run our own
+          # server on the cached dir instead
+          sudo systemctl stop ollama || true
+          OLLAMA_MODELS=~/.ollama/models nohup ollama serve > /tmp/ollama.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/tags > /dev/null && break; sleep 2; done
+          OLLAMA_MODELS=~/.ollama/models ollama pull qwen2.5:7b-instruct
+
+      - name: Name talent builds
+        run: |
+          python backend_scripts/nameTalentBuilds.py --max-minutes 240
+
       - name: Clean up CSV
         run: |
           rm data/static/specs.csv
