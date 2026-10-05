@@ -75,24 +75,25 @@ def canonical_build(code, spec_id, hero_tree_id, full_node_order, nodes):
 
 
 # Talent tags (written weekly by tagTalents.py into data/static/talent_tags.json)
-# and the labels build names are composed from. Order breaks ties. The set follows
-# LibSpellDB's spell tags, the closest public vocabulary to raider.io's build names.
+# and the labels build names are composed from. Order breaks ties. Loosely follows
+# LibSpellDB's spell tags, with one survival and one group tag so a 7B model
+# cannot blur near-synonyms, and plain/pet damage tags so throughput talents are
+# not forced into a utility bucket.
 BUILD_TAGS = {
     "AOE": "AoE",
     "SINGLE_TARGET": "Single Target",
     "BURST": "Burst",
-    "DEFENSIVE": "Defensives",
-    "DAMAGE_REDUCTION": "Damage Reduction",
+    "DAMAGE": "Damage",
+    "PET_DAMAGE": "Pet Damage",
+    "SURVIVABILITY": "Survivability",
     "SELF_HEALING": "Self Healing",
-    "GROUP_HEALING": "Group Healing",
+    "GROUP_SUPPORT": "Group Support",
     "INTERRUPT": "Interrupts",
     "CC_HARD": "Hard CC",
     "CC_SOFT": "Slows",
-    "MOVEMENT": "Mobility",
     "DISPEL": "Dispels",
     "BATTLE_REZ": "Battle Res",
-    "UTILITY": "Utility",
-    "COOLDOWN_REDUCTION": "Cooldown Reduction",
+    "MOVEMENT": "Mobility",
     "RESOURCE": "Resource",
 }
 

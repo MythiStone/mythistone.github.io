@@ -520,7 +520,11 @@ def load_talent_tags():
     tags = {}
     path = os.path.join(LOOKUP_DIR, "talent_tags.json")
     if os.path.exists(path):
-        tags = {sid: entry["tags"] for sid, entry in load_json(path).items()}
+        # tags from an older tag list (until the next run re-tags them) count for nothing
+        tags = {
+            sid: [t for t in entry["tags"] if t in talentBuilds.BUILD_TAGS]
+            for sid, entry in load_json(path).items()
+        }
     overrides = os.path.join(LOOKUP_DIR, "talent_tag_overrides.json")
     if os.path.exists(overrides):
         for sid, override in load_json(overrides).items():

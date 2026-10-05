@@ -201,6 +201,10 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/tags > /dev/null && break; sleep 2; done
           OLLAMA_MODELS=~/.ollama/models ollama pull qwen2.5:7b-instruct
 
+      - name: Score talent tagging
+        run: |
+          python backend_scripts/tagTalents.py --eval
+
       - name: Tag talents
         run: |
           python backend_scripts/tagTalents.py --max-minutes 240
