@@ -512,23 +512,33 @@ def choice_spell_ids(nodes):
     }
 
 
-def load_build_names():
-    """{signature: name} written weekly by nameTalentBuilds.py. Intentional
-    fail-soft: before its first run (or for a build it has not named yet) rows
-    fall back to "Build N" / "Variant N"."""
-    path = os.path.join(LOOKUP_DIR, "build_names.json")
-    if not os.path.exists(path):
-        return {}
-    return {sig: entry["name"] for sig, entry in load_json(path).items()}
+def load_talent_tags():
+    """{spellId: [tag, ...]} from tagTalents.py's weekly data/static/talent_tags.json,
+    with the hand-maintained talent_tag_overrides.json on top. Intentional
+    fail-soft: an untagged talent adds nothing to a build name, and a build none
+    of whose changes is tagged falls back to "Build N" / "Variant N"."""
+    tags = {}
+    path = os.path.join(LOOKUP_DIR, "talent_tags.json")
+    if os.path.exists(path):
+        tags = {sid: entry["tags"] for sid, entry in load_json(path).items()}
+    overrides = os.path.join(LOOKUP_DIR, "talent_tag_overrides.json")
+    if os.path.exists(overrides):
+        for sid, override in load_json(overrides).items():
+            unknown = set(override) - set(talentBuilds.BUILD_TAGS)
+            if unknown:
+                raise ValueError(f"talent_tag_overrides.json: unknown tags {unknown} for spell {sid}")
+            tags[sid] = override
+    return tags
 
 
-def build_path_view(tree, nodes, payload, spec_id, hero_id, build_names):
+def build_path_view(tree, nodes, payload, talent_tags):
     """Template view of one hero tree's build paths (talentBuilds output).
 
     Fills ``payload`` ({build_id: {code, picks, flex}}) for spec-page.js, which
     repaints the talent tree to a clicked build. Each card's ``name`` is
-    "Standard" for Build 1, "Standard class tree" for a Variant 1, the weekly
-    LLM name when there is one, else None. Returns None without builds.
+    "Standard" for Build 1, "Standard class tree" for a Variant 1, else "More X,
+    Less Y" composed from ``talent_tags`` (talentBuilds.compose_build_name), or
+    None when none of its changed talents is tagged. Returns None without builds.
     """
     if not tree or not tree["cores"]:
         return None
@@ -554,7 +564,12 @@ def build_path_view(tree, nodes, payload, spec_id, hero_id, build_names):
         node = nodes[str(nid)]
         return (sign_order[sign], section_order.get(node.get("g"), 3), node.get("y") or 0, node.get("x") or 0)
 
-    def card(b, scope):
+    def tags_of(nid, entry):
+        entries = nodes[str(nid)].get("entries") or [{}]
+        e = entries[entry] if entry < len(entries) else entries[0]
+        return talent_tags.get(str(e.get("spellId")), ())
+
+    def card(b):
         # A choice node that only changed its option is one "swap" chip (the new
         # option, old one in the label) instead of an add plus a drop of one node.
         signs = Counter(nid for _sign, nid, _entry, _rank in b["diff"])
@@ -600,7 +615,7 @@ def build_path_view(tree, nodes, payload, spec_id, hero_id, build_names):
             "name": (
                 "Standard" if b["id"] == "b1"
                 else "Standard class tree" if b["id"].endswith(".v1")
-                else build_names.get(talentBuilds.build_signature(spec_id, scope, b["diff"]))
+                else talentBuilds.compose_build_name(b["diff"], tags_of)
             ),
             "share": b["share"],
             "runs": b["runs"],
@@ -615,8 +630,8 @@ def build_path_view(tree, nodes, payload, spec_id, hero_id, build_names):
         }
 
     def core_card(c):
-        view = card(c, hero_id)
-        view["variants"] = [card(v, "class") for v in c["variants"]]
+        view = card(c)
+        view["variants"] = [card(v) for v in c["variants"]]
         view["other_variant_share"] = c["other_variant_share"]
         return view
 
@@ -2204,7 +2219,7 @@ def main(template_path, output_dir, debug=False, spec=None):
     )  # this is temporarily just using eu prices
     bonus_lookup = load_json(os.path.join(LOOKUP_DIR, "bonuses.json"))
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
-    build_names = load_build_names()
+    talent_tags = load_talent_tags()
     dungeon_lookup_slug = {}
     for id, value in dungeon_lookup.items():
         value["id"] = id
@@ -3103,7 +3118,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                     "build_paths": build_path_view(
                         builds_by_tree.get(int(tid)), talent_lookup["nodes"],
                         build_payload["builds"].setdefault(str(tid), {}),
-                        int(spec_id), int(tid), build_names,
+                        talent_tags,
                     ),
                 })
 

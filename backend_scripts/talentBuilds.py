@@ -4,7 +4,6 @@ Pure (no DB, no Jinja). Input is ``databaseConnector.fetch_loadout_key_levels``
 rows plus the top-50 players' export strings; output feeds the spec page's
 Talent Builds modal. See AGENTS.md "Talent build paths" for why each rule exists.
 """
-import hashlib
 import math
 from collections import Counter, defaultdict
 
@@ -75,18 +74,47 @@ def canonical_build(code, spec_id, hero_tree_id, full_node_order, nodes):
     return frozenset(core), frozenset(cls), totals, int(active)
 
 
-def build_signature(spec_id, scope, diff):
-    """Stable key for a build's name: what it changes vs its lead build.
+# Talent tags (written weekly by tagTalents.py into data/static/talent_tags.json)
+# and the labels build names are composed from. Order breaks ties. The set follows
+# LibSpellDB's spell tags, the closest public vocabulary to raider.io's build names.
+BUILD_TAGS = {
+    "AOE": "AoE",
+    "SINGLE_TARGET": "Single Target",
+    "BURST": "Burst",
+    "DEFENSIVE": "Defensives",
+    "DAMAGE_REDUCTION": "Damage Reduction",
+    "SELF_HEALING": "Self Healing",
+    "GROUP_HEALING": "Group Healing",
+    "INTERRUPT": "Interrupts",
+    "CC_HARD": "Hard CC",
+    "CC_SOFT": "Slows",
+    "MOVEMENT": "Mobility",
+    "DISPEL": "Dispels",
+    "BATTLE_REZ": "Battle Res",
+    "UTILITY": "Utility",
+    "COOLDOWN_REDUCTION": "Cooldown Reduction",
+    "RESOURCE": "Resource",
+}
 
-    ``scope`` is the hero tree id for core builds and "class" for class tree
-    variants; ``diff`` is the build's ``diff`` (vs Build 1 / Variant 1). The
-    weekly namer (nameTalentBuilds.py) and the page generator both key
-    data/static/build_names.json with it, so a name follows its build even when
-    the list order changes. Empty for the lead itself (nothing to name)."""
-    if not diff:
-        return None
-    body = ",".join(f"{sign}{nid}:{entry}:{rank}" for sign, nid, entry, rank in sorted(diff))
-    return hashlib.sha1(f"{spec_id}|{scope}|{body}".encode("utf-8")).hexdigest()[:16]
+
+def compose_build_name(diff, tags_of):
+    """'More X, Less Y' from the tags a build gains and loses vs its lead, or None
+    when none of its changed talents is tagged. ``tags_of(nid, entry)`` returns a
+    talent's tags; each tag is weighted by the points moved."""
+    score = Counter()
+    for sign, nid, entry, rank in diff:
+        weight = rank if sign == "+" else -rank if sign == "-" else 0
+        for tag in tags_of(nid, entry):
+            score[tag] += weight
+    order = list(BUILD_TAGS)
+    more = sorted((t for t in score if score[t] > 0), key=lambda t: (-score[t], order.index(t)))
+    less = sorted((t for t in score if score[t] < 0), key=lambda t: (score[t], order.index(t)))
+    parts = []
+    if more:
+        parts.append("More " + BUILD_TAGS[more[0]])
+    if less:
+        parts.append("Less " + BUILD_TAGS[less[0]])
+    return ", ".join(parts) or None
 
 
 def top50_inputs(top_loadouts, dungeon_ids):

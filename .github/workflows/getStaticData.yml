@@ -181,10 +181,10 @@ jobs:
           python backend_scripts/fetchMythicPlusCutoffs.py
 
 
-      # Weekly playstyle names for the spec page's talent builds (nameTalentBuilds.py),
-      # from a local Ollama model on the runner's CPU. Only new builds, or builds whose
-      # talent descriptions changed, are named; the run is time-boxed and the rest keep
-      # their "Build N" fallback until next week.
+      # Weekly playstyle tags for the talents the spec page's builds differ by
+      # (tagTalents.py), from a local Ollama model on the runner's CPU. The page build
+      # composes "More X, Less Y" build names from them. Only new talents, or talents
+      # whose description changed, are tagged; the run is time-boxed.
       - name: Cache Ollama model
         uses: actions/cache@v4
         with:
@@ -201,9 +201,9 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/tags > /dev/null && break; sleep 2; done
           OLLAMA_MODELS=~/.ollama/models ollama pull qwen2.5:7b-instruct
 
-      - name: Name talent builds
+      - name: Tag talents
         run: |
-          python backend_scripts/nameTalentBuilds.py --max-minutes 240
+          python backend_scripts/tagTalents.py --max-minutes 240
 
       - name: Clean up CSV
         run: |
