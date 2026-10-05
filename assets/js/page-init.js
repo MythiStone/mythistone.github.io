@@ -7,7 +7,11 @@
 // heavy). Scrollbar comes from plugins/smooth-scrollbar.min.js.
 var win = navigator.platform.indexOf('Win') > -1;
 if (win && document.querySelector('#sidenav-collapse-main')) {
-    Scrollbar.init(document.querySelector('#sidenav-collapse-main'), { damping: '0.5' });
+    var sidenavScrollbar = Scrollbar.init(document.querySelector('#sidenav-collapse-main'), { damping: '0.5' });
+    if (typeof ResizeObserver === 'function') {
+        new ResizeObserver(function () { sidenavScrollbar.update(); })
+            .observe(sidenavScrollbar.contentEl);
+    }
 }
 
 function timeAgo(unixTsSeconds) {
