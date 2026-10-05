@@ -1,0 +1,8347 @@
+{
+ "99": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Incapacitating Roar",
+  "desc_hash": "ec4d7f8ba0cc39eb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "370": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Purge",
+  "desc_hash": "7686894145a65c15",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "475": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Remove Curse",
+  "desc_hash": "e112a5e7bc3d7d49",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "528": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Dispel Magic",
+  "desc_hash": "27e45fd8f68e7c42",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "710": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Banish",
+  "desc_hash": "bbc0d79b0016f4c9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1022": {
+  "tags": [
+   "DEFENSIVE",
+   "BATTLE_REZ"
+  ],
+  "name": "Blessing of Protection",
+  "desc_hash": "c3c0f78a1fd94372",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1079": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Rip",
+  "desc_hash": "976a26abedea7fac",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1714": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Curse of Tongues",
+  "desc_hash": "444ce7a1eee11e91",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1776": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Gouge",
+  "desc_hash": "bbe32b813c036184",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1822": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Rake",
+  "desc_hash": "4993cdafec60dd87",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "2120": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Flamestrike",
+  "desc_hash": "e8e52ea8608caa5d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "3411": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Intervene",
+  "desc_hash": "f449b002f3c9b8c2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "5246": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Intimidating Shout",
+  "desc_hash": "6b66daf25a57abef",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "5761": {
+  "tags": [
+   "CC_SOFT",
+   "SINGLE_TARGET"
+  ],
+  "name": "Numbing Poison",
+  "desc_hash": "a89716c788344d9a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "5938": {
+  "tags": [
+   "CC_SOFT",
+   "SINGLE_TARGET"
+  ],
+  "name": "Shiv",
+  "desc_hash": "795b144d1389a6ef",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "6353": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Soul Fire",
+  "desc_hash": "549bb824827b6817",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "8122": {
+  "tags": [
+   "INTERRUPT",
+   "CC_SOFT"
+  ],
+  "name": "Psychic Scream",
+  "desc_hash": "2a2d16e1b0b10d9a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "9484": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Shackle Horror",
+  "desc_hash": "e9fe77a4a0a96d48",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "12323": {
+  "tags": [
+   "CC_SOFT"
+  ],
+  "name": "Piercing Howl",
+  "desc_hash": "0e8e98f5637bc6d8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "16166": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Master of the Elements",
+  "desc_hash": "cb566e4850a6ecd4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "19801": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Tranquilizing Shot",
+  "desc_hash": "33951976ba872dbb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "22842": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Frenzied Regeneration",
+  "desc_hash": "a303e23501915ef7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "24858": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Moonkin Form",
+  "desc_hash": "ac6a0f05ffeb0b65",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "29166": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Innervate",
+  "desc_hash": "59908df5f60b8203",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "29725": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Sudden Death",
+  "desc_hash": "11f22e32df7706e6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "29838": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Second Wind",
+  "desc_hash": "70a101051de4936e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "30146": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Summon Felguard",
+  "desc_hash": "8dcdc9f1bed1bbaf",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "30283": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Shadowfury",
+  "desc_hash": "26dfdc08e20068dc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "30449": {
+  "tags": [],
+  "name": "Spellsteal",
+  "desc_hash": "c935768b7b5824f4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "31230": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Cheat Death",
+  "desc_hash": "54f570703da63d3a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "31661": {
+  "tags": [
+   "CC_SOFT"
+  ],
+  "name": "Dragon's Breath",
+  "desc_hash": "2b3205248df1b56b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "33873": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Nurturing Instinct",
+  "desc_hash": "dd77e4401a6c2f54",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "34433": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Shadowfiend",
+  "desc_hash": "a3ed8e3ee076f4b6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "34477": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Misdirection",
+  "desc_hash": "1e6ceae47dff7a46",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "46968": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Shockwave",
+  "desc_hash": "646e2470eefe48a5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "47515": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Divine Aegis",
+  "desc_hash": "3a59ffb3e2867a5d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "48743": {
+  "tags": [
+   "SELF_HEALING",
+   "RESOURCE"
+  ],
+  "name": "Death Pact",
+  "desc_hash": "1df301fbd53e02f8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "51485": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Earthgrab Totem",
+  "desc_hash": "18ff6f2b04fff48a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "51514": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Hex",
+  "desc_hash": "54d58e5c9fc22201",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "51886": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Cleanse Spirit",
+  "desc_hash": "c40d5e27a50a3f71",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "53351": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Kill Shot",
+  "desc_hash": "e1e8ebc305daf756",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "53480": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Roar of Sacrifice",
+  "desc_hash": "e6afcaa453083482",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "55342": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Mirror Image",
+  "desc_hash": "7722010c09506f79",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "55676": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Petrifying Scream",
+  "desc_hash": "082f46f4cf4d36e7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "58875": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Spirit Walk",
+  "desc_hash": "585db149c7ae02e5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "64129": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Body and Soul",
+  "desc_hash": "0856619d1220b2b4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "73685": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Unleash Life",
+  "desc_hash": "d30caeda8fa667af",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "73920": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Healing Rain",
+  "desc_hash": "047daa47d5be623b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "79008": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Elusiveness",
+  "desc_hash": "c6e575f6a0b4cafa",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "80240": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Havoc",
+  "desc_hash": "fa0aeb0966b3c874",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "88625": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Holy Word: Chastise",
+  "desc_hash": "dc84adcd0a5594e6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "88747": {
+  "tags": [
+   "AOE",
+   "RESOURCE"
+  ],
+  "name": "Wild Mushroom",
+  "desc_hash": "352ad8c89f0c0d21",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "93402": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Sunfire",
+  "desc_hash": "689b745059c48422",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "97462": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Rallying Cry",
+  "desc_hash": "8c149d604c9218af",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "102401": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Wild Charge",
+  "desc_hash": "a497535a6e3c5302",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "102543": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Incarnation: Avatar of Ashamane",
+  "desc_hash": "9515dd10912ee3fc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "107570": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Storm Bolt",
+  "desc_hash": "e59df7310861b78e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "108280": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Healing Tide Totem",
+  "desc_hash": "a6eccd46fe8e69d0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "108299": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Killer Instinct",
+  "desc_hash": "aa7e94454398a5b9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "108942": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Phantasm",
+  "desc_hash": "08ce57f7a2b074cf",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "108945": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Angelic Bulwark",
+  "desc_hash": "4b6a104fd4c7a20c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "109248": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Binding Shot",
+  "desc_hash": "b9fffb90b72f2cbd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "110959": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Greater Invisibility",
+  "desc_hash": "4aace83ce2dc7f7c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "114052": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Ascendance",
+  "desc_hash": "e0db46e826c322f0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "114107": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Soul of the Forest",
+  "desc_hash": "c7ce3e4e11008755",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "115175": {
+  "tags": [
+   "SELF_HEALING",
+   "RESOURCE"
+  ],
+  "name": "Soothing Mist",
+  "desc_hash": "0ecc0dfbe76ee831",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "115315": {
+  "tags": [
+   "AOE",
+   "CC_HARD"
+  ],
+  "name": "Summon Black Ox Statue",
+  "desc_hash": "91a083f5f5e90bea",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "115399": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Black Ox Brew",
+  "desc_hash": "511a696633b763df",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "115750": {
+  "tags": [
+   "AOE",
+   "INTERRUPT"
+  ],
+  "name": "Blinding Light",
+  "desc_hash": "69010297e8a624a4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "121536": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Angelic Feather",
+  "desc_hash": "dfe72da343e9341e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "123986": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Chi Burst",
+  "desc_hash": "4ff4542ee42b1a94",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "132469": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Typhoon",
+  "desc_hash": "59aeb4409a8673ed",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "146956": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Light's Revocation",
+  "desc_hash": "ce5d027f7b78ac83",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "152108": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Cataclysm",
+  "desc_hash": "b1de14acbe075a82",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "155578": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Guardian of Elune",
+  "desc_hash": "a09aac39e1206cb4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "155580": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Lunar Inspiration",
+  "desc_hash": "cbd15e1465593bc3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "157047": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Saved by the Light",
+  "desc_hash": "eea7a7899e6f6e56",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "157411": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Windwalking",
+  "desc_hash": "b678e32c55619983",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "157980": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Supernova",
+  "desc_hash": "9e55bd732e822597",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "158477": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Soul of the Forest",
+  "desc_hash": "1700d4bf4cee731a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "158504": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Dream of Cenarius",
+  "desc_hash": "79a85d63276e1766",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "170374": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Earthen Rage",
+  "desc_hash": "f82096fe84fb4351",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "173841": {
+  "tags": [
+   "RESOURCE",
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Pool of Mists",
+  "desc_hash": "d6fcb64d15d22774",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "183416": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Blessing of Dawn",
+  "desc_hash": "9d175f90a06370bd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "183782": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Disrupting Fury",
+  "desc_hash": "35e8ed971142e91c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "184364": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Enraged Regeneration",
+  "desc_hash": "128175bfa748510e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "185314": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Deepening Shadows",
+  "desc_hash": "62859edaf6f58c99",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "187698": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Tar Trap",
+  "desc_hash": "f0df897a326e9ef9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "190356": {
+  "tags": [
+   "CC_SOFT"
+  ],
+  "name": "Blizzard",
+  "desc_hash": "9772785863ee1978",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "191384": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Aspect of the Beast",
+  "desc_hash": "a85ff39b78874af1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "191861": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Power of the Maelstrom",
+  "desc_hash": "ab29475ca1308b3b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "192058": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Capacitor Totem",
+  "desc_hash": "e80310a07451b80f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "192063": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Gust of Wind",
+  "desc_hash": "b22778ebccfbc94a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "192077": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Wind Rush Totem",
+  "desc_hash": "0558b6264b32c244",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "193155": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Enlightenment",
+  "desc_hash": "405d3f967530423d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "193546": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Iron Stomach",
+  "desc_hash": "829e7d80aa172074",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "196103": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Absolute Corruption",
+  "desc_hash": "514e8e7afc239aa2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "196226": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Sow the Seeds",
+  "desc_hash": "a8a73e20b2d5eced",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "196408": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Fire and Brimstone",
+  "desc_hash": "81d9f1f3af997c21",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "196704": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Psychic Voice",
+  "desc_hash": "2ca40dfa3d6eb7e5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "196707": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Afterlife",
+  "desc_hash": "d9f4627fad30ba0a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "196737": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "High Tolerance",
+  "desc_hash": "a22706d71603c3ba",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "196840": {
+  "tags": [
+   "CC_SOFT"
+  ],
+  "name": "Frost Shock",
+  "desc_hash": "b738440041e68f6d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "196926": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Crusader's Might",
+  "desc_hash": "962e29828ce688c7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "197045": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Shield Discipline",
+  "desc_hash": "edd56f7424546be5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "197524": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Astral Influence",
+  "desc_hash": "cfd6a8766813bb5e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "197626": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Starsurge",
+  "desc_hash": "85cd42cb7726f89c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "197628": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Starfire",
+  "desc_hash": "7a308d9998cfef3a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "197721": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Flourish",
+  "desc_hash": "6ac07c7afd1a7934",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "197900": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Mist Wrap",
+  "desc_hash": "91d0a8ec47a945a9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "198103": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Earth Elemental",
+  "desc_hash": "3e0cd910f1eb1353",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "199422": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Holy Ritual",
+  "desc_hash": "0123a1c5a32518f7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "199483": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Camouflage",
+  "desc_hash": "ceed484e1dd97e93",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "199921": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Trailblazer",
+  "desc_hash": "656179c891b237d1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "200128": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Trail of Light",
+  "desc_hash": "a7edd627295ef90a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "200733": {
+  "tags": [
+   "CC_SOFT"
+  ],
+  "name": "Airborne Irritant",
+  "desc_hash": "328b71564862ab7e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "200854": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Gory Fur",
+  "desc_hash": "a7a51b4d08f78d77",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "202095": {
+  "tags": [
+   "DEFENSIVE",
+   "SELF_HEALING"
+  ],
+  "name": "Indomitable",
+  "desc_hash": "781fa8690f11a93f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "202137": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Sigil of Silence",
+  "desc_hash": "38138d1d18d709bf",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "202163": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Bounding Stride",
+  "desc_hash": "edcf49a919734367",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "202316": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Fervor of Battle",
+  "desc_hash": "369d5dce22cd7ff1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "202430": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Nature's Balance",
+  "desc_hash": "ee83ee00ea93e621",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "202603": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Into the Fray",
+  "desc_hash": "62ca8f8301e65f09",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "202770": {
+  "tags": [
+   "AOE",
+   "RESOURCE"
+  ],
+  "name": "Fury of Elune",
+  "desc_hash": "719cbabe22b1c9bc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "202918": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Light of the Sun",
+  "desc_hash": "7968c64fa66fef02",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "203177": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Heavy Repercussions",
+  "desc_hash": "5c9914b1bad8f301",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "203550": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Blind Fury",
+  "desc_hash": "7230a1615f5de718",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "203953": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Brambles",
+  "desc_hash": "febfd3be4954199e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "203962": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Blood Frenzy",
+  "desc_hash": "491bd8742b092c9b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "204018": {
+  "tags": [
+   "DEFENSIVE",
+   "BATTLE_REZ"
+  ],
+  "name": "Blessing of Spellwarding",
+  "desc_hash": "0edbc50e6e5eff23",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "204054": {
+  "tags": [
+   "AOE",
+   "CC_SOFT"
+  ],
+  "name": "Consecrated Ground",
+  "desc_hash": "b2af1975b1d0263d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "204066": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Lunar Beam",
+  "desc_hash": "647587f7bf24d891",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "204077": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Final Stand",
+  "desc_hash": "68c7bf6f0c48d142",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "205030": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Frozen Touch",
+  "desc_hash": "b0cad2e919a9a727",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "205364": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Dominate Mind",
+  "desc_hash": "978c0f0808233874",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "206974": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Foul Bulwark",
+  "desc_hash": "6d21ddb07ac5ac74",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "207167": {
+  "tags": [
+   "CC_SOFT"
+  ],
+  "name": "Blinding Sleet",
+  "desc_hash": "e2dbd6a46b1928c2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "207200": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Permafrost",
+  "desc_hash": "c6baf3ce63ebc1af",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "207272": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Infected Claws",
+  "desc_hash": "09e931534f807473",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "207347": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Aura of Pain",
+  "desc_hash": "49e70489de35fb90",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "207387": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Painbringer",
+  "desc_hash": "2e5f607e3bbe6fc5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "207401": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Ancestral Vigor",
+  "desc_hash": "d4474d028b7c4fd4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "207684": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Sigil of Misery",
+  "desc_hash": "3bc4bb18ed91f032",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "209258": {
+  "tags": [],
+  "name": "Last Resort",
+  "desc_hash": "64f0ca4d0c0f8918",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "209281": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Quickened Sigils",
+  "desc_hash": "0871eef969720db8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "209389": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Bulwark of Order",
+  "desc_hash": "203a3c183bee0c58",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "210476": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Master of Escape",
+  "desc_hash": "84f9c24074c0695f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "212552": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Wraith Walk",
+  "desc_hash": "c58e0dbe571b351a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "213634": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Purify Disease",
+  "desc_hash": "bd45690ebc2032ce",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "213764": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Swipe",
+  "desc_hash": "e7ac319f3532d779",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "217832": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Imprison",
+  "desc_hash": "b8e46bd8bca7bd8e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "218164": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Detox",
+  "desc_hash": "42e53f96b5f763f7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "218612": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Feed the Demon",
+  "desc_hash": "026cbd83679fcd8c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "221562": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Asphyxiate",
+  "desc_hash": "1d8452e92017d9f5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "231691": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Improved Sprint",
+  "desc_hash": "a8088acafa2e7bdb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "234876": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Death's Embrace",
+  "desc_hash": "fa23acdd344eea39",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "235484": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Improved Between the Eyes",
+  "desc_hash": "e1310bee2aaf4183",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "238558": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Misery",
+  "desc_hash": "d05167d467965f19",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "245687": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Dark Shadow",
+  "desc_hash": "01bbebe2e0b175a4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "252216": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Tiger Dash",
+  "desc_hash": "a0009f8780435640",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "257621": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Trick Shots",
+  "desc_hash": "6db0899802b56471",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "258881": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Trail of Ruin",
+  "desc_hash": "5540f3ae3d268401",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "260248": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Bloodseeker",
+  "desc_hash": "0a2cada4d0ea4916",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "260404": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Calling the Shots",
+  "desc_hash": "057167afecdcb42f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "260878": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Spirit Wolf",
+  "desc_hash": "0264a519bf78bfe6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "264348": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Tiger Tail Sweep",
+  "desc_hash": "c71f489376dc0e63",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "265046": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Static Charge",
+  "desc_hash": "27c82372172553f2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "266086": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Rain of Chaos",
+  "desc_hash": "b409af7e8ab14435",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "266921": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Born To Be Wild",
+  "desc_hash": "330f9fc2c092c908",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "270233": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Freezing Rain",
+  "desc_hash": "331776b6788b0db8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "271877": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Blade Rush",
+  "desc_hash": "395977bec3390486",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "272026": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Dancing Steel",
+  "desc_hash": "4205e4a8688f6bcb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "273952": {
+  "tags": [
+   "CC_SOFT"
+  ],
+  "name": "Grip of the Dead",
+  "desc_hash": "3301ee11a6c6964f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "274909": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Rising Mist",
+  "desc_hash": "b81c656ded46d758",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "275339": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Rumbling Earth",
+  "desc_hash": "92817dc1ed45cbbd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "276079": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Death's Reach",
+  "desc_hash": "c1f30d8a99868306",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "278326": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Consume Magic",
+  "desc_hash": "8264ed47da3bf1be",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "279620": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Twin Moons",
+  "desc_hash": "f14dcbc0b820b6e3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "280197": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Spiritual Focus",
+  "desc_hash": "7f878043780b234e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "280373": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Redoubt",
+  "desc_hash": "105ffbed9acb4fee",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "280515": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Bob and Weave",
+  "desc_hash": "0eba6bcc5bebea3f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "280716": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Leeching Poison",
+  "desc_hash": "758171a834adc99a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "281001": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Massacre",
+  "desc_hash": "62943cacc93bc554",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "285381": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Primal Wrath",
+  "desc_hash": "66d1978eea7ea9ee",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "288826": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Improved Stampeding Roar",
+  "desc_hash": "d038f242b0927143",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "289237": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Master Shapeshifter",
+  "desc_hash": "c5d83142561a031e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "301768": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Verdant Heart",
+  "desc_hash": "702ae3cb9176113e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "305394": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Unbound Freedom",
+  "desc_hash": "f87cc581fc7a28d0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "317133": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Improved Vampiric Blood",
+  "desc_hash": "87365f19ae83b6dd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "317138": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Strength of Will",
+  "desc_hash": "b8fdd005793803a2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "317610": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Relish in Blood",
+  "desc_hash": "fafa3a440b4d6439",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "319066": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Improved Wound Poison",
+  "desc_hash": "f724f8b5d7c143f3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "320313": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Swallowed Anger",
+  "desc_hash": "00ff453bf368bf2c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "320331": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Infernal Armor",
+  "desc_hash": "f721434541c0023e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "320418": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Improved Sigil of Misery",
+  "desc_hash": "d0fc97d7d1aac278",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "320635": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Vengeful Bonds",
+  "desc_hash": "0647c8f579213779",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "320654": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Pursuit",
+  "desc_hash": "14d09fd70bc6f64a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "321290": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Improved Wildfire Bomb",
+  "desc_hash": "dc123e0a40649abd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "322113": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Improved Touch of Death",
+  "desc_hash": "d82e097b330f3dff",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "322115": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Light's Promise",
+  "desc_hash": "ad6c072ce02c76af",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "325153": {
+  "tags": [
+   "AOE",
+   "CC_HARD"
+  ],
+  "name": "Exploding Keg",
+  "desc_hash": "2c7a28e7739c8cda",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "327541": {
+  "tags": [
+   "AOE",
+   "RESOURCE"
+  ],
+  "name": "Aetherial Kindling",
+  "desc_hash": "f97eb1fc8ef64ef2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "328025": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Improved Wild Growth",
+  "desc_hash": "e23865e4dae26379",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "328670": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Hasty Provocation",
+  "desc_hash": "1c9a6ba536b8f3c5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "328725": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Mortal Dance",
+  "desc_hash": "99134dbb7acdd956",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "334046": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Lashing Flames",
+  "desc_hash": "66150534611b0ecd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "334275": {
+  "tags": [
+   "CC_SOFT"
+  ],
+  "name": "Curse of Exhaustion",
+  "desc_hash": "4b06dd76e5de6d29",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "334779": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Collateral Damage",
+  "desc_hash": "f588c10a164ea192",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "341167": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Mental Agility",
+  "desc_hash": "15ecaa388dcf0a63",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "342249": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Master of Time",
+  "desc_hash": "f3760e5e61884953",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "343014": {
+  "tags": [
+   "DAMAGE_REDUCTION"
+  ],
+  "name": "Revel in Pain",
+  "desc_hash": "c2e1ce81ddf3f36e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "343207": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Focused Cleave",
+  "desc_hash": "5903332761200f8a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "343244": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Disruptive Rounds",
+  "desc_hash": "eb8ad0cde7718761",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "343294": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Soul Reaper",
+  "desc_hash": "4fa3505d7e1a7c7d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "343527": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Execution Sentence",
+  "desc_hash": "e692ae3772b8c20a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "344359": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Ancient Arts",
+  "desc_hash": "00590208a03bfb06",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "355630": {
+  "tags": [
+   "INTERRUPT",
+   "DEFENSIVE"
+  ],
+  "name": "Windveil",
+  "desc_hash": "8cedaafc95f1d093",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "360806": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Sleep Walk",
+  "desc_hash": "dca8f23c4d37f66d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "360827": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Blistering Scales",
+  "desc_hash": "92ca10bf8aeca22c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "368275": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Binding Heals",
+  "desc_hash": "98a91b90b2809580",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "369089": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Volatility",
+  "desc_hash": "ef48e106a9278f06",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "369909": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Protracted Talons",
+  "desc_hash": "4275e2b532092227",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "369990": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Ancient Flame",
+  "desc_hash": "c8e2628b220bf354",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "370455": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Charged Blast",
+  "desc_hash": "11b3f24bddee8123",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "370586": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Elune's Favored",
+  "desc_hash": "03a039a783363453",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "370665": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Rescue",
+  "desc_hash": "abbd78ac4d671000",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "370695": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Fury of Nature",
+  "desc_hash": "da0de1c0e26ba78e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "370867": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Iridescence",
+  "desc_hash": "2429b726fc437ecb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "370888": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Twin Guardian",
+  "desc_hash": "cb91a8b1ceb8450b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "371032": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Terror of the Skies",
+  "desc_hash": "91d2803ab95c379a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "372048": {
+  "tags": [
+   "CC_HARD",
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Oppressing Roar",
+  "desc_hash": "7b1af6e23e7c2ce8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "372119": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Dream of Cenarius",
+  "desc_hash": "7c3313d2f0c6c0f6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "372233": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Energy Loop",
+  "desc_hash": "89aed8d4e5025a31",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "372307": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Burning Vehemence",
+  "desc_hash": "19a9dc5bed07264e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "372469": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Scarlet Adaptation",
+  "desc_hash": "0c670419f55da599",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "372527": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Time Lord",
+  "desc_hash": "4a595c684bab7e37",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "372567": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Twin Moonfire",
+  "desc_hash": "b94006fb12992772",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "372616": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Empyreal Blaze",
+  "desc_hash": "f2f754cbd315e157",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "372945": {
+  "tags": [
+   "SELF_HEALING",
+   "GROUP_HEALING"
+  ],
+  "name": "Reinvigoration",
+  "desc_hash": "0af1f7057fab5094",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "372969": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Holy Ray",
+  "desc_hash": "50864f77e10b9b94",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "373003": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Revel in Darkness",
+  "desc_hash": "e1fa6ee28a8d11bb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "373049": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Indemnity",
+  "desc_hash": "01dbbb8ba50eda31",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "373054": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Abyssal Reverie",
+  "desc_hash": "92b4dde4b75a73df",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "373212": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Insidious Ire",
+  "desc_hash": "bd4aadd687efc63d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "373223": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Tithe Evasion",
+  "desc_hash": "5839a38bec169c7f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "373270": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Lifebind",
+  "desc_hash": "d65079ca04091320",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "373310": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Idol of Y'Shaarj",
+  "desc_hash": "8764315c321e6297",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "373427": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Inescapable Torment",
+  "desc_hash": "a020f7d4c5674577",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "373450": {
+  "tags": [],
+  "name": "Light's Inspiration",
+  "desc_hash": "8b9f0c4d79e51daf",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "373456": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Unwavering Will",
+  "desc_hash": "f87d20db7ec17eff",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "374030": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Blood Scent",
+  "desc_hash": "e3c49172b8c1e6c4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "374049": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Suppression",
+  "desc_hash": "256b39b2bb1b69d3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "374251": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Cauterizing Flame",
+  "desc_hash": "f00671ae28af01c3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "374346": {
+  "tags": [
+   "UTILITY",
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Overawe",
+  "desc_hash": "f18eb42d89a0e3b5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "374383": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Assimilation",
+  "desc_hash": "46ab828b0303f063",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "374598": {
+  "tags": [
+   "DEFENSIVE",
+   "RESOURCE"
+  ],
+  "name": "Blood Draw",
+  "desc_hash": "6dadc4dc743a370d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "374717": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Improved Heart Strike",
+  "desc_hash": "4ef7a9ab4712570d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "374968": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Time Spiral",
+  "desc_hash": "b7dc8815aa2cdb68",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "375443": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Clobbering Sweep",
+  "desc_hash": "ca3487f62cab8ae3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "375510": {
+  "tags": [],
+  "name": "Blast Furnace",
+  "desc_hash": "fed79a86449a9d50",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "375517": {
+  "tags": [],
+  "name": "Extended Flight",
+  "desc_hash": "1f41dad7614013ec",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "375542": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Exuberance",
+  "desc_hash": "5cdb86ed6e1b8df9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "375544": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Inherent Resistance",
+  "desc_hash": "8c09560c1d94b498",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "375554": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Enkindled",
+  "desc_hash": "f538284e444352ed",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "375556": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Tailwind",
+  "desc_hash": "5df380ed3ccbcc2e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "375574": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Foci of Life",
+  "desc_hash": "a4c4e6fb09ad8b78",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "375725": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Heat Wave",
+  "desc_hash": "2964984a0e77de75",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "376150": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Spiritual Clarity",
+  "desc_hash": "81b0328a75c2c713",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "376164": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Instinctive Arcana",
+  "desc_hash": "e2ed3cfcc5e76532",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "376179": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Lifeforce Mender",
+  "desc_hash": "810abb6c526b8ae2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "376204": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Just in Time",
+  "desc_hash": "f3a8486d4f057352",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "376240": {
+  "tags": [
+   "RESOURCE",
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Timeless Magic",
+  "desc_hash": "28b3b6331413514e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "376930": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Attuned to the Dream",
+  "desc_hash": "426a9fd4df15046e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "377100": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Exhilarating Burst",
+  "desc_hash": "5c5d15b39ba4ad00",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "377210": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Ursoc's Fury",
+  "desc_hash": "347b5d040c3c996a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "377349": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Idol of C'Thun",
+  "desc_hash": "4ff3d7a8740f88eb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "377514": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Reaping",
+  "desc_hash": "12bbdba247cb5ae3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "377587": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Ghoulish Frenzy",
+  "desc_hash": "58416825cdd61432",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "377592": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Morbidity",
+  "desc_hash": "5a1616212ab8d958",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "377842": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Ursine Vigor",
+  "desc_hash": "acfccae3bc2f8385",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378002": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Pathfinding",
+  "desc_hash": "12e5ab00c45940ad",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378075": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Thunderous Paws",
+  "desc_hash": "89238f2fe1698f3c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378207": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Kill Cleave",
+  "desc_hash": "7623ed23a986b007",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378209": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Training Expert",
+  "desc_hash": "b4d6c5a3eac5d003",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378211": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Refreshing Waters",
+  "desc_hash": "5bcebe55aecb6674",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378266": {
+  "tags": [
+   "COOLDOWN_REDUCTION",
+   "BURST"
+  ],
+  "name": "Flames of the Cauldron",
+  "desc_hash": "c4a9e711c53b72bb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378279": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Gift of the Golden Val'kyr",
+  "desc_hash": "881bbd915c0d11f3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378285": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Tyr's Enforcer",
+  "desc_hash": "1ff368fc655614cb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378405": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Light of the Titans",
+  "desc_hash": "3c16060024785177",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378425": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Uther's Counsel",
+  "desc_hash": "34ed3c3b338b6dc2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378443": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Acid Rain",
+  "desc_hash": "09136a676783ab41",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378457": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Soaring Shield",
+  "desc_hash": "9db921b1f20e37bf",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378762": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Ferren Marcus's Fervor",
+  "desc_hash": "ab08ee73b5817784",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378807": {
+  "tags": [
+   "CC_SOFT",
+   "SINGLE_TARGET"
+  ],
+  "name": "Shadowrunner",
+  "desc_hash": "159dd67347f524dc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378845": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Focused Enmity",
+  "desc_hash": "a596e71c6c9fe401",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378848": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Coldthirst",
+  "desc_hash": "b3c899c607d95d6d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378937": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Explosives Expert",
+  "desc_hash": "7a42bd34e3e6fd26",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378950": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Sweeping Spear",
+  "desc_hash": "f5a2ad32d8cce3fa",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "378996": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Recuperator",
+  "desc_hash": "f68473ec517d6788",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "379021": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Sanctuary",
+  "desc_hash": "9a195850d67d1027",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "379391": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Quickened Invocation",
+  "desc_hash": "1557802848deb6ec",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "380188": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Crusader's Resolve",
+  "desc_hash": "31e139da3408e000",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381631": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Flying Daggers",
+  "desc_hash": "37c11ee51195ad92",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381637": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Atrophic Poison",
+  "desc_hash": "aeddc0039282a053",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381707": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Swelling Maelstrom",
+  "desc_hash": "487f9f2933c40b33",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381784": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Flames of the Firelord",
+  "desc_hash": "88b267322c6b5bdd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381797": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Dashing Scoundrel",
+  "desc_hash": "a915289d5a9766bf",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381798": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Zoldyck Recipe",
+  "desc_hash": "4033f1cac7992c34",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381799": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Scent of Blood",
+  "desc_hash": "d6d8a9cee4b18cf6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381839": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Sleight of Hand",
+  "desc_hash": "3fc2a8d6680585c0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381867": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Totemic Surge",
+  "desc_hash": "9afcc5283d9602c0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381885": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Heavy Hitter",
+  "desc_hash": "dac67a0a8d59ffe4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381922": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Temporal Artificer",
+  "desc_hash": "d5d5960bd3c6182d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381946": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Wavespeaker's Blessing",
+  "desc_hash": "742fcda37381e1a5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "381990": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Summarily Dispatched",
+  "desc_hash": "8510893441aa9cb7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382017": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Veiltouched",
+  "desc_hash": "99c6ce79042ce065",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382020": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Earthen Harmony",
+  "desc_hash": "976d2a6c457315c0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382039": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Flow of the Tides",
+  "desc_hash": "a3c052473827e9c5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382194": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Undercurrent",
+  "desc_hash": "ab9d8f8f8e814b06",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382201": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Totemic Focus",
+  "desc_hash": "b735fd1eb1e4843d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382215": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Winds of Al'Akir",
+  "desc_hash": "a7f28d298530c6fe",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382258": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Leeching Strikes",
+  "desc_hash": "189536a78883ed67",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382260": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Fast Footwork",
+  "desc_hash": "c43442789321e273",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382293": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Incantation of Swiftness",
+  "desc_hash": "eb6039229af3a56e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382309": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Ancestral Awakening",
+  "desc_hash": "e6031b7a26bab34e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382315": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Improved Earthliving Weapon",
+  "desc_hash": "09db7cc59faebafb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382504": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Dark Brew",
+  "desc_hash": "ae01e3014b2c8a5d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382508": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Planned Execution",
+  "desc_hash": "904f659f8a3275ed",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382524": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Lingering Shadow",
+  "desc_hash": "0ad1b05aafcb1cf2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382525": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Finality",
+  "desc_hash": "c09ae3167a1378c9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382528": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Danse Macabre",
+  "desc_hash": "d20b2e4cee9c34c8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382536": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Sanctify",
+  "desc_hash": "60dc9e917f654400",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382552": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Improved Ironbark",
+  "desc_hash": "7b415387c26441db",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382559": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Unstoppable Growth",
+  "desc_hash": "cbf05de70b1921ed",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382732": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Ancestral Reach",
+  "desc_hash": "5dafc310257d2c71",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "382764": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Crushing Force",
+  "desc_hash": "76ed45c6b043c6e1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383013": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Poison Cleansing Totem",
+  "desc_hash": "1e3c4c22e8d2f6c7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383016": {
+  "tags": [],
+  "name": "Improved Purify Spirit",
+  "desc_hash": "62b0974050fec1cb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383082": {
+  "tags": [
+   "SINGLE_TARGET",
+   "AOE"
+  ],
+  "name": "Barbaric Training",
+  "desc_hash": "ebb55b996e31136d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383195": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Umbral Intensity",
+  "desc_hash": "7f1afa461a5e61be",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383197": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Orbit Breaker",
+  "desc_hash": "6e4922d3a82e1bb9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383222": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Overflowing Shores",
+  "desc_hash": "179c92d9392bad2a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383295": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Deft Experience",
+  "desc_hash": "c427ce015411b2ce",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383297": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Critical Thinking",
+  "desc_hash": "8aa2031e1b6c4fa3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383352": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Tireless Energy",
+  "desc_hash": "409c754d54cbb7d3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383396": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Tempest of the Lightbringer",
+  "desc_hash": "39d48fa714983100",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383486": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Focus in Chaos",
+  "desc_hash": "53f5537bc155beca",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383695": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Improved Blackout Kick",
+  "desc_hash": "07b4e0fb2e1539fb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383703": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Fatality",
+  "desc_hash": "a2d28dd508497501",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383852": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Spite",
+  "desc_hash": "cfebfab7ef3dcc15",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383877": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Hack and Slash",
+  "desc_hash": "86d88f94b1ef55fd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "383885": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Vicious Contempt",
+  "desc_hash": "67e9620596027799",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "384027": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Divine Resonance",
+  "desc_hash": "8d8f6ea067c59e78",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "384063": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Enduring Alacrity",
+  "desc_hash": "ff537acfec2b6a74",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "384067": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Focused Vigor",
+  "desc_hash": "49b83a97e86a9b55",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "384100": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Berserker Shout",
+  "desc_hash": "38a8278d284a36c7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "384110": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Wrecking Throw",
+  "desc_hash": "20cd98e401c9f0de",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "384361": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Bloodsurge",
+  "desc_hash": "249f6ebc6aeb460d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "384820": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Sacrifice of the Just",
+  "desc_hash": "c8dacda7c8f7d0ee",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "385059": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Odyn's Fury",
+  "desc_hash": "9a85b0c45de5e55b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "385167": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Everlasting Frost",
+  "desc_hash": "0c9d03f8d737023c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "385414": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Afterimage",
+  "desc_hash": "48d590d868cb783b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "385427": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Obduracy",
+  "desc_hash": "0ca4e3bf70a7cef1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "385696": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Flow State",
+  "desc_hash": "3e5cc049a5d1ee51",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "385704": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Bloodborne",
+  "desc_hash": "93d89005fb8a029b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "385786": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Matted Fur",
+  "desc_hash": "38ae5e6e0e30fc4f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "385840": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Thunderlord",
+  "desc_hash": "e9d6d775ee6136e1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "385881": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Teachings of the Black Harvest",
+  "desc_hash": "2bb677c7e50f59fc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "385888": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Tough as Nails",
+  "desc_hash": "2919030d69af1323",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "386011": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Shield Specialization",
+  "desc_hash": "a389f921a1eb6d74",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "386071": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Disrupting Shout",
+  "desc_hash": "a02d96066bb88baf",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "386110": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Fiendish Stride",
+  "desc_hash": "fb31f3172d97feb9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "386283": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Catalyze",
+  "desc_hash": "6d7af49c981b3cc9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "386394": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Battle-Scarred Veteran",
+  "desc_hash": "436d7c3add8e5568",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "386659": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Dark Accord",
+  "desc_hash": "6db2bc6500aff667",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "386664": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Ichor of Devils",
+  "desc_hash": "8f3d091a90649fd7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "386686": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Frequent Donor",
+  "desc_hash": "50bd6d02d7ae8e5a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "386828": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Energized Barriers",
+  "desc_hash": "37347dd10d6c91f7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "386937": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Anvil and Stave",
+  "desc_hash": "39e8eece06f5fca7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "386986": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Sacrolash's Dark Strike",
+  "desc_hash": "289f8de27d049e9d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387219": {
+  "tags": [
+   "AOE",
+   "CC_HARD"
+  ],
+  "name": "Walk with the Ox",
+  "desc_hash": "311686dda4af2175",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387252": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Ashen Remains",
+  "desc_hash": "0900a00bd2431288",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387275": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Chaos Incarnate",
+  "desc_hash": "7acec931018970aa",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387276": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Strength of Spirit",
+  "desc_hash": "2bee3c940a7a5b03",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387384": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Backlash",
+  "desc_hash": "7f7c0d4f66323c95",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387506": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Mayhem",
+  "desc_hash": "ab1fd21806587d76",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387625": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Staggering Strikes",
+  "desc_hash": "fec3483460900f29",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387787": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Regenerative Magic",
+  "desc_hash": "8d271caef37b114b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387791": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Empyreal Ward",
+  "desc_hash": "0d7e0691e5154d80",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387801": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Echoing Blessings",
+  "desc_hash": "ba5f90209ce0b718",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387807": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Time Manipulation",
+  "desc_hash": "038c6c876c12246c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "387991": {
+  "tags": [
+   "GROUP_HEALING",
+   "UTILITY"
+  ],
+  "name": "Tear of Morning",
+  "desc_hash": "9dcfeee6742b2420",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "388020": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Resplendent Mist",
+  "desc_hash": "4c134c4fd452ac5e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "388113": {
+  "tags": [
+   "CC_HARD",
+   "BURST"
+  ],
+  "name": "Isolated Prey",
+  "desc_hash": "1912b32b6508cdc2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "388116": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Shattered Destiny",
+  "desc_hash": "cc12a62e2358808a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "388505": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Quick Sip",
+  "desc_hash": "becab0655ae52cdc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "388667": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Drain Soul",
+  "desc_hash": "8ec4529ca6cf755a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "388681": {
+  "tags": [
+   "DAMAGE_REDUCTION"
+  ],
+  "name": "Elusive Mists",
+  "desc_hash": "bacd16a8093001b7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "388812": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Vivacious Vivification",
+  "desc_hash": "a49b6918803d6d48",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "388848": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Crane Vortex",
+  "desc_hash": "f60dfcc121311bcd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "388849": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Rising Star",
+  "desc_hash": "ee12d5abf3399b20",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "388856": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Touch of the Tiger",
+  "desc_hash": "91a0de132433f74b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389019": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Bulletstorm",
+  "desc_hash": "52f55ea4e991aebc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389367": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Fel Synergy",
+  "desc_hash": "8cfb7dc48cb3c332",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389579": {
+  "tags": [],
+  "name": "Save Them All",
+  "desc_hash": "5dd49266547bc243",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389590": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Demonic Resilience",
+  "desc_hash": "9f6ffdd6501cc75c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389609": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Abyss Walker",
+  "desc_hash": "12c19238cb691896",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389623": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Gorefiend's Resolve",
+  "desc_hash": "957626297629a4bc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389682": {
+  "tags": [
+   "DEFENSIVE",
+   "UTILITY"
+  ],
+  "name": "Unholy Endurance",
+  "desc_hash": "151ca18e1f622721",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389705": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Fel Flame Fortification",
+  "desc_hash": "b1bef3c01bc4ee11",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389711": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Soulmonger",
+  "desc_hash": "552770da8469d3e2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389724": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Felfire Fist",
+  "desc_hash": "bdd1aa8ba969764d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389763": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Master of the Glaive",
+  "desc_hash": "9956f8e09172f472",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389781": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Long Night",
+  "desc_hash": "006a325d1f296034",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389783": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Pitch Black",
+  "desc_hash": "568441bed9bd7ff5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389846": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Felfire Haste",
+  "desc_hash": "889148ea4d93102c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "389978": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Dancing with Fate",
+  "desc_hash": "b569bcee4bc19946",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390259": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Commander of the Dead",
+  "desc_hash": "62d85116d2f36861",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390270": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Coil of Devastation",
+  "desc_hash": "370c92e62194f92e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390620": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Move with Grace",
+  "desc_hash": "5ffca5d1b8085eb8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390632": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Improved Purify",
+  "desc_hash": "8f7f51bec625c838",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390667": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Spell Warding",
+  "desc_hash": "2d238b21e6f3a61b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390676": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Inspiration",
+  "desc_hash": "71ad7d6c4f1a58fd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390685": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Enduring Luminescence",
+  "desc_hash": "8aca888cad06b181",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390689": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Pain and Suffering",
+  "desc_hash": "47ef2c78038f4614",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390691": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Borrowed Time",
+  "desc_hash": "8b039922acdcea32",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390808": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Volatile Flameblood",
+  "desc_hash": "604aacb3e3496a85",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390864": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Wild Slashes",
+  "desc_hash": "3f807f0d850a385c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390902": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Carnivorous Instinct",
+  "desc_hash": "4e3a78777719f50f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390954": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Crisis Management",
+  "desc_hash": "71394616afcd9284",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390967": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Prismatic Echoes",
+  "desc_hash": "ca792e6f16083a17",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390977": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Prayers of the Virtuous",
+  "desc_hash": "58ea17f3ff25ce7f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "390992": {
+  "tags": [
+   "COOLDOWN_REDUCTION",
+   "GROUP_HEALING"
+  ],
+  "name": "Lightweaver",
+  "desc_hash": "0555358b6e5c062d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391151": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Mastermind",
+  "desc_hash": "7abfcc1021ba3771",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391233": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Divine Service",
+  "desc_hash": "31861abb108abeb4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391347": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Rip and Tear",
+  "desc_hash": "38950648b6c59f78",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391370": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Drinking Horn Cover",
+  "desc_hash": "3fcbaef5142766d9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391381": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Desperate Times",
+  "desc_hash": "fde1fd2d4a83b695",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391397": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Erratic Felheart",
+  "desc_hash": "eef0386aa8db98b7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391517": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Umbilicus Eternus",
+  "desc_hash": "965f450d34ee4746",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391528": {
+  "tags": [
+   "AOE",
+   "BURST"
+  ],
+  "name": "Convoke the Spirits",
+  "desc_hash": "10e02c3267b93a46",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391546": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "March of Darkness",
+  "desc_hash": "1bf0f6b61fba3bcf",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391548": {
+  "tags": [
+   "COOLDOWN_REDUCTION",
+   "AOE"
+  ],
+  "name": "Ashamane's Guidance",
+  "desc_hash": "23b8b7ce38e11265",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391571": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Gloom Ward",
+  "desc_hash": "4ec6025c7457abe8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391700": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Double-Clawed Rake",
+  "desc_hash": "8063bc75b43f6463",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391709": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Rampant Ferocity",
+  "desc_hash": "15e4901a9da6286d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "391881": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Apex Predator's Craving",
+  "desc_hash": "8d18fa8b5b9b1601",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392099": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Nurturing Dormancy",
+  "desc_hash": "44de41bd17bba509",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392116": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Regenerative Heartwood",
+  "desc_hash": "5a3ee1672d45d316",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392325": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Verdancy",
+  "desc_hash": "11b1036073b2c328",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392356": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Reforestation",
+  "desc_hash": "0f20cff26ef9d57a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392384": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Fatal Concoction",
+  "desc_hash": "91207b4881accfce",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392566": {
+  "tags": [
+   "CC_SOFT"
+  ],
+  "name": "Enfeeble",
+  "desc_hash": "23590078c81c218e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392792": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Frothing Berserker",
+  "desc_hash": "ca699734c2c6c3bc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392900": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Vigorous Expulsion",
+  "desc_hash": "21da5d7a09445e4c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392911": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Unwavering Spirit",
+  "desc_hash": "0ef818338c27245a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392915": {
+  "tags": [],
+  "name": "Healing Stream Totem",
+  "desc_hash": "da39a3ee5e6b4b0d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392936": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Wrath and Fury",
+  "desc_hash": "a7cceaab119fb560",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392961": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Imbued Infusions",
+  "desc_hash": "fffac64e48458bef",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392979": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Jade Ignition",
+  "desc_hash": "688c7465e2cbd288",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392982": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Shadowboxing Treads",
+  "desc_hash": "45a33692a665e873",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "392988": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Divine Image",
+  "desc_hash": "3d0a637357260019",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "393071": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Strength in Adversity",
+  "desc_hash": "9930f29b96948b5f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "393611": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Ursoc's Endurance",
+  "desc_hash": "4afd5641588540ad",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "393618": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Reinforced Fur",
+  "desc_hash": "a0b657874b2d1451",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "393760": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Umbral Embrace",
+  "desc_hash": "8e00b137c63addba",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "393870": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Improved Flash Heal",
+  "desc_hash": "ae0593754ae2ef6e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "393940": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Starweaver",
+  "desc_hash": "63dec617a884c0e7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "393950": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Bloodcraze",
+  "desc_hash": "0e653aea3ceadf74",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "393954": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Rattle the Stars",
+  "desc_hash": "0387c2b24063801c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "393991": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Elune's Guidance",
+  "desc_hash": "4c7283feeb4d41cb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "394013": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Incarnation: Chosen of Elune",
+  "desc_hash": "31e82eb123735cc3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "394046": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Power of Goldrinn",
+  "desc_hash": "c8d67fa31a519587",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "394065": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Denizen of the Dream",
+  "desc_hash": "b23e0dffd9edb8af",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "394094": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Sundered Firmament",
+  "desc_hash": "ae8fdd57bafa8467",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "394123": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Fatal Touch",
+  "desc_hash": "f3414650991f1991",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "394311": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Instigate",
+  "desc_hash": "bb071f3eafb7c801",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "397768": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Inner Peace",
+  "desc_hash": "437784d8c358fa6f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "400053": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Veil of Pride",
+  "desc_hash": "60f33e4e2d936d52",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "400129": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Forestwalk",
+  "desc_hash": "9846ee66726c4fb7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "400254": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Raze",
+  "desc_hash": "dcf9b172fb4c820b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "400278": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Moonless Night",
+  "desc_hash": "b9ef76173eeb6b57",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "400533": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Wild Synthesis",
+  "desc_hash": "b610d0b64a4292ca",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "400804": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Unbreakable Stride",
+  "desc_hash": "6766ab2403abe03b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "403010": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Blessed Champion",
+  "desc_hash": "a7e346ab8f8dabf3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "403208": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Draconic Attunements",
+  "desc_hash": "7df6ddb104e0fc82",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "403479": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Lightforged Blessing",
+  "desc_hash": "485a418cd5c7c598",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "403495": {
+  "tags": [
+   "SINGLE_TARGET",
+   "MOVEMENT"
+  ],
+  "name": "Judgment of Justice",
+  "desc_hash": "dd14b7d526543630",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "403530": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Punishment",
+  "desc_hash": "fbca241354016e8d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "403826": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Blade of Vengeance",
+  "desc_hash": "d2e30d0a543a2776",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "404408": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Legacy of Wisdom",
+  "desc_hash": "5b3e4c12a2eb3eb2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "406101": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Faith's Armor",
+  "desc_hash": "0f60a4075403258b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "406154": {
+  "tags": [
+   "SINGLE_TARGET",
+   "BATTLE_REZ"
+  ],
+  "name": "Heart of the Crusader",
+  "desc_hash": "135160c16297eb5b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "406468": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Lightforged Blessing",
+  "desc_hash": "d320078901e44862",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "406732": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Spatial Paradox",
+  "desc_hash": "3be36b8b9ba08903",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "406907": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Regenerative Chitin",
+  "desc_hash": "480d95aba9da37ae",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "407412": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Bloody Frenzy",
+  "desc_hash": "c9da2071eb11ab58",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "407814": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Pupil of Alexstrasza",
+  "desc_hash": "edc8970ffae7fbfe",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "409267": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Motes of Possibility",
+  "desc_hash": "4b0eda24c1e235e5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "409676": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Chrono Ward",
+  "desc_hash": "ab1fe398932f4259",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "410260": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Overlord",
+  "desc_hash": "8f50a412bb385fff",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "410261": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Inferno's Blessing",
+  "desc_hash": "c0095cc6ba6f016b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "410352": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Stretch Time",
+  "desc_hash": "4d644b8fd1f9a8bd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "410784": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Echoing Strike",
+  "desc_hash": "5831b8fed840b0fb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "411212": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Font of Magic",
+  "desc_hash": "b9122a14238645d9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "414113": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Righteous Judgment",
+  "desc_hash": "13933c1d5ad356be",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "414443": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Shining Righteousness",
+  "desc_hash": "14d5932d3d9dba7a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "414553": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Epiphany",
+  "desc_hash": "03fa6df8bd65f10c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "414664": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Mass Invisibility",
+  "desc_hash": "0d678321aa4295cd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "415416": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Benevolence",
+  "desc_hash": "45618b583d995ce4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "416615": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Xavius' Gambit",
+  "desc_hash": "751c3da164a2091f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "417234": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Crashing Chaos",
+  "desc_hash": "09824b54234c9460",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "418733": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Splintering Ray",
+  "desc_hash": "88c91373741baf41",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "421432": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Saber Jaws",
+  "desc_hash": "a1de134ac467bdb2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "422031": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Energizing Brew",
+  "desc_hash": "06926bcd2fd403ac",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "423136": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Sudden Demise",
+  "desc_hash": "2476cefc22339743",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "423662": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Stillshroud",
+  "desc_hash": "463b8ecc9714ab5a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "423683": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Featherfoot",
+  "desc_hash": "abc9899d04b5202b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "423701": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Superior Mixture",
+  "desc_hash": "5cfa04125bef1fdd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "424557": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Savagery",
+  "desc_hash": "d3c12e1b6f75d26b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "426555": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Warning Signs",
+  "desc_hash": "6af4fdade917e5a5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "426702": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Liveliness",
+  "desc_hash": "1b7034f3a7e637e9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "426784": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Call of the Elder Druid",
+  "desc_hash": "08df8135fad21347",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "427776": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Deflecting Dance",
+  "desc_hash": "41ef214f31394ac7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "427794": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Never Say Die",
+  "desc_hash": "aad05262c8f14911",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "428232": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Scars of Suffering",
+  "desc_hash": "e6c9b3ce28ffc0f6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "428603": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Ascending Flame",
+  "desc_hash": "3805a586336dd7ae",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "428607": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Live by the Glaive",
+  "desc_hash": "b755056845e77257",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "428859": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Power of Nature",
+  "desc_hash": "5883e59068d89f74",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "428937": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Early Spring",
+  "desc_hash": "234e3e0d5de509c2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "429211": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Champion of the Glaive",
+  "desc_hash": "628b131f54657069",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "429215": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Bounteous Bloom",
+  "desc_hash": "9c0670c9a0d9095a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "429227": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Durability of Nature",
+  "desc_hash": "17f325bb355bbe5d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "429402": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Grove's Inspiration",
+  "desc_hash": "eb430c64ef677e06",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "429420": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Potent Enchantments",
+  "desc_hash": "8f98bafff535022b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "429637": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "One Against Many",
+  "desc_hash": "046dba4dcda081dd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "429639": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Boneshaker",
+  "desc_hash": "102d0e0601b8e26d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "431874": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Double-time",
+  "desc_hash": "a8d299fba2540890",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "431984": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Time Convergence",
+  "desc_hash": "dcf0e34531b61c10",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "432804": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Forewarning",
+  "desc_hash": "763f091aef5f9e07",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "432964": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Divine Inspiration",
+  "desc_hash": "9a61e5db37246347",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "433905": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Prophet's Will",
+  "desc_hash": "7b6e61f792d8e9a2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "434100": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Vampiric Aura",
+  "desc_hash": "86041a5eeefcac64",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "434136": {
+  "tags": [
+   "DEFENSIVE",
+   "RESOURCE"
+  ],
+  "name": "Bloody Fortitude",
+  "desc_hash": "5b38f25a46d77052",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "434220": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Power of the Dream",
+  "desc_hash": "5f46ab8038c6da09",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "434249": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Control of the Dream",
+  "desc_hash": "1727a3dee2d3afa3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "436687": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Dark Talons",
+  "desc_hash": "d64e6160c125cc6f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "437079": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Flashing Skies",
+  "desc_hash": "006cb96bd7bf6d0a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "439880": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Resilient Flourishing",
+  "desc_hash": "d2ddae51b34043fa",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "439882": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Root Network",
+  "desc_hash": "59e555e96a477b0f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "439929": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Bond with Nature",
+  "desc_hash": "f5b33848096ddf45",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "440057": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Curse of the Satyr",
+  "desc_hash": "10e5ec5e90b4e600",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "440059": {
+  "tags": [
+   "CC_HARD",
+   "UTILITY"
+  ],
+  "name": "Aura of Enfeeblement",
+  "desc_hash": "04800f728c722bd2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "440116": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Harmonious Constitution",
+  "desc_hash": "d0ad652773797888",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "440669": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Save the Day",
+  "desc_hash": "7b7159a2a52f9fac",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "440670": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Divine Feathers",
+  "desc_hash": "a8b11a6bacd8abdf",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "440992": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Earthquaker",
+  "desc_hash": "2082ed56362223e0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "440995": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Arterial Bleed",
+  "desc_hash": "41b5d052a1cc02a6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "442497": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Keen Engagement",
+  "desc_hash": "18f11fda226d10eb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "442687": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Xuen's Guidance",
+  "desc_hash": "7a1ac1698ed1553a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "442714": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Army Unto Oneself",
+  "desc_hash": "3a96a8811236ef73",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "442736": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Incorruptible Spirit",
+  "desc_hash": "154edec5f5cd7a6a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "442743": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Temple Training",
+  "desc_hash": "792ef29fdc59cacd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "442747": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Niuzao's Protection",
+  "desc_hash": "164391d0b22d3b7c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "443059": {
+  "tags": [
+   "SELF_HEALING",
+   "UTILITY"
+  ],
+  "name": "Jade Sanctuary",
+  "desc_hash": "3cf491c32d393193",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "443177": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Lifespark",
+  "desc_hash": "43be9e6db6284fb3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "443264": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Titan's Gift",
+  "desc_hash": "6888e7606c4ccfce",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "444069": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Fury of the Horsemen",
+  "desc_hash": "fedcff44ab7bf129",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "444072": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "A Feast of Souls",
+  "desc_hash": "b7e38eb0f3f340a2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "444074": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Horsemen's Aid",
+  "desc_hash": "783b4b98afb9eef4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "444083": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Pact of the Apocalypse",
+  "desc_hash": "efd47b94939d420f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "444849": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Trailblazer",
+  "desc_hash": "65fdab4736c17848",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "444926": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Evasive Action",
+  "desc_hash": "25f7f7da8013b92a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "444931": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Unhindered Assault",
+  "desc_hash": "1cf6b53262071fef",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "444997": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Preemptive Strike",
+  "desc_hash": "0107bb3ce3de1415",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "445074": {
+  "tags": [
+   "AOE",
+   "CC_SOFT"
+  ],
+  "name": "Shape of Flame",
+  "desc_hash": "b8fde2689c1d7064",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "447131": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Thriving Vegetation",
+  "desc_hash": "d91ba9e0c959d264",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "447985": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Light of the Martyr",
+  "desc_hash": "2c08cbe0652cc61f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "448040": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Bestow Light",
+  "desc_hash": "5ab4b228844b308c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "449193": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Fluid Form",
+  "desc_hash": "74a8c75184c037b1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "449537": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Coiled to Spring",
+  "desc_hash": "f89851bc3c609db4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "449627": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Lessons in Debilitation",
+  "desc_hash": "458f8ca04d2e60df",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "449707": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Eternal Servitude",
+  "desc_hash": "4d9eeaee03be7c8f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "449874": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Energy Compression",
+  "desc_hash": "eefdfcd90a1edbef",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450212": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Stellar Amplification",
+  "desc_hash": "10bda44f57cb2cb0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450335": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Crashing Momentum",
+  "desc_hash": "5219a66b72835b72",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450347": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Nature's Grace",
+  "desc_hash": "13e8dd3093c199d8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450391": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Chi Wave",
+  "desc_hash": "b5bea687869f27e6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450432": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Pressure Points",
+  "desc_hash": "12576c1bd9872919",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450448": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Peace and Prosperity",
+  "desc_hash": "f9aacee13069eabe",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450503": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Quick Footed",
+  "desc_hash": "0772b089e27c62c4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450520": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Bounding Agility",
+  "desc_hash": "6b9eb9ce71317ab0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450553": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Jade Walk",
+  "desc_hash": "d921d05a60de9ac8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450598": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Astral Communion",
+  "desc_hash": "c07f55895b716b85",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450622": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Swift Art",
+  "desc_hash": "d99a5c664e0d5e3f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "450631": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Energy Transfer",
+  "desc_hash": "7dc604c65e22517d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "451041": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Tiger's Vigor",
+  "desc_hash": "4380832e0c41d04c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "451043": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Roar from the Heavens",
+  "desc_hash": "c3fd4a9c61c4365e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "451211": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Starlight Conduit",
+  "desc_hash": "a668324c6629bb3e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "451311": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Void Leech",
+  "desc_hash": "89ed1c9290e16e84",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "451498": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Energy Burst",
+  "desc_hash": "ceed4858b259600d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "451529": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Knowledge of the Broken Temple",
+  "desc_hash": "d98d7a1d71cbb8c7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "451569": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Embrace the Shadow",
+  "desc_hash": "ecc6eda405bd9f6b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "451573": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Singularly Focused Jade",
+  "desc_hash": "b8065a67af621d0f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "451576": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Communion With Wind",
+  "desc_hash": "e36f6fd3815e14cb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "452403": {
+  "tags": [
+   "CC_SOFT"
+  ],
+  "name": "Wave of Debilitation",
+  "desc_hash": "b5ecb467ea87a41a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "452404": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Pursuit of Angriness",
+  "desc_hash": "b245af5e9031ec39",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "452406": {
+  "tags": [
+   "DAMAGE_REDUCTION"
+  ],
+  "name": "Set Fire to the Pain",
+  "desc_hash": "5949ea2b263e13ce",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "452407": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Improved Soul Rending",
+  "desc_hash": "eb498445ec7cb344",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "452412": {
+  "tags": [
+   "BURST",
+   "RESOURCE"
+  ],
+  "name": "Student of Suffering",
+  "desc_hash": "dce2c64f04cb5bfa",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "452413": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Flamebound",
+  "desc_hash": "69a65664453f6672",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "452494": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Fight Through the Flames",
+  "desc_hash": "ba35b74bf11b1f4b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "452902": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Swift Artifice",
+  "desc_hash": "13770faaf3d104c7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "452999": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Siphon Life",
+  "desc_hash": "77efefd6c4427c66",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "453080": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Improved Shadow Bolt",
+  "desc_hash": "4e39b3090c402d65",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "453087": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Malediction",
+  "desc_hash": "86c6bdcea7822b9c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "453852": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Shock Pulse",
+  "desc_hash": "16820f5bc3065a6e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "453918": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Incessant Screams",
+  "desc_hash": "faafe166e351d91f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "454001": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Sustained Potency",
+  "desc_hash": "4775db552e1217a3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "454286": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Tempted Fate",
+  "desc_hash": "745d8a08d5938952",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "454432": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Inexorable March",
+  "desc_hash": "905afb36c1dd598c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "454433": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Death's Arrival",
+  "desc_hash": "f7aec58ba99a95f7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "454735": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Devastation",
+  "desc_hash": "54f38cd30b1cc3ce",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "454744": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Emberstorm",
+  "desc_hash": "2518931e3d3d7f1d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "454788": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Runic Protection",
+  "desc_hash": "f18855657e607037",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "454822": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Subduing Grasp",
+  "desc_hash": "19cf40e5d5625714",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "454835": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Osmosis",
+  "desc_hash": "83428b1306f15ba5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "454851": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Vestigial Shell",
+  "desc_hash": "ccb9aa4458d1ecef",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "454969": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Memory of the Monastery",
+  "desc_hash": "a772b3e29078bb63",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "455135": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Menacing Magus",
+  "desc_hash": "65746a898ead57a6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "455139": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Elixir of Determination",
+  "desc_hash": "338ca70f90bb691d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "455143": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Acrobatic Strikes",
+  "desc_hash": "f91f1222b7401e59",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "456270": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Snap Induction",
+  "desc_hash": "90747c02a633c29b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "457022": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Ethereal Cloak",
+  "desc_hash": "b87f64e3df48a6e9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "457034": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Bait and Switch",
+  "desc_hash": "2422f71a56ced492",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "457521": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Mana Bomb",
+  "desc_hash": "f16e2e5c90c687a6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "457974": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Jadefire Stomp",
+  "desc_hash": "bbf876f85e5b9cff",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "458359": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Radiant Glory",
+  "desc_hash": "905e22c67a2bb2bd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "458718": {
+  "tags": [
+   "DEFENSIVE",
+   "RESOURCE"
+  ],
+  "name": "Desperate Measures",
+  "desc_hash": "b127c72ce2c164e5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "459120": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Rumbling Earth",
+  "desc_hash": "c66fabfab2c93914",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "459440": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Ravenous Afflictions",
+  "desc_hash": "afa086012c546912",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "459455": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Scout's Instincts",
+  "desc_hash": "3f8e3678395c7a0b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "459517": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Emergency Salve",
+  "desc_hash": "3bcab0ebaba1bba0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "459559": {
+  "tags": [],
+  "name": "Phantom Reach",
+  "desc_hash": "acd25a08b4e302b2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "459843": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Grenade Juggler",
+  "desc_hash": "5191ae9e47ae8a27",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "459964": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Flanker's Advantage",
+  "desc_hash": "da943f20ba176063",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "459983": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Kodo Tranquilizer",
+  "desc_hash": "fe62cc143c555c4c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "459991": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Devilsaur Tranquilizer",
+  "desc_hash": "b15227b391de48cb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "460590": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Permafrost Lances",
+  "desc_hash": "e397a92f1116fa17",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "461244": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Overflowing Light",
+  "desc_hash": "067e5731845d87b2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "461246": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Glorious Dawn",
+  "desc_hash": "5431d438b7806ce1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "461260": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Consortium's Bauble",
+  "desc_hash": "7f6e6298bf3640fb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "461273": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Truth Prevails",
+  "desc_hash": "955259f85478660b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "462036": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Blackrock Munitions",
+  "desc_hash": "e3f9f249b4b6b955",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "462383": {
+  "tags": [
+   "DEFENSIVE",
+   "GROUP_HEALING"
+  ],
+  "name": "Spouting Spirits",
+  "desc_hash": "e6b1c7a4b2c66b6f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "462424": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Tidewaters",
+  "desc_hash": "4e7a0bb6f96abc36",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "462440": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "First Ascendant",
+  "desc_hash": "3c2f9f3d100b510b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "462443": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Preeminence",
+  "desc_hash": "b66c77b3a9f97a2e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "462791": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Ascending Air",
+  "desc_hash": "5c47b315e6555be9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "462817": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Jet Stream",
+  "desc_hash": "4eddf600cdb5ec8d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "462840": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Fusion of Elements",
+  "desc_hash": "1507d0cf6e518919",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "462866": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Elemental Unity",
+  "desc_hash": "7bffdf9e673c055c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "462867": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Everlasting Elements",
+  "desc_hash": "3ac5519d0adb8ecc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "468695": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Snakeskin Quiver",
+  "desc_hash": "a71035bc543fd79c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "468936": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Sunseeker Mushroom",
+  "desc_hash": "65ea01002938e2ad",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "469309": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Eye for an Eye",
+  "desc_hash": "b83c1628c0fe82b8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "469321": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Righteous Protection",
+  "desc_hash": "3f27701b015e9348",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "469325": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Light's Countenance",
+  "desc_hash": "46fffa83fed50eea",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "469411": {
+  "tags": [
+   "COOLDOWN_REDUCTION",
+   "SELF_HEALING"
+  ],
+  "name": "A Just Reward",
+  "desc_hash": "ed10080c0236057e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "469416": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Lightbearer",
+  "desc_hash": "bde27287e195c22d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "469439": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Inspired Guard",
+  "desc_hash": "f1b4ff599e45b76b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "469476": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Divine Reach",
+  "desc_hash": "82e505876ed30fae",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "469770": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Blessed Calling",
+  "desc_hash": "41e3917e51ad4f87",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "469779": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Thistle Tea",
+  "desc_hash": "0453214161dbbd59",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "469780": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Lead the Charge",
+  "desc_hash": "84b3ed78f445bd79",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "469870": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Reaper's Onslaught",
+  "desc_hash": "cb4bb95710ae3fb6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "470057": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Voltaic Blaze",
+  "desc_hash": "3cd77f4281f78c3e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "470549": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Improved Swiftmend",
+  "desc_hash": "3899dfb4175e1e33",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "470945": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Aspect of the Hydra",
+  "desc_hash": "79a2f9e421c33bc2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "471348": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "On Target",
+  "desc_hash": "927def03ada37248",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "471350": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Obsidian Arrowhead",
+  "desc_hash": "807718a86e2ba5d7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "471428": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Accuracy By Volume",
+  "desc_hash": "a27782d94e6802da",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "471492": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Ursol's Warding",
+  "desc_hash": "50711413f1563066",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "471504": {
+  "tags": [
+   "GROUP_HEALING",
+   "RESOURCE"
+  ],
+  "name": "Lasting Words",
+  "desc_hash": "596c0d1c2529d8ca",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "472476": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Ursine Fury",
+  "desc_hash": "63de3d68094276ca",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "472524": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Sharpened Claws",
+  "desc_hash": "e1f7e2a28b0701f5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "472568": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Encroaching Shadows",
+  "desc_hash": "97061988f35021b2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "472719": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Slicked Shoes",
+  "desc_hash": "50713e8aff6e0d2a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "472729": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Horsehair Tether",
+  "desc_hash": "1c5f8b994e3d4efe",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "474421": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Intimidation",
+  "desc_hash": "36c2f998170e060c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "474456": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Tenacious",
+  "desc_hash": "f6469335fa5277b3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "474526": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Grievous Wounds",
+  "desc_hash": "768ed7762d90d180",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "474530": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Circle of the Wild",
+  "desc_hash": "1605d93c1680d50d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "474541": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Circle of the Heavens",
+  "desc_hash": "7847915c8aea8882",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "474738": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Unerring Vision",
+  "desc_hash": "2b2d7f66e3bbab48",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "474750": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Symbiotic Relationship",
+  "desc_hash": "6692a2eae39df4a5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1213597": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Perfectly-Honed Instincts",
+  "desc_hash": "fa0de47c2ff4a384",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1215241": {
+  "tags": [
+   "COOLDOWN_REDUCTION",
+   "RESOURCE"
+  ],
+  "name": "Divinity",
+  "desc_hash": "a1cf76d84b76de9d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1215245": {
+  "tags": [
+   "DEFENSIVE",
+   "RESOURCE"
+  ],
+  "name": "Eternal Sanctity",
+  "desc_hash": "c5736e7a02f2760e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1215265": {
+  "tags": [
+   "GROUP_HEALING",
+   "RESOURCE"
+  ],
+  "name": "Dispersing Light",
+  "desc_hash": "769e6ca889e11a9e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1226033": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Eradicate",
+  "desc_hash": "845fabcd8a7d082f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1226140": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Grove Guardians",
+  "desc_hash": "688320194984c7f3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1230223": {
+  "tags": [
+   "BURST",
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Howling Blades",
+  "desc_hash": "e4fe6b2605c07db3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1230284": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Northwinds",
+  "desc_hash": "8f003efaf992d90c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1230301": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Frostreaper",
+  "desc_hash": "8a1d76cee9178c02",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1230339": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Mindbender",
+  "desc_hash": "18e62c679b28c78c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1232897": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Lycara's Inspiration",
+  "desc_hash": "565d7dcfb6af9c40",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1234769": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Armor Specialization",
+  "desc_hash": "4ee714f7b5d99d37",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1235088": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Heavy Handed",
+  "desc_hash": "11453bc865445d91",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1235211": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Shadow Tap",
+  "desc_hash": "c16abdecbe22b4ca",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1239581": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Unshakable",
+  "desc_hash": "13884413cc2f2293",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1240204": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Star Fragments",
+  "desc_hash": "56284d5d57ed17fc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1240262": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Meteor Storm",
+  "desc_hash": "f623b8622749ae81",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1240907": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Meteorites",
+  "desc_hash": "32a741e8fa28922a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1241097": {
+  "tags": [
+   "SELF_HEALING",
+   "RESOURCE"
+  ],
+  "name": "Niuzao's Resolve",
+  "desc_hash": "4316c7557e8601d7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1241136": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Zen State",
+  "desc_hash": "c2a7da461be8af13",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1241288": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Hammer of Wrath",
+  "desc_hash": "4f0091bb59b48963",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1241511": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Call of the Righteous",
+  "desc_hash": "63386fbbe5619ce3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1241669": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Dream Simulacrum",
+  "desc_hash": "5d255ca17a15356d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1241705": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Outnumber",
+  "desc_hash": "f3bc4a3c03d8aaf9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1241805": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Glistening Radiance",
+  "desc_hash": "27f53d3c0bf06f24",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1241858": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Unholy Devotion",
+  "desc_hash": "f9ce0568d8fc7d1e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1241958": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Vengeful Wrath",
+  "desc_hash": "7fd84bca60fcdaf4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1242008": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Hand of Divinity",
+  "desc_hash": "c189c191174c7f33",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1242031": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Twin Echoes",
+  "desc_hash": "9c2a121c8975b72e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1242604": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Scourging",
+  "desc_hash": "53d927f51dc8c4a3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1242745": {
+  "tags": [
+   "UTILITY",
+   "RESOURCE"
+  ],
+  "name": "Inner Flame",
+  "desc_hash": "bec0bbee4e579999",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1242862": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Instilled Doubt",
+  "desc_hash": "8b4c40d4860a185c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1242910": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Jade Infusion",
+  "desc_hash": "a8517613bdfddefd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1242956": {
+  "tags": [],
+  "name": "Voidrage",
+  "desc_hash": "7c50feceab8028c1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1243287": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Diffuse Magic",
+  "desc_hash": "ef5ea705217d51c1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1243660": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Resonant Voice",
+  "desc_hash": "261996c52247b466",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1243807": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Frantic Frenzy",
+  "desc_hash": "c5b93cff01b83993",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244019": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Undying Embers",
+  "desc_hash": "5cab2847c7f0c99d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244025": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Improved Conjuration",
+  "desc_hash": "4469c109e315772c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244070": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Searing Sunlight",
+  "desc_hash": "ab334fd1373d01e5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244087": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Time Walk",
+  "desc_hash": "f9f5b7f85bba705d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244088": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Interpose",
+  "desc_hash": "b4f8d9a35e1cc415",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244090": {
+  "tags": [
+   "DEFENSIVE",
+   "SELF_HEALING"
+  ],
+  "name": "Temporal Realignment",
+  "desc_hash": "da37c586e5057756",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244284": {
+  "tags": [],
+  "name": "Practiced Chaos",
+  "desc_hash": "2781dab8db2cc319",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244295": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Sweet Suffering",
+  "desc_hash": "1863fb07c23e936f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244460": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Improved Havoc",
+  "desc_hash": "b9c6418d15c042e8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244532": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Blood Spattered",
+  "desc_hash": "3bd5aa09c50df7e0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244544": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Focused Frenzy",
+  "desc_hash": "dd29b1d478719bb4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244547": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Hunger for Battle",
+  "desc_hash": "7f031faed2ab0557",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244557": {
+  "tags": [
+   "AOE",
+   "BURST"
+  ],
+  "name": "Glaive Tempest",
+  "desc_hash": "0ec500aee8000e85",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244788": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Chaotic Inferno",
+  "desc_hash": "80d85a8540afcfc3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244877": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Lake of Fire",
+  "desc_hash": "c2c6fc5eeaa6bbbc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1244941": {
+  "tags": [],
+  "name": "Alythess's Ire",
+  "desc_hash": "94156b5c1748d050",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1245089": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Avatar of Destruction",
+  "desc_hash": "f7644e68e9429e1e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1245354": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Vision of Sanctity",
+  "desc_hash": "3d7fa85859740159",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1245891": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Solace",
+  "desc_hash": "a6a53db82400e759",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1245979": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Valiant Crusade",
+  "desc_hash": "1fb6cf7fdd333f7e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1246030": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Explosive Potential",
+  "desc_hash": "4f6d0d21b6a01cd8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1246488": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Sweeping Verdict",
+  "desc_hash": "721970d77206e4e9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1246549": {
+  "tags": [
+   "AOE",
+   "RESOURCE"
+  ],
+  "name": "Lightburst",
+  "desc_hash": "eb51a4c66e00b876",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1246558": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Scythe's Embrace",
+  "desc_hash": "ffaeb94ccfb5199c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1246562": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Duty Eternal",
+  "desc_hash": "9a130bd5195034e0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1247166": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Healing Focus",
+  "desc_hash": "8a2c9117bd8120fc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1247538": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Demonic Instinct",
+  "desc_hash": "46d3e93dc2105a75",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1247544": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Crystalline Refraction",
+  "desc_hash": "309d586809fe77c7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1248418": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Cosmic Wave",
+  "desc_hash": "7e1ebf6179ba965d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1248704": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Skyfire Heel",
+  "desc_hash": "aeb933d07df8be9d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1248829": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Blizzard",
+  "desc_hash": "cebf068e9bbd5540",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1249201": {
+  "tags": [],
+  "name": "Chosen's Revelry",
+  "desc_hash": "c8673029c683eed7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1249230": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Focused Power",
+  "desc_hash": "1b192ea96f6db273",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1250218": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Purge the Wicked",
+  "desc_hash": "5a0fbcb30e20846c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1250293": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Occultist",
+  "desc_hash": "8932908ec448ec7a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1250315": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Frost Conditioning",
+  "desc_hash": "ab7a0fb80914a526",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1250358": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Avulsion",
+  "desc_hash": "51b2b2f4b68a3185",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1250359": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Canny Strikes",
+  "desc_hash": "643fe4df634688f6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1250375": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Practiced Rituals",
+  "desc_hash": "505554bc09e6838e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1250806": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "False Autonomy",
+  "desc_hash": "2db796008d7bbf9a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1250914": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Clairvoyant",
+  "desc_hash": "b649b568c01fc2da",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1251026": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Overcharge",
+  "desc_hash": "99ed9d0103ee32a1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1251030": {
+  "tags": [
+   "SINGLE_TARGET",
+   "RESOURCE"
+  ],
+  "name": "Painful Invocation",
+  "desc_hash": "9d1219ae0b997a04",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1251790": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Savagery",
+  "desc_hash": "1608f913d72b56a5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1251876": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Gift of an Ancient Guardian",
+  "desc_hash": "528522f8ffadff81",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1252217": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Shadow Mend",
+  "desc_hash": "9d7df3892d5ce2e7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1252871": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Red Moon",
+  "desc_hash": "958aff492f5e07fe",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1252874": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Soothing Rain",
+  "desc_hash": "dd4318397eed7bf1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1252931": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Shellshock",
+  "desc_hash": "8b53e7a459b66f8f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1253053": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Razor Edge",
+  "desc_hash": "09b664da99ae4c94",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1253093": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Current Control",
+  "desc_hash": "6d20733a0f47a236",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1253137": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Sic 'Em",
+  "desc_hash": "b1f3ddbccaa7fc19",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1253172": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Shrapnel Bomb",
+  "desc_hash": "8af0f6b3a1a4c7ef",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1253176": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Flamebreak",
+  "desc_hash": "50fb5f729325bdd7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1253399": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Path to Oblivion",
+  "desc_hash": "8aca573615de26c4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1253402": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "State of Matter",
+  "desc_hash": "0bf235c3764d60a1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1253461": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Waking Nightmare",
+  "desc_hash": "654cc64530553b5d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1253751": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Stargazer",
+  "desc_hash": "51e43f84301178bd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1253799": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Sundering Roar",
+  "desc_hash": "4cd061041a1636f6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1253807": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Open Fire",
+  "desc_hash": "b8c78a39aa4872f8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1254210": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Earthweaver",
+  "desc_hash": "8e9fcd654d20863e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1254251": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Rip Current",
+  "desc_hash": "e42abc48ab8a4c42",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1254851": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Flamestrike",
+  "desc_hash": "f036665dba20d82e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1256938": {
+  "tags": [
+   "AOE",
+   "BURST"
+  ],
+  "name": "Flanked",
+  "desc_hash": "a423a7d61231edc4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1257011": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Vulnerability",
+  "desc_hash": "b3c8a87bf22291ff",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1258404": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Catlike Reflexes",
+  "desc_hash": "9421b95fbb72bcc0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1258486": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Improved Feign Death",
+  "desc_hash": "6cf56849acf849e5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1258509": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Guttural Roar",
+  "desc_hash": "56f4bee9aa65923d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1258843": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Molten Wrath",
+  "desc_hash": "a8eb4b77a4ecd816",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1258889": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Storm Infusion",
+  "desc_hash": "f2d74d7b2d64008f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1259469": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Grand Melee",
+  "desc_hash": "a02a225a7d2433fd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1259471": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Purging Flames",
+  "desc_hash": "a99974388ce19a82",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1259485": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Zero In",
+  "desc_hash": "21c778959b82ce12",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1259815": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Potent Soul Shards",
+  "desc_hash": "9461d161a9c6f0b0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1259838": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Seeds of Destruction",
+  "desc_hash": "77d52d31dab7bea9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1260209": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Sudden Onset",
+  "desc_hash": "82f02f2ff85b8a41",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1260229": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Fatal Echoes",
+  "desc_hash": "ef9a617fc4f91b54",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1260429": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Divine Exaction",
+  "desc_hash": "fbfa7510e7770a33",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1260511": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Spiritfont",
+  "desc_hash": "9f62113d620c0f62",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1261060": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Deep Wounds",
+  "desc_hash": "6c432629b61fec50",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1261124": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Cascading Calamity",
+  "desc_hash": "5bbc6ea5d1b8abe9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1261149": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Malefic Grasp",
+  "desc_hash": "0ac5dd6f75ee1945",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1261703": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Tigereye Brew",
+  "desc_hash": "80da4d9272bc9641",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1261867": {
+  "tags": [
+   "GROUP_HEALING",
+   "UTILITY"
+  ],
+  "name": "Heart of the Wild",
+  "desc_hash": "3b06a4d9397f736b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1262017": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Fuel on the Fire",
+  "desc_hash": "968fbc3ec8393964",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1262329": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Empty the Cellar",
+  "desc_hash": "26f4904f8fcf9e07",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1262409": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Lethal Calibration",
+  "desc_hash": "679c58c1742565c3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1262659": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Vital Flame",
+  "desc_hash": "740d9236385c725b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1263252": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Seal of the Templar",
+  "desc_hash": "6533038e9a8e0539",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1263346": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Swift as a Coursing River",
+  "desc_hash": "2b837f215f3dfc81",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1263743": {
+  "tags": [
+   "RESOURCE",
+   "BURST"
+  ],
+  "name": "Blood Mist",
+  "desc_hash": "1ffd5a1fdefe6e8b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1263781": {
+  "tags": [
+   "SELF_HEALING",
+   "BURST"
+  ],
+  "name": "Sanguinary Burst",
+  "desc_hash": "52fb1c48d4876a32",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1263879": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Nature's Bounty",
+  "desc_hash": "182a8996791e66d8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1264296": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Lifeblood",
+  "desc_hash": "d72546d1bf4ba72c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1264330": {
+  "tags": [
+   "SINGLE_TARGET",
+   "BURST"
+  ],
+  "name": "Devastating Focus",
+  "desc_hash": "529594e01e36d161",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1264378": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Unravel",
+  "desc_hash": "4282b9e33c2b6af8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1264904": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Twilight Requiem",
+  "desc_hash": "6937350ec4b56d3d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265044": {
+  "tags": [
+   "BATTLE_REZ"
+  ],
+  "name": "Jagged Wounds",
+  "desc_hash": "38ba2848cf295e82",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265051": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Thrill of the Hunt",
+  "desc_hash": "c83923734b43b32e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265052": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Razor Sharp",
+  "desc_hash": "75b8491a15c4580c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265359": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Surge of Adrenaline",
+  "desc_hash": "e6f1d2936d03b761",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265385": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Implacable",
+  "desc_hash": "a8365cfc15ee298e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265549": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Brought to Light",
+  "desc_hash": "735713733899833d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265570": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Executioner's Wrath",
+  "desc_hash": "f124796086450f9c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265801": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Frequent Traveler",
+  "desc_hash": "dee78465121e7f78",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265810": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Infernal Beneficiary",
+  "desc_hash": "789a9f449bb3a6e1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265813": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Foul Mouth",
+  "desc_hash": "90026da8c565e37d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265816": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Improved Mortal Coil",
+  "desc_hash": "ec2277e377ed2c16",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265826": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Star Salvo",
+  "desc_hash": "b627ade01b287fc0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265861": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Gravedigger",
+  "desc_hash": "4a0ec749f90df43e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265869": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Plague Infusion",
+  "desc_hash": "df3fb7a47de283c0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1265952": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Potent Powder",
+  "desc_hash": "9e56aab31b9b8024",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266069": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Stalk and Strike",
+  "desc_hash": "e0bdfc29d0c15486",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266296": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Focused Ire",
+  "desc_hash": "15f229690604ec72",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266307": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Demonic Resilience",
+  "desc_hash": "43035dcf4a39d5df",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266316": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Burn It Out",
+  "desc_hash": "3bd52a32f8c66ae0",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266326": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Furious",
+  "desc_hash": "10277ee3cf777ee4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266329": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Demon Muzzle",
+  "desc_hash": "c1f421a17fd185dd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266493": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Wings of Wrath",
+  "desc_hash": "e4bdc5f740fd5247",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266496": {
+  "tags": [
+   "DISPEL"
+  ],
+  "name": "Soul Cleanse",
+  "desc_hash": "c33e8eec8bfda6fb",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266500": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Final Breath",
+  "desc_hash": "59cf508fd117c2a5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266719": {
+  "tags": [],
+  "name": "Silent Sanctuary",
+  "desc_hash": "baaeb864123fe8aa",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266733": {
+  "tags": [
+   "CC_SOFT"
+  ],
+  "name": "Stillstep Coil",
+  "desc_hash": "39600407be30d9e2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266748": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Vital Clarity",
+  "desc_hash": "c1834e30e87a3c60",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266762": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Felbound",
+  "desc_hash": "a4031f2e135dbec7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266818": {
+  "tags": [
+   "DEFENSIVE",
+   "RESOURCE"
+  ],
+  "name": "Death Defiance",
+  "desc_hash": "4018a0c1d1e679c4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1266819": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Death Notes",
+  "desc_hash": "e0dbdbfe4e0d291c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1267182": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Toxic Stiletto",
+  "desc_hash": "911ae5aefdd7a0b9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1267206": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Strike from Above",
+  "desc_hash": "dc24598789af35a6",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1267218": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Shell Wall",
+  "desc_hash": "7a50fd03afb2defa",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1268705": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Masterful Call",
+  "desc_hash": "0265ebb3700b91af",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1269215": {
+  "tags": [
+   "COOLDOWN_REDUCTION",
+   "BURST"
+  ],
+  "name": "Crackling Fury",
+  "desc_hash": "aea4974231adff11",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1269614": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Wild Guardian",
+  "desc_hash": "0b48bc516c73758a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1270255": {
+  "tags": [
+   "BURST",
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Oppressive Darkness",
+  "desc_hash": "2793b3ca94608985",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1270621": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Tranquil Tea",
+  "desc_hash": "ab01669fe2faf22b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1270701": {
+  "tags": [
+   "AOE",
+   "SELF_HEALING"
+  ],
+  "name": "Gorefiend's Avarice",
+  "desc_hash": "b8bfee7ab4c05df3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1270845": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Mana Confluence",
+  "desc_hash": "bb57f95fffd20bc1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1270847": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Improved Remove Curse",
+  "desc_hash": "ba70f0cdbe15fefa",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1270865": {
+  "tags": [
+   "INTERRUPT"
+  ],
+  "name": "Improved Counterspell",
+  "desc_hash": "10a0a69331cd5fb1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1270872": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Captured Thoughts",
+  "desc_hash": "7c668518e54ceecd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1270916": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Divine Favor",
+  "desc_hash": "8a482c5cba2c0036",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1271077": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Divine Overload",
+  "desc_hash": "3f00cc189c7fae40",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1271104": {
+  "tags": [
+   "SELF_HEALING",
+   "RESOURCE"
+  ],
+  "name": "Earthen Accord",
+  "desc_hash": "e427aa82d89f54d1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1271431": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Amplified Rush",
+  "desc_hash": "3566d2cac1e7709a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1271687": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Rising Fury",
+  "desc_hash": "b2243f41f0943fd9",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1271689": {
+  "tags": [
+   "SINGLE_TARGET",
+   "UTILITY"
+  ],
+  "name": "Empowered Drain Life",
+  "desc_hash": "b080a271c2e5b58c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1271802": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Blight of Tongues",
+  "desc_hash": "904af7619f4a2f53",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1271925": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Fearless",
+  "desc_hash": "6433cc8ad5474a85",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1271926": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Field Dressing",
+  "desc_hash": "8c0368a7bbaa7636",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1271948": {
+  "tags": [
+   "CC_HARD"
+  ],
+  "name": "Javelineer",
+  "desc_hash": "315321de5fac5b0d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1271974": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Blightfall",
+  "desc_hash": "6e0d1712f7401632",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1272094": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Guardian's Hide",
+  "desc_hash": "f4e2d2d18816056d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1272139": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Twin Fangs",
+  "desc_hash": "833c355a497c4933",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1272175": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Universal Energy",
+  "desc_hash": "c47af6bc257770c1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1272432": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Soulforged Blades",
+  "desc_hash": "a3eb6327e26027fd",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1272452": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Chi Transfer",
+  "desc_hash": "00204b3b42f11dcf",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1272685": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Martial Agility",
+  "desc_hash": "a8ffb9f304671418",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1272770": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Singular Strikes",
+  "desc_hash": "7ffd75ba4c3d1bfe",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1272844": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Combat Stance",
+  "desc_hash": "6d5b74a0e37cfd3f",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1272847": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Gift of the Void",
+  "desc_hash": "a9b87f57defb8765",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1272849": {
+  "tags": [
+   "MOVEMENT"
+  ],
+  "name": "Initiator's Edge",
+  "desc_hash": "47d57d9064bf9125",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1276945": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Imbued Shield",
+  "desc_hash": "c7988214029b0c9d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1277005": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Adjudication",
+  "desc_hash": "6101b0a32ae99b81",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1277162": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Instrument of the Divine",
+  "desc_hash": "fc64bb0893653f22",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1277651": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Rising Sunlight",
+  "desc_hash": "b8a871c6bc09f1a3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1278789": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Natural Resilience",
+  "desc_hash": "28f777e950f1ca8b",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1278886": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Dream Guide",
+  "desc_hash": "543b5a82a094f7d2",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1279350": {
+  "tags": [
+   "SINGLE_TARGET"
+  ],
+  "name": "Invoked Nightmare",
+  "desc_hash": "90d38d13af68b3c5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1279354": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Crushing Void",
+  "desc_hash": "6673783895202958",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1279444": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Improved Secret Technique",
+  "desc_hash": "f7d372e9a9c13e26",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1279510": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Niskaran Methods",
+  "desc_hash": "8132f7d5ced86e51",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1279521": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Eye Contract",
+  "desc_hash": "301fb20e49bfa53c",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1279633": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Bloody Reflection",
+  "desc_hash": "0d00c3847fabaac4",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1279819": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Primordial Bond",
+  "desc_hash": "4ce62ae3b9d47a28",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1280131": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Searing Light",
+  "desc_hash": "27a21015daf8ed2d",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1280297": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Mistline",
+  "desc_hash": "c13a54613ed268d8",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1280316": {
+  "tags": [
+   "UTILITY"
+  ],
+  "name": "Panther's Guile",
+  "desc_hash": "66f09ace27e78032",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1280483": {
+  "tags": [
+   "COOLDOWN_REDUCTION"
+  ],
+  "name": "Inferno",
+  "desc_hash": "9ab7218696cdd0dc",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1280733": {
+  "tags": [
+   "AOE"
+  ],
+  "name": "Nether Plating",
+  "desc_hash": "f49d2e5676486e25",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1280961": {
+  "tags": [
+   "DEFENSIVE",
+   "DAMAGE_REDUCTION"
+  ],
+  "name": "Stance Mastery",
+  "desc_hash": "01bc116aebde6f97",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1290864": {
+  "tags": [
+   "COOLDOWN_REDUCTION",
+   "UTILITY"
+  ],
+  "name": "Cycle of Death",
+  "desc_hash": "f50cc12c9da206d5",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1291457": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Mighty Inferno",
+  "desc_hash": "26a9ab8222eafd56",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1297073": {
+  "tags": [
+   "DEFENSIVE"
+  ],
+  "name": "Improved Warding",
+  "desc_hash": "4839cdae498e74de",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1298779": {
+  "tags": [
+   "SELF_HEALING",
+   "UTILITY"
+  ],
+  "name": "Grim Deliverance",
+  "desc_hash": "ff40cb547122a35e",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1298826": {
+  "tags": [
+   "RESOURCE"
+  ],
+  "name": "Thistle Tea",
+  "desc_hash": "40a8ee12334afd23",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1299572": {
+  "tags": [
+   "SELF_HEALING"
+  ],
+  "name": "Vital Expenditure",
+  "desc_hash": "5fa521bd15d57500",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1301732": {
+  "tags": [],
+  "name": "Blessed Word",
+  "desc_hash": "f781fe0855471ff7",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1311963": {
+  "tags": [
+   "BURST"
+  ],
+  "name": "Bombardier",
+  "desc_hash": "eb348655d0eeedd3",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1311969": {
+  "tags": [
+   "BURST",
+   "AOE"
+  ],
+  "name": "Hedonic Gorging",
+  "desc_hash": "2f6ef26efe88811a",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ },
+ "1312843": {
+  "tags": [
+   "GROUP_HEALING"
+  ],
+  "name": "Swelling Tides",
+  "desc_hash": "33b17c9790ed2bd1",
+  "model": "qwen2.5:7b-instruct",
+  "tagged_at": "2026-10-05"
+ }
+}
