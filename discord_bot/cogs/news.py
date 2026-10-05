@@ -16,6 +16,25 @@ from ..errors import ValidationError
 REQUIRED_PERMS = ("view_channel", "send_messages", "embed_links", "attach_files")
 
 
+class _PostChannel(app_commands.Transformer):
+    """Text/announcement channel picker that hands over the raw option.
+
+    The stock TextChannel transformer fails with a TransformerError before the
+    command runs when the guild is not in the bot's cache (installed with only the
+    applications.commands scope), so the friendly check in setup never fires."""
+
+    @property
+    def type(self):
+        return discord.AppCommandOptionType.channel
+
+    @property
+    def channel_types(self):
+        return [discord.ChannelType.text, discord.ChannelType.news]
+
+    async def transform(self, interaction, value):
+        return value
+
+
 def _reply(description: str) -> discord.Embed:
     return discord.Embed(description=description, colour=embeds.BRAND_COLOR)
 
@@ -38,13 +57,21 @@ class NewsCog(commands.Cog):
     @app_commands.describe(channel="Channel that should receive the daily post")
     @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.checks.cooldown(2, 10.0, key=lambda i: i.guild_id)
-    async def setup(self, interaction: discord.Interaction, channel: discord.TextChannel):
+    async def setup(
+        self,
+        interaction: discord.Interaction,
+        channel: app_commands.Transform[app_commands.AppCommandChannel, _PostChannel],
+    ):
         guild = interaction.guild
         me = guild.me if guild is not None else None
         if me is None:
             raise ValidationError(
-                "The Mythistone bot has to be added to this server before it can post here."
+                "The Mythistone bot is not a member of this server, so it cannot post here. "
+                "Re-invite it with the bot scope (not only slash commands) and try again."
             )
+        channel = channel.resolve()
+        if channel is None:
+            raise ValidationError("I cannot see that channel. Give me View Channel there and try again.")
         perms = channel.permissions_for(me)
         missing = [p for p in REQUIRED_PERMS if not getattr(perms, p)]
         if missing:
