@@ -4,6 +4,7 @@ Pure (no DB, no Jinja). Input is ``databaseConnector.fetch_loadout_key_levels``
 rows plus the top-50 players' export strings; output feeds the spec page's
 Talent Builds modal. See AGENTS.md "Talent build paths" for why each rule exists.
 """
+import hashlib
 import math
 from collections import Counter, defaultdict
 
@@ -72,6 +73,30 @@ def canonical_build(code, spec_id, hero_tree_id, full_node_order, nodes):
         (cls if g == "class" else core).append((nid, (entry, rank)))
         totals[g] += rank
     return frozenset(core), frozenset(cls), totals, int(active)
+
+
+def build_signature(spec_id, scope, diff):
+    """Stable key for a build's name: what it changes vs its lead build.
+
+    ``scope`` is the hero tree id for core builds and "class" for class tree
+    variants; ``diff`` is the build's ``diff`` (vs Build 1 / Variant 1). The
+    weekly namer (nameTalentBuilds.py) and the page generator both key
+    data/static/build_names.json with it, so a name follows its build even when
+    the list order changes. Empty for the lead itself (nothing to name)."""
+    if not diff:
+        return None
+    body = ",".join(f"{sign}{nid}:{entry}:{rank}" for sign, nid, entry, rank in sorted(diff))
+    return hashlib.sha1(f"{spec_id}|{scope}|{body}".encode("utf-8")).hexdigest()[:16]
+
+
+def top50_inputs(top_loadouts, dungeon_ids):
+    """(loadout_text, keystone_level) pairs for build_hero_tree_builds, from
+    databaseConnector.fetch_top50_loadouts rows of the current dungeons."""
+    return [
+        (lo["loadout_text"], lo.get("keystone_level"))
+        for lo in top_loadouts
+        if lo.get("loadout_text") and lo.get("map_challenge_mode_id") in dungeon_ids
+    ]
 
 
 def points_distance(a, b):
