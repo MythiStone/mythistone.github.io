@@ -2207,90 +2207,97 @@
               </div>
               {% endfor %}
             </div>
-          </div>
-
-
-
-
-          {# Consumables detail accordions, split per hero tree (outer wrapper once,
-             one .hero-section-variant per tree; accordion ids are suffixed with the
-             tree id so the hidden variants never collide). #}
-          {% set cons_detail_any = namespace(v=false) %}
-          {% for v in hero_variants %}{% if sections_by_tree[v.id].consumable_sections %}{% set cons_detail_any.v = true %}{% endif %}{% endfor %}
-          {% if cons_detail_any.v %}
-          <div id="consumables-detail" class="col-12 mt-4" data-share>
-            <h6 class="mb-1">Consumables</h6>
-            <p class="text-sm mb-2">
-              Every flask, potion, food, weapon enchant and augment rune seen on sampled high-key
-              players, ranked by how many ran it. Percentages are the share within each category.
-            </p>
-            {% for v in hero_variants %}
-            {% set sec_c = sections_by_tree[v.id] %}
-            {% set hs = '-h' ~ v.id %}
-            <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
-            {{ hero_fallback_note(sec_c) }}
-            <div class="accordion mx-2" id="consumablesAccordion{{ hs }}">
-              {% for sec in sec_c.consumable_sections %}
-              <div class="accordion-item">
-                <h2 class="accordion-header" id="headingConsumable-{{ sec.key }}{{ hs }}">
-                  <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#collapseConsumable-{{ sec.key }}{{ hs }}" aria-expanded="false"
-                    aria-controls="collapseConsumable-{{ sec.key }}{{ hs }}">
-                    {{ sec.label }}
-                  </button>
-                </h2>
-                <div id="collapseConsumable-{{ sec.key }}{{ hs }}" class="accordion-collapse collapse w-100"
-                  aria-labelledby="headingConsumable-{{ sec.key }}{{ hs }}" data-bs-parent="#consumablesAccordion{{ hs }}">
-                  <div class="accordion-body">
-                    <div class="row">
-                      <div class="col-12">
-                        {% for entry in sec.entries %}
-                        <div class="row align-items-center mb-2">
-                          <div class="col-auto">
-                            {% if entry.icon_url %}
-                            {% if entry.slug %}
-                            <a href="/consumables/{{ entry.slug }}" class="icon-link position-relative detail-row-icon">
-                              <img src="{{ entry.icon_url }}" alt="" class="base-icon border border-grey-100">
-                            </a>
-                            {% elif entry.item_id %}
-                            <a target="_blank" href="https://www.wowhead.com/item={{ entry.item_id }}&spec={{ spec_id }}"
-                              class="icon-link position-relative detail-row-icon">
-                              <img src="{{ entry.icon_url }}" alt="" class="base-icon border border-grey-100">
-                            </a>
-                            {% else %}
-                            <span class="detail-row-icon"><img src="{{ entry.icon_url }}" alt="" class="base-icon border border-grey-100"></span>
-                            {% endif %}
-                            {% endif %}
-                          </div>
-                          <div class="col">
-                            {% if entry.slug %}
-                            <a href="/consumables/{{ entry.slug }}"><p class="mb-1">{{ entry.name }}</p></a>
-                            {% elif entry.item_id %}
-                            <a target="_blank" href="https://www.wowhead.com/item={{ entry.item_id }}&spec={{ spec_id }}">
-                              <p class="mb-1">{{ entry.name }}</p>
-                            </a>
-                            {% else %}
-                            <p class="mb-1">{{ entry.name }}</p>
-                            {% endif %}
-                          </div>
-                          <div class="col-auto ms-auto text-end">
-                            <p data-bs-toggle="tooltip" data-bs-placement="top"
-                              title="{{ entry.count }} of {{ sec.total }} {{ sec.label | lower }} users" class="mb-0">
-                              {{ entry.pct }}%</p>
+            {# Consumables detail accordions, split per hero tree (outer wrapper once,
+               one .hero-section-variant per tree). Same two-column layout as Enchants, Gems
+               & Crafting: one accordion per category, ids suffixed with the category key and
+               tree id so the hidden variants never collide. #}
+            {% set cons_detail_any = namespace(v=false) %}
+            {% for v in hero_variants %}{% if sections_by_tree[v.id].consumable_sections %}{% set cons_detail_any.v = true %}{% endif %}{% endfor %}
+            {% if cons_detail_any.v %}
+            <div id="consumables-detail" class="mx-auto my-4" data-share>
+              <h6 class="mb-1">Consumables</h6>
+              <p class="text-sm mb-3">
+                Every flask, potion, food, weapon enchant and augment rune seen on sampled high-key
+                players, ranked by how many ran it. Percentages are the share within each category.
+              </p>
+              {% for v in hero_variants %}
+              {% set sec_c = sections_by_tree[v.id] %}
+              {% set hs = '-h' ~ v.id %}
+              <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
+              {{ hero_fallback_note(sec_c) }}
+              {% for pair in sec_c.consumable_sections | batch(2) %}
+              <div class="d-flex flex-column flex-md-row gap-3{% if not loop.first %} mt-4{% endif %}">
+                {% for sec in pair %}
+                <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
+                  <div class="accordion mx-2" id="consumableAccordion-{{ sec.key }}{{ hs }}">
+                    <div class="accordion-item">
+                      <h2 class="accordion-header" id="headingConsumable-{{ sec.key }}{{ hs }}">
+                        <button class="accordion-button collapsed fw-semibold text-center w-100" type="button"
+                          data-bs-toggle="collapse" data-bs-target="#collapseConsumable-{{ sec.key }}{{ hs }}" aria-expanded="false"
+                          aria-controls="collapseConsumable-{{ sec.key }}{{ hs }}">
+                          {{ sec.label }}
+                        </button>
+                      </h2>
+                      <div id="collapseConsumable-{{ sec.key }}{{ hs }}" class="accordion-collapse collapse w-100"
+                        aria-labelledby="headingConsumable-{{ sec.key }}{{ hs }}" data-bs-parent="#consumableAccordion-{{ sec.key }}{{ hs }}">
+                        <div class="accordion-body">
+                          <div class="row">
+                            <div class="col-12">
+                              {% for entry in sec.entries %}
+                              <div class="row align-items-center mb-2">
+                                <div class="col-auto">
+                                  {% if entry.icon_url %}
+                                  {% if entry.slug %}
+                                  <a href="/consumables/{{ entry.slug }}" class="icon-link position-relative detail-row-icon">
+                                    <img src="{{ entry.icon_url }}" alt="" class="base-icon border border-grey-100">
+                                  </a>
+                                  {% elif entry.item_id %}
+                                  <a target="_blank" href="https://www.wowhead.com/item={{ entry.item_id }}&spec={{ spec_id }}"
+                                    class="icon-link position-relative detail-row-icon">
+                                    <img src="{{ entry.icon_url }}" alt="" class="base-icon border border-grey-100">
+                                  </a>
+                                  {% else %}
+                                  <span class="detail-row-icon"><img src="{{ entry.icon_url }}" alt="" class="base-icon border border-grey-100"></span>
+                                  {% endif %}
+                                  {% endif %}
+                                </div>
+                                <div class="col">
+                                  {% if entry.slug %}
+                                  <a href="/consumables/{{ entry.slug }}"><p class="mb-1">{{ entry.name }}</p></a>
+                                  {% elif entry.item_id %}
+                                  <a target="_blank" href="https://www.wowhead.com/item={{ entry.item_id }}&spec={{ spec_id }}">
+                                    <p class="mb-1">{{ entry.name }}</p>
+                                  </a>
+                                  {% else %}
+                                  <p class="mb-1">{{ entry.name }}</p>
+                                  {% endif %}
+                                </div>
+                                <div class="col-auto ms-auto text-end">
+                                  <p data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="{{ entry.count }} of {{ sec.total }} {{ sec.label | lower }} users" class="mb-0">
+                                    {{ entry.pct }}%</p>
+                                </div>
+                              </div>
+                              {% endfor %}
+                            </div>
                           </div>
                         </div>
-                        {% endfor %}
                       </div>
                     </div>
                   </div>
                 </div>
+                {% endfor %}
+                {% if pair | length == 1 %}
+                <!-- Spacer keeps a lone last panel at half width on desktop -->
+                <div class="flex-fill d-none d-md-block" style="flex:1 1 0 !important; min-width:0;"></div>
+                {% endif %}
+              </div>
+              {% endfor %}
               </div>
               {% endfor %}
             </div>
-            </div>
-            {% endfor %}
+            {% endif %}
           </div>
-          {% endif %}
 
           {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
           <div class="col-12 mt-4">
