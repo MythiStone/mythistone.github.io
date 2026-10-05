@@ -22,7 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          # the branch the run was started on (main on the schedule), so a test branch's code runs
+          ref: ${{ github.ref_name }}
           fetch-depth: 1
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -221,12 +222,12 @@ jobs:
           else
             git commit -m "Updated Static Data"
             # Pull latest changes, fail only on actual errors
-            if ! git fetch --depth=1 origin main; then
+            if ! git fetch --depth=1 origin "${{ github.ref_name }}"; then
               echo "Error during shallow fetch" >&2
               exit 1
             fi
 
-            if ! git rebase origin/main; then
+            if ! git rebase "origin/${{ github.ref_name }}"; then
               echo "Error during rebase" >&2
               exit 1
             fi
