@@ -512,11 +512,23 @@ def choice_spell_ids(nodes):
     }
 
 
-def build_path_view(tree, nodes, payload):
+def load_build_names():
+    """{signature: name} written weekly by nameTalentBuilds.py. Intentional
+    fail-soft: before its first run (or for a build it has not named yet) rows
+    fall back to "Build N" / "Variant N"."""
+    path = os.path.join(LOOKUP_DIR, "build_names.json")
+    if not os.path.exists(path):
+        return {}
+    return {sig: entry["name"] for sig, entry in load_json(path).items()}
+
+
+def build_path_view(tree, nodes, payload, spec_id, hero_id, build_names):
     """Template view of one hero tree's build paths (talentBuilds output).
 
     Fills ``payload`` ({build_id: {code, picks, flex}}) for spec-page.js, which
-    repaints the talent tree to a clicked build. Returns None without builds.
+    repaints the talent tree to a clicked build. Each card's ``name`` is
+    "Standard" for Build 1, "Standard class tree" for a Variant 1, the weekly
+    LLM name when there is one, else None. Returns None without builds.
     """
     if not tree or not tree["cores"]:
         return None
@@ -542,7 +554,7 @@ def build_path_view(tree, nodes, payload):
         node = nodes[str(nid)]
         return (sign_order[sign], section_order.get(node.get("g"), 3), node.get("y") or 0, node.get("x") or 0)
 
-    def card(b):
+    def card(b, scope):
         # A choice node that only changed its option is one "swap" chip (the new
         # option, old one in the label) instead of an add plus a drop of one node.
         signs = Counter(nid for _sign, nid, _entry, _rank in b["diff"])
@@ -585,6 +597,11 @@ def build_path_view(tree, nodes, payload):
         }
         return {
             "id": b["id"],
+            "name": (
+                "Standard" if b["id"] == "b1"
+                else "Standard class tree" if b["id"].endswith(".v1")
+                else build_names.get(talentBuilds.build_signature(spec_id, scope, b["diff"]))
+            ),
             "share": b["share"],
             "runs": b["runs"],
             "max_timed_key": b["max_timed_key"],
@@ -598,8 +615,8 @@ def build_path_view(tree, nodes, payload):
         }
 
     def core_card(c):
-        view = card(c)
-        view["variants"] = [card(v) for v in c["variants"]]
+        view = card(c, hero_id)
+        view["variants"] = [card(v, "class") for v in c["variants"]]
         view["other_variant_share"] = c["other_variant_share"]
         return view
 
@@ -2187,6 +2204,7 @@ def main(template_path, output_dir, debug=False, spec=None):
     )  # this is temporarily just using eu prices
     bonus_lookup = load_json(os.path.join(LOOKUP_DIR, "bonuses.json"))
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
+    build_names = load_build_names()
     dungeon_lookup_slug = {}
     for id, value in dungeon_lookup.items():
         value["id"] = id
@@ -3028,10 +3046,7 @@ def main(template_path, output_dir, debug=False, spec=None):
             builds_by_tree, build_drops = talentBuilds.build_hero_tree_builds(
                 loadout_key_levels, spec_id,
                 talent_lookup["fullNodeOrder"], talent_lookup["nodes"],
-                top50=[
-                    (lo["loadout_text"], lo.get("keystone_level"))
-                    for lo in (top50_raw or []) if lo.get("loadout_text")
-                ],
+                top50=talentBuilds.top50_inputs(top50_raw or [], current_dungeon_ids),
             )
             if build_drops:
                 print(f"Talent builds: dropped loadout runs by reason: {build_drops}")
@@ -3088,6 +3103,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                     "build_paths": build_path_view(
                         builds_by_tree.get(int(tid)), talent_lookup["nodes"],
                         build_payload["builds"].setdefault(str(tid), {}),
+                        int(spec_id), int(tid), build_names,
                     ),
                 })
 

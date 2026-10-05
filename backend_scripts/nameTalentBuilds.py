@@ -35,7 +35,7 @@ WAGO_SPELL_CSV = "https://wago.tools/db2/Spell/csv"
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 MODEL = os.environ.get("NAMER_MODEL", "qwen2.5:7b-instruct")
 DESC_MAX_CHARS = 220  # per talent in the prompt; keeps CPU prompt evaluation affordable
-NAME_MAX_CHARS = 28
+NAME_MAX_CHARS = 32
 NAME_RE = re.compile(r"^[A-Za-z][A-Za-z ,'&-]*[A-Za-z]$")
 FAKE_WORDS = ["Cleave", "Burst", "Sustain", "Mobility", "Utility", "Control", "Defense", "Priority", "Tempo"]
 
@@ -146,7 +146,8 @@ def valid_name(name, build, nodes, taken):
     if name.lower() in {t.lower() for t in taken} or name.lower().startswith("standard"):
         return None
     for _sign, nid, entry, _rank in build["diff"]:
-        if talent(nodes, nid, entry)[0].lower() in name.lower():
+        # whole words, so "Hexed Pack" is fine next to a talent called "Hex"
+        if re.search(r"\b" + re.escape(talent(nodes, nid, entry)[0]) + r"\b", name, re.IGNORECASE):
             return None
     return name
 
@@ -160,10 +161,24 @@ def ask_model(prompt, pending):
         "options": {"temperature": 0.2, "num_ctx": 8192},
     }, timeout=1800)
     resp.raise_for_status()
+    raw = resp.json().get("response", "")
     try:
-        return json.loads(resp.json()["response"]).get("names") or {}
-    except (ValueError, AttributeError):
-        return {}
+        data = json.loads(raw)
+    except ValueError:
+        data = None
+    # 7B models often drop the {"names": ...} wrapper or change the id's case
+    if isinstance(data, dict) and isinstance(data.get("names"), dict):
+        data = data["names"]
+    wanted = {b["id"].lower(): b["id"] for b, _sig, _h in pending}
+    answer = {}
+    if isinstance(data, dict):
+        for key, value in data.items():
+            build_id = wanted.get(str(key).strip().lower())
+            if build_id and isinstance(value, str):
+                answer[build_id] = value
+    if not answer:
+        print(f"  no usable names in model reply: {raw[:300]!r}")
+    return answer
 
 
 def check_model():
@@ -240,6 +255,10 @@ def main(max_minutes, dry_run, only_spec):
             print(prompt)
             continue
         answer = ask_model(prompt, pending)
+        missing = [p for p in pending if p[0]["id"] not in answer]
+        if missing:
+            # one retry with only the ids the model skipped
+            answer.update(ask_model(build_prompt(parent, missing, nodes, descriptions, taken), missing))
         for b, sig, h in pending:
             name = valid_name(answer.get(b["id"]), b, nodes, taken)
             if not name:

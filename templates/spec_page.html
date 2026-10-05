@@ -2357,12 +2357,12 @@
                 <div class="tt-build-list">
                   <div class="tt-build-list-title">Builds on {{ v.name }}</div>
                   {% for b in bp.cores + ([bp.extra] if bp.extra else []) %}
-                  {% set core_title = 'Top 50 build' if b.id == 't1' else 'Build ' ~ loop.index %}
+                  {% if b.id == 't1' %}{% set core_title = ('Top 50: ' ~ b.name) if b.name else 'Top 50 build' %}{% else %}{% set core_title = b.name or ('Build ' ~ loop.index) %}{% endif %}
                   {{ build_card(b, core_title, 'runs on ' ~ v.name, bp.top50_total, v.name) }}
                   {% if b.variants | length > 1 %}
                   <div class="tt-build-variants" data-core="{{ b.id }}" hidden>
                     <div class="tt-build-list-title">Class tree variants of {{ core_title }}</div>
-                    {% for c in b.variants %}{{ build_card(c, 'Variant ' ~ loop.index, core_title ~ "'s runs", b.top50_count, core_title) }}{% endfor %}
+                    {% for c in b.variants %}{{ build_card(c, c.name or ('Variant ' ~ loop.index), core_title ~ "'s runs", b.top50_count, core_title) }}{% endfor %}
                     {% if b.other_variant_share >= 1 %}<div class="tt-build-other">Other variants: {{ '{:.0f}'.format(b.other_variant_share) }}%</div>{% endif %}
                   </div>
                   {% endif %}
@@ -2750,7 +2750,9 @@
             differ by a single talent point count as one build, and the talents they disagree on are ringed as
             flexible. Each build shows its share of runs, its run count and the highest key it was timed in. The small
             icons list the talents a build adds or drops compared to Build 1. Click a build to see it on the tree and
-            copy exactly that build, or pick one of its class tree variants below it.
+            copy exactly that build, or pick one of its class tree variants below it. Build names are written once a
+            week by a language model from the talents a build adds and drops, so they are a quick summary, not a
+            guarantee. The most played build is always called Standard.
           </p>
           <p>
             In <strong>Talent Builds</strong>, the gold percentage next to a build is its share of the top&nbsp;50
