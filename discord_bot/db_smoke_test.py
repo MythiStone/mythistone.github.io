@@ -38,7 +38,7 @@ import commonUtils
 import databaseConnector
 import discord
 
-from . import charts, config, db, embeds, lookups
+from . import charts, config, db, embeds, lookups, usage_stats
 from .cogs import analyze, comps, consumables, dungeon, items, routes, season, spec, stats, vods
 from .errors import SiteDataError, ValidationError
 from .site_data import SiteData
@@ -139,6 +139,38 @@ def test_support_nudge():
     )
     # no counter on the client => never due, never raises.
     check(embeds._support_due(_FakeInter(object(), guild_id=1)) is False, "missing counter should be inert")
+
+
+def test_usage_embed():
+    """The 24h usage embed: totals math, per-command sort, empty state, and the
+    code-block table staying inside the 1024-char field limit with many commands."""
+    rows = [
+        ("meta specs", "ok", 7),
+        ("meta specs", "error", 2),
+        ("spec gear", "ok", 12),
+        ("routes", "crash", 1),
+        ("routes", "blocked", 3),
+        ("item info", "user_error", 4),
+    ]
+    embed = usage_stats.build_embed(rows, 0)
+    assert_embed(embed, "usage")
+    totals, commands = embed.fields[0].value, embed.fields[1].value
+    check(" 29" in totals, "usage totals should sum every outcome (29)")
+    check("Errors" in totals and " 3" in totals, "usage errors should count error + crash (3)")
+    order = [commands.index(f"/{c}") for c in ("spec gear", "meta specs", "item info", "routes")]
+    check(order == sorted(order), "usage commands should sort by uses descending")
+
+    empty = usage_stats.build_embed([], 0)
+    assert_embed(empty, "usage (empty)")
+    check("No commands" in empty.fields[1].value, "usage empty state missing")
+
+    many = [(f"command number {i}", "ok", i) for i in range(200)]
+    big = usage_stats.build_embed(many, 0)
+    assert_embed(big, "usage (many)")
+    value = big.fields[1].value
+    check(len(value) <= embeds.MAX_FIELD_VALUE, "usage table exceeds field limit")
+    check(value.startswith("```") and value.endswith("```"), "usage table fence broken")
+    check("more" in value, "usage table should note dropped rows")
 
 
 def test_resolvers():
@@ -251,6 +283,17 @@ async def test_stats_db(site):
     assert_embed(stats.build_run_card("Closest call", closest, stats._margin_field(did, closest)), "stats.closest")
     fastest = await db.run(databaseConnector.fetch_dungeon_fastest_top_levels_run, did, config.SEASON, dictionary=True)
     assert_embed(stats.build_run_card("Fastest at top keys", fastest), "stats.fastest")
+
+
+async def test_usage_db(site):
+    # Write through the same path the bot uses, then read the 24h aggregate back.
+    marker = "smoke usage test"
+    for outcome in ("ok", "ok", "crash"):
+        await db.run(databaseConnector.insert_bot_command_usage, config.SEASON, marker, outcome)
+    rows = await db.run(databaseConnector.fetch_bot_command_usage_24h)
+    counts = {outcome: int(n) for command, outcome, n in rows if command == marker}
+    check(counts.get("ok", 0) >= 2 and counts.get("crash", 0) >= 1, f"usage 24h fetch wrong: {counts}")
+    assert_embed(usage_stats.build_embed(rows, 0), "usage (db)")
 
 
 async def test_charts_db(site):
@@ -390,8 +433,8 @@ async def test_spec_gear_site(site):
     assert_embed(analyze.build_analyze_embed(A_SPEC, spec_meta, off), "analyze (off)")
 
 
-PURE_TESTS = [test_helpers, test_support_nudge, test_resolvers, test_analyze_parse]
-DB_TESTS = [test_season_db, test_spec_db, test_dungeon_db, test_stats_db, test_charts_db]
+PURE_TESTS = [test_helpers, test_support_nudge, test_usage_embed, test_resolvers, test_analyze_parse]
+DB_TESTS = [test_season_db, test_spec_db, test_dungeon_db, test_stats_db, test_usage_db, test_charts_db]
 SITE_TESTS = [test_comps_site, test_items_site, test_consumables_site, test_vods_site, test_routes_site, test_spec_gear_site]
 
 

@@ -99,12 +99,29 @@ async def _respond(interaction: discord.Interaction, embed: discord.Embed, ephem
         log.warning("failed to deliver error embed to the user", exc_info=True)
 
 
+def _usage_outcome(error: Exception) -> str:
+    """Map an (unwrapped) command error to its bot_command_usage outcome, using
+    the same classification as the reply branches below."""
+    if isinstance(error, (SeasonJustStarted, SeasonNotStarted)):
+        return "blocked"
+    if isinstance(error, (app_commands.CommandOnCooldown, ValidationError)):
+        return "user_error"
+    if isinstance(error, BotError):
+        return "error"
+    return "crash"
+
+
 async def on_app_command_error(
     interaction: discord.Interaction, error: app_commands.AppCommandError
 ):
     # Unwrap the wrapper discord.py puts around exceptions raised inside a command.
     if isinstance(error, app_commands.CommandInvokeError):
         error = error.original
+
+    # Local import: usage_stats imports db, which imports this module.
+    from . import usage_stats
+
+    usage_stats.record(interaction.client, interaction, _usage_outcome(error))
 
     # Launch day (first 24h): show the "season has started" embed instead of an
     # error on sparse data. Checked before SeasonNotStarted so the launch-day

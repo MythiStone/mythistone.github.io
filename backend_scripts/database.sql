@@ -441,6 +441,18 @@ CREATE TABLE `bonus_sets` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+
+CREATE TABLE `bot_command_usage` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `used_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `season` int NOT NULL,
+  `command` varchar(64) NOT NULL,
+  `outcome` varchar(16) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_used_at` (`used_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.crafted_item_ids definition
 
 CREATE TABLE `crafted_item_ids` (

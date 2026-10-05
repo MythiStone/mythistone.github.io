@@ -8,7 +8,7 @@ import aiohttp
 import discord
 from discord.ext import commands, tasks
 
-from . import cache, cogs, config, db, emojis, errors, guards, site_data
+from . import cache, cogs, config, db, emojis, errors, guards, site_data, usage_stats
 
 log = logging.getLogger("mythistone.bot")
 
@@ -23,6 +23,7 @@ class MythistoneBot(commands.Bot):
         self.site_data: site_data.SiteData | None = None
         # (scope, id) -> count of successful commands, for the periodic Patreon nudge.
         self._support_counts: dict[tuple[str, int], int] = {}
+        self.usage_reporter: usage_stats.UsageReporter | None = None
 
     async def setup_hook(self):
         self.site_data = site_data.SiteData(aiohttp.ClientSession())
@@ -34,6 +35,13 @@ class MythistoneBot(commands.Bot):
         self.tree.interaction_check = guards.season_guard
         await self._sync_tree()
         self.prune_loop.start()
+        if self.webhook_url:
+            self.usage_reporter = usage_stats.UsageReporter(
+                self.webhook_url,
+                self.site_data.session,
+                config.USAGE_EMBED_INTERVAL_MINUTES * 60,
+            )
+            self.usage_loop.start()
 
     async def _sync_tree(self):
         """Sync globally, but only when the command surface actually changed.
@@ -81,6 +89,22 @@ class MythistoneBot(commands.Bot):
     @prune_loop.before_loop
     async def _before_prune(self):
         await self.wait_until_ready()
+
+    @tasks.loop(minutes=config.USAGE_EMBED_INTERVAL_MINUTES)
+    async def usage_loop(self):
+        try:
+            await self.usage_reporter.update()
+        except Exception:
+            log.warning("command usage embed update failed", exc_info=True)
+
+    @usage_loop.before_loop
+    async def _before_usage(self):
+        await self.wait_until_ready()
+
+    async def on_app_command_completion(self, interaction, command):
+        # Fired by discord.py only for app commands that completed without raising;
+        # failures are recorded per outcome in errors.on_app_command_error.
+        usage_stats.record(self, interaction, "ok")
 
     async def on_ready(self):
         log.info("logged in as %s (id=%s)", self.user, getattr(self.user, "id", "?"))

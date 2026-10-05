@@ -5883,3 +5883,28 @@ def fetch_missive_usage(connection, cursor, spec_id, season):
     return _fetch_id_run_pairs(connection, cursor, FETCH_MISSIVE_USAGE_SQL, spec_id, season)
 
 
+
+
+def insert_bot_command_usage(connection, cursor, season, command, outcome):
+    """Record one Discord bot slash-command invocation. The bot's session is
+    autocommit=1 (configure_read_session), so the row commits immediately."""
+    execute_with_retry(
+        connection,
+        cursor,
+        "INSERT INTO Mythistone.bot_command_usage (season, command, outcome) VALUES (%s, %s, %s)",
+        (season, command, outcome),
+    )
+
+
+def fetch_bot_command_usage_24h(connection, cursor):
+    """Bot command usage over the last 24 hours: [(command, outcome, count)]."""
+    return fetch_with_retry(
+        connection,
+        cursor,
+        """
+        SELECT command, outcome, COUNT(*)
+        FROM Mythistone.bot_command_usage
+        WHERE used_at >= NOW() - INTERVAL 24 HOUR
+        GROUP BY command, outcome
+        """,
+    )

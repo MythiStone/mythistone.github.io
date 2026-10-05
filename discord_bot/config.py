@@ -95,6 +95,9 @@ SEASON_SHORT = SEASON_INFO.get("short_name", "")
 # Disk locations (relative to CWD). bot_cache is a docker volume in production.
 CHART_CACHE_DIR = os.path.join("data", "bot_cache", "charts")
 TREE_HASH_FILE = os.path.join("data", "bot_cache", "tree_hash.txt")
+# Webhook message id of the self-updating command-usage embed (see usage_stats).
+USAGE_STATUS_FILE = os.path.join("data", "bot_cache", "usage_status.json")
+USAGE_EMBED_INTERVAL_MINUTES = 5
 
 
 def _rollover_hour() -> int:
