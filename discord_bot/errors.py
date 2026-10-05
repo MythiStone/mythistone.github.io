@@ -99,12 +99,15 @@ async def _respond(interaction: discord.Interaction, embed: discord.Embed, ephem
         log.warning("failed to deliver error embed to the user", exc_info=True)
 
 
+_ACCESS_ERRORS = (app_commands.MissingPermissions, app_commands.NoPrivateMessage)
+
+
 def _usage_outcome(error: Exception) -> str:
     """Map an (unwrapped) command error to its bot_command_usage outcome, using
     the same classification as the reply branches below."""
     if isinstance(error, (SeasonJustStarted, SeasonNotStarted)):
         return "blocked"
-    if isinstance(error, (app_commands.CommandOnCooldown, ValidationError)):
+    if isinstance(error, (app_commands.CommandOnCooldown, ValidationError, *_ACCESS_ERRORS)):
         return "user_error"
     if isinstance(error, BotError):
         return "error"
@@ -151,6 +154,15 @@ async def on_app_command_error(
 
     if isinstance(error, ValidationError):
         await _respond(interaction, error_embed(error), ephemeral=True)
+        return
+
+    if isinstance(error, _ACCESS_ERRORS):
+        message = (
+            "This command only works inside a server."
+            if isinstance(error, app_commands.NoPrivateMessage)
+            else "You need the Manage Server permission to use this command."
+        )
+        await _respond(interaction, error_embed(BotError(message)), ephemeral=True)
         return
 
     if isinstance(error, (DatabaseUnavailable, SiteDataError, BotError)):

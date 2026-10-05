@@ -93,6 +93,7 @@ IGNORE_TABLES = {
     "agg_pipeline_log",
     "agg_lock_diag",
     "bot_command_usage",
+    "bot_news_channels",
 }
 
 

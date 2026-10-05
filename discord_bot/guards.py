@@ -17,6 +17,8 @@ from .errors import SeasonJustStarted, SeasonNotStarted
 
 log = logging.getLogger("mythistone.bot")
 
+SEASON_EXEMPT_ROOTS = {"news"}
+
 
 @cache.ttl_cache(300)
 async def _season_has_runs() -> bool:
@@ -32,6 +34,10 @@ async def season_guard(interaction) -> bool:
     SeasonNotStarted when the season has no runs yet. Fail-open on any DB check
     error so a transient blip does not block every command — the command's own
     db.run then surfaces the real DB error."""
+    # Admin setup needs no season data, and the off-season is when static posts run.
+    command = interaction.command
+    if command is not None and command.qualified_name.split(" ", 1)[0] in SEASON_EXEMPT_ROOTS:
+        return True
     # Launch-day window: pure time + seasonInfo (no DB), shared with the social
     # auto-poster's launch-day post. Checked first and outside the fail-open DB
     # try/except so it is never swallowed, and so it wins the moment a region is

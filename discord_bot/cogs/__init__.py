@@ -16,4 +16,5 @@ COG_MODULES = [
     "consumables",
     "stats",
     "analyze",
+    "news",
 ]

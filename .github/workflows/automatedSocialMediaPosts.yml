@@ -307,3 +307,41 @@ jobs:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: ${{ steps.read_post.outputs.SOCIAL_TEXT }}
           filename: uploaded/${{ env.FILENAME }}
+
+  # Fans the post out to every channel servers picked with the bot's /news setup.
+  discord-subscribers:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: main
+
+      - name: Download social artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: social-post
+          path: uploaded
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install requests mysql-connector-python
+
+      - name: Post to subscribed Discord channels
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORT }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+        run: |
+          python -u backend_scripts/broadcastDiscordNews.py \
+            --post-file uploaded/post.json \
+            --image "uploaded/${{ needs.setup.outputs.image_filename }}"

@@ -5,6 +5,7 @@ import logging
 import os
 
 import aiohttp
+import databaseConnector
 import discord
 from discord.ext import commands, tasks
 
@@ -105,6 +106,13 @@ class MythistoneBot(commands.Bot):
         # Fired by discord.py only for app commands that completed without raising;
         # failures are recorded per outcome in errors.on_app_command_error.
         usage_stats.record(self, interaction, "ok")
+
+    async def on_guild_remove(self, guild):
+        # Kicked or the server was deleted: drop its daily-post subscription.
+        try:
+            await db.run(databaseConnector.delete_bot_news_channel, guild.id)
+        except Exception:
+            log.warning("failed to drop news channel for guild %s", guild.id, exc_info=True)
 
     async def on_ready(self):
         log.info("logged in as %s (id=%s)", self.user, getattr(self.user, "id", "?"))

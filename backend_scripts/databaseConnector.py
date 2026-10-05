@@ -5908,3 +5908,49 @@ def fetch_bot_command_usage_24h(connection, cursor):
         GROUP BY command, outcome
         """,
     )
+
+
+def upsert_bot_news_channel(connection, cursor, guild_id, channel_id, set_by):
+    """Point a server's daily-post subscription at ``channel_id`` (one per guild)."""
+    execute_with_retry(
+        connection,
+        cursor,
+        """
+        INSERT INTO Mythistone.bot_news_channels (guild_id, channel_id, set_by)
+        VALUES (%s, %s, %s)
+        ON DUPLICATE KEY UPDATE channel_id = VALUES(channel_id), set_by = VALUES(set_by)
+        """,
+        (guild_id, channel_id, set_by),
+    )
+
+
+def delete_bot_news_channel(connection, cursor, guild_id):
+    """Remove a server's subscription. Returns the number of rows deleted (0 or 1).
+    Non-autocommit callers (CI) must commit."""
+    execute_with_retry(
+        connection,
+        cursor,
+        "DELETE FROM Mythistone.bot_news_channels WHERE guild_id = %s",
+        (guild_id,),
+    )
+    return cursor.rowcount
+
+
+def fetch_bot_news_channel(connection, cursor, guild_id):
+    """The subscribed channel id for one server, or None."""
+    rows = fetch_with_retry(
+        connection,
+        cursor,
+        "SELECT channel_id FROM Mythistone.bot_news_channels WHERE guild_id = %s",
+        (guild_id,),
+    )
+    return int(rows[0][0]) if rows else None
+
+
+def fetch_bot_news_channels(connection, cursor):
+    """Every subscription: [(guild_id, channel_id)]."""
+    return fetch_with_retry(
+        connection,
+        cursor,
+        "SELECT guild_id, channel_id FROM Mythistone.bot_news_channels ORDER BY guild_id",
+    )

@@ -453,6 +453,16 @@ CREATE TABLE `bot_command_usage` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+
+CREATE TABLE `bot_news_channels` (
+  `guild_id` bigint unsigned NOT NULL,
+  `channel_id` bigint unsigned NOT NULL,
+  `set_by` bigint unsigned NOT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`guild_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.crafted_item_ids definition
 
 CREATE TABLE `crafted_item_ids` (
