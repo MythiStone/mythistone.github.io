@@ -513,25 +513,29 @@ def choice_spell_ids(nodes):
 
 
 def load_talent_tags():
-    """{spellId: [tag, ...]} from tagTalents.py's weekly data/static/talent_tags.json,
-    with the hand-maintained talent_tag_overrides.json on top. Intentional
+    """{spellId: (tags, major)} from tagTalents.py's weekly data/static/talent_tags.json,
+    with the hand-maintained talent_tag_overrides.json on top. An override is a
+    tag list (counted as major) or {"tags": [...], "major": bool}. Intentional
     fail-soft: an untagged talent adds nothing to a build name, and a build none
     of whose changes is tagged falls back to "Build N" / "Variant N"."""
     tags = {}
     path = os.path.join(LOOKUP_DIR, "talent_tags.json")
     if os.path.exists(path):
         # tags from an older tag list (until the next run re-tags them) count for nothing
-        tags = {
-            sid: [t for t in entry["tags"] if t in talentBuilds.BUILD_TAGS]
-            for sid, entry in load_json(path).items()
-        }
+        for sid, entry in load_json(path).items():
+            known = [t for t in entry["tags"] if t in talentBuilds.BUILD_TAGS]
+            tags[sid] = (known, entry.get("impact", "major") == "major")
     overrides = os.path.join(LOOKUP_DIR, "talent_tag_overrides.json")
     if os.path.exists(overrides):
         for sid, override in load_json(overrides).items():
-            unknown = set(override) - set(talentBuilds.BUILD_TAGS)
+            if isinstance(override, dict):
+                override_tags, major = override.get("tags", []), bool(override.get("major", True))
+            else:
+                override_tags, major = override, True
+            unknown = set(override_tags) - set(talentBuilds.BUILD_TAGS)
             if unknown:
                 raise ValueError(f"talent_tag_overrides.json: unknown tags {unknown} for spell {sid}")
-            tags[sid] = override
+            tags[sid] = (override_tags, major)
     return tags
 
 
@@ -571,7 +575,7 @@ def build_path_view(tree, nodes, payload, talent_tags):
     def tags_of(nid, entry):
         entries = nodes[str(nid)].get("entries") or [{}]
         e = entries[entry] if entry < len(entries) else entries[0]
-        return talent_tags.get(str(e.get("spellId")), ())
+        return talent_tags.get(str(e.get("spellId")), ((), False))
 
     def card(b):
         # A choice node that only changed its option is one "swap" chip (the new

@@ -189,7 +189,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.ollama/models
-          key: ollama-qwen2.5-7b-instruct
+          key: ollama-qwen2.5-14b-instruct
 
       - name: Start Ollama
         run: |
@@ -199,15 +199,17 @@ jobs:
           sudo systemctl stop ollama || true
           OLLAMA_MODELS=~/.ollama/models nohup ollama serve > /tmp/ollama.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/tags > /dev/null && break; sleep 2; done
-          OLLAMA_MODELS=~/.ollama/models ollama pull qwen2.5:7b-instruct
+          OLLAMA_MODELS=~/.ollama/models ollama pull qwen2.5:14b-instruct
 
+      # ~30 min with per-talent voting, so only on manual runs (prompt experiments)
       - name: Score talent tagging
+        if: github.event_name == 'workflow_dispatch'
         run: |
           python backend_scripts/tagTalents.py --eval
 
       - name: Tag talents
         run: |
-          python backend_scripts/tagTalents.py --max-minutes 240
+          python backend_scripts/tagTalents.py --max-minutes 20
 
       - name: Clean up CSV
         run: |

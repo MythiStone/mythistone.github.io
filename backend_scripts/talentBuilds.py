@@ -76,37 +76,51 @@ def canonical_build(code, spec_id, hero_tree_id, full_node_order, nodes):
 
 # Talent tags (written weekly by tagTalents.py into data/static/talent_tags.json)
 # and the labels build names are composed from. Order breaks ties. Loosely follows
-# LibSpellDB's spell tags, with one survival and one group tag so a 7B model
-# cannot blur near-synonyms, and plain/pet damage tags so throughput talents are
-# not forced into a utility bucket.
+# LibSpellDB's spell tags, with one survival and one group tag so the model cannot
+# blur near-synonyms, plain/pet damage tags so throughput talents are not forced
+# into a utility bucket, and no resource tag ("More Resource" never helps a reader).
 BUILD_TAGS = {
     "AOE": "AoE",
     "SINGLE_TARGET": "Single Target",
+    "EXECUTE": "Execute",
     "BURST": "Burst",
     "DAMAGE": "Damage",
     "PET_DAMAGE": "Pet Damage",
     "SURVIVABILITY": "Survivability",
     "SELF_HEALING": "Self Healing",
     "GROUP_SUPPORT": "Group Support",
+    "UTILITY": "Utility",
     "INTERRUPT": "Interrupts",
     "CC_HARD": "Hard CC",
-    "CC_SOFT": "Slows",
+    "CC_SOFT": "Soft CC",
+    "SLOW": "Slows",
+    "ROOT": "Roots",
     "DISPEL": "Dispels",
     "BATTLE_REZ": "Battle Res",
     "MOVEMENT": "Mobility",
-    "RESOURCE": "Resource",
 }
 
 
 def compose_build_name(diff, tags_of):
     """'More X, Less Y' from the tags a build gains and loses vs its lead, or None
-    when none of its changed talents is tagged. ``tags_of(nid, entry)`` returns a
-    talent's tags; each tag is weighted by the points moved."""
-    score = Counter()
-    for sign, nid, entry, rank in diff:
-        weight = rank if sign == "+" else -rank if sign == "-" else 0
-        for tag in tags_of(nid, entry):
-            score[tag] += weight
+    when none of its changed talents is tagged. ``tags_of(nid, entry)`` returns
+    (tags, major). Only major talents count, so a dropped small passive cannot
+    name a build, unless the build changes nothing major. Each tag is weighted by
+    the points moved."""
+    def scores(major_only):
+        score = Counter()
+        for sign, nid, entry, rank in diff:
+            tags, major = tags_of(nid, entry)
+            if major_only and not major:
+                continue
+            weight = rank if sign == "+" else -rank if sign == "-" else 0
+            for tag in tags:
+                score[tag] += weight
+        return score
+
+    score = scores(True)
+    if not any(score.values()):
+        score = scores(False)
     order = list(BUILD_TAGS)
     more = sorted((t for t in score if score[t] > 0), key=lambda t: (-score[t], order.index(t)))
     less = sorted((t for t in score if score[t] < 0), key=lambda t: (score[t], order.index(t)))

@@ -2,19 +2,24 @@
 
 Runs in getStaticData.yml with a local Ollama model. For every spec it computes
 the same builds as generateSpecPages (talentBuilds on the same DB inputs),
-collects the talents in their diffs, and asks the model for up to two tags per
-talent from talentBuilds.BUILD_TAGS. Results go to data/static/talent_tags.json
-({spellId: {"tags", "name", "desc_hash", "model", "tagged_at"}}). The page build
-composes "More X, Less Y" names from them (talentBuilds.compose_build_name), so a
-name always matches the build it is shown on. data/static/talent_tag_overrides.json
-({spellId: [tags]}) is hand-maintained and wins over the model.
+collects the talents in their diffs, and asks the model, one talent per prompt
+and from the spell description alone, for up to two tags from
+talentBuilds.BUILD_TAGS plus whether the talent is a major or minor change. Each
+talent is asked up to three times and only tags at least two answers agree on
+are kept. Results go to data/static/talent_tags.json ({spellId: {"tags",
+"impact", "name", "desc_hash", "model", "tagged_at"}}); the page build composes
+"More X, Less Y" names from them (talentBuilds.compose_build_name), so a name
+always matches the build it is shown on. data/static/talent_tag_overrides.json
+is hand-maintained and wins over the model.
 
 Descriptions come from wago.tools (Spell, with real values from SpellEffect,
-SpellMisc and SpellDuration), downloaded every run because they change between
-game builds. A talent is re-tagged only when its rendered description changes.
+SpellMisc and SpellDuration), downloaded every run because talents change between
+patches: a talent is re-tagged whenever its rendered description changes (or
+PROMPT_VERSION is bumped).
 
 NAMER_FAKE=1 swaps the model for deterministic tags (local tests have no model);
---dry-run prints the prompts and writes nothing.
+--dry-run prints prompts and writes nothing; --eval scores the prompt against
+localDev/talent_tag_gold.json.
 """
 import argparse
 import csv
@@ -24,6 +29,7 @@ import json
 import os
 import re
 import time
+from collections import Counter
 from datetime import datetime, timezone
 
 import requests
@@ -35,66 +41,70 @@ import talentBuilds
 TAGS_PATH = os.path.join(commonUtils.LOOKUP_DIR, "talent_tags.json")
 WAGO_CSV = "https://wago.tools/db2/{table}/csv"
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
-MODEL = os.environ.get("NAMER_MODEL", "qwen2.5:7b-instruct")
-BATCH_SIZE = 8         # talents per prompt (each answer carries a reason)
-DESC_MAX_CHARS = 400   # per talent; keeps CPU prompt evaluation affordable
+MODEL = os.environ.get("NAMER_MODEL", "qwen2.5:14b-instruct")
+DESC_MAX_CHARS = 500
 MAX_TAGS = 2
+VOTES = 3              # answers per talent; the third is skipped when the first two agree
+VOTE_TEMPERATURE = 0.5  # some spread between answers, or voting has nothing to vote on
+SAVE_EVERY = 25        # talents between checkpoints, so a killed job keeps its progress
 # Part of each talent's cache key: bump it when the prompt or tag list changes so
 # the next weekly run re-tags everything.
-PROMPT_VERSION = 2
+PROMPT_VERSION = 3
 GOLD_PATH = os.path.join(os.path.dirname(__file__), "localDev", "talent_tag_gold.json")
-LOG_REASONS = 3  # reasons printed per spec, to see how the model decides
 
 TAG_HELP = {
     "AOE": "hits or heals several targets: cleave, chains, splash, ground effects",
-    "SINGLE_TARGET": "damage aimed at one target, including execute effects",
+    "SINGLE_TARGET": "damage aimed at one target",
+    "EXECUTE": "damage that only works or is stronger on targets below a certain threshold of health",
     "BURST": "big damage spikes or short damage cooldowns",
     "DAMAGE": "general damage increase with no clear number of targets",
     "PET_DAMAGE": "makes pets, minions, ghouls or other summons stronger or last longer",
     "SURVIVABILITY": "the player takes less damage: damage reduction, absorbs, armor, avoidance, defensive cooldowns",
     "SELF_HEALING": "heals the player, Leech, more healing received",
     "GROUP_SUPPORT": "helps allies: heals or shields them, group buffs, shared damage reduction",
+    "UTILITY": "other utility no tag above covers: grips, threat, range, stealth",
     "INTERRUPT": "interrupts or silences spellcasting",
-    "CC_HARD": "stuns, incapacitates or otherwise hinders enemies which CAN NOT be broken by damage",
-    "CC_SOFT": "stuns, incapacitates or otherwise hinders enemies which CAN be broken by damage",
+    "CC_HARD": "stuns, incapacitates or otherwise hinders enemies, and CAN NOT be broken by damage",
+    "CC_SOFT": "stuns, incapacitates, disorients or otherwise hinders enemies, and CAN be broken by damage",
     "SLOW": "slows enemies",
     "ROOT": "roots enemies",
     "DISPEL": "removes magic, curse, poison, disease or enrage effects",
     "BATTLE_REZ": "resurrects an ally in combat",
-    "UTILITY": "other group utility: buffs, damage reduction for allies, threat",
     "MOVEMENT": "movement speed, dashes, teleports, freedom from roots",
-    "RESOURCE": "the main effect is gaining or saving the spec's resource",
-    "EXECUTE": "damage that only works or is stronger on targets below a certain threshhold of health",
 }
+assert set(TAG_HELP) == set(talentBuilds.BUILD_TAGS), "TAG_HELP and talentBuilds.BUILD_TAGS must list the same tags"
 
-EXAMPLES = """- EX1 Splitting Ice: Your Ice Lance deals 5% increased damage and hits a second nearby target. -> {"reason": "hits an extra target", "tags": ["AOE"]}
-- EX2 Alpha Predator: Kill Command has 1 additional charge and your pet deals 15% increased damage. -> {"reason": "Kill Command is the pet's attack", "tags": ["PET_DAMAGE"]}
-- EX3 Divine Intercession: Intercession costs 1 less Holy Power. -> {"reason": "cheaper in-combat resurrect", "tags": ["BATTLE_REZ"]}
-- EX4 Honed Reflexes: Reduces the cooldown of Kick by 2 sec. -> {"reason": "Kick is an interrupt", "tags": ["INTERRUPT"]}
-- EX5 Armored Skin: Increases your Armor by 6% and reduces damage taken from area of effect attacks by 4%. -> {"reason": "passive damage reduction", "tags": ["SURVIVABILITY"]}
-- EX6 Vital Leech: Increases Leech by 3%. -> {"reason": "Leech heals the player", "tags": ["SELF_HEALING"]}
-- EX7 Rallying Banner: Rallying Cry increases the maximum health of party members by 10% for 10 sec. -> {"reason": "buffs the whole party", "tags": ["GROUP_SUPPORT"]}
-- EX8 Bloodlust Edge: Your damage dealt is increased by 3% while you are above 80% health. -> {"reason": "plain damage increase", "tags": ["DAMAGE"]}
-- EX9 Barbed Shield: Ignore Pain costs 5 less Rage and absorbs 10% more damage. -> {"reason": "Ignore Pain is a defensive; the cost is a side detail", "tags": ["SURVIVABILITY"]}
-- EX10 Furious Strikes: Your auto attacks generate 3 Rage. -> {"reason": "the effect is resource generation", "tags": ["RESOURCE"]}"""
+EXAMPLES = """- Your Ice Lance deals 5% increased damage and hits a second nearby target. -> {"reason": "hits an extra target", "tags": ["AOE"], "impact": "minor"}
+- Kill Command has 1 additional charge and your pet deals 15% increased damage. -> {"reason": "Kill Command is the pet's attack", "tags": ["PET_DAMAGE"], "impact": "major"}
+- Intercession costs 1 less Holy Power. -> {"reason": "cheaper in-combat resurrect", "tags": ["BATTLE_REZ"], "impact": "minor"}
+- Reduces the cooldown of Kick by 2 sec. -> {"reason": "Kick is an interrupt", "tags": ["INTERRUPT"], "impact": "minor"}
+- Increases your Armor by 6% and reduces damage taken from area of effect attacks by 4%. -> {"reason": "passive damage reduction", "tags": ["SURVIVABILITY"], "impact": "minor"}
+- Become immune to all damage for 8 sec. 5 min cooldown. -> {"reason": "an immunity cooldown", "tags": ["SURVIVABILITY"], "impact": "major"}
+- Increases Leech by 3%. -> {"reason": "Leech heals the player", "tags": ["SELF_HEALING"], "impact": "minor"}
+- Rallying Cry increases the maximum health of party members by 10% for 10 sec. -> {"reason": "buffs the whole party", "tags": ["GROUP_SUPPORT"], "impact": "major"}
+- Your damage dealt is increased by 3% while you are above 80% health. -> {"reason": "plain damage increase", "tags": ["DAMAGE"], "impact": "minor"}
+- Ignore Pain costs 5 less Rage and absorbs 10% more damage. -> {"reason": "Ignore Pain is a defensive; the cost is a side detail", "tags": ["SURVIVABILITY"], "impact": "minor"}
+- Execute deals 20% more damage to enemies below 35% health. -> {"reason": "bonus on low health targets", "tags": ["EXECUTE"], "impact": "minor"}
+- Stuns all enemies within 8 yards for 3 sec. -> {"reason": "an area stun", "tags": ["CC_HARD"], "impact": "major"}"""
 
-PROMPT = """You tag World of Warcraft talents of {spec} by what they do for the player in Mythic+.
+PROMPT = """You tag a World of Warcraft talent by what it does for the player in Mythic+, using only its description.
 Allowed tags:
 {tags}
 
 Rules:
 - Tag the main effect. A talent that changes another ability (its cooldown, cost, range, duration or charges) gets the tag of what that ability does: a cheaper resurrect is BATTLE_REZ, a faster interrupt is INTERRUPT, a longer defensive is SURVIVABILITY.
-- Use RESOURCE only when gaining or saving resource is the point of the talent, never because a resource is merely mentioned.
-- Use 0 to {max_tags} tags. No tag is fine for a talent with a tiny or unclear effect.
+- Gaining or saving a resource is not a tag of its own: tag what the talent achieves, or use no tag.
+- Use 0 to {max_tags} tags. No tag is fine for a tiny or unclear effect.
+- impact is "major" for a new ability, a cooldown or an effect that clearly changes how the spec plays, and "minor" for a small passive bonus or a tweak to an existing ability.
 
 Examples:
 {examples}
 
-TALENTS:
-{talents}
+Talent:
+{description}
 
-For each talent write a short reason, then its tags.
-Respond with JSON only: {{"<talent id>": {{"reason": "<a few words>", "tags": ["TAG", ...]}}, ...}}
+Write a short reason, then the tags and the impact.
+Respond with JSON only: {{"reason": "<a few words>", "tags": ["TAG", ...], "impact": "major" or "minor"}}
 """
 
 
@@ -188,74 +198,90 @@ def diff_talents(trees, nodes):
     return out
 
 
-def ask_model(prompt, batch):
-    """{spell_id: (tags, reason)} for the talents the model answered."""
-    if os.environ.get("NAMER_FAKE") == "1":
-        tags = list(talentBuilds.BUILD_TAGS)
-        return {sid: ([tags[sid % len(tags)]], "fake") for sid, _name, _desc in batch}
-    resp = requests.post(f"{OLLAMA_URL}/api/generate", json={
-        "model": MODEL, "prompt": prompt, "format": "json", "stream": False,
-        "options": {"temperature": 0.1, "num_ctx": 8192},
-    }, timeout=1800)
-    resp.raise_for_status()
-    raw = resp.json().get("response", "")
+def build_prompt(description):
+    return PROMPT.format(
+        max_tags=MAX_TAGS, examples=EXAMPLES, description=description or "no description",
+        tags="\n".join(f"- {t}: {h}" for t, h in TAG_HELP.items()),
+    )
+
+
+def parse_answer(raw):
+    """(tags, major, reason) from one model reply, or None when unusable."""
     try:
         data = json.loads(raw)
     except ValueError:
-        data = None
-    # 7B models sometimes wrap the answer or skip the reason
-    if isinstance(data, dict) and isinstance(data.get("tags"), dict):
-        data = data["tags"]
-    wanted = {str(sid): sid for sid, _name, _desc in batch}
-    answer = {}
-    if isinstance(data, dict):
-        for key, value in data.items():
-            sid = wanted.get(str(key).strip())
-            if sid is None:
-                continue
-            reason = ""
-            if isinstance(value, dict):
-                reason = str(value.get("reason") or "")
-                value = value.get("tags", [])
-            if isinstance(value, str):
-                value = [value]
-            if isinstance(value, list):
-                tags = [str(t).strip().upper() for t in value if str(t).strip().upper() in talentBuilds.BUILD_TAGS]
-                answer[sid] = (list(dict.fromkeys(tags))[:MAX_TAGS], reason)
-    if not answer:
-        print(f"  no usable tags in model reply: {raw[:300]!r}")
+        return None
+    # models sometimes nest the answer one level under an id or a "talent" key
+    if isinstance(data, dict) and "tags" not in data and len(data) == 1:
+        inner = next(iter(data.values()))
+        data = inner if isinstance(inner, dict) else data
+    if not isinstance(data, dict):
+        return None
+    tags = data.get("tags", [])
+    if isinstance(tags, str):
+        tags = [tags]
+    if not isinstance(tags, list):
+        return None
+    tags = [str(t).strip().upper() for t in tags]
+    tags = list(dict.fromkeys(t for t in tags if t in talentBuilds.BUILD_TAGS))[:MAX_TAGS]
+    major = str(data.get("impact", "")).strip().lower() == "major"
+    return tags, major, str(data.get("reason") or "")
+
+
+def ask_once(prompt, seed):
+    resp = requests.post(f"{OLLAMA_URL}/api/generate", json={
+        "model": MODEL, "prompt": prompt, "format": "json", "stream": False,
+        "options": {"temperature": VOTE_TEMPERATURE, "seed": seed, "num_ctx": 4096},
+    }, timeout=1800)
+    resp.raise_for_status()
+    raw = resp.json().get("response", "")
+    answer = parse_answer(raw)
+    if answer is None:
+        print(f"  unusable model reply: {raw[:200]!r}")
     return answer
 
 
-def build_prompt(spec, batch):
-    return PROMPT.format(
-        spec=spec, max_tags=MAX_TAGS, examples=EXAMPLES,
-        tags="\n".join(f"- {t}: {h}" for t, h in TAG_HELP.items()),
-        talents="\n".join(f"- {sid} {name}: {desc or 'no description'}" for sid, name, desc in batch),
-    )
+def tag_talent(spell_id, description):
+    """(tags, major, reason) voted over up to VOTES answers, or None if the model
+    gave no usable answer. A tag survives when at least two answers give it."""
+    if os.environ.get("NAMER_FAKE") == "1":
+        tags = list(talentBuilds.BUILD_TAGS)
+        return [tags[spell_id % len(tags)]], spell_id % 2 == 0, "fake"
+    prompt = build_prompt(description)
+    answers = []
+    for seed in range(VOTES):
+        answer = ask_once(prompt, seed)
+        if answer is not None:
+            answers.append(answer)
+        if len(answers) == 2 and set(answers[0][0]) == set(answers[1][0]) and answers[0][1] == answers[1][1]:
+            break
+    if not answers:
+        return None
+    if len(answers) == 1:
+        return answers[0]
+    need = 2
+    counts = Counter(t for tags, _major, _reason in answers for t in tags)
+    tags = [t for t in talentBuilds.BUILD_TAGS if counts[t] >= need][:MAX_TAGS]
+    major = sum(major for _tags, major, _reason in answers) >= need
+    return tags, major, answers[0][2]
 
 
 def evaluate(text):
     """Scores the prompt against hand labels (localDev/talent_tag_gold.json)."""
     gold = commonUtils.load_json(GOLD_PATH)
-    lookup = commonUtils.load_json(os.path.join(commonUtils.LOOKUP_DIR, "talents", f"{gold['spec']}.json"))
-    spec = f'{lookup.get("specName", "")} {lookup.get("className", "")}'.strip()
-    items = [(int(sid), g["name"], text.render(int(sid))[:DESC_MAX_CHARS]) for sid, g in gold["tags"].items()]
     exact = overlap = 0
-    for i in range(0, len(items), BATCH_SIZE):
-        batch = items[i:i + BATCH_SIZE]
-        answer = ask_model(build_prompt(spec, batch), batch)
-        for sid, name, _desc in batch:
-            want = set(gold["tags"][str(sid)]["tags"])
-            got, reason = answer.get(sid, ([], "no answer"))
-            got = set(got)
-            exact += got == want
-            hit = bool(got & want) or got == want
-            overlap += hit
-            mark = "ok  " if got == want else "part" if hit else "MISS"
-            print(f"  eval {mark} {name}: model {sorted(got)} vs {sorted(want)} ({reason})")
-    n = len(items)
-    print(f"tag eval ({spec}): {exact}/{n} exact, {overlap}/{n} at least one right")
+    for sid, g in gold["tags"].items():
+        want = set(g["tags"])
+        result = tag_talent(int(sid), text.render(int(sid))[:DESC_MAX_CHARS])
+        got, major, reason = result if result else ([], False, "no answer")
+        got = set(got)
+        exact += got == want
+        hit = bool(got & want) or got == want
+        overlap += hit
+        mark = "ok  " if got == want else "part" if hit else "MISS"
+        print(f"  eval {mark} {g['name']}: model {sorted(got)} {'major' if major else 'minor'} vs {sorted(want)} ({reason})")
+    n = len(gold["tags"])
+    print(f"tag eval: {exact}/{n} exact, {overlap}/{n} at least one right")
 
 
 def check_model():
@@ -267,6 +293,13 @@ def check_model():
         raise RuntimeError(f"Ollama at {OLLAMA_URL} does not have {MODEL}; run `ollama pull {MODEL}`")
 
 
+def save(tags):
+    tmp = TAGS_PATH + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(dict(sorted(tags.items(), key=lambda kv: int(kv[0]))), f, indent=1, ensure_ascii=False)
+    os.replace(tmp, TAGS_PATH)
+
+
 def main(max_minutes, dry_run, only_spec):
     started = time.monotonic()
     check_model()
@@ -276,9 +309,8 @@ def main(max_minutes, dry_run, only_spec):
     dungeon_ids = {int(k) for k in commonUtils.load_json(os.path.join(commonUtils.LOOKUP_DIR, "dungeons.json"))}
     spec_lookup = commonUtils.load_json(os.path.join(commonUtils.LOOKUP_DIR, "specs.json"))
 
-    # earlier tags are kept: a talent that drops out of this week's builds can return
-    tags = dict(old)
-    work = []  # (spec name, [(spell_id, name, description, desc_hash)])
+    # tags depend only on the description, so a talent shared by several specs is asked once
+    pending = {}  # spell_id -> (name, description, desc_hash)
     conn = databaseConnector.get_connection()
     try:
         cursor = conn.cursor()
@@ -288,54 +320,47 @@ def main(max_minutes, dry_run, only_spec):
             if not os.path.exists(os.path.join(commonUtils.LOOKUP_DIR, "talents", f"{spec_id}.json")):
                 continue
             lookup, trees = spec_trees(conn, cursor, int(spec_id), season, dungeon_ids)
-            spec_name = f'{lookup.get("specName", "")} {lookup.get("className", "")}'.strip()
-            pending = []
-            for sid, name in sorted(diff_talents(trees, lookup["nodes"]).items()):
+            for sid, name in diff_talents(trees, lookup["nodes"]).items():
                 desc = text.render(sid)[:DESC_MAX_CHARS]
                 h = hashlib.sha1(f"{PROMPT_VERSION}|{desc}".encode("utf-8")).hexdigest()[:16]
                 cached = old.get(str(sid))
                 if not (cached and cached.get("desc_hash") == h):
-                    pending.append((sid, name, desc, h))
-            if pending:
-                work.append((spec_name, pending))
+                    pending[sid] = (name, desc, h)
     finally:
         conn.close()
 
-    tagged = 0
-    logged = {}
-    batches = [(spec, items[i:i + BATCH_SIZE]) for spec, items in work for i in range(0, len(items), BATCH_SIZE)]
-    for n, (spec, batch) in enumerate(batches):
-        if time.monotonic() - started > max_minutes * 60:
-            left = sum(len(b) for _s, b in batches[n:])
-            print(f"time box of {max_minutes} min reached; {left} talents stay untagged until next run")
-            break
-        prompt = build_prompt(spec, [(sid, name, desc) for sid, name, desc, _h in batch])
-        if dry_run:
-            print(prompt)
-            continue
-        answer = ask_model(prompt, [(sid, name, desc) for sid, name, desc, _h in batch])
-        for sid, name, _desc, h in batch:
-            if sid not in answer:
-                print(f"  untagged {spec} {sid} {name}")
-                continue
-            if logged.get(spec, 0) < LOG_REASONS:
-                logged[spec] = logged.get(spec, 0) + 1
-                print(f"  {spec} / {name}: {answer[sid][0]} ({answer[sid][1]})")
-            tags[str(sid)] = {"tags": answer[sid][0], "name": name, "desc_hash": h, "model": MODEL,
-                              "tagged_at": datetime.now(timezone.utc).strftime("%Y-%m-%d")}
-            tagged += 1
-        print(f"  {spec}: tagged {tagged} so far, {time.monotonic() - started:.0f}s")
+    print(f"{len(pending)} talents to tag")
     if dry_run:
+        for sid, (name, desc, _h) in list(pending.items())[:3]:
+            print(f"--- {sid} {name}\n{build_prompt(desc)}")
         return
-    with open(TAGS_PATH, "w", encoding="utf-8") as f:
-        json.dump(dict(sorted(tags.items(), key=lambda kv: int(kv[0]))), f, indent=1, ensure_ascii=False)
+    # earlier tags are kept: a talent that drops out of this week's builds can return
+    tags = dict(old)
+    tagged = 0
+    for n, (sid, (name, desc, h)) in enumerate(sorted(pending.items())):
+        if time.monotonic() - started > max_minutes * 60:
+            print(f"time box of {max_minutes} min reached; {len(pending) - n} talents stay untagged until next run")
+            break
+        result = tag_talent(sid, desc)
+        if result is None:
+            print(f"  untagged {sid} {name}: no usable answer")
+            continue
+        found, major, reason = result
+        tags[str(sid)] = {"tags": found, "impact": "major" if major else "minor", "name": name,
+                          "desc_hash": h, "model": MODEL,
+                          "tagged_at": datetime.now(timezone.utc).strftime("%Y-%m-%d")}
+        tagged += 1
+        print(f"  {name}: {found} {'major' if major else 'minor'} ({reason}) [{time.monotonic() - started:.0f}s]")
+        if tagged % SAVE_EVERY == 0:
+            save(tags)
+    save(tags)
     print(f"talent tags: {len(tags)} talents ({tagged} new or re-tagged), written to {TAGS_PATH}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--max-minutes", type=float, default=240)
-    parser.add_argument("--dry-run", action="store_true", help="print the prompts, write nothing")
+    parser.add_argument("--max-minutes", type=float, default=300)
+    parser.add_argument("--dry-run", action="store_true", help="print a few prompts, write nothing")
     parser.add_argument("--spec", type=int, help="only this spec id (testing)")
     parser.add_argument("--eval", action="store_true", help="score the prompt against localDev/talent_tag_gold.json")
     args = parser.parse_args()
