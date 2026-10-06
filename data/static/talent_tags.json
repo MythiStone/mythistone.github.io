@@ -5,7 +5,7 @@
   ],
   "impact": "major",
   "name": "Incapacitating Roar",
-  "desc_hash": "4825c20198580a4a",
+  "desc_hash": "d995d9d607574f66",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -15,7 +15,7 @@
   ],
   "impact": "minor",
   "name": "Purge",
-  "desc_hash": "ceb38710acbfb964",
+  "desc_hash": "163b6cf6dc8d5390",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -26,7 +26,7 @@
   ],
   "impact": "minor",
   "name": "Remove Curse",
-  "desc_hash": "fcb1b2649cb629fc",
+  "desc_hash": "2424a1b27247a010",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -36,7 +36,7 @@
   ],
   "impact": "minor",
   "name": "Dispel Magic",
-  "desc_hash": "9c65e6624927f59c",
+  "desc_hash": "5cb2a6cf4627cb1c",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -46,7 +46,7 @@
   ],
   "impact": "major",
   "name": "Banish",
-  "desc_hash": "34be1f749a1236a7",
+  "desc_hash": "a324be99c06fdea5",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -56,7 +56,7 @@
   ],
   "impact": "major",
   "name": "Blessing of Protection",
-  "desc_hash": "7e6a4c635632c494",
+  "desc_hash": "437fc82ec1861c46",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -66,7 +66,7 @@
   ],
   "impact": "minor",
   "name": "Rip",
-  "desc_hash": "71417ae2c7ddd29b",
+  "desc_hash": "39808197056d49f6",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -76,7 +76,7 @@
   ],
   "impact": "major",
   "name": "Curse of Tongues",
-  "desc_hash": "6e7138b04f583182",
+  "desc_hash": "751f34efb7b52eee",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -86,18 +86,18 @@
   ],
   "impact": "major",
   "name": "Gouge",
-  "desc_hash": "1c765e14cdea5c0f",
+  "desc_hash": "5757904b064ee24d",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
  "1822": {
   "tags": [
-   "CC_HARD",
-   "SLOW"
+   "DAMAGE",
+   "CC_HARD"
   ],
   "impact": "major",
   "name": "Rake",
-  "desc_hash": "34e646f41ecf8508",
+  "desc_hash": "ddfdda9b1575e5d2",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -107,7 +107,7 @@
   ],
   "impact": "major",
   "name": "Flamestrike",
-  "desc_hash": "2821d99c2efee45b",
+  "desc_hash": "e818f4993b11b7b5",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -118,7 +118,7 @@
   ],
   "impact": "major",
   "name": "Intervene",
-  "desc_hash": "d03b5e6d95855ef7",
+  "desc_hash": "2fa9e0aadfd31557",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -129,7 +129,7 @@
   ],
   "impact": "major",
   "name": "Intimidating Shout",
-  "desc_hash": "7f986c36e63a9344",
+  "desc_hash": "bd337b25e550463c",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -139,7 +139,7 @@
   ],
   "impact": "minor",
   "name": "Numbing Poison",
-  "desc_hash": "62b6c6beb3eafda9",
+  "desc_hash": "9ce5b35c8c2fde9d",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -148,19 +148,20 @@
    "SLOW",
    "DISPEL"
   ],
-  "impact": "major",
+  "impact": "minor",
   "name": "Shiv",
-  "desc_hash": "922fdc81c029d0c7",
+  "desc_hash": "7c7ca4a5b58370c2",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
  "6353": {
   "tags": [
+   "SINGLE_TARGET",
    "DAMAGE"
   ],
   "impact": "minor",
   "name": "Soul Fire",
-  "desc_hash": "b043d9efba690b2c",
+  "desc_hash": "60a3130e63928314",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -170,7 +171,7 @@
   ],
   "impact": "major",
   "name": "Psychic Scream",
-  "desc_hash": "372b436c3190c5b1",
+  "desc_hash": "8d28be778b9266e9",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -180,7 +181,7 @@
   ],
   "impact": "major",
   "name": "Shackle Horror",
-  "desc_hash": "9bcc61e0784ccc01",
+  "desc_hash": "7d3e523ea2a24eaa",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
@@ -191,7 +192,7 @@
   ],
   "impact": "major",
   "name": "Piercing Howl",
-  "desc_hash": "15547fc925c31bb4",
+  "desc_hash": "1e3723fb1363bef9",
   "model": "qwen2.5:14b-instruct",
   "tagged_at": "2026-10-06"
  },
