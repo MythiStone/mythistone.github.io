@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>{% if admin %}Talent Tags Admin{% else %}Talent Tags: Help Name Mythic+ Builds{% endif %} | MythiStone</title>
+  <meta name="description"
+    content="See the playstyle tags behind MythiStone's Mythic+ build names for every spec, and suggest better ones when a build name looks wrong.">
+  {% if admin %}
+  <meta name="robots" content="noindex, nofollow">
+  {% else %}
+  <link rel="canonical" href="https://mythistone.com/pages/talent-tags">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="MythiStone">
+  <meta property="og:url" content="https://mythistone.com/pages/talent-tags">
+  <meta property="og:title" content="Talent Tags: Help Name Mythic+ Builds | MythiStone">
+  <meta property="og:description" content="The tags behind MythiStone's build names, per spec. Spot a wrong one and suggest a fix.">
+  <meta property="og:locale" content="en_US">
+  {% endif %}
+  <meta name="theme-color" content="#1a202c">
+  <meta name="apple-mobile-web-app-title" content="MythiStone" />
+  {% include "header_imports.html" %}
+  <link rel="stylesheet" href="/assets/css/talent-tags.css?v={{ generated_at | int }}">
+</head>
+
+<body class="g-sidenav-show g-sidenav-show-right">
+  {% include "sidenav.html" %}
+  <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg">
+    {% include "navbar.html" %}
+    {% include "notifications.html" %}
+    {% include "trends_bar.html" %}
+
+    <div class="container-fluid py-2 mx-3 w-auto">
+      <div class="row">
+        <div class="ms-3 mb-3">
+          {% if admin %}
+          <h1 class="mb-0 h4 font-weight-bolder">Talent tags admin</h1>
+          <p class="mb-0">Import player suggestions, re-check overrides whose talent changed, and keep the gold labels for the tagger's eval. Nothing is written to disk: export and paste the files.</p>
+          {% else %}
+          <h1 class="mb-0 h4 font-weight-bolder">Talent tags</h1>
+          <p class="mb-0">
+            Build names like "More AoE, Less Survivability" come from these tags: each talent a build adds or drops
+            is tagged by what it does, and major talents name the build. The tags are written by a language model
+            from the talent's description, so some are wrong. Pick your spec, fix the ones you disagree with, then
+            press <strong>Save</strong> to send them to us.
+          </p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12 mb-4">
+          <div class="card">
+            <div class="card-body p-3">
+              <div class="row g-2 align-items-end tg-toolbar">
+                <div class="col-12 col-md-4">
+                  <label class="form-label text-xs opacity-7 mb-1" for="tg-spec">Spec</label>
+                  <select id="tg-spec" class="selectpicker form-control" data-style="btn-outline-primary" data-width="100%" data-live-search="true"></select>
+                </div>
+                <div class="col-12 col-md-5">
+                  <label class="form-label text-xs opacity-7 mb-1" for="tg-filter">Filter</label>
+                  <input id="tg-filter" type="search" class="form-control" placeholder="Talent name or description" autocomplete="off">
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="form-label text-xs opacity-7 mb-1" for="tg-view">Show</label>
+                  <select id="tg-view" class="selectpicker form-control" data-style="btn-outline-primary" data-width="100%">
+                    <option value="all">All talents</option>
+                    <option value="changed">{% if admin %}Edited by me{% else %}My suggestions{% endif %}</option>
+                    {% if admin %}
+                    <option value="suggested">Imported suggestions</option>
+                    <option value="stale">Overrides to re-check</option>
+                    <option value="overrides">All overrides</option>
+                    <option value="gold">Gold labels (this spec)</option>
+                    {% endif %}
+                  </select>
+                </div>
+              </div>
+              <div class="tg-actions-row">
+                <p class="tg-legend text-sm mb-0">
+                  <span class="tg-tag is-current tg-legend-chip">Ringed</span> is what the spec pages use now,
+                  <span class="tg-tag tg-legend-chip is-on">filled</span> is your pick (at most 2 tags).
+                  <strong>Major</strong> talents name builds, <strong>minor</strong> ones only when nothing major changed.
+                </p>
+                <div class="tg-actions">
+                  <span class="tg-count text-sm" id="tg-count"></span>
+                  <button type="button" class="btn btn-sm btn-outline-secondary mb-0" id="tg-clear">{% if admin %}Discard draft{% else %}Clear my suggestions{% endif %}</button>
+                  {% if admin %}
+                  <button type="button" class="btn btn-sm btn-outline-primary mb-0" id="tg-export-gold">Export gold</button>
+                  <button type="button" class="btn btn-sm btn-primary mb-0" id="tg-export-overrides">Export overrides</button>
+                  {% else %}
+                  <button type="button" class="btn btn-sm btn-primary mb-0" id="tg-save">Save</button>
+                  {% endif %}
+                </div>
+              </div>
+              {% if admin %}
+              <details class="tg-import" id="tg-import-box">
+                <summary>Import suggestions <span class="text-sm tg-muted" id="tg-import-count"></span></summary>
+                <textarea id="tg-import-json" class="tg-mono" rows="5" placeholder="Paste one or more suggestion JSONs from players"></textarea>
+                <div class="tg-import-row">
+                  <input id="tg-import-source" class="form-control form-control-sm" placeholder="Source, e.g. github #12 or discord @name">
+                  <button type="button" class="btn btn-sm btn-primary mb-0" id="tg-import">Import</button>
+                  <span class="text-sm" id="tg-import-msg" role="status"></span>
+                </div>
+              </details>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12 mb-4">
+          <div id="tg-list" class="tg-list" aria-live="polite">
+            <p class="text-sm tg-muted">Loading talents...</p>
+          </div>
+        </div>
+      </div>
+
+      {% include "footer.html" %}
+    </div>
+  </main>
+
+  {# data-no-deep-link: the modal's content is built on demand, so a #tg-modal link would reopen it empty #}
+  <div class="modal fade" id="tg-modal" tabindex="-1" aria-labelledby="tg-modal-title" aria-hidden="true" data-no-deep-link>
+    <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
+      <div class="modal-content card">
+        <div class="modal-header">
+          <h5 class="modal-title" id="tg-modal-title"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-sm" id="tg-modal-help"></p>
+          {% if not admin %}
+          <label class="tg-field tg-note">
+            <span>Note (optional)</span>
+            <input id="tg-note" class="form-control form-control-sm" maxlength="300" placeholder="Why these tags? Anything we should know?">
+          </label>
+          {% endif %}
+          <textarea id="tg-modal-json" class="tg-mono" rows="14" readonly></textarea>
+        </div>
+        <div class="modal-footer">
+          <span class="text-sm me-auto" id="tg-copied" role="status"></span>
+          <button type="button" class="btn btn-sm btn-outline-secondary mb-0" id="tg-copy">Copy</button>
+          {% if not admin %}
+          <a class="btn btn-sm btn-outline-primary mb-0" id="tg-github" target="_blank" rel="noopener">Open GitHub issue</a>
+          <a class="btn btn-sm btn-primary mb-0" id="tg-discord" target="_blank" rel="noopener">Send on Discord</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% include "right_aside.html" %}
+  {% include "fixed_plugin.html" %}
+  {% include "javascript_imports.html" %}
+
+  {% if admin %}
+  {# local only, never deployed: no consent banner to gate it #}
+  <script>const whTooltips = { colorLinks: true, iconizeLinks: false, renameLinks: false };</script>
+  <script src="https://wow.zamimg.com/widgets/power.js"></script>
+  {% else %}
+  <!-- Wowhead tooltips (Klaro consent-gated, same as spec/item pages) -->
+  <script type="text/plain" data-type="application/javascript" data-name="wowhead"
+    data-src='https://wow.zamimg.com/widgets/power.js'></script>
+  {% endif %}
+  <script>
+    window.TALENT_TAGS_DATA_URL = {{ data_url | tojson }};
+    window.TALENT_TAGS_ADMIN = {{ 'true' if admin else 'false' }};
+  </script>
+  <script src="/assets/js/talent-tags.js?v={{ generated_at | int }}"></script>
+</body>
+
+</html>

@@ -2369,6 +2369,7 @@
                   {% endfor %}
                   {% if bp.other_share >= 1 %}<div class="tt-build-other">Other builds: {{ '{:.0f}'.format(bp.other_share) }}% of runs, each too rare to list</div>{% endif %}
                   {% if bp.low_coverage %}<div class="tt-build-other">No dominant build: players spread across many small variations.</div>{% endif %}
+                  <a class="tt-build-other tt-build-feedback" href="/pages/talent-tags?spec={{ spec_id }}">Build name look wrong? Help improve it</a>
                 </div>
               </div>
               <div class="col-12 col-xl-8">

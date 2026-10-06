@@ -1035,6 +1035,8 @@ a.item-source-badge:hover {
 .tt-diff-chip.is-swap img { border-color: var(--mythi-text-info); }
 .tt-diff-chip.is-swap .tt-diff-sign { color: var(--mythi-text-info); }
 .tt-build-other { font-size: 0.72rem; color: var(--mythi-text-muted); }
+.tt-build-feedback { text-decoration: underline; margin-top: 0.25rem; }
+.tt-build-feedback:hover { color: var(--bs-body-color); }
 
 .tt-build-variants { display: flex; flex-direction: column; gap: 0.4rem; margin-left: 0.75rem; padding-left: 0.65rem; border-left: 2px solid var(--bs-primary); }
 .tt-build-variants[hidden] { display: none; }

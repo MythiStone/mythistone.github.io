@@ -24,6 +24,9 @@ NAMESPACE = (
 )
 OUT_PATH = Path("data") / "static" / "spells.json"
 ICON_DIR = Path("data") / "icons"
+TALENT_TAGS_PATH = Path("data") / "static" / "talent_tags.json"
+TALENT_DIR = Path("data") / "static" / "talents"
+MENTION_SPELLS_PATH = Path("data") / "static" / "talent_mention_spells.json"
 
 
 # Simple retry helper
@@ -88,20 +91,22 @@ def fetch_spell_icon(spell_id: int, headers: Dict[str, str]) -> Optional[str]:
     return icon_filename
 
 
-def process_spell_ids(spell_ids: List[int]):
-    if not spell_ids:
-        print("No spell IDs provided.")
-        return
-
+def auth_headers() -> Dict[str, str]:
     client_id = os.environ.get("BLIZ_CLIENT_ID")
     client_secret = os.environ.get("BLIZ_CLIENT_SECRET")
     if not client_id or not client_secret:
         raise RuntimeError(
             "BLIZ_CLIENT_ID and BLIZ_CLIENT_SECRET must be set in environment"
         )
+    return {"Authorization": f"Bearer {get_access_token(client_id, client_secret)}"}
 
-    token = get_access_token(client_id, client_secret)
-    headers = {"Authorization": f"Bearer {token}"}
+
+def process_spell_ids(spell_ids: List[int]):
+    if not spell_ids:
+        print("No spell IDs provided.")
+        return
+
+    headers = auth_headers()
 
     out: Dict[str, Any] = {}
     total = len(spell_ids)
@@ -167,6 +172,41 @@ def process_spell_ids(spell_ids: List[int]):
     print(f"Wrote {len(out)} spells to {OUT_PATH}")
 
 
+def process_talent_mentions():
+    """Icons for the abilities talent descriptions mention (tagTalents.py writes them
+    to talent_tags.json as "mentions"), for the talent tags page. Talents already have
+    an icon in their talent lookup, so only other spells (Death Coil, Crusader Strike)
+    are fetched, each once. They go to their own file: spells.json feeds the routes
+    and VODs spell filters, which list every spell in it."""
+    tags = json.loads(TALENT_TAGS_PATH.read_text(encoding="utf-8"))
+    talent_ids = set()
+    for path in TALENT_DIR.glob("*.json"):
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        for node in doc["nodes"].values():
+            for e in node.get("entries") or []:
+                if e.get("spellId"):
+                    talent_ids.add(int(e["spellId"]))
+    wanted = {m["id"] for entry in tags.values() for m in entry.get("mentions", []) if m["id"] not in talent_ids}
+
+    known = json.loads(MENTION_SPELLS_PATH.read_text(encoding="utf-8")) if MENTION_SPELLS_PATH.exists() else {}
+    out = {sid: e for sid, e in known.items()
+           if int(sid) in wanted and e.get("icon") and (ICON_DIR / e["icon"]).exists()}
+    todo = sorted(i for i in wanted if str(i) not in out)
+    print(f"talent mentions: {len(wanted)} non-talent spells, {len(todo)} to fetch")
+    if todo:
+        headers = auth_headers()
+        for spell_id in todo:
+            icon = fetch_spell_icon(spell_id, headers)
+            if icon:
+                out[str(spell_id)] = {"icon": icon}
+            else:
+                print(f"  no icon for spell {spell_id}")
+            time.sleep(0.05)
+    MENTION_SPELLS_PATH.write_text(
+        json.dumps(dict(sorted(out.items(), key=lambda kv: int(kv[0]))), indent=1) + "\n", encoding="utf-8")
+    print(f"Wrote {len(out)} mention icons to {MENTION_SPELLS_PATH}")
+
+
 def main():
     # initialize DB pool (matches your other scripts)
     init_connection_pool(
@@ -182,11 +222,12 @@ def main():
         cursor = conn.cursor()
         ids = fetch_distinct_spell_ids(conn, cursor)
 
-    if not ids:
-        print("fetch_distinct_spell_ids returned no rows. Nothing to do.")
-        return
-
-    process_spell_ids(ids)
+    if ids:
+        process_spell_ids(ids)
+    else:
+        print("fetch_distinct_spell_ids returned no rows. No route spells to fetch.")
+    # runs after tagTalents.py in getStaticData.yml, so this week's mentions are in
+    process_talent_mentions()
 
 
 if __name__ == "__main__":

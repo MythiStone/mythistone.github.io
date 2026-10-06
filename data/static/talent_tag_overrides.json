@@ -1,1 +1,6 @@
-{}
+{
+ "414664": {"name": "Mass Invisibility", "tags": ["MOVEMENT"], "impact": "major", "version": "cd5f8045d6557371", "source": "import", "reviewed_at": "2026-10-06",
+  "desc": "You and your allies within 40 yards instantly become invisible for 12 sec. Taking any action will cancel the effect. Does not affect allies in combat."},
+ "1270872": {"name": "Captured Thoughts", "tags": ["DAMAGE"], "impact": "major", "version": "4b92fde38290e07c", "source": "admin", "reviewed_at": "2026-10-06",
+  "desc": "The duration of Clearcasting is increased by 10 sec."}
+}

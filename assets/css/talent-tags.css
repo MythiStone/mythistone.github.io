@@ -1,0 +1,319 @@
+/* Talent tags page (templates/talent_tags.html, assets/js/talent-tags.js). */
+
+/* same look as the items page search box, so it lines up with the selectpickers */
+#tg-filter.form-control {
+  height: 38px;
+  padding: 0.5rem 1rem;
+  line-height: 1.4;
+  border: 1px solid var(--bs-primary);
+  border-radius: 0.375rem;
+  color: var(--bs-body-color);
+}
+
+#tg-filter.form-control:focus {
+  border-color: var(--bs-primary);
+  box-shadow: none;
+}
+
+#tg-filter.form-control::placeholder {
+  color: var(--mythi-text-muted);
+  opacity: 1;
+}
+
+.tg-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--mythi-border-subtle);
+}
+
+.tg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+.tg-legend {
+  flex: 1 1 22rem;
+  color: var(--mythi-text-muted);
+}
+
+.tg-muted {
+  color: var(--mythi-text-muted);
+}
+
+.tg-warn {
+  color: var(--mythi-text-warning);
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
+
+.tg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.tg-row {
+  padding: 0.75rem 1rem;
+  border-left: 4px solid transparent;
+}
+
+.tg-row.is-edited {
+  border-left-color: var(--mythi-text-info);
+}
+
+.tg-row.is-decided {
+  border-left-color: var(--mythi-text-success);
+}
+
+.tg-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tg-head img {
+  border-radius: 6px;
+}
+
+.tg-name {
+  font-weight: 600;
+  color: var(--bs-body-color);
+}
+
+.tg-sid {
+  font-size: 0.7rem;
+  color: var(--mythi-text-muted);
+}
+
+.tg-reset {
+  margin-left: auto;
+}
+
+/* labelled rows: current tags, current impact, then the player's own pick */
+.tg-facts {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  column-gap: 0.75rem;
+  row-gap: 0.4rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.tg-fact-label {
+  color: var(--mythi-text-muted);
+}
+
+.tg-fact-value {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+
+.tg-desc {
+  margin: 0.4rem 0;
+  font-size: 0.85rem;
+}
+
+.tg-mentions {
+  font-size: 0.78rem;
+  margin-bottom: 0.4rem;
+}
+
+.tg-mentions summary {
+  cursor: pointer;
+  color: var(--mythi-text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.tg-mention {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  background: var(--mythi-surface-sunken);
+  margin-bottom: 0.25rem;
+}
+
+.tg-mention img {
+  border-radius: 4px;
+  flex: none;
+  margin-top: 0.1rem;
+}
+
+.tg-mention-name {
+  font-weight: 600;
+  color: var(--bs-body-color);
+}
+
+.tg-mention-desc {
+  color: var(--mythi-text-muted);
+}
+
+.tg-chip {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  background: var(--mythi-chip-bg);
+}
+
+.tg-chip.is-empty {
+  color: var(--mythi-text-muted);
+  font-style: italic;
+}
+
+.tg-tag {
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--mythi-border-subtle);
+  background: transparent;
+  color: var(--bs-body-color);
+  cursor: pointer;
+}
+
+.tg-tag:hover {
+  background: var(--mythi-hover-bg);
+}
+
+.tg-tag[aria-pressed="true"],
+.tg-legend-chip.is-on {
+  background: var(--mythi-text-info);
+  border-color: var(--mythi-text-info);
+  color: #fff;
+}
+
+.tg-legend-chip {
+  display: inline-block;
+  cursor: default;
+  margin: 0 0.2rem;
+}
+
+/* what the spec pages use now: a ring that stays put while the fill (the pick) moves */
+.tg-tag.is-current {
+  box-shadow: 0 0 0 2px var(--bs-body-bg), 0 0 0 4px var(--bs-primary);
+}
+
+.tg-mono {
+  width: 100%;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.75rem;
+  background: var(--mythi-surface-sunken);
+  color: var(--bs-body-color);
+  border: 1px solid var(--mythi-border-subtle);
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+}
+
+.tg-note {
+  margin-bottom: 0.6rem;
+}
+
+/* admin mode */
+.tg-import {
+  margin-top: 0.75rem;
+}
+
+.tg-import summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tg-import-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.4rem;
+}
+
+.tg-import-row input {
+  max-width: 22rem;
+}
+
+.tg-box {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  background: var(--mythi-surface-sunken);
+  margin: 0.3rem 0;
+}
+
+.tg-box.is-warn {
+  border-left: 3px solid var(--mythi-text-warning);
+}
+
+.tg-box.is-info {
+  border-left: 3px solid var(--mythi-text-info);
+}
+
+.tg-sub {
+  font-size: 0.75rem;
+  color: var(--mythi-text-muted);
+}
+
+.tg-diff {
+  margin-top: 0.25rem;
+  line-height: 1.6;
+}
+
+.tg-diff .is-del {
+  color: var(--mythi-text-danger);
+  text-decoration: line-through;
+}
+
+.tg-diff .is-ins {
+  color: var(--mythi-text-success);
+  font-weight: 600;
+}
+
+.tg-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.tg-decision {
+  color: var(--mythi-text-success);
+  font-weight: 600;
+}
+
+.tg-gold {
+  margin: 0 0 0 auto;
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.tg-use {
+  padding: 0 0.5rem;
+  margin-left: 0.3rem;
+}
+
+@media (max-width: 575.98px) {
+  .tg-actions {
+    margin-left: 0;
+  }
+
+  .tg-facts {
+    grid-template-columns: 1fr;
+    row-gap: 0.15rem;
+  }
+}

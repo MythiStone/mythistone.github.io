@@ -121,6 +121,32 @@ half-populated schema.
     The season id these pages render against comes from `data/static/seasonInfo.json`
     (`commonUtils.current_season_id()`), not the Blizzard API.
 
+## Talent tags admin (overrides and gold labels)
+
+`buildTalentTagAdmin.py` builds the admin version of the public talent tags page (no DB needed,
+fetching the wago.tools tables takes about a minute):
+
+```bash
+python backend_scripts/localDev/buildTalentTagAdmin.py
+python -m http.server 8099 --bind 127.0.0.1
+```
+
+Open `http://127.0.0.1:8099/pages/admin/talent-tags.html?spec=252`.
+
+- **Import suggestions:** paste one or more players' suggestion JSONs (a whole GitHub issue body
+  works), name the source (`github #12`), Import. The "Imported suggestions" view lists them next to
+  the model tags and any override. "Use" copies a suggestion into the editor, "Accept as override"
+  marks the row's value for export, "Dismiss suggestions" drops them.
+- **Overrides to re-check:** overrides whose talent text changed since review, with the old text vs
+  the current one. Confirm (keeps the tags, stamps the current version) or remove.
+- **Gold labels:** tick "gold" on a row to label it for the current spec (`tagTalents.py --eval`).
+- **Export overrides** / **Export gold** show the whole file to paste over
+  `data/static/talent_tag_overrides.json` / `backend_scripts/localDev/talent_tag_gold*.json`.
+
+Edits stay in the browser until "Discard draft". `--tags <file>` points the build at another
+tags file. The public page is `python backend_scripts/generateTalentTagsPage.py`
+(`/pages/talent-tags.html`), which takes the same `--tags`.
+
 ## Teardown
 
 ```bash

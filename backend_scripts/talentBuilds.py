@@ -474,6 +474,7 @@ def _display(cluster, build_id, src, lead_key):
         "merged": len(cluster["members"]) - 1,
         "code": src["code"],
         "picks": _picks(src["core"], src["cls"]),
-        "diff": [] if cluster["key"] == lead_key else diff_nodes(cluster["key"], lead_key),
+        # no lead when no build reached BUILD_MIN_RUNS but the top-50 one is still listed
+        "diff": [] if lead_key is None or cluster["key"] == lead_key else diff_nodes(cluster["key"], lead_key),
         "flex": cluster["flex"],
     }

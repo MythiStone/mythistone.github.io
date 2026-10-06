@@ -23,6 +23,7 @@ on:
       - 'backend_scripts/generateConsumablePages.py'
       - 'backend_scripts/generateBlogPage.py'
       - 'backend_scripts/generateLegalPages.py'
+      - 'backend_scripts/generateTalentTagsPage.py'
       - 'backend_scripts/generateDungeonPages.py'
       - 'backend_scripts/fetchHotfixes.py'
       - 'backend_scripts/generateSearchIndex.py'
@@ -530,6 +531,13 @@ jobs:
           python backend_scripts/generateSpecPages.py \
             --template templates/spec_page.html \
             --output_dir classes
+
+      # Talent tags page: the tags behind build names, where players suggest fixes (no DB)
+      - name: Generate Talent Tags page
+        run: |
+          python backend_scripts/generateTalentTagsPage.py \
+            --template templates/talent_tags.html \
+            --output_dir pages
 
       - name: Generate Dungeon HTML pages
         env:

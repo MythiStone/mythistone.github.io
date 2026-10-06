@@ -1,5 +1,5 @@
-{
- "_about": "Hand-labelled tags for tagTalents.py --eval (Unholy Death Knight, spec 252). Scores the prompt; not used for pages.",
+[{
+ "_about": "Hand-labelled tags for tagTalents.py --eval (Unholy Death Knight, spec 252), built with localDev/buildTagGoldAdmin.py. Scores the prompt, not used for pages. Never use these talents as prompt examples.",
  "spec": 252,
  "tags": {
   "221562": {"name": "Asphyxiate", "tags": ["CC_HARD"]},
@@ -10,7 +10,7 @@
   "378848": {"name": "Coldthirst", "tags": ["INTERRUPT"]},
   "1266818": {"name": "Death Defiance", "tags": ["SURVIVABILITY","SELF_HEALING"]},
   "1266819": {"name": "Death Notes", "tags": ["BATTLE_REZ"]},
-  "48743": {"name": "Death Pact", "tags": ["SURVIVABILITY","SELF_HEALING"]},
+  "48743": {"name": "Death Pact", "tags": ["SELF_HEALING"]},
   "276079": {"name": "Death's Reach", "tags": ["UTILITY"]},
   "392566": {"name": "Enfeeble", "tags": ["SLOW", "SURVIVABILITY"]},
   "391571": {"name": "Gloom Ward", "tags": ["SURVIVABILITY"]},
@@ -43,4 +43,28 @@
   "343294": {"name": "Soul Reaper", "tags": ["EXECUTE"]},
   "1241858": {"name": "Unholy Devotion", "tags": ["PET_DAMAGE"]}
  }
+},
+{
+ "_about": "Hand-labelled tags for tagTalents.py --eval (Frost Mage, spec 64), built with localDev/buildTagGoldAdmin.py. Scores the prompt, not used for pages. Never use these talents as prompt examples.",
+ "spec": 64,
+ "tags": {
+  "30449": {"name": "Spellsteal", "tags": ["UTILITY"], "impact": "major"},
+  "414659": {"name": "Ice Cold", "tags": ["UTILITY"]},
+  "1265517": {"name": "Permafrost Bauble", "tags": ["SURVIVABILITY"]},
+  "386763": {"name": "Freezing Cold", "tags": ["ROOT"]},
+  "157997": {"name": "Ice Nova", "tags": ["ROOT"]},
+  "113724": {"name": "Ring of Frost", "tags": ["SLOW","ROOT"]},
+  "383121": {"name": "Mass Polymorph", "tags": ["CC_SOFT"]},
+  "455428": {"name": "Barrier Diffusion", "tags": ["SURVIVABILITY"]},
+  "414664": {"name": "Mass Invisibility", "tags": ["UTILITY"]},
+  "1244031": {"name": "Spatial Manipulation", "tags": ["MOVEMENT"]},
+  "1270829": {"name": "Reflection", "tags": ["MOVEMENT"]},
+  "382268": {"name": "Flow of Time", "tags": ["MOVEMENT"]},
+  "382490": {"name": "Tome of Antonidas", "tags": ["DAMAGE"]},
+  "386828": {"name": "Energized Barriers", "tags": ["MOVEMENT"]},
+  "342249": {"name": "Master of Time", "tags": ["SURVIVABILITY"]},
+  "382297": {"name": "Quick Witted", "tags": ["INTERRUPT"]},
+  "212653": {"name": "Shimmer", "tags": ["MOVEMENT"]}
+ }
 }
+]

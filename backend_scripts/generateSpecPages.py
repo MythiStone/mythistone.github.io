@@ -514,28 +514,32 @@ def choice_spell_ids(nodes):
 
 def load_talent_tags():
     """{spellId: (tags, major)} from tagTalents.py's weekly data/static/talent_tags.json,
-    with the hand-maintained talent_tag_overrides.json on top. An override is a
-    tag list (counted as major) or {"tags": [...], "major": bool}. Intentional
-    fail-soft: an untagged talent adds nothing to a build name, and a build none
-    of whose changes is tagged falls back to "Build N" / "Variant N"."""
-    tags = {}
+    with the reviewed talent_tag_overrides.json on top. Intentional fail-soft: an
+    untagged talent adds nothing to a build name, a build none of whose changes is
+    tagged falls back to "Build N" / "Variant N", and an override made for an older
+    version of its talent (tagTalents.talent_version) is skipped until re-checked
+    in the talent tags admin."""
+    tags, versions = {}, {}
     path = os.path.join(LOOKUP_DIR, "talent_tags.json")
     if os.path.exists(path):
         # tags from an older tag list (until the next run re-tags them) count for nothing
         for sid, entry in load_json(path).items():
             known = [t for t in entry["tags"] if t in talentBuilds.BUILD_TAGS]
             tags[sid] = (known, entry.get("impact", "major") == "major")
+            versions[sid] = entry.get("version")
     overrides = os.path.join(LOOKUP_DIR, "talent_tag_overrides.json")
+    stale = 0
     if os.path.exists(overrides):
         for sid, override in load_json(overrides).items():
-            if isinstance(override, dict):
-                override_tags, major = override.get("tags", []), bool(override.get("major", True))
-            else:
-                override_tags, major = override, True
-            unknown = set(override_tags) - set(talentBuilds.BUILD_TAGS)
-            if unknown:
-                raise ValueError(f"talent_tag_overrides.json: unknown tags {unknown} for spell {sid}")
-            tags[sid] = (override_tags, major)
+            unknown = set(override["tags"]) - set(talentBuilds.BUILD_TAGS)
+            if unknown or override["impact"] not in ("major", "minor") or not override["version"]:
+                raise ValueError(f"talent_tag_overrides.json: bad override for spell {sid}: {override}")
+            if override["version"] != versions.get(sid):
+                stale += 1
+                continue
+            tags[sid] = (override["tags"], override["impact"] == "major")
+    if stale:
+        print(f"talent tag overrides: {stale} skipped, their talent changed since review")
     return tags
 
 

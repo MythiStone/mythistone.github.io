@@ -144,18 +144,6 @@ jobs:
         run: |
           python backend_scripts/fetchNpcIcons.py
 
-      - name: Fetch spell data
-        env:
-          BLIZ_CLIENT_ID:     ${{ secrets.BLIZ_CLIENT_ID }}
-          BLIZ_CLIENT_SECRET: ${{ secrets.BLIZ_CLIENT_SECRET }}
-          DATABASE_HOST: ${{secrets.DATABASE_HOST}}  
-          DATABASE_USER: ${{secrets.DATABASE_USER}} 
-          DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORT}} 
-          DATABASE_NAME: ${{secrets.DATABASE_NAME}} 
-          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
-        run: |
-          python backend_scripts/fetchSpellInfo.py
-
       - name: Fetch commodity prices
         env:
           BLIZ_CLIENT_ID:     ${{ secrets.BLIZ_CLIENT_ID }}
@@ -201,7 +189,7 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/tags > /dev/null && break; sleep 2; done
           OLLAMA_MODELS=~/.ollama/models ollama pull qwen2.5:14b-instruct
 
-      # ~30 min with per-talent voting, so only on manual runs (prompt experiments)
+      # ~30 min per gold spec with per-talent voting, so only on manual runs (prompt experiments)
       - name: Score talent tagging
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -210,6 +198,20 @@ jobs:
       - name: Tag talents
         run: |
           python backend_scripts/tagTalents.py --max-minutes 20
+
+      # Route spells plus the abilities talent descriptions mention (talent tags page).
+      # After "Tag talents", so this week's mentions get their icons.
+      - name: Fetch spell data
+        env:
+          BLIZ_CLIENT_ID:     ${{ secrets.BLIZ_CLIENT_ID }}
+          BLIZ_CLIENT_SECRET: ${{ secrets.BLIZ_CLIENT_SECRET }}
+          DATABASE_HOST: ${{secrets.DATABASE_HOST}}
+          DATABASE_USER: ${{secrets.DATABASE_USER}}
+          DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORT}}
+          DATABASE_NAME: ${{secrets.DATABASE_NAME}}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+        run: |
+          python backend_scripts/fetchSpellInfo.py
 
       - name: Clean up CSV
         run: |
