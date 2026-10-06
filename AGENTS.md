@@ -261,6 +261,74 @@ Content go-lives snap each patch's `first_seen_ts` forward to the first US reset
 `generateDashboardPage.compute_patch_annotations` exactly (keep the two in sync). Pre-season emits
 `should_build=false` without raising.
 
+### Talent tagging (build names)
+
+`tagTalents.py` (weekly, `getStaticData.yml`) tags the talents the spec page's builds differ by
+with up to two `talentBuilds.BUILD_TAGS` plus major/minor impact, using `qwen2.5:14b-instruct` on
+the runner's CPU via Ollama, three votes per talent. `talentBuilds.compose_build_name` turns them
+into "More X, Less Y", counting only major talents, so impact matters as much as tags.
+Descriptions come from wago.tools
+(`SpellText.render`). GOTCHA: wago.tools CSVs default to the newest build, which is often the PTR
+with different wording and numbers, so `fetch_table` always pins `?build=` to the live retail
+version from `/api/builds/latest` (`wow`). Values: `$s`/`$m` effect points, `$a` radius (either
+`EffectRadiusIndex` slot), `$t` tick, `$d` duration (worded as sec/min/hour), `$u` max stacks,
+`$proccooldown`, `${...}` and `$/1000;s1` arithmetic. Base points 0 (power scaled damage) and
+`$<variables>` render as X. `$@spelldesc`/`$@spelltooltip` inline the linked spell. `$?` condition
+chains are resolved per spec (`SpellText._conditions`): `cN` is the spec's
+`ChrSpecialization.OrderIndex + 1`, and `aN`/`sN` are true only for the spec's own
+`SpecializationSpells`. Optional talents, forms, glyphs and set bonuses read as absent, matching an
+untalented Wowhead tooltip. Unknown forms (`$@switch`, pet checks) keep the first branch. `render`
+therefore needs a spec id, and a talent shared by several specs is tagged once from the first
+spec's text. To check rendering, compare against `https://nether.wowhead.com/tooltip/spell/<id>`.
+
+**Talent version.** `tagTalents.talent_version(desc)` hashes the rendered text with every number
+and X masked: a damage or cooldown tweak keeps the version, new wording makes a new one (the
+mentioned abilities are not part of it). Each `talent_tags.json` entry stores `version`,
+`prompt_version`, `desc` and `mentions` (`[{id, name, desc}]` from `referenced_abilities`, turned
+into the prompt's "Abilities it mentions" block by `mentions_prompt`). The tagger re-tags a talent
+only when its version or `PROMPT_VERSION` changed, and just refreshes `desc`/`mentions` when only
+numbers moved. A talent
+waiting to be re-tagged gets its current text and version right away with `prompt_version`
+removed, so the talents page shows it even when the time box ends first and the next run still
+re-tags it. `tagTalents.py --backfill` does the same for every entry lacking text or mentions,
+without the DB or the model. Mention icons: a talent's own icon from its lookup, else
+`fetchSpellInfo.py` (its "Fetch spell data" step runs right after "Tag talents") also fetches the
+Blizzard media icon of each non-talent mentioned spell once into `data/icons/` and lists it in
+`data/static/talent_mention_spells.json`. GOTCHA: not in `spells.json`, whose every entry shows up
+in the routes and VODs spell filters. GOTCHA: bumping `PROMPT_VERSION` re-tags every talent, spread over several weekly
+runs by the 20 min time box. Build-pinned wago.tools CSVs are exported on demand and the gateway
+returns 504 now and then, so `fetch_table` retries 502/503/504 with backoff before raising.
+
+**Overrides.** `data/static/talent_tag_overrides.json` is `{spellId: {name, tags, impact, version,
+source, reviewed_at, desc}}`, `desc` being the text that was reviewed. `generateSpecPages.
+load_talent_tags` applies an override only while its `version` equals the talent's current
+`talent_tags.json` version, skipping stale ones (printed count, intentional fail-soft) so the spec
+pages fall back to the model until the override is re-checked. A malformed override raises.
+
+**Community flow.** `generateTalentTagsPage.py` (buildPages.yml, no DB) writes
+`/pages/talent-tags` and `assets/json/talent_tags_index.json` (gitignored): every tagged talent per
+spec with its desc, mentioned abilities (icon, Wowhead link, text) and current tags (valid
+override, else model). The spec page's builds dialog links to it with `?spec=<id>`. On the tag and
+impact toggles, a ring marks what the spec pages use now and the fill marks the player's pick, so
+a change shows as the fill leaving the ring. Players toggle (draft in localStorage), and Save shows a
+`{"kind": "mythistone-talent-tag-suggestions", "v": 1, "suggestions": {spellId: {name, version,
+tags, impact, was}}}` JSON with a prefilled GitHub issue link (body falls back to "paste from
+clipboard" past about 7000 URL chars) and the Discord invite. `assets/js/talent-tags.js` serves
+both this page and the admin. The modal carries `data-no-deep-link`: deep-link.js would otherwise
+put `#tg-modal` in the URL and reopen it empty on reload.
+
+**Admin review and gold.** `localDev/buildTalentTagAdmin.py` renders the same template with
+`admin=True` to `pages/admin/talent-tags.html` (local only, noindex). It holds every talent of
+every spec (per-spec text where conditions differ) and, for talents the tagger has seen, its
+`talent_tags.json` text and version, so an accepted override matches what the spec pages compare.
+It imports pasted suggestion JSONs (several at once, straight from an issue body), lists overrides
+to re-check with an old-vs-new word diff, and exports the whole overrides file and gold file as
+text to paste. A row's value is: my edit, else a stale override, else this spec's gold label, else
+current. `--eval` scores against every `backend_scripts/localDev/talent_tag_gold*.json` (each
+holds one spec object or a list of them, optional `impact` per talent), takes about 30 min per spec
+on CPU and only runs on `workflow_dispatch`. Never use a gold talent as a prompt example, or the
+score stops meaning anything.
+
 ## SimulationCraft
 
 ### Chunked checkpoint / resume
