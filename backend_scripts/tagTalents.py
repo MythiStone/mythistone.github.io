@@ -49,7 +49,9 @@ VOTE_TEMPERATURE = 0.5  # some spread between answers, or voting has nothing to 
 SAVE_EVERY = 25        # talents between checkpoints, so a killed job keeps its progress
 # Part of each talent's cache key: bump it when the prompt or tag list changes so
 # the next weekly run re-tags everything.
-PROMPT_VERSION = 3
+PROMPT_VERSION = 4
+MAX_REFERENCES = 3        # mentioned abilities whose description is added to a prompt
+REFERENCE_MAX_CHARS = 250
 GOLD_PATH = os.path.join(os.path.dirname(__file__), "localDev", "talent_tag_gold.json")
 
 TAG_HELP = {
@@ -95,6 +97,7 @@ Rules:
 - Tag the main effect. A talent that changes another ability (its cooldown, cost, range, duration or charges) gets the tag of what that ability does: a cheaper resurrect is BATTLE_REZ, a faster interrupt is INTERRUPT, a longer defensive is SURVIVABILITY.
 - Gaining or saving a resource is not a tag of its own: tag what the talent achieves, or use no tag.
 - Use 0 to {max_tags} tags. No tag is fine for a tiny or unclear effect.
+- "Abilities it mentions" only explain what a modified ability does; tag the talent itself.
 - impact is "major" for a new ability, a cooldown or an effect that clearly changes how the spec plays, and "minor" for a small passive bonus or a tweak to an existing ability.
 
 Examples:
@@ -102,7 +105,7 @@ Examples:
 
 Talent:
 {description}
-
+{references}
 Write a short reason, then the tags and the impact.
 Respond with JSON only: {{"reason": "<a few words>", "tags": ["TAG", ...], "impact": "major" or "minor"}}
 """
@@ -132,6 +135,12 @@ class SpellText:
             key = (int(r["SpellID"]), int(r["EffectIndex"]))
             self.effects[key] = float(r["EffectBasePointsF"] or 0)
             self.periods[key] = int(r["EffectAuraPeriod"] or 0)
+        self.name_ids = {}
+        for r in fetch_table("SpellName", ["ID", "Name_lang"]):
+            self.name_ids.setdefault(r["Name_lang"], []).append(int(r["ID"]))
+        # the class a player spell belongs to (NPC copies of a name have none)
+        self.class_set = {int(r["SpellID"]): int(r["SpellClassSet"])
+                          for r in fetch_table("SpellClassOptions", ["SpellID", "SpellClassSet"])}
         durations = {int(r["ID"]): int(r["Duration"]) for r in fetch_table("SpellDuration", ["ID", "Duration"])}
         self.durations = {}
         for r in fetch_table("SpellMisc", ["SpellID", "DifficultyID", "DurationIndex"]):
@@ -165,11 +174,83 @@ class SpellText:
         text = re.sub(r"\$@spell\w*?\d+", "", text)
         text = re.sub(r"\|c[0-9A-Fa-f]{8}|\|r", "", text)
         text = re.sub(r"\$[lL]([^:;]+):([^;]+);", r"\2", text)       # $lpoint:points;
-        text = re.sub(r"\$?\?[!a-zA-Z]+\d*\[", " ", text)            # conditional heads ($?s123[ or ?c3[)
+        text = re.sub(r"\$?\?[^\[\s]*\[", " ", text)                # conditional heads ($?s123[, ?c3[, $?a1&!c1[)
         text = re.sub(r"\]\s*\[[^\]]*\]", "", text).replace("]", "")  # keep the first branch
         text = re.sub(r"\$\{[^}]*\}|\$<[^>]*>", "X", text)            # formulas and variables
         text = re.sub(r"\$(\d*)([A-Za-z])(\d?)", lambda m: self._value(spell, m), text)
         return re.sub(r"\s+", " ", text).strip()
+
+
+_CLASS_SPELLS = {}
+# resources share their name with a spell ("Gain X Runic Power"), but are not abilities
+RESOURCE_NAMES = {
+    "Runic Power", "Runes", "Rage", "Mana", "Energy", "Focus", "Fury", "Pain", "Insanity",
+    "Maelstrom", "Holy Power", "Astral Power", "Lunar Power", "Chi", "Combo Points",
+    "Soul Shards", "Arcane Charges", "Essence",
+}
+_PHRASE_RE = re.compile(r"[A-Z][\w'-]*(?:[ ](?:of|the|and|[A-Z][\w'-]*))*")
+
+
+def class_spells(class_name):
+    """{talent name: spellId} over every spec's talent file of a class."""
+    if class_name not in _CLASS_SPELLS:
+        out = {}
+        talent_dir = os.path.join(commonUtils.LOOKUP_DIR, "talents")
+        for fname in sorted(os.listdir(talent_dir)):
+            doc = commonUtils.load_json(os.path.join(talent_dir, fname))
+            if doc.get("className") != class_name:
+                continue
+            for node in (doc.get("nodes") or {}).values():
+                for e in node.get("entries") or []:
+                    if e.get("name") and e.get("spellId"):
+                        out.setdefault(e["name"], int(e["spellId"]))
+        _CLASS_SPELLS[class_name] = out
+    return _CLASS_SPELLS[class_name]
+
+
+def referenced_abilities(text, description, own_name, class_name):
+    """'- Name: description' lines for abilities a talent's text mentions, so a
+    talent that modifies Anti-Magic Zone is tagged by what Anti-Magic Zone does.
+    A one-word name only counts when it is a class talent (plain capitalised words
+    like "Damage" are spell names too); longer names may be any of the class's
+    spells (SpellClassOptions class set), using the lowest such id with a
+    description. Resource names are never abilities."""
+    known = class_spells(class_name)
+    # the class's spell family: the class set most of its talents carry
+    sets = Counter(text.class_set.get(i) for i in known.values() if text.class_set.get(i))
+    family = sets.most_common(1)[0][0] if sets else None
+    found = {}
+    for phrase in _PHRASE_RE.findall(description):
+        words = phrase.split(" ")
+        # longest sub-phrase first, so "Death and Decay" wins over "Death"
+        for size in range(len(words), 0, -1):
+            hit = None
+            for start in range(len(words) - size + 1):
+                name = " ".join(words[start:start + size])
+                if (name == own_name or name in found or name in RESOURCE_NAMES
+                        or name.lower() in ("of", "the", "and")):
+                    continue
+                if name in known:
+                    hit = (name, known[name])
+                elif size > 1 and family is not None:
+                    # only this class's version of the spell: other ids are NPC or old copies
+                    ids = [i for i in sorted(text.name_ids.get(name, ()))
+                           if text.raw.get(i) and text.class_set.get(i) == family]
+                    if ids:
+                        hit = (name, ids[0])
+                if hit:
+                    break
+            if hit:
+                found[hit[0]] = hit[1]
+                break
+        if len(found) >= MAX_REFERENCES:
+            break
+    lines = []
+    for name, sid in found.items():
+        desc = text.render(sid)[:REFERENCE_MAX_CHARS]
+        if desc:
+            lines.append(f"- {name}: {desc}")
+    return ("Abilities it mentions:\n" + "\n".join(lines) + "\n") if lines else ""
 
 
 def spec_trees(conn, cursor, spec_id, season, dungeon_ids):
@@ -198,9 +279,10 @@ def diff_talents(trees, nodes):
     return out
 
 
-def build_prompt(description):
+def build_prompt(description, references=""):
     return PROMPT.format(
         max_tags=MAX_TAGS, examples=EXAMPLES, description=description or "no description",
+        references=references,
         tags="\n".join(f"- {t}: {h}" for t, h in TAG_HELP.items()),
     )
 
@@ -241,13 +323,13 @@ def ask_once(prompt, seed):
     return answer
 
 
-def tag_talent(spell_id, description):
+def tag_talent(spell_id, description, references=""):
     """(tags, major, reason) voted over up to VOTES answers, or None if the model
     gave no usable answer. A tag survives when at least two answers give it."""
     if os.environ.get("NAMER_FAKE") == "1":
         tags = list(talentBuilds.BUILD_TAGS)
         return [tags[spell_id % len(tags)]], spell_id % 2 == 0, "fake"
-    prompt = build_prompt(description)
+    prompt = build_prompt(description, references)
     answers = []
     for seed in range(VOTES):
         answer = ask_once(prompt, seed)
@@ -269,10 +351,16 @@ def tag_talent(spell_id, description):
 def evaluate(text):
     """Scores the prompt against hand labels (localDev/talent_tag_gold.json)."""
     gold = commonUtils.load_json(GOLD_PATH)
+    class_name = commonUtils.load_json(
+        os.path.join(commonUtils.LOOKUP_DIR, "talents", f"{gold['spec']}.json"))["className"]
     exact = overlap = 0
     for sid, g in gold["tags"].items():
         want = set(g["tags"])
-        result = tag_talent(int(sid), text.render(int(sid))[:DESC_MAX_CHARS])
+        desc = text.render(int(sid))[:DESC_MAX_CHARS]
+        refs = referenced_abilities(text, desc, g["name"], class_name)
+        if refs:
+            print(f"  {g['name']} mentions:\n    " + refs.strip().replace("\n", "\n    "))
+        result = tag_talent(int(sid), desc, refs)
         got, major, reason = result if result else ([], False, "no answer")
         got = set(got)
         exact += got == want
@@ -310,7 +398,7 @@ def main(max_minutes, dry_run, only_spec):
     spec_lookup = commonUtils.load_json(os.path.join(commonUtils.LOOKUP_DIR, "specs.json"))
 
     # tags depend only on the description, so a talent shared by several specs is asked once
-    pending = {}  # spell_id -> (name, description, desc_hash)
+    pending = {}  # spell_id -> (name, description, references, desc_hash)
     conn = databaseConnector.get_connection()
     try:
         cursor = conn.cursor()
@@ -321,27 +409,30 @@ def main(max_minutes, dry_run, only_spec):
                 continue
             lookup, trees = spec_trees(conn, cursor, int(spec_id), season, dungeon_ids)
             for sid, name in diff_talents(trees, lookup["nodes"]).items():
+                if sid in pending:
+                    continue
                 desc = text.render(sid)[:DESC_MAX_CHARS]
-                h = hashlib.sha1(f"{PROMPT_VERSION}|{desc}".encode("utf-8")).hexdigest()[:16]
+                refs = referenced_abilities(text, desc, name, lookup["className"])
+                h = hashlib.sha1(f"{PROMPT_VERSION}|{desc}|{refs}".encode("utf-8")).hexdigest()[:16]
                 cached = old.get(str(sid))
                 if not (cached and cached.get("desc_hash") == h):
-                    pending[sid] = (name, desc, h)
+                    pending[sid] = (name, desc, refs, h)
     finally:
         conn.close()
 
     print(f"{len(pending)} talents to tag")
     if dry_run:
-        for sid, (name, desc, _h) in list(pending.items())[:3]:
-            print(f"--- {sid} {name}\n{build_prompt(desc)}")
+        for sid, (name, desc, refs, _h) in list(pending.items())[:3]:
+            print(f"--- {sid} {name}\n{build_prompt(desc, refs)}")
         return
     # earlier tags are kept: a talent that drops out of this week's builds can return
     tags = dict(old)
     tagged = 0
-    for n, (sid, (name, desc, h)) in enumerate(sorted(pending.items())):
+    for n, (sid, (name, desc, refs, h)) in enumerate(sorted(pending.items())):
         if time.monotonic() - started > max_minutes * 60:
             print(f"time box of {max_minutes} min reached; {len(pending) - n} talents stay untagged until next run")
             break
-        result = tag_talent(sid, desc)
+        result = tag_talent(sid, desc, refs)
         if result is None:
             print(f"  untagged {sid} {name}: no usable answer")
             continue

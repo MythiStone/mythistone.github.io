@@ -4,7 +4,7 @@
  "tags": {
   "221562": {"name": "Asphyxiate", "tags": ["CC_HARD"]},
   "374383": {"name": "Assimilation", "tags": ["GROUP_SUPPORT"]},
-  "207167": {"name": "Blinding Sleet", "tags": ["CC_SOFT"]},
+  "207167": {"name": "Blinding Sleet", "tags": ["CC_SOFT", "SLOW"]},
   "374598": {"name": "Blood Draw", "tags": ["SURVIVABILITY", "SELF_HEALING"]},
   "374030": {"name": "Blood Scent", "tags": ["SELF_HEALING"]},
   "378848": {"name": "Coldthirst", "tags": ["INTERRUPT"]},
@@ -12,7 +12,7 @@
   "1266819": {"name": "Death Notes", "tags": ["BATTLE_REZ"]},
   "48743": {"name": "Death Pact", "tags": ["SURVIVABILITY","SELF_HEALING"]},
   "276079": {"name": "Death's Reach", "tags": ["UTILITY"]},
-  "392566": {"name": "Enfeeble", "tags": ["CC_SOFT", "SURVIVABILITY"]},
+  "392566": {"name": "Enfeeble", "tags": ["SLOW", "SURVIVABILITY"]},
   "391571": {"name": "Gloom Ward", "tags": ["SURVIVABILITY"]},
   "273952": {"name": "Grip of the Dead", "tags": ["SLOW"]},
   "391546": {"name": "March of Darkness", "tags": ["MOVEMENT"]},
@@ -29,7 +29,7 @@
   "444072": {"name": "A Feast of Souls", "tags": ["DAMAGE"]},
   "444074": {"name": "Horsemen's Aid", "tags": ["SURVIVABILITY"]},
   "444083": {"name": "Pact of the Apocalypse", "tags": ["SURVIVABILITY"]},
-  "1271974": {"name": "Blightfall", "tags": ["BURST", "AOE"]},
+  "1271974": {"name": "Blightfall", "tags": ["BURST"]},
   "390270": {"name": "Coil of Devastation", "tags": ["SINGLE_TARGET"]},
   "390259": {"name": "Commander of the Dead", "tags": ["PET_DAMAGE"]},
   "1290864": {"name": "Cycle of Death", "tags": ["AOE"]},
@@ -39,7 +39,7 @@
   "377592": {"name": "Morbidity", "tags": ["DAMAGE"]},
   "1241705": {"name": "Outnumber", "tags": ["PET_DAMAGE", "AOE"]},
   "377514": {"name": "Reaping", "tags": ["EXECUTE"]},
-  "1242604": {"name": "Scourging", "tags": ["AOE"]},
+  "1242604": {"name": "Scourging", "tags": ["DAMAGE"]},
   "343294": {"name": "Soul Reaper", "tags": ["EXECUTE"]},
   "1241858": {"name": "Unholy Devotion", "tags": ["PET_DAMAGE"]}
  }
