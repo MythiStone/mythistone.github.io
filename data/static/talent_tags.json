@@ -3,260 +3,299 @@
   "tags": [
    "CC_HARD"
   ],
+  "impact": "major",
   "name": "Incapacitating Roar",
-  "desc_hash": "5b186f9e47ba7192",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "4825c20198580a4a",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "370": {
   "tags": [
    "DISPEL"
   ],
+  "impact": "minor",
   "name": "Purge",
-  "desc_hash": "26467d04c8b0ab5c",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "ceb38710acbfb964",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "475": {
   "tags": [
-   "DISPEL",
-   "DAMAGE"
+   "DAMAGE",
+   "DISPEL"
   ],
+  "impact": "minor",
   "name": "Remove Curse",
-  "desc_hash": "ea4f520eba02476c",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "fcb1b2649cb629fc",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "528": {
   "tags": [
    "DISPEL"
   ],
+  "impact": "minor",
   "name": "Dispel Magic",
-  "desc_hash": "862e897d80bb6e96",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "9c65e6624927f59c",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "710": {
   "tags": [
    "CC_HARD"
   ],
+  "impact": "major",
   "name": "Banish",
-  "desc_hash": "ac8a971f01075ff7",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "34be1f749a1236a7",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "1022": {
   "tags": [
    "SURVIVABILITY"
   ],
+  "impact": "major",
   "name": "Blessing of Protection",
-  "desc_hash": "ea6cae5dc09d56dc",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "7e6a4c635632c494",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "1079": {
   "tags": [
    "DAMAGE"
   ],
+  "impact": "minor",
   "name": "Rip",
-  "desc_hash": "8a9cdd8576f12c42",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "71417ae2c7ddd29b",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "1714": {
   "tags": [
-   "CC_SOFT"
+   "INTERRUPT"
   ],
+  "impact": "major",
   "name": "Curse of Tongues",
-  "desc_hash": "2369e47cb8fce3c9",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "6e7138b04f583182",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "1776": {
   "tags": [
    "CC_HARD"
   ],
+  "impact": "major",
   "name": "Gouge",
-  "desc_hash": "5626738a5c201b7e",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "1c765e14cdea5c0f",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "1822": {
   "tags": [
-   "CC_HARD"
+   "CC_HARD",
+   "SLOW"
   ],
+  "impact": "major",
   "name": "Rake",
-  "desc_hash": "4462cf52ef95a935",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "34e646f41ecf8508",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "2120": {
   "tags": [
-   "AOE",
-   "DAMAGE"
+   "AOE"
   ],
+  "impact": "major",
   "name": "Flamestrike",
-  "desc_hash": "8e79313d956b45a8",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "2821d99c2efee45b",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "3411": {
   "tags": [
-   "MOVEMENT"
+   "SURVIVABILITY",
+   "UTILITY"
   ],
+  "impact": "major",
   "name": "Intervene",
-  "desc_hash": "de1e4e94a949f6bd",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "d03b5e6d95855ef7",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "5246": {
   "tags": [
-   "CC_HARD"
+   "CC_HARD",
+   "SLOW"
   ],
+  "impact": "major",
   "name": "Intimidating Shout",
-  "desc_hash": "bb8a9a459e332c91",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "7f986c36e63a9344",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "5761": {
-  "tags": [],
+  "tags": [
+   "SLOW"
+  ],
+  "impact": "minor",
   "name": "Numbing Poison",
-  "desc_hash": "6ef98ea8a02dbe8f",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "62b6c6beb3eafda9",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "5938": {
   "tags": [
-   "CC_SOFT"
+   "SLOW",
+   "DISPEL"
   ],
+  "impact": "major",
   "name": "Shiv",
-  "desc_hash": "fff1939dd3e77baa",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "922fdc81c029d0c7",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "6353": {
   "tags": [
    "DAMAGE"
   ],
+  "impact": "minor",
   "name": "Soul Fire",
-  "desc_hash": "d24bf75d16ce9d38",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "b043d9efba690b2c",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "8122": {
-  "tags": [],
+  "tags": [
+   "CC_SOFT"
+  ],
+  "impact": "major",
   "name": "Psychic Scream",
-  "desc_hash": "da886ae160481087",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "372b436c3190c5b1",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "9484": {
   "tags": [
    "CC_HARD"
   ],
+  "impact": "major",
   "name": "Shackle Horror",
-  "desc_hash": "6305aead23da0baa",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "9bcc61e0784ccc01",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "12323": {
   "tags": [
+   "SLOW",
    "MOVEMENT"
   ],
+  "impact": "major",
   "name": "Piercing Howl",
-  "desc_hash": "dc3d349f470af927",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "15547fc925c31bb4",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "16166": {
-  "tags": [],
+  "tags": [
+   "DAMAGE"
+  ],
+  "impact": "minor",
   "name": "Master of the Elements",
-  "desc_hash": "13b4e312b982f07d",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "b6bfaf030a1712b6",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "19801": {
   "tags": [
-   "CC_HARD"
+   "DISPEL"
   ],
+  "impact": "minor",
   "name": "Tranquilizing Shot",
-  "desc_hash": "45d1b72dc17989a2",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "3344faa699ca18c5",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "22842": {
   "tags": [
-   "SELF_HEALING",
-   "GROUP_SUPPORT"
+   "SELF_HEALING"
   ],
+  "impact": "minor",
   "name": "Frenzied Regeneration",
-  "desc_hash": "a28bae9c7bda77e6",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "335a3ff675330d69",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "24858": {
   "tags": [
    "DAMAGE",
    "SURVIVABILITY"
   ],
+  "impact": "major",
   "name": "Moonkin Form",
-  "desc_hash": "465f6336c9e30ed5",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "4efbe38e70a984c0",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "29166": {
   "tags": [
    "GROUP_SUPPORT"
   ],
+  "impact": "minor",
   "name": "Innervate",
-  "desc_hash": "ece417dea8811d86",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "48d6bcb8f09bab09",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "29725": {
   "tags": [
-   "RESOURCE"
+   "DAMAGE",
+   "UTILITY"
   ],
+  "impact": "major",
   "name": "Sudden Death",
-  "desc_hash": "ae8dc979b63f4f6f",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "8a0d1e6351df52cc",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "29838": {
   "tags": [
    "SELF_HEALING"
   ],
+  "impact": "minor",
   "name": "Second Wind",
-  "desc_hash": "a7994075d0a7d6b8",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "9d37f1b22b44f90f",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "30146": {
   "tags": [
    "PET_DAMAGE"
   ],
+  "impact": "major",
   "name": "Summon Felguard",
-  "desc_hash": "09db1a0aa1e78460",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "36366920dcd74540",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "30283": {
   "tags": [
    "CC_HARD"
   ],
+  "impact": "major",
   "name": "Shadowfury",
-  "desc_hash": "5ce498ee84847f4e",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "ea0be85c8a481fda",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "30449": {
   "tags": [
    "DISPEL"
   ],
+  "impact": "minor",
   "name": "Spellsteal",
-  "desc_hash": "adc7203ded849ee1",
-  "model": "qwen2.5:7b-instruct",
-  "tagged_at": "2026-10-05"
+  "desc_hash": "dfcec6c7882d179a",
+  "model": "qwen2.5:14b-instruct",
+  "tagged_at": "2026-10-06"
  },
  "31230": {
   "tags": [
