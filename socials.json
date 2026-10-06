@@ -1963,5 +1963,16 @@
         "persona": "hype_caster",
         "judge_score": 28.0,
         "timestamp": 1791148532173
+    },
+    "data/social/spec_popularity_tierlist_2026-10.png": {
+        "title": "Spec Popularity Tier List",
+        "post_type": "spec_popularity_tierlist",
+        "link": "https://mythistone.com/",
+        "social": "Assassination tops the tier list but sits at 10th most played. You'd think the meta chasers would know by now. Pull in five. #WoW #MythicPlus https://mythistone.com/",
+        "blog": "Assassination Rogue leads this season's spec tier list while Frost Mage anchors the bottom, based on 4.1 M tracked runs.\n\nTiers weigh how often each spec times keys, with higher keys counting for more.",
+        "post": "Assassination tops the tier list but sits at 10th most played. You'd think the meta chasers would know by now. Pull in five. #WoW #MythicPlus https://mythistone.com/",
+        "persona": "deadpan_raid_leader",
+        "judge_score": 34.0,
+        "timestamp": 1791244790432
     }
 }
