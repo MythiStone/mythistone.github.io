@@ -1985,5 +1985,16 @@
         "persona": "hype_caster",
         "judge_score": 36.0,
         "timestamp": 1791326369235
+    },
+    "data/social/spec_overview_253_2026-10.png": {
+        "title": "Beast Mastery Hunter Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Dps/Beast%20Mastery_Hunter",
+        "social": "Tier list has it in C tier. 1.1 M runs say otherwise with 88% timed. The pet tanks the boss while the tank argues in chat. Never change BM. #WoW #MythicPlus https://mythistone.com/classes/Dps/Beast%20Mastery_Hunter",
+        "blog": "1.1 M Beast Mastery Hunter keys are in the books this season. The Pack Leader hero tree leads at 99% of builds, with Dark Ranger (1%) trailing.\n\nGroups time keys with the spec 88% of the time and three-chest 6% of them. The stat priority skews toward Mastery > Crit > Haste > Versatility. The best key so far: +21 Murder Row in 31:13.932.",
+        "post": "Tier list has it in C tier. 1.1 M runs say otherwise with 88% timed. The pet tanks the boss while the tank argues in chat. Never change BM. #WoW #MythicPlus https://mythistone.com/classes/Dps/Beast%20Mastery_Hunter",
+        "persona": "pug_veteran",
+        "judge_score": 34.0,
+        "timestamp": 1791414230159
     }
 }
