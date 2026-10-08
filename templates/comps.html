@@ -46,10 +46,8 @@
 
 <body class="g-sidenav-show g-sidenav-show-right">
   {% include "sidenav.html" %}
-  <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">
-    {% include "navbar.html" %}
-    {% include "notifications.html" %}
-    {% include "trends_bar.html" %}
+  <main class="main-content position-relative border-radius-lg ">
+    {% include "top_chrome.html" %}
 
     {% set meta_badge_html = '<span class="badge meta-badge ms-2" title="Current meta comp: the strongest composition in the highest keys"><i class="material-symbols-rounded align-middle">workspace_premium</i> META</span>' %}
     {% import "_team_comp_macros.html" as tc %}

@@ -129,6 +129,10 @@ TALENT_DIFF_DROP_MAX_PCT = 20.0
 # builds) data so a minority tree never shows noisy or near-empty tables.
 HERO_SECTION_MIN_RUNS = 30       # absolute floor of 14-day appearances
 HERO_SECTION_MIN_SHARE = 0.05    # and this fraction of the spec's hero-tree runs
+# Top Players view: a hero tree gets its own top-player section payload only with
+# at least this many verified loadouts (one per player per dungeon); below it the
+# tree shows the combined top-player data instead.
+TOP_SECTION_MIN_LOADOUTS = 25
 # Hero-tree preference shifts per dungeon: a couple of tenths of a percent is
 # not a preference, so only shifts of this many points are worth a row.
 HERO_TREE_DIFF_MIN_PCT_POINTS = 5.0
@@ -620,6 +624,22 @@ def escape_raidbot_code(code):
     loadout["original"] = code
     loadout["code"] = quote_plus(code, safe="")
     return loadout
+
+
+def finalize_gear_slots(left, right, weapon, trinket, item_lookup, spec_id):
+    """Normalize converted slot lists for the template and fold the off-hand into
+    the main hand when the main hand occupies both hands."""
+    left = normalize_slot_collections(left, LEFT_ORDER)
+    right = normalize_slot_collections(right, RIGHT_ORDER)
+    weapon = normalize_slot_collections(weapon, WEAPON_SLOTS)
+    trinket = normalize_slot_collections(trinket, TRINKET_SLOTS)
+    mh = next((g for g in weapon if g["slot"] == "MAIN_HAND"), None)
+    oh = next((g for g in weapon if g["slot"] == "OFF_HAND"), None)
+    if mh and mh["entries"] and occupies_both_hands(item_lookup.get(mh["entries"][0]["id"]), spec_id):
+        mh["entries"] = mh["entries"] + (oh.get("entries", []) if oh else [])
+        if oh:
+            weapon = [g for g in weapon if g["slot"] != "OFF_HAND"]
+    return left, right, weapon, trinket
 
 
 def normalize_slot_collections(list_of_lists, slot_names):
@@ -1323,6 +1343,129 @@ def checkItemLimits(sockets, socket_lookup, socket_limits):
     return
 
 
+def loadout_hero_tree(lo, hero_node_subtree):
+    """The hero subTreeId most of a top-player loadout's hero nodes sit in, or None."""
+    if not hero_node_subtree:
+        return None
+    hits = defaultdict(int)
+    for t in lo.get("talents", []) or []:
+        node = t.get("node_id") or t.get("id")
+        if not node:
+            continue
+        st = hero_node_subtree.get(int(node))
+        if st is not None:
+            hits[st] += 1
+    return max(hits.items(), key=lambda x: x[1])[0] if hits else None
+
+
+def _top_enchant_group(slot):
+    # Top-player enchants are stored per Blizzard slot (FINGER_1, MAIN_HAND, ...);
+    # the page groups them like the DB's slot_group_map.
+    if slot in WEAPON_SLOTS:
+        return "WEAPON"
+    return MULTI_SLOT_GROUPS.get(slot, slot)
+
+
+def aggregate_top_player_gear(loadouts):
+    """Count gear, enchants and gems over top-player loadouts, in the row shapes the
+    general DB fetchers return, so the spec page's gear pipeline renders them as-is.
+
+    Returns (items_by_slot, slot_totals, enchants_by_group, sockets):
+      - items_by_slot: {slot or slot group: [{item, count, bonus{ids,count}}, ...]} sorted desc
+      - slot_totals: {slot: loadouts with an item there} (gear noise-filter denominators)
+      - enchants_by_group: {slot_group: [{id, count}, ...]}
+      - sockets: [{id, count}, ...] top 10 gems by socketed count
+    Key levels are left 0: a top-player loadout records the player's best key in that
+    dungeon, not whether it was timed, so it cannot fill "Highest Timed".
+    """
+    item_counts = defaultdict(lambda: defaultdict(int))
+    bonus_counts = defaultdict(lambda: defaultdict(int))
+    slot_totals = defaultdict(int)
+    enchant_counts = defaultdict(lambda: defaultdict(int))
+    gem_counts = defaultdict(int)
+    for lo in loadouts:
+        for it in lo.get("items", []) or []:
+            slot, iid = it.get("slot"), it.get("item_id")
+            if not slot or not iid:
+                continue
+            iid = int(iid)
+            slot_totals[slot] += 1
+            item_counts[MULTI_SLOT_GROUPS.get(slot, slot)][iid] += 1
+            if it.get("bonus_ids"):
+                bonus_counts[iid][str(it["bonus_ids"])] += 1
+        for e in lo.get("enchants", []) or []:
+            if e.get("slot_group") and e.get("enchantment_id"):
+                enchant_counts[_top_enchant_group(e["slot_group"])][int(e["enchantment_id"])] += 1
+        for g in lo.get("gems", []) or []:
+            if g.get("gem_item_id"):
+                gem_counts[int(g["gem_item_id"])] += int(g.get("usage_count") or 1)
+
+    def _ranked(cmap):
+        return sorted(cmap.items(), key=lambda x: (-x[1], x[0]))
+
+    items_by_slot = {}
+    for slot, cmap in item_counts.items():
+        rows = []
+        for iid, cnt in _ranked(cmap)[:10]:
+            bonus = max(bonus_counts[iid].items(), key=lambda x: x[1]) if bonus_counts.get(iid) else None
+            rows.append({
+                "item": iid,
+                "count": cnt,
+                "max_timed_key": 0,
+                "max_depleted_key": 0,
+                "bonus": {"ids": bonus[0], "count": bonus[1]} if bonus else None,
+            })
+        items_by_slot[slot] = rows
+    enchants_by_group = {
+        sg: [{"id": eid, "count": cnt, "max_timed_key": 0, "max_depleted_key": 0} for eid, cnt in _ranked(cmap)[:10]]
+        for sg, cmap in enchant_counts.items()
+    }
+    sockets = [
+        {"id": gid, "count": cnt, "max_timed_key": 0, "max_depleted_key": 0}
+        for gid, cnt in _ranked(gem_counts)[:10]
+    ]
+    return items_by_slot, dict(slot_totals), enchants_by_group, sockets
+
+
+def top_summary_rows(summary_section, limit=None):
+    """compute_bis_from_top_loadouts `{by_key: {key: {count}}}` -> the
+    (key, count, max_timed_key, max_depleted_key) tuples the DB fetchers return."""
+    by_key = (summary_section or {}).get("by_key", {})
+    rows = sorted(((k, v["count"], 0, 0) for k, v in by_key.items()), key=lambda r: -r[1])
+    return rows[:limit] if limit else rows
+
+
+def top_talent_pop_data(loadouts):
+    """Top-player talent usage in the `pop_data` shape build_ui_tree reads.
+
+    Nodes are keyed by node id and picked choices by entry id (falling back to spell
+    id), the same mixed keying the aggregated talent tables use.
+    """
+    n = len(loadouts)
+    counts = defaultdict(int)
+    rank_sums = defaultdict(int)
+    for lo in loadouts:
+        for t in lo.get("talents", []) or []:
+            node = t.get("node_id")
+            if not node:
+                continue
+            rank = int(t.get("node_rank") or 1)
+            keys = {int(node)}
+            choice = t.get("entry_id") or t.get("spell_id")
+            if choice:
+                keys.add(int(choice))
+            for k in keys:
+                counts[k] += 1
+                rank_sums[k] += rank
+    return {
+        "data_count": n,
+        "overall_dungeon_talents": [
+            {"id": k, "count": c, "pct": c / n * 100.0 if n else 0.0, "avg_rank": rank_sums[k] / c}
+            for k, c in counts.items()
+        ],
+    }
+
+
 def compute_bis_from_top_loadouts(
     top_loadouts,
     item_lookup=None,
@@ -1455,16 +1598,7 @@ def compute_bis_from_top_loadouts(
             if entry_id is not None or spell_id is not None:
                 talent_entry_counts[int(node)][(entry_id, spell_id)] += 1
 
-        # hero tree of this loadout: the subtree most of its hero nodes sit in
-        loadout_tree = None
-        if hero_node_subtree:
-            subtree_hits = defaultdict(int)
-            for node in loadout_nodes:
-                subtree = hero_node_subtree.get(node)
-                if subtree is not None:
-                    subtree_hits[subtree] += 1
-            if subtree_hits:
-                loadout_tree = max(subtree_hits.items(), key=lambda x: x[1])[0]
+        loadout_tree = loadout_hero_tree(lo, hero_node_subtree)
         if loadout_tree is not None:
             hero_tree_loadout_counts[loadout_tree] += 1
             buckets = [tree_talent_stats[loadout_tree]]
@@ -1594,24 +1728,9 @@ def compute_bis_from_top_loadouts(
         # canonical DB key: ascending ids (repeats kept), comma-joined
         return ",".join(str(i) for i in sorted(ids))
 
-    def _loadout_hero_tree(lo):
-        # The subtree most of this loadout's hero nodes sit in (same rule the
-        # first pass uses for tree_talent_stats). None when no hero-node data.
-        if not hero_node_subtree:
-            return None
-        hits = defaultdict(int)
-        for t in lo.get("talents", []) or []:
-            node = t.get("node_id") or t.get("id")
-            if not node:
-                continue
-            st = hero_node_subtree.get(int(node))
-            if st is not None:
-                hits[st] += 1
-        return max(hits.items(), key=lambda x: x[1])[0] if hits else None
-
     for lo in top_loadouts:
         items = lo.get("items", []) or []
-        lo_tree = _loadout_hero_tree(lo)
+        lo_tree = loadout_hero_tree(lo, hero_node_subtree)
 
         # crafted items + crafted comp
         crafted_ids = [
@@ -1817,24 +1936,32 @@ def filter_weapon_gear_entries(weapon_lists, slot_totals):
 
 def fetch_slot_info(conn, cursor, spec_id, current_season_id, slot, slot_totals, hero_talent_id=None):
     if MULTI_SLOT_GROUPS.get(slot):
-        group = MULTI_SLOT_GROUPS[slot]
-        num = re.search(r"\d+", slot)
         data = databaseConnector.fetch_top_items_for_slot_group_with_bonus(
-            conn, cursor, spec_id, current_season_id, group, hero_talent_id
+            conn, cursor, spec_id, current_season_id, MULTI_SLOT_GROUPS[slot], hero_talent_id
         )
+    else:
+        data = databaseConnector.fetch_top_items_for_slot_with_bonus(
+            conn, cursor, spec_id, current_season_id, slot, hero_talent_id
+        )
+    return select_slot_entries(slot, data, slot_totals)
+
+
+def select_slot_entries(slot, data, slot_totals):
+    """Noise-filter one slot's ranked item list (a FINGER/TRINKET slot gets its
+    group's list). Shared by the DB path and the Top Players view."""
+    data = list(data)
+    if MULTI_SLOT_GROUPS.get(slot):
+        group = MULTI_SLOT_GROUPS[slot]
         # Filter on the intact group list (before the positional removal below)
         # so FINGER_1/FINGER_2 both derive from the same filtered ranking — the
         # same list the SQL mirror models.
         group_total = sum(t for s, t in slot_totals.items()
                           if MULTI_SLOT_GROUPS.get(s) == group)
         data = filter_gear_entries(data, group_total)
-        index_to_remove = int(num.group()) - 1
+        index_to_remove = int(re.search(r"\d+", slot).group()) - 1
         if 0 <= index_to_remove < len(data):
             del data[index_to_remove]
         return data
-    data = databaseConnector.fetch_top_items_for_slot_with_bonus(
-        conn, cursor, spec_id, current_season_id, slot, hero_talent_id
-    )
     if slot in WEAPON_SLOTS:
         # Returned unfiltered: MAIN_HAND/OFF_HAND are filtered together by
         # filter_weapon_gear_entries at the call site.
@@ -1869,6 +1996,14 @@ def fetch_enchant_info(
         )
         for slot_group in SLOT_GROUPS
     }
+    return filter_enchant_slots(
+        enchant_slots_raw, enchant_lookup, spec_sample_size, current_expansion, spec_id
+    )
+
+
+def filter_enchant_slots(enchant_slots_raw, enchant_lookup, spec_sample_size, current_expansion, spec_id):
+    """Drop unknown/irrelevant enchants and rarely enchanted slot groups.
+    `enchant_slots_raw` is {slot_group: [{id, count, ...}]} in SLOT_GROUPS order."""
     total_enchant_counts = {slot_group: 0 for slot_group in SLOT_GROUPS}
     enchant_slots = {}
     for slot_group, enchants in enchant_slots_raw.items():
@@ -1920,16 +2055,17 @@ def convert_slots(
     bis_summary=None,
     simc_bis=None,
     hero_talent_id=None,
+    socket_map=None,
 ):
+    """`socket_map` ({str(item_id): [(gem_id, count, ...)]}) skips the DB socket
+    lookup; the Top Players view passes its own."""
     primary_ids = {int(items[0]["item"]) for items in slots if len(items) > 0}
 
-    all_item_ids = set()
-    for items in slots:
-        for it in items:
-            all_item_ids.add(int(it.get("item")))
-    socket_map = databaseConnector.fetch_top_sockets_for_items(
-        conn, cursor, spec_id, current_season_id, list(all_item_ids), hero_talent_id
-    )
+    if socket_map is None:
+        all_item_ids = {int(it.get("item")) for items in slots for it in items}
+        socket_map = databaseConnector.fetch_top_sockets_for_items(
+            conn, cursor, spec_id, current_season_id, list(all_item_ids), hero_talent_id
+        )
 
     socket_limits = {}
     for items, slot in zip(
@@ -3037,6 +3173,29 @@ def main(template_path, output_dir, debug=False, spec=None):
                 print(f"Talent builds: dropped loadout runs by reason: {build_drops}")
             build_payload = {"choiceSpells": choice_spell_ids(talent_lookup["nodes"]), "builds": {}}
 
+            top_by_tree = defaultdict(list)
+            for _lo in top50_raw or []:
+                _t = loadout_hero_tree(_lo, hero_node_subtree)
+                if _t is not None:
+                    top_by_tree[int(_t)].append(_lo)
+
+            def top_talent_view(hero_tree_id):
+                """Talent trees + export string from this hero tree's top-player
+                loadouts (Top Players view). None when no top player runs it."""
+                los = top_by_tree.get(int(hero_tree_id))
+                if not los:
+                    return None
+                pop = top_talent_pop_data(los)
+                texts = Counter(lo["loadout_text"] for lo in los if lo.get("loadout_text"))
+                return {
+                    "ui_class_tree": build_ui_tree(tree_nodes.get("classNodes", []), pop),
+                    "ui_spec_tree": build_ui_tree(tree_nodes.get("specNodes", []), pop),
+                    "ui_hero_tree": build_ui_tree(
+                        tree_nodes.get("heroNodes", []), pop, is_hero=True, pop_hero_tree_id=hero_tree_id,
+                    ),
+                    "loadout_code": escape_raidbot_code(texts.most_common(1)[0][0]) if texts else None,
+                }
+
             hero_variants = []
             for ht in sorted(
                 hero_trees, key=lambda t: t.get("count", 0), reverse=True
@@ -3078,6 +3237,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                     "loadout_code": escape_raidbot_code(
                         loadouts.get(tid, {}).get("loadout")
                     ),
+                    "top_view": top_talent_view(tid),
                     # Per-dungeon talent swaps of the top players running THIS
                     # hero tree (its own hero nodes, plus class and spec).
                     "talent_difs": top_dungeon_difs(tid, variant_node_ids),
@@ -3269,18 +3429,9 @@ def main(template_path, output_dir, debug=False, spec=None):
                     set_members, t_missives, t_embellishments,
                     bis_summary=bis_summary, simc_bis=simc_bis, hero_talent_id=hero_id,
                 )
-                t_left = normalize_slot_collections(t_left, LEFT_ORDER)
-                t_right = normalize_slot_collections(t_right, RIGHT_ORDER)
-                t_weapon = normalize_slot_collections(t_weapon, WEAPON_SLOTS)
-                t_trinket = normalize_slot_collections(t_trinket, TRINKET_SLOTS)
-                _mh = next((g for g in t_weapon if g["slot"] == "MAIN_HAND"), None)
-                _oh = next((g for g in t_weapon if g["slot"] == "OFF_HAND"), None)
-                if _mh and _mh["entries"]:
-                    _mh_item_id = _mh["entries"][0]["id"]
-                    if occupies_both_hands(item_lookup.get(_mh_item_id), spec_id):
-                        _mh["entries"] = _mh["entries"] + (_oh.get("entries", []) if _oh else [])
-                        if _oh:
-                            t_weapon = [g for g in t_weapon if g["slot"] != "OFF_HAND"]
+                t_left, t_right, t_weapon, t_trinket = finalize_gear_slots(
+                    t_left, t_right, t_weapon, t_trinket, item_lookup, spec_id
+                )
                 _annotate_sockets_bis(t_sockets)
 
                 # Embellishment rarity filter, thresholded against this tree's sample.
@@ -3381,6 +3532,102 @@ def main(template_path, output_dir, debug=False, spec=None):
                     "fallback": False,
                 }
 
+            def _build_top_sections(top_los):
+                # Top Players view: the gear / enchant / gem / crafting section
+                # payload built from the verified top-player loadouts. Stats and
+                # consumables have no top-player source, so the template keeps
+                # their overall blocks in both views.
+                n_los = len(top_los)
+                summary = compute_bis_from_top_loadouts(
+                    top_los,
+                    item_lookup=item_lookup,
+                    missive_lookup=missive_lookup,
+                    embellishment_lookup=embellishment_lookup,
+                    crafted_item_ids=crafted_item_id_set,
+                )
+                items_by_slot, top_slot_totals, enchants_by_group, k_sockets = aggregate_top_player_gear(top_los)
+
+                def _slot(s):
+                    rows = [dict(r) for r in items_by_slot.get(MULTI_SLOT_GROUPS.get(s, s), [])]
+                    return select_slot_entries(s, rows, top_slot_totals)
+
+                k_left = [_slot(s) for s in LEFT_ORDER]
+                k_right = [_slot(s) for s in RIGHT_ORDER]
+                k_weapon = filter_weapon_gear_entries([_slot(s) for s in WEAPON_SLOTS], top_slot_totals)
+                k_trinket = [_slot(s) for s in TRINKET_SLOTS]
+                k_enchant_slots, k_total_enchant_counts = filter_enchant_slots(
+                    {sg: enchants_by_group.get(sg, []) for sg in SLOT_GROUPS},
+                    enchant_lookup, n_los, current_expansion, spec_id,
+                )
+                k_missives = top_summary_rows(summary.get("missives"))
+                k_embellishments = top_summary_rows(summary.get("embellishments"))
+                k_crafted = top_summary_rows(summary.get("crafted_items"), 10)
+                # No per-item gem placement is stored, so every socket shows the
+                # top players' most used gems.
+                gem_rows = [(g["id"], g["count"], 0, 0) for g in k_sockets]
+                convert_slots(
+                    None, None, spec_id, current_season_id,
+                    k_left + k_right + k_weapon + k_trinket,
+                    item_lookup, bonus_lookup, missive_lookup, embellishment_lookup,
+                    bonus_quality_lookup, k_sockets, socket_lookup, k_enchant_slots,
+                    set_members, k_missives, k_embellishments,
+                    simc_bis=simc_bis,
+                    socket_map={str(r["item"]): gem_rows for lst in k_left + k_right + k_weapon + k_trinket for r in lst},
+                )
+                k_left, k_right, k_weapon, k_trinket = finalize_gear_slots(
+                    k_left, k_right, k_weapon, k_trinket, item_lookup, spec_id
+                )
+
+                comp_rows = {
+                    key: top_summary_rows(summary.get(key), limit)
+                    for key, limit in (
+                        ("embellishment_comps", 15), ("crafted_comps", 10),
+                        ("tier_set_comps", 10), ("gem_comps", 15), ("enchant_comps", 15),
+                    )
+                }
+                comp_totals = {key: sum(r[1] for r in rows) for key, rows in comp_rows.items()}
+                return {
+                    "left_slots": k_left,
+                    "right_slots": k_right,
+                    "weapon_slots": k_weapon,
+                    "trinket_slots": k_trinket,
+                    "enchant_slots": k_enchant_slots,
+                    "total_enchant_counts": k_total_enchant_counts,
+                    "missives": k_missives,
+                    "total_missive_count": sum(e[1] for e in k_missives),
+                    "embellishments": k_embellishments,
+                    "total_embellishment_count": sum(e[1] for e in k_embellishments),
+                    "crafted_items": k_crafted,
+                    "total_crafted_items": sum(e[1] for e in k_crafted),
+                    "embellishment_comps": build_comps(
+                        comp_rows["embellishment_comps"], comp_totals["embellishment_comps"] * 0.005,
+                        item_lookup, "embellishment", spec_id, slot_sorted=False,
+                    ),
+                    "total_embellishment_comps": comp_totals["embellishment_comps"],
+                    "crafted_comps": build_comps(
+                        comp_rows["crafted_comps"], comp_totals["crafted_comps"] * 0.005,
+                        item_lookup, "crafted", spec_id,
+                    ),
+                    "total_crafted_comps": comp_totals["crafted_comps"],
+                    "tier_set_comps": build_comps(
+                        comp_rows["tier_set_comps"], comp_totals["tier_set_comps"] * 0.005,
+                        item_lookup, "tier set", spec_id, set_meta=tier_set_meta,
+                    ),
+                    "total_tier_set_comps": comp_totals["tier_set_comps"],
+                    "gem_comps": build_multiset_comps(
+                        comp_rows["gem_comps"], socket_lookup, comp_totals["gem_comps"] * 0.005
+                    ),
+                    "total_gem_comps": comp_totals["gem_comps"],
+                    "enchant_comps": build_multiset_comps(
+                        comp_rows["enchant_comps"], enchant_lookup, comp_totals["enchant_comps"] * 0.005,
+                        slot_rank=enchant_slot_pos,
+                    ),
+                    "total_enchant_comps": comp_totals["enchant_comps"],
+                    "sockets": k_sockets,
+                    "total_socket_count": sum(s["count"] for s in k_sockets),
+                    "fallback": False,
+                }
+
             _combined_payload = _combined_sections_payload()
             sections_by_tree = {}
             for _v in hero_variants:
@@ -3395,6 +3642,32 @@ def main(template_path, output_dir, debug=False, spec=None):
                         sections_by_tree[_tid] = dict(_combined_payload)
                 else:
                     sections_by_tree[_tid] = dict(_combined_payload)
+
+            # Top Players view: one payload per hero tree from that tree's verified
+            # loadouts, falling back to all top players for a thin tree.
+            top_sections_by_tree = {}
+            if top50_raw:
+                _top_combined = _build_top_sections(top50_raw)
+                for _v in hero_variants:
+                    _los = top_by_tree.get(int(_v["id"]), [])
+                    top_sections_by_tree[_v["id"]] = (
+                        _build_top_sections(_los)
+                        if len(_los) >= TOP_SECTION_MIN_LOADOUTS
+                        else dict(_top_combined, fallback=True)
+                    )
+
+            # Flat list the template walks for every switchable section: one entry
+            # per (cohort, hero tree), told apart by data-cohort/data-hero-tree-id.
+            # `hs` keeps accordion/collapse ids unique across entries.
+            section_variants = [
+                {"id": _v["id"], "cohort": "all", "is_default": _v["is_default"],
+                 "sec": sections_by_tree[_v["id"]], "hs": f"-h{_v['id']}"}
+                for _v in hero_variants
+            ] + [
+                {"id": _v["id"], "cohort": "top", "is_default": False,
+                 "sec": top_sections_by_tree[_v["id"]], "hs": f"-h{_v['id']}-top"}
+                for _v in hero_variants if _v["id"] in top_sections_by_tree
+            ]
 
             # Machine-readable meta snapshot for the client-side "Am I meta?"
             # analyzer. Reuses data already assembled above (including the per-hero
@@ -3419,7 +3692,8 @@ def main(template_path, output_dir, debug=False, spec=None):
             output_html = template.render(
                 generated_at=datetime.now(timezone.utc).timestamp(),
                 spec_id=spec_id,
-                sections_by_tree=sections_by_tree,
+                section_variants=section_variants,
+                has_top_view=bool(top_sections_by_tree),
                 spec=spec_data,
                 trends=trends,
                 class_info=class_data,
@@ -3514,6 +3788,8 @@ def main(template_path, output_dir, debug=False, spec=None):
                     },
                     {
                         "title": f"{spec_data.get('name')} {class_data.get('name')}",
+                        # Class colour, same class the h1's spec name uses.
+                        "css": f"class-{(class_data.get('name') or 'Unknown').replace(' ', '')}-text",
                         "href": f"/Classes/{ROLE_FOLDERS[spec_data.get('role', 2)]}/{spec_data.get('name')}_{class_data.get('name')}",
                     },
                 ],

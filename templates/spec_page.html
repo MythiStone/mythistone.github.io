@@ -17,8 +17,20 @@
 {%- endmacro %}
 {# Shown at the top of a per-hero-tree section that fell back to combined data
    because the tree had too few runs for its own breakdown. #}
-{% macro hero_fallback_note(sec) -%}
-{% if sec.fallback %}<p class="text-sm mb-2 d-inline-flex align-items-center gap-1" style="color: var(--bs-info-text-emphasis);"><i class="material-symbols-rounded" style="font-size: 1.1rem;">info</i><span>This hero tree doesn't have enough data on its own yet. The numbers below cover all builds combined.</span></p>{% endif +%}
+{% macro hero_fallback_note(sec, cohort='all') -%}
+{% if sec.fallback %}<p class="text-sm mb-2 d-inline-flex align-items-center gap-1" style="color: var(--bs-info-text-emphasis);"><i class="material-symbols-rounded" style="font-size: 1.1rem;">info</i><span>{% if cohort == 'top' %}Too few top players run this hero tree for its own breakdown. The numbers below cover all top players combined.{% else %}This hero tree doesn't have enough data on its own yet. The numbers below cover all builds combined.{% endif %}</span></p>{% endif +%}
+{%- endmacro %}
+{# Opens one (cohort, hero tree) block of a switchable section; spec-page.js shows
+   the block matching the current Top Players toggle and hero tree. by_cohort=false
+   for overall-only sections (stats, consumables): one block per tree, shown in
+   both views. #}
+{% macro section_variant_open(v, by_cohort=true) -%}
+<div class="hero-section-variant"{% if by_cohort %} data-cohort="{{ v.cohort }}"{% endif %} data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
+{%- endmacro %}
+{# Sections with no top-player source keep their overall numbers in the Top
+   Players view; this note is only visible while that view is on. #}
+{% macro overall_data_note() -%}
+<p class="cohort-overall-note text-xs mb-2"><i class="material-symbols-rounded">info</i><span>No top player data for this section. Showing overall data.</span></p>
 {%- endmacro %}
 {% macro render_slot(entry, slot_count=0, is_button=false, slug="") -%}
 {# choose tag and base classes #}
@@ -532,14 +544,27 @@
 
   {% include "sidenav.html" %}
 
-  <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">
-    <!-- Navbar -->
-    {% include "navbar.html" %}
-    <!-- End Navbar -->
-    <!-- Notifications -->
-    {% include "notifications.html" %}
-    {% include "trends_bar.html" %}
-    <!-- End Notifications -->
+  <main class="main-content position-relative border-radius-lg ">
+    {# Top Players switch lives in the sticky navbar (navbar.html renders
+       navbar_extra), so it stays in reach while it re-filters every section. #}
+    {% if has_top_view %}
+    {% set navbar_extra %}
+    {# The theme's own Material switch (same control as the fixed plugin's
+       Light / Dark). Below lg the icon stands in for the text label. #}
+    <div class="form-check form-switch d-flex align-items-center ps-0 mb-0 cohort-switch"
+      title="Show talents and gear of the top 50 {{ spec.name }} {{ class_info.name }} players instead of the top 1%">
+      <input class="form-check-input ms-0 me-2 mt-0" type="checkbox" role="switch" id="cohort-toggle"
+        aria-describedby="cohort-toggle-desc">
+      <label class="form-check-label text-sm text-body-emphasis mb-0" for="cohort-toggle">
+        <i class="material-symbols-rounded d-lg-none align-middle" aria-hidden="true">military_tech</i>
+        <span class="d-none d-lg-inline">Top 50 only</span>
+        <span class="visually-hidden d-lg-none">Top 50 only</span>
+      </label>
+      <span id="cohort-toggle-desc" class="visually-hidden">Show talents and gear of the top 50 {{ spec.name }} {{ class_info.name }} players instead of the top 1%</span>
+    </div>
+    {% endset %}
+    {% endif %}
+    {% include "top_chrome.html" %}
     <div class="container-fluid py-2 mx-3 w-auto">
       <h1 class="h3"> <span class="class-{{ class_info.name | default('Unknown') | replace(' ', '') }}-text">{{
           spec.name }} {{ class_info.name }} </span> Mythic+ Build &amp; Gear Guide in {{ season_info.name }}</h1>
@@ -723,6 +748,7 @@
           {% endif %}
 
           {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
+          {% set overall_variants = section_variants | selectattr('cohort', 'equalto', 'all') | list %}
 
           {% if hero_variants and hero_variants | length > 0 %}
           <div id="static-talent-tree">
@@ -753,30 +779,37 @@
               {% endif %}
             </p>
             {% endif %}
+            {# One .tt-variant per (cohort, hero tree). The "top" cohort is the Top
+               Players view, built from verified top-player loadouts (v.top_view);
+               a tree no top player runs keeps its overall trees with a note. #}
+            {% for cohort in (['all', 'top'] if has_top_view else ['all']) %}
             {% for v in hero_variants %}
-            {% if v.ui_class_tree and v.ui_spec_tree %}
-            <div class="tt-variant" data-hero-tree-id="{{ v.id }}" data-loadout="{{ v.loadout_code.original if v.loadout_code else '' }}"{% if not v.is_default %} style="display: none;"{% endif %}>
+            {% set is_top_cohort = cohort == 'top' %}
+            {% set tv = (v.top_view or v) if is_top_cohort else v %}
+            {% set share = v.top_pct if is_top_cohort else v.pct %}
+            {% if tv.ui_class_tree and tv.ui_spec_tree %}
+            <div class="tt-variant" data-cohort="{{ cohort }}" data-hero-tree-id="{{ v.id }}" data-loadout="{{ tv.loadout_code.original if tv.loadout_code else '' }}"{% if is_top_cohort or not v.is_default %} style="display: none;"{% endif %}>
               <div class="talent-tree-wrapper d-flex flex-column flex-xl-row justify-content-center align-items-center gap-5 gap-xl-4">
                 <div class="tt-column tt-class tt-tree-column">
                   <svg class="tt-edges">
-                    {% for e in v.ui_class_tree.edges %}
+                    {% for e in tv.ui_class_tree.edges %}
                     <line data-from="{{ e.from }}" data-to="{{ e.to }}" x1="{{e.x1}}%" y1="{{e.y1}}%" x2="{{e.x2}}%" y2="{{e.y2}}%" style="stroke: {% if e.active %}#ffb000{% else %}#555{% endif %}; stroke-width: 2px;"></line>
                     {% endfor %}
                   </svg>
-                  {% for n in v.ui_class_tree.nodes %}
+                  {% for n in tv.ui_class_tree.nodes %}
                   {{ render_tree_node(n) }}
                   {% endfor %}
                 </div>
 
-                {% if v.ui_hero_tree and v.ui_hero_tree.nodes %}
+                {% if tv.ui_hero_tree and tv.ui_hero_tree.nodes %}
                 <div class="tt-column tt-hero d-flex flex-column justify-content-center align-items-center my-5 my-xl-0 tt-hero-column">
                   <div class="mb-4 text-center">
-                    <h5 class="text-uppercase font-weight-bolder d-inline-flex align-items-center gap-2" style="letter-spacing: 1px; font-size: 16px;">{{ v.name }}{% if v.is_top %}<span class="badge tt-top-badge tt-top-badge-inline" data-bs-toggle="tooltip" title="Most-used hero tree among the top 50 {{ spec.name }} {{ class_info.name }} players ({{ '{:.0f}'.format(v.top_pct) }}%).">TOP</span>{% endif %}</h5>
+                    <h5 class="text-uppercase font-weight-bolder d-inline-flex align-items-center gap-2" style="letter-spacing: 1px; font-size: 16px;">{{ v.name }}{% if v.is_top and not is_top_cohort %}<span class="badge tt-top-badge tt-top-badge-inline" data-bs-toggle="tooltip" title="Most-used hero tree among the top 50 {{ spec.name }} {{ class_info.name }} players ({{ '{:.0f}'.format(v.top_pct) }}%).">TOP</span>{% endif %}</h5>
                     <div class="position-relative d-inline-block mt-2 tt-hero-switch{% if hero_variants | length > 1 %} tt-hero-switch-active{% endif %}"
                       {% if hero_variants | length > 1 %}role="button" tabindex="0" title="Click to switch hero tree"{% endif %}>
                       <img src="/data/icons/{{ v.icon }}.png" alt="{{ v.name }}" style="width: 110px; height: 110px; border-radius: 50%; border: 3px solid #ffb000; box-shadow: 0 0 15px rgba(255, 176, 0, 0.4);" onerror="this.src='/data/icons/inv_misc_questionmark.png'">
-                      <div class="tt-hero-share" style="position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%); background: var(--mythi-overlay-bg); color: var(--mythi-overlay-color); padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; border: 1px solid #ffb000; white-space: nowrap;" title="{{ '{:.1f}'.format(v.pct) }}%">
-                        {{ v.pct | round | int }}%
+                      <div class="tt-hero-share" style="position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%); background: var(--mythi-overlay-bg); color: var(--mythi-overlay-color); padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; border: 1px solid #ffb000; white-space: nowrap;" title="{{ '{:.1f}'.format(share) }}%{% if is_top_cohort %} of top player loadouts{% endif %}">
+                        {{ share | round | int }}%
                       </div>
                       {% if hero_variants | length > 1 %}
                       <span class="tt-hero-switch-hint" aria-hidden="true" title="Click to switch hero tree">
@@ -784,7 +817,11 @@
                       </span>
                       {% endif %}
                     </div>
-                    {% if top_hero_tree_name and top_hero_tree_id is not none and top_hero_tree_id != v.id %}
+                    {% if is_top_cohort and not v.top_view %}
+                    <div class="text-xs mt-4" style="color: var(--bs-info-text-emphasis);">No top player runs this hero tree yet, so these talents show overall data.</div>
+                    {% elif is_top_cohort %}
+                    {% if hero_variants | length > 1 %}<div class="text-xs text-secondary mt-5 tt-hero-switch-label">Click icon to switch hero tree</div>{% endif %}
+                    {% elif top_hero_tree_name and top_hero_tree_id is not none and top_hero_tree_id != v.id %}
                     <div class="text-xs mt-4 tt-hero-top-hint" data-bs-toggle="tooltip"
                       title="This is the most-played hero tree overall, but the top 50 {{ spec.name }} {{ class_info.name }} players most often run {{ top_hero_tree_name }} ({{ '{:.0f}'.format(top_hero_tree_pct) }}%).">
                       <span class="badge tt-top-badge tt-top-badge-inline me-1">TOP</span>
@@ -798,7 +835,7 @@
                   </div>
 
                   <div class="d-flex flex-column align-items-center gap-3 mt-3 w-100">
-                    {% for n in v.ui_hero_tree.nodes %}
+                    {% for n in tv.ui_hero_tree.nodes %}
                     {{ render_hero_node(n) }}
                     {% endfor %}
                   </div>
@@ -807,17 +844,18 @@
 
                 <div class="tt-column tt-spec tt-tree-column">
                   <svg class="tt-edges">
-                    {% for e in v.ui_spec_tree.edges %}
+                    {% for e in tv.ui_spec_tree.edges %}
                     <line data-from="{{ e.from }}" data-to="{{ e.to }}" x1="{{e.x1}}%" y1="{{e.y1}}%" x2="{{e.x2}}%" y2="{{e.y2}}%" style="stroke: {% if e.active %}#ffb000{% else %}#555{% endif %}; stroke-width: 2px;"></line>
                     {% endfor %}
                   </svg>
-                  {% for n in v.ui_spec_tree.nodes %}
+                  {% for n in tv.ui_spec_tree.nodes %}
                   {{ render_tree_node(n) }}
                   {% endfor %}
                 </div>
               </div>
             </div>
             {% endif %}
+            {% endfor %}
             {% endfor %}
           </div>
           {% endif %}
@@ -868,11 +906,12 @@
             {# data-share: deep-link.js pins a copy-link button to the corner (assets/js/deep-link.js). #}
             <div id="stat-overview" class="mx-auto my-4" data-share>
               <h6 class="mb-1">Stat Priority</h6>
-              {% for v in hero_variants %}
-              {% set sec = sections_by_tree[v.id] %}
+              {{ overall_data_note() }}
+              {% for v in overall_variants %}
+              {% set sec = v.sec %}
               {% set stats = sec.stats %}
               {% set tertiary_priority = sec.tertiary_priority %}
-              <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
+              {{ section_variant_open(v, false) }}
               {{ hero_fallback_note(sec) }}
               {% set stat_secs = stats | selectattr('name', 'in', secondary_stats) | list %}
               {% set stat_primary = stats | rejectattr('name', 'in', secondary_stats) | first %}
@@ -914,19 +953,20 @@
                Outer block renders once; one .hero-section-variant per tree swaps
                with the hero-tree toggle, like the gear sections. #}
             {% set cons_overview_any = namespace(v=false) %}
-            {% for v in hero_variants %}{% if sections_by_tree[v.id].consumable_sections %}{% set cons_overview_any.v = true %}{% endif %}{% endfor %}
+            {% for v in overall_variants %}{% if v.sec.consumable_sections %}{% set cons_overview_any.v = true %}{% endif %}{% endfor %}
             {% if cons_overview_any.v %}
             {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
             <div id="consumables-overview" class="mx-auto my-4" data-share>
               <h6 class="mb-1">Top Consumables</h6>
+              {{ overall_data_note() }}
               <p class="text-sm mb-2">
                 The flask, potion, food, weapon enchant and augment rune most used by high-key
                 <span class="class-{{ class_slug }}-text">{{ spec.name }} {{ class_info.name }}</span>
                 players, from recorded Mythic+ runs.
               </p>
-              {% for v in hero_variants %}
-              {% set sec_c = sections_by_tree[v.id] %}
-              <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
+              {% for v in overall_variants %}
+              {% set sec_c = v.sec %}
+              {{ section_variant_open(v, false) }}
               {{ hero_fallback_note(sec_c) }}
               <div class="row g-3">
                 {% for sec in sec_c.consumable_sections %}
@@ -978,15 +1018,15 @@
                 always simulate your own character before committing to gear changes. You can do that with
                 <a href="https://www.raidbots.com/simbot/topgear" target="_blank" rel="noopener">Raidbots Top Gear</a>.
               </p>
-              {% for v in hero_variants %}
-              {% set sec = sections_by_tree[v.id] %}
-              {% set hs = '-h' ~ v.id %}
+              {% for v in section_variants %}
+              {% set sec = v.sec %}
+              {% set hs = v.hs %}
               {% set left_slots = sec.left_slots %}
               {% set right_slots = sec.right_slots %}
               {% set weapon_slots = sec.weapon_slots %}
               {% set trinket_slots = sec.trinket_slots %}
-              <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
-              {{ hero_fallback_note(sec) }}
+              {{ section_variant_open(v) }}
+              {{ hero_fallback_note(sec, v.cohort) }}
               <div class="d-flex flex-column flex-md-row gap-3">
                 <div class="flex-fill" style="flex: 1 1 0 !important; min-width: 0;">
                   <!-- Header for this pane -->
@@ -1148,9 +1188,9 @@
                 and missives on their crafted gear, and the combinations they pair together. Each list is ordered by how
                 common the choice is among the sampled characters, over the same rolling two-week window as the gear above.
               </p>
-              {% for v in hero_variants %}
-              {% set sec = sections_by_tree[v.id] %}
-              {% set hs = '-h' ~ v.id %}
+              {% for v in section_variants %}
+              {% set sec = v.sec %}
+              {% set hs = v.hs %}
               {% set enchant_slots = sec.enchant_slots %}
               {% set total_enchant_counts = sec.total_enchant_counts %}
               {% set sockets = sec.sockets %}
@@ -1171,8 +1211,8 @@
               {% set total_gem_comps = sec.total_gem_comps %}
               {% set enchant_comps = sec.enchant_comps %}
               {% set total_enchant_comps = sec.total_enchant_comps %}
-              <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
-              {{ hero_fallback_note(sec) }}
+              {{ section_variant_open(v) }}
+              {{ hero_fallback_note(sec, v.cohort) }}
               <div class="d-flex flex-column flex-md-row gap-3">
                 <!-- Enchantment Overview-->
                 <div class="flex-fill" style="flex:1 1 0 !important; min-width:0;">
@@ -2212,18 +2252,19 @@
                & Crafting: one accordion per category, ids suffixed with the category key and
                tree id so the hidden variants never collide. #}
             {% set cons_detail_any = namespace(v=false) %}
-            {% for v in hero_variants %}{% if sections_by_tree[v.id].consumable_sections %}{% set cons_detail_any.v = true %}{% endif %}{% endfor %}
+            {% for v in overall_variants %}{% if v.sec.consumable_sections %}{% set cons_detail_any.v = true %}{% endif %}{% endfor %}
             {% if cons_detail_any.v %}
             <div id="consumables-detail" class="mx-auto my-4" data-share>
               <h6 class="mb-1">Consumables</h6>
+              {{ overall_data_note() }}
               <p class="text-sm mb-3">
                 Every flask, potion, food, weapon enchant and augment rune seen on sampled high-key
                 players, ranked by how many ran it. Percentages are the share within each category.
               </p>
-              {% for v in hero_variants %}
-              {% set sec_c = sections_by_tree[v.id] %}
-              {% set hs = '-h' ~ v.id %}
-              <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
+              {% for v in overall_variants %}
+              {% set sec_c = v.sec %}
+              {% set hs = v.hs %}
+              {{ section_variant_open(v, false) }}
               {{ hero_fallback_note(sec_c) }}
               {% for pair in sec_c.consumable_sections | batch(2) %}
               <div class="d-flex flex-column flex-md-row gap-3{% if not loop.first %} mt-4{% endif %}">

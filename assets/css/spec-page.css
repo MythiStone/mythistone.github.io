@@ -1116,3 +1116,42 @@ a.item-source-badge:hover {
 .tt-build-tree-mount .tt-build-change { position: absolute; top: -6px; left: -6px; z-index: 5; cursor: help; }
 .tt-build-legend .tt-build-change + .tt-build-change { margin-left: -0.2rem; }
 .tt-build-flex-badge { bottom: -8px; right: -8px; border: 1px dashed var(--bs-primary); cursor: help; }
+
+/* Top Players switch (spec-page.js toggles body.spec-cohort-top): the theme's
+   Material form-switch, rendered in the sticky navbar (navbar_extra in
+   spec_page.html) because it changes every section below it. */
+.navbar-extra {
+  margin-right: 1rem;
+}
+/* Room for the switch: the breadcrumb's stock 4rem end margin would otherwise
+   push a long "<Spec> <Class>" crumb onto two lines. */
+.navbar-main:has(.navbar-extra) .breadcrumb {
+  margin-right: 1rem !important;
+  white-space: nowrap;
+}
+.cohort-switch,
+.cohort-switch .form-check-label {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* "Overall data" note on sections with no top-player source, shown only while
+   the Top Players view is on. */
+.cohort-overall-note {
+  display: none;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--bs-info-text-emphasis);
+}
+.cohort-overall-note .material-symbols-rounded {
+  font-size: 1rem;
+}
+.spec-cohort-top .cohort-overall-note {
+  display: flex;
+}
+
+/* Every number in the Top Players view already comes from the top 50, so the
+   per-entry TOP badges would only repeat that. */
+.hero-section-variant[data-cohort="top"] .bis-badge {
+  display: none;
+}

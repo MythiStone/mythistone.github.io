@@ -1,0 +1,77 @@
+/* Sticky page header (templates/top_chrome.html, driven by assets/js/top-chrome.js).
+   The window is the scroller and <main> grows with its content, so plain sticky
+   positioning pins the header for the whole page. --top-chrome-h is the header's
+   live height, published by the JS for anything that must clear it. */
+
+html {
+  /* Anchor jumps and deep-link.js scrollIntoView land below the header. */
+  scroll-padding-top: calc(var(--top-chrome-h, 0px) + 0.5rem);
+}
+
+.page-top-chrome {
+  position: sticky;
+  top: 0;
+  /* Above in-page sticky bits (spec cohort toggle 1020), below modals (1055)
+     and the sidenav (9999). */
+  z-index: 1030;
+  background: var(--bs-body-bg);
+  padding-bottom: 0.25rem;
+  transition: box-shadow 0.2s ease;
+}
+.page-top-chrome.is-condensed {
+  box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.45);
+}
+
+/* ---- condensed navbar ---- */
+.page-top-chrome .navbar-main { transition: padding 0.2s ease; }
+.page-top-chrome.is-condensed .navbar-main {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* ---- notifications fold into the navbar bell ---- */
+.top-chrome-bell-item { display: none; }
+.page-top-chrome.is-condensed.has-notes .top-chrome-bell-item { display: flex; }
+#top-chrome-bell { line-height: 1; }
+.top-chrome-bell-count {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.55rem;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.25rem;
+  border-radius: 0.5rem;
+  background: var(--bs-warning);
+  color: #171717;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1rem;
+  text-align: center;
+}
+.page-top-chrome.is-condensed .top-chrome-notes {
+  /* Out of flow while condensed, so opening the panel never shifts the page. */
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--bs-body-bg);
+  box-shadow: 0 8px 16px -8px rgba(0, 0, 0, 0.5);
+}
+.page-top-chrome.is-condensed.notes-open .top-chrome-notes { display: block; }
+
+/* ---- phones: only the navbar stays once condensed ---- */
+@media (max-width: 767.98px) {
+  /* Collapsed to zero height rather than display:none so trends-bar.js can
+     still measure the ticker when it re-lays out on resize. */
+  .page-top-chrome.is-condensed .trends-bar {
+    height: 0;
+    padding: 0;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    border: 0;
+    visibility: hidden;
+  }
+}

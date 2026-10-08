@@ -144,13 +144,20 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
         }
       });
     })();
-    // Hero-tree switcher: cycles the talent overview (class/spec/hero trees),
-    // the Talent Differences modal, and the Export Talent String between hero
-    // trees. Clicking the hero icon advances to the next tree.
+    // View switcher: the hero tree (cycled by clicking the hero icon) and the Top
+    // Players toggle together pick which server-rendered blocks are visible. Every
+    // switchable block carries data-hero-tree-id; blocks that differ per data
+    // source also carry data-cohort ("all" | "top", see section_variants in
+    // generateSpecPages.py). Blocks without data-cohort (per-dungeon talent diffs,
+    // Talent Builds) follow the hero tree only.
     (function () {
       const variants = Array.from(document.querySelectorAll('.tt-variant'));
-      if (variants.length <= 1) return;
-      const difVariants = Array.from(document.querySelectorAll('.talent-dif-variant'));
+      if (!variants.length) return;
+      const switchable = Array.from(
+        document.querySelectorAll('.tt-variant, .talent-dif-variant, .hero-section-variant')
+      );
+      const treeIds = [...new Set(variants.map((el) => el.getAttribute('data-hero-tree-id')))];
+      const cohortSwitch = document.getElementById('cohort-toggle');
 
       function syncExport(variantEl) {
         const btnText = document.getElementById('btnText');
@@ -161,33 +168,29 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
         copyBtn.style.display = loadout ? '' : 'none';
       }
 
-      // The gear / stats / enchant / gem / missive / embellishment / crafted /
-      // set-combo sections each ship one .hero-section-variant per hero tree
-      // (see sections_by_tree in generateSpecPages.py); switching the hero tree
-      // shows the matching variant across every section at once.
-      const sectionVariants = Array.from(document.querySelectorAll('.hero-section-variant'));
+      // The server-rendered default: the visible overall-data tree.
+      const initial = variants.find((el) => el.style.display !== 'none') || variants[0];
+      const defaultTreeId = initial.getAttribute('data-hero-tree-id');
+      let treeId = defaultTreeId;
+      let cohort = 'all';
 
-      function show(idx) {
-        const treeId = variants[idx].getAttribute('data-hero-tree-id');
-        variants.forEach((el, i) => { el.style.display = (i === idx) ? '' : 'none'; });
-        difVariants.forEach((el) => {
-          el.style.display = (el.getAttribute('data-hero-tree-id') === treeId) ? '' : 'none';
+      function show() {
+        switchable.forEach((el) => {
+          const elCohort = el.getAttribute('data-cohort');
+          const match = el.getAttribute('data-hero-tree-id') === treeId && (!elCohort || elCohort === cohort);
+          el.style.display = match ? '' : 'none';
         });
-        sectionVariants.forEach((el) => {
-          el.style.display = (el.getAttribute('data-hero-tree-id') === treeId) ? '' : 'none';
-        });
-        syncExport(variants[idx]);
+        const active = variants.find((el) => el.style.display !== 'none');
+        if (active) syncExport(active);
+        const isTop = cohort === 'top';
+        document.body.classList.toggle('spec-cohort-top', isTop);
+        if (cohortSwitch) cohortSwitch.checked = isTop;
       }
-
-      // Determine the initially visible variant (the server-rendered default).
-      let current = variants.findIndex((el) => el.style.display !== 'none');
-      if (current < 0) current = 0;
-      const defaultTreeId = variants[current].getAttribute('data-hero-tree-id');
-      show(current);
+      show();
 
       function advance() {
-        current = (current + 1) % variants.length;
-        show(current);
+        treeId = treeIds[(treeIds.indexOf(treeId) + 1) % treeIds.length];
+        show();
         if (window.MythiLink) MythiLink.sync();
       }
 
@@ -201,22 +204,36 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
         });
       });
 
-      // The hero tree is the one bit of view state that changes what a visitor
-      // walks away with: it drives the talent tree, the per-dungeon diffs *and*
-      // the Export Talent String. A shared link that landed on the default tree
-      // would hand the recipient the wrong import string, so it rides in the
-      // hash as &hero=<treeId> whenever it isn't the default.
+      if (cohortSwitch) {
+        cohortSwitch.addEventListener('change', () => {
+          cohort = cohortSwitch.checked ? 'top' : 'all';
+          show();
+          if (window.MythiLink) MythiLink.sync();
+        });
+      }
+
+      // Both bits of view state change what a visitor walks away with (the talent
+      // tree, the gear lists *and* the Export Talent String), so a shared link
+      // carries them as &cohort=top / &hero=<treeId> whenever they aren't the default.
       if (window.MythiLink) {
+        MythiLink.registerState('cohort', {
+          read: function () {
+            return cohort === 'top' ? 'top' : null;
+          },
+          apply: function (value) {
+            if (value !== 'top' || !cohortSwitch) return;  // no Top Players view on this page
+            cohort = 'top';
+            show();
+          }
+        });
         MythiLink.registerState('hero', {
           read: function () {
-            const id = variants[current].getAttribute('data-hero-tree-id');
-            return id === defaultTreeId ? null : id;
+            return treeId === defaultTreeId ? null : treeId;
           },
-          apply: function (treeId) {
-            const idx = variants.findIndex((el) => el.getAttribute('data-hero-tree-id') === String(treeId));
-            if (idx < 0) return;  // unknown tree id in a hand-edited link
-            current = idx;
-            show(current);
+          apply: function (value) {
+            if (!treeIds.includes(String(value))) return;  // unknown tree id in a hand-edited link
+            treeId = String(value);
+            show();
           }
         });
       }
@@ -226,7 +243,7 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
     // season-wide badges and the page-only hero switcher stripped.
     function cloneTalentTree(treeId) {
       const source = document.querySelector(
-        '#static-talent-tree .tt-variant[data-hero-tree-id="' + treeId + '"] .talent-tree-wrapper'
+        '#static-talent-tree .tt-variant[data-cohort="all"][data-hero-tree-id="' + treeId + '"] .talent-tree-wrapper'
       );
       if (!source) return null;
       const clone = source.cloneNode(true);

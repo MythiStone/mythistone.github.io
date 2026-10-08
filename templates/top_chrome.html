@@ -1,0 +1,12 @@
+{# Sticky page header: navbar, notifications and Top Trends, pinned to the top
+   of every page. assets/js/top-chrome.js condenses it once the visitor scrolls
+   (notifications fold into the navbar bell, Top Trends hides on phones) and
+   publishes the header height as --top-chrome-h for scroll-padding-top and
+   other sticky elements. #}
+<div id="page-top-chrome" class="page-top-chrome">
+  {% include "navbar.html" %}
+  <div id="top-chrome-notes" class="top-chrome-notes">
+    {% include "notifications.html" %}
+  </div>
+  {% include "trends_bar.html" %}
+</div>

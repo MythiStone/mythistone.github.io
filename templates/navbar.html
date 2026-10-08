@@ -7,13 +7,21 @@
         <li class="breadcrumb-item text-sm "><a class="opacity-5 text-body-emphasis" href="{{ crumb.href }}">{{
             crumb.title }}</a></li>
         {% else %}
-        <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ crumb.title }}</li>
+        {# crumb.css: optional class for the current page's crumb (e.g. the spec
+           page's class colour). #}
+        <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{% if crumb.css %}<span class="{{ crumb.css }}">{{ crumb.title }}</span>{% else %}{{ crumb.title }}{% endif %}</li>
         {% endif %}
         {% endfor %}
       </ol>
     </nav>
     <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4" id="navbar">
-      <div class="ms-md-auto pe-md-3 d-flex align-items-center">
+      {# Page-specific navbar controls: a page sets `navbar_extra` (a {% set %}
+         block) before including top_chrome.html, e.g. the spec page's Top
+         Players switch. #}
+      {% if navbar_extra %}
+      <div class="navbar-extra d-flex align-items-center ms-md-auto">{{ navbar_extra }}</div>
+      {% endif %}
+      <div class="{% if not navbar_extra %}ms-md-auto {% endif %}pe-md-3 d-flex align-items-center">
         <!-- paste into navbar (replaces the current input-group) -->
         <div class="ms-md-auto pe-md-3 d-flex align-items-center">
           <div class="position-relative w-100">
@@ -51,6 +59,15 @@
               <i class="sidenav-toggler-line"></i>
             </div>
           </a>
+        </li>
+        {# Shown by top-chrome.js only while the sticky header is condensed and
+           notifications exist; it reopens them as a panel under the header. #}
+        <li class="nav-item ps-3 align-items-center top-chrome-bell-item">
+          <button type="button" id="top-chrome-bell" class="btn btn-link nav-link text-body p-0 m-0 position-relative"
+            aria-controls="top-chrome-notes" aria-expanded="false" aria-label="Show notifications">
+            <i class="material-symbols-rounded" aria-hidden="true">notifications</i>
+            <span class="top-chrome-bell-count" aria-hidden="true"></span>
+          </button>
         </li>
         <li class="nav-item px-3 d-flex align-items-center">
           <a href="javascript:;" class="nav-link text-body p-0">
