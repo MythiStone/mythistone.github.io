@@ -1996,5 +1996,16 @@
         "persona": "pug_veteran",
         "judge_score": 34.0,
         "timestamp": 1791414230159
+    },
+    "data/social/dungeon_popularity_across_keylevels_2026-10.png": {
+        "title": "Dungeon Popularity Across Key Levels",
+        "post_type": "dungeon_popularity_by_level",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Murder Row's popularity keeps climbing, up +1.7% this week - seems even the rogue's guild can't resist a good backstab marathon. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "Murder Row draws the most runs across 21 key levels; Ruby Life Pools draws the fewest.\n\nDungeon popularity tracks route length, difficulty and how punishing the bosses get at high keys.",
+        "post": "Murder Row's popularity keeps climbing, up +1.7% this week - seems even the rogue's guild can't resist a good backstab marathon. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "lore_nerd",
+        "judge_score": 34.0,
+        "timestamp": 1791501407082
     }
 }
