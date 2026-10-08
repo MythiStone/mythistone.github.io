@@ -17,6 +17,7 @@ COPY backend_scripts/commonUtils.py       ${APP_DIR}/commonUtils.py
 COPY backend_scripts/chartData.py         ${APP_DIR}/chartData.py
 COPY backend_scripts/tierMath.py          ${APP_DIR}/tierMath.py
 COPY backend_scripts/season_gate.py       ${APP_DIR}/season_gate.py
+COPY backend_scripts/computeBuildPhase.py ${APP_DIR}/computeBuildPhase.py
 
 # The bot package itself.
 COPY discord_bot/ ${APP_DIR}/discord_bot/
@@ -37,6 +38,7 @@ COPY data/static/dungeons.json   ${APP_DIR}/data/static/dungeons.json
 COPY data/static/seasonInfo.json ${APP_DIR}/data/static/seasonInfo.json
 COPY data/static/groupbuffs.json ${APP_DIR}/data/static/groupbuffs.json
 COPY data/static/periods.json    ${APP_DIR}/data/static/periods.json
+COPY data/static/patches.json    ${APP_DIR}/data/static/patches.json
 COPY data/static/npcs.json       ${APP_DIR}/data/static/npcs.json
 # per-spec talent shards for /spec talents (hero-tree + talent names).
 COPY data/static/talents/        ${APP_DIR}/data/static/talents/
