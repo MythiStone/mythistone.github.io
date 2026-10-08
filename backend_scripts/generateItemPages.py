@@ -684,7 +684,8 @@ def build_payloads(season, ctx, only_item=None):
         # "Best in slot" signals (item-level), fetched once.
         print(f"[{datetime.now(timezone.utc).isoformat()}] fetching BiS / enchant signals...")
         simc_bis_by_item = defaultdict(list)
-        for sp, iid, dps in databaseConnector.fetch_simc_bis_rank1(conn, cursor, season):
+        for sp, iid, dps in databaseConnector.fetch_simc_bis_rank1(
+                conn, cursor, season, commonUtils.simc_fresh_cutoff(lookup_dir=LOOKUP_DIR)):
             simc_bis_by_item[str(iid)].append({
                 "spec_id": int(sp),
                 "dps_pct": round(float(dps), 1) if dps is not None else None,

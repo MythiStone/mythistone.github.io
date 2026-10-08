@@ -487,9 +487,10 @@
     if (kind === "sim") {
       var simTip = "Best item for this slot according to SimulationCraft" +
         (pick && pick.dps_pct != null && pick.dps_pct >= 0.05
-          ? " (+" + pick.dps_pct.toFixed(1) + "% DPS over the most-equipped item)" : "") + ".";
+          ? " (+" + pick.dps_pct.toFixed(1) + "% DPS over the most-equipped item)" : "") + "." +
+        (pick && pick.sim_at ? "<br>Updated: " + pick.sim_at + "." : "");
       return '<span class="badge simc-badge item-icon-sim-badge" data-bs-toggle="tooltip"' +
-        ' data-bs-container="body" title="' + esc(simTip) + '">SIM</span>';
+        ' data-bs-container="body" data-bs-html="true" title="' + esc(simTip) + '">SIM</span>';
     }
     if (kind === "top") {
       var pct = pick && pick.pct != null ? Math.round(pick.pct) : null;

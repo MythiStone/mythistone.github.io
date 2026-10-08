@@ -700,6 +700,7 @@ def normalize_slot_collections(list_of_lists, slot_names):
                 "is_simc_bis": e.get("is_simc_bis", False),
                 "simc_dps_pct": e.get("simc_dps_pct"),
                 "simc_rank": e.get("simc_rank"),
+                "simc_at": e.get("simc_at"),
                 "quality_override": e.get("quality_override"),
                 "crafted_stats": e.get("crafted_stats"),
                 "slot_slug": slot_slug,
@@ -1089,7 +1090,8 @@ def build_spec_meta_json(
                 common_pct = round(common.get("count", 0) / slot_count * 100, 1) if slot_count else None
                 out[slot_name] = {
                     "top": top,
-                    "sim": _pick(simc, dps_pct=simc.get("simc_dps_pct")) if simc else None,
+                    "sim": _pick(simc, dps_pct=simc.get("simc_dps_pct"),
+                                 sim_at=simc.get("simc_at")) if simc else None,
                     "common": _pick(common, pct=common_pct),
                 }
         return out
@@ -2162,6 +2164,8 @@ def convert_slots(
                         item["is_simc_bis"] = True
                         item["simc_rank"] = best.get("rank", 1)
                         item["simc_dps_pct"] = best.get("dps_pct_gain")
+                        at = best.get("inputs_at")
+                        item["simc_at"] = f"{at.day} {at:%b %Y}" if at else None
 
             # BIS annotations: items, enchants, gems (respect multi-slot groups)
             if bis_summary and isinstance(bis_summary, dict):
@@ -2435,6 +2439,7 @@ def main(template_path, output_dir, debug=False, spec=None):
     print(
         f"[{datetime.now(timezone.utc).isoformat()}] Current season ID: {current_season_id}"
     )
+    simc_cutoff = commonUtils.simc_fresh_cutoff(lookup_dir=LOOKUP_DIR)
 
     notifications = load_notifications(LOOKUP_DIR)
 
@@ -2888,7 +2893,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                 # frequency-based "TOP" highlight above). slot -> ranked candidate list.
                 try:
                     simc_bis = databaseConnector.fetch_simc_bis(
-                        conn, cursor, spec_id, current_season_id
+                        conn, cursor, spec_id, current_season_id, simc_cutoff
                     )
                 except Exception as e:
                     print(f"Warning: fetch_simc_bis failed: {e}")
