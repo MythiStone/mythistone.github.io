@@ -20,6 +20,9 @@ COPY backend_scripts/simcBis.py ${APP_DIR}/simcBis.py
 # from here (the Titan's Grip exception to the "2H main hand => no off-hand"
 # rule) so the page generators and the BiS collector can never disagree on it.
 COPY backend_scripts/commonUtils.py ${APP_DIR}/commonUtils.py
+# commonUtils.simc_fresh_cutoff reuses its content-update go-live rule, so the
+# collector's revalidation guard and the pages' SIM freshness gate never disagree.
+COPY backend_scripts/computeBuildPhase.py ${APP_DIR}/computeBuildPhase.py
 
 RUN mkdir -p ${APP_DIR}/data/static
 COPY data/static/dungeons.json ${APP_DIR}/data/static/dungeons.json
@@ -54,6 +57,10 @@ COPY data/static/enchantments.json ${APP_DIR}/data/static/enchantments.json
 COPY data/static/item-sets.json ${APP_DIR}/data/static/item-sets.json
 COPY data/static/consumables.json ${APP_DIR}/data/static/consumables.json
 COPY data/static/food_buffs.json ${APP_DIR}/data/static/food_buffs.json
+# patches.json + periods.json give commonUtils.simc_fresh_cutoff the latest
+# content go-live (read via os.path.join, so listed in REQUIRED_STATIC_EXTRA).
+COPY data/static/patches.json ${APP_DIR}/data/static/patches.json
+COPY data/static/periods.json ${APP_DIR}/data/static/periods.json
 
 # entrypoint and executable
 COPY entrypoint.sh /entrypoint.sh

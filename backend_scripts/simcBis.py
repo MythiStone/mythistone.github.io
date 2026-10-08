@@ -15,6 +15,9 @@ Runs continuously inside the collector container (registered alongside
      unique-equipped item, other itemLimit categories), and evaluating each legal
      set as a full profileset in a single simc invocation. The bag is trimmed
      (least-popular first) so the product fits ``SIMC_MAX_COMBINATIONS``.
+     Every combo is first screened at low precision, then only the finalists
+     are re-simmed at full precision (see _next_stage_work); an unchanged
+     profile re-sims only the previous run's leaders (see _revalidate_names).
   5. Derives a per-slot ranking from the full-set DPS results and persists it to
      ``simc_bis_meta`` / ``simc_bis_items`` for the page build's "SIM" badge.
 
@@ -122,6 +125,20 @@ SIMC_MAX_COMBINATIONS = int(os.environ.get("SIMC_MAX_COMBINATIONS", "500"))
 # stops a slow-converging (high-variance) combo from running unbounded. Set to
 # empty/0 to fall back to SIMC_ITERATIONS (else: no cap, target_error alone).
 SIMC_COMBO_ITERATIONS = os.environ.get("SIMC_COMBO_ITERATIONS", "5000")
+# Two-stage run (see _next_stage_work): stage 1 screens every combo at this low
+# precision, stage 2 re-sims only the finalists at SIMC_TARGET_ERROR /
+# SIMC_COMBO_ITERATIONS. Screening chunks are cheap, hence the larger chunk size.
+SIMC_SCREEN_TARGET_ERROR = os.environ.get("SIMC_SCREEN_TARGET_ERROR", "1.0")
+SIMC_SCREEN_ITERATIONS = int(os.environ.get("SIMC_SCREEN_ITERATIONS", "500"))
+SIMC_SCREEN_CHUNK_SIZE = int(os.environ.get("SIMC_SCREEN_CHUNK_SIZE", "256"))
+# Finalists: the top SIMC_FINALISTS screened combos, widened to every combo within
+# SIMC_FINALIST_KEEP_PCT of the best (screening noise), capped at SIMC_FINALISTS_MAX.
+SIMC_FINALISTS = int(os.environ.get("SIMC_FINALISTS", "20"))
+SIMC_FINALIST_KEEP_PCT = float(os.environ.get("SIMC_FINALIST_KEEP_PCT", "1.0"))
+SIMC_FINALISTS_MAX = int(os.environ.get("SIMC_FINALISTS_MAX", "40"))
+# Combos a completed run stores for revalidation (plus the per-slot references):
+# when a spec's profile is unchanged only these are re-simmed.
+SIMC_REVALIDATE_TOP = int(os.environ.get("SIMC_REVALIDATE_TOP", "3"))
 # Drop slot candidates used by fewer than this fraction of the slot's most-popular
 # item (filters stale/old-expansion items that pollute the aggregated pool).
 SIMC_MIN_CANDIDATE_FRACTION = float(os.environ.get("SIMC_MIN_CANDIDATE_FRACTION", "0.02"))
@@ -1403,7 +1420,7 @@ RAID_BUFF_OVERRIDES = [
 ]
 
 
-def sim_options(iterations=None):
+def sim_options(iterations=None, target_error=None):
     """simc-wide options.
 
     Convergence: every sim runs to SIMC_TARGET_ERROR but is capped at a maximum
@@ -1412,7 +1429,8 @@ def sim_options(iterations=None):
     SIMC_COMBO_ITERATIONS); otherwise the cap comes from SIMC_ITERATIONS if set,
     else there is no cap and target_error alone governs. In simc, specifying both
     target_error and iterations makes iterations the ceiling — so this yields
-    "stop at 0.1% error OR N iterations, whichever first".
+    "stop at 0.1% error OR N iterations, whichever first". `target_error`
+    overrides SIMC_TARGET_ERROR (the stage-1 screen passes its own).
     """
     opts = [
         f"threads={SIMC_THREADS}",
@@ -1431,21 +1449,21 @@ def sim_options(iterations=None):
         *RAID_BUFF_OVERRIDES,
         "optimize_expressions=1",
     ]
-    opts.append(f"target_error={SIMC_TARGET_ERROR}")
+    opts.append(f"target_error={target_error or SIMC_TARGET_ERROR}")
     cap = iterations or (int(SIMC_ITERATIONS) if SIMC_ITERATIONS else None)
     if cap:
         opts.append(f"iterations={cap}")
     return opts
 
 
-def build_profile(header, baseline_gear, profilesets, iterations=None):
+def build_profile(header, baseline_gear, profilesets, iterations=None, target_error=None):
     """Assemble the full .simc text.
 
     baseline_gear: dict slot -> candidate (the current best-known set).
     profilesets: list of (name, [(slot, candidate), ...]) overrides.
     """
     out = []
-    out.extend(sim_options(iterations))
+    out.extend(sim_options(iterations, target_error))
     out.append("")
     out.extend(header)
     out.append("")
@@ -2197,13 +2215,16 @@ _PREP_SNAPSHOT_KEYS = ("header", "candidates", "baseline", "tier_set_id",
 
 
 def _snapshot_prep(prep):
-    """Serialize the build-relevant part of a prep dict to compact JSON."""
+    """Serialize the build-relevant part of a prep dict to compact JSON. The
+    optional `revalidate` name list rides along so a revalidation resumes as one."""
     data = {}
     for k in _PREP_SNAPSHOT_KEYS:
         v = prep.get(k)
         if isinstance(v, set):
             v = sorted(v)
         data[k] = v
+    if prep.get("revalidate"):
+        data["revalidate"] = list(prep["revalidate"])
     return json.dumps(data, separators=(",", ":"))
 
 
@@ -2275,8 +2296,22 @@ def _build_run(prep, item_lookup):
     if not all_combos:
         return None, reason or "no legal gear combination"
 
-    full_text = build_profile(header, base_full, profilesets, iterations=combo_iters)
-    signature = hashlib.sha256(full_text.encode("utf-8")).hexdigest()
+    # profile_signature identifies the full two-stage run (stage-1 text plus the
+    # knobs that decide stage 2) and is what a completed run stores to detect an
+    # unchanged profile. A revalidation sims a subset, so its checkpoint gets its
+    # own signature.
+    screen_text = build_profile(header, base_full, profilesets,
+                                iterations=SIMC_SCREEN_ITERATIONS,
+                                target_error=SIMC_SCREEN_TARGET_ERROR)
+    stage_params = (f"final:{SIMC_TARGET_ERROR}/{combo_iters} finalists:{SIMC_FINALISTS}/"
+                    f"{SIMC_FINALIST_KEEP_PCT}/{SIMC_FINALISTS_MAX}")
+    profile_signature = hashlib.sha256((screen_text + stage_params).encode("utf-8")).hexdigest()
+    revalidate = [n for n in prep.get("revalidate") or [] if n in index]
+    signature = profile_signature
+    if revalidate:
+        signature = hashlib.sha256(
+            f"{profile_signature}|revalidate:{','.join(revalidate)}".encode("utf-8")
+        ).hexdigest()
     return {
         "header": header,
         "candidates": candidates,
@@ -2290,7 +2325,68 @@ def _build_run(prep, item_lookup):
         "combo_iters": combo_iters,
         "n_combos": len(all_combos),
         "signature": signature,
+        "profile_signature": profile_signature,
+        "revalidate": revalidate,
     }, None
+
+
+def _stage_means(done, stage):
+    """{profileset_name: mean} of one stage's banked rows (prefix stripped)."""
+    prefix = f"{stage}:"
+    return {n[len(prefix):]: m for n, m in done.items() if n.startswith(prefix)}
+
+
+def _rank_with_refs(build, means, top_n):
+    """Profileset names to carry forward from `means`: the top_n by DPS plus, per
+    active slot, the best combo wearing that slot's most-equipped candidate. The
+    latter keep _assemble_result's slot_baseline_dps (the "+X% over the
+    most-equipped item" figure) on real numbers. Ties break by name, so a resume
+    recomputes the identical list."""
+    index = build["index"]
+    ranked = sorted(((m, n) for n, m in means.items() if n in index),
+                    key=lambda x: (-x[0], x[1]))
+    keep = {n for _, n in ranked[:top_n]}
+    for slot in build["active_slots"]:
+        cands = build["candidates"].get(slot)
+        if not cands:
+            continue
+        popular = cands[0]["item_id"]
+        ref = next((n for _, n in ranked
+                    if (index[n][0].get(slot) or {}).get("item_id") == popular), None)
+        if ref is not None:
+            keep.add(ref)
+    return [n for _, n in ranked if n in keep]
+
+
+def _select_finalists(build, s1_means):
+    """Stage-2 finalists from the stage-1 screen (see SIMC_FINALISTS*)."""
+    if not s1_means:
+        return []
+    best = max(s1_means.values())
+    floor = best * (1 - SIMC_FINALIST_KEEP_PCT / 100.0)
+    within = sum(1 for m in s1_means.values() if m >= floor)
+    return _rank_with_refs(build, s1_means,
+                           min(max(SIMC_FINALISTS, within), SIMC_FINALISTS_MAX))
+
+
+def _next_stage_work(build, done):
+    """The next chunk to sim as (stage, pending profilesets, iterations,
+    target_error, chunk_size), or None when every stage is banked and the run can
+    finalize. Progress rows are keyed `s1:<name>` (screen) and `s2:<name>`
+    (final). A revalidation skips the screen and finalizes its stored names."""
+    if build["revalidate"]:
+        finalists = set(build["revalidate"])
+    else:
+        pending = [ps for ps in build["profilesets"] if f"s1:{ps[0]}" not in done]
+        if pending:
+            return ("s1", pending, SIMC_SCREEN_ITERATIONS, SIMC_SCREEN_TARGET_ERROR,
+                    SIMC_SCREEN_CHUNK_SIZE)
+        finalists = set(_select_finalists(build, _stage_means(done, "s1")))
+    pending = [ps for ps in build["profilesets"]
+               if ps[0] in finalists and f"s2:{ps[0]}" not in done]
+    if pending:
+        return "s2", pending, build["combo_iters"], None, SIMC_CHUNK_SIZE
+    return None
 
 
 def _assemble_result(spec_id, season, build, means, baseline_dps, simc_version):
@@ -2466,6 +2562,9 @@ def persist(conn, cursor, result, item_lookup):
             target_error=effective_terr,
             tier_config=result.get("tier_config"),
             updated_at=now,
+            inputs_at=result.get("inputs_at") or now,
+            run_signature=result.get("run_signature"),
+            revalidate_set=result.get("revalidate_set"),
         )
         databaseConnector.insert_simc_bis_items_batch(conn, cursor, item_rows)
         databaseConnector.commit_with_retry(conn)
@@ -2476,8 +2575,9 @@ def persist(conn, cursor, result, item_lookup):
 
 
 def _write_failure_meta(spec_id, season):
-    """Record a failed/timed-out attempt (empty BiS meta with a fresh timestamp)
-    so pick_next_spec's round-robin doesn't immediately re-pick the broken spec.
+    """Record a failed/timed-out attempt by bumping only simc_bis_meta.updated_at,
+    so _select_target_spec doesn't immediately re-pick the broken spec. The last
+    good result stays; the pages' freshness gate (inputs_at) retires it.
 
     Uses its own short-lived, validated connection: the sim that just failed may
     have run for hours, so any connection checked out before it would be dead by
@@ -2491,10 +2591,7 @@ def _write_failure_meta(spec_id, season):
             now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
             if not conn.in_transaction:
                 conn.start_transaction()
-            databaseConnector.delete_simc_bis(conn, cursor, spec_id, season)
-            databaseConnector.insert_simc_bis_meta(
-                conn, cursor, spec_id, season, updated_at=now
-            )
+            databaseConnector.touch_simc_bis_meta(conn, cursor, spec_id, season, now)
             databaseConnector.commit_with_retry(conn)
     except Exception as e:
         _log(f"simc: could not write failure meta for spec {spec_id}: {e}")
@@ -2516,9 +2613,9 @@ def _persist_progress_chunk(spec_id, season, signature, total, reset, snapshot,
 
     `reset` drops any stale checkpoint (signature changed) first. `snapshot` is
     the JSON prep snapshot; COALESCE in the upsert keeps the stored one when None
-    is passed. A successful chunk clears the failed flag. baseline_dps /
-    simc_version are captured from whichever chunk ran (every chunk sims the base
-    actor). Its own transaction, own connection."""
+    is passed. A successful chunk clears the failed flag. baseline_dps (None for
+    a screening chunk, so only a full-precision base actor is kept) and
+    simc_version are kept via COALESCE. Its own transaction, own connection."""
     from contextlib import closing
     with closing(databaseConnector.get_live_connection()) as conn:
         cursor = conn.cursor()
@@ -2563,15 +2660,22 @@ def _touch_progress_attempt(spec_id, season, signature, total, reset, snapshot, 
         _log(f"simc: could not touch progress attempt for spec {spec_id}: {e}")
 
 
-def _finalize_run(spec_id, season, build, all_means, baseline_dps, simc_version, item_lookup):
-    """Assemble the final BiS from every chunk's means, persist it, and clear the
+def _finalize_run(spec_id, season, build, all_means, baseline_dps, simc_version, item_lookup,
+                  inputs_at):
+    """Assemble the final BiS from the stage-2 means, persist it, and clear the
     checkpoint. Returns (True, result) or (False, error_str). The persist and the
     checkpoint-clear run on one connection; if the process dies between them the
-    leftover progress rows just re-finalise (idempotently) on the next visit."""
+    leftover progress rows just re-finalise (idempotently) on the next visit.
+    `inputs_at` is when the run's gear snapshot was prepared (the pages'
+    freshness clock); the stored signature and revalidate set let the next
+    visit re-sim only the leaders when the profile is unchanged."""
     from contextlib import closing
     result, err = _assemble_result(spec_id, season, build, all_means, baseline_dps, simc_version)
     if not result:
         return False, err
+    result["inputs_at"] = inputs_at
+    result["run_signature"] = build["profile_signature"]
+    result["revalidate_set"] = ",".join(_rank_with_refs(build, all_means, SIMC_REVALIDATE_TOP))
     with closing(databaseConnector.get_live_connection()) as conn:
         cursor = conn.cursor()
         databaseConnector.configure_read_session(conn, cursor)
@@ -2630,6 +2734,22 @@ def _select_target_spec(conn, cursor, specs, season):
     return best[1], best[2]
 
 
+def _revalidate_names(conn, cursor, spec_id, season, build):
+    """Stored combo names to re-sim when the spec's profile is unchanged since its
+    last completed run, else None (full two-stage run). A content go-live after
+    that run always forces a full run: new tuning can reorder more than the
+    leaders."""
+    completed = databaseConnector.fetch_simc_bis_completed(conn, cursor, spec_id, season)
+    if not completed or completed.get("run_signature") != build["profile_signature"]:
+        return None
+    names = [n for n in (completed.get("revalidate_set") or "").split(",") if n in build["index"]]
+    inputs_at = completed.get("inputs_at")
+    go_live = commonUtils.latest_content_go_live(lookup_dir=str(STATIC_DIR))
+    if not names or inputs_at is None or (go_live is not None and inputs_at < go_live):
+        return None
+    return names
+
+
 # --------------------------------------------------------------------------
 # Spec selection (round-robin cursor)
 # --------------------------------------------------------------------------
@@ -2647,23 +2767,6 @@ def simulated_specs(specs):
             continue
         out.append((int(spec_id_str), info))
     return out
-
-
-def pick_next_spec(conn, cursor, specs, season):
-    """Return the (spec_id, info) with the oldest / missing simc run."""
-    oldest = None
-    for spec_id, info in simulated_specs(specs):
-        try:
-            ts = databaseConnector.fetch_simc_bis_updated_at(conn, cursor, spec_id, season)
-        except Exception:
-            ts = None
-        # None (never run) sorts first
-        key = (ts is not None, ts or datetime.min)
-        if oldest is None or key < oldest[0]:
-            oldest = (key, spec_id, info)
-    if oldest is None:
-        return None
-    return oldest[1], oldest[2]
 
 
 # --------------------------------------------------------------------------
@@ -2742,7 +2845,7 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
             last_pull = asyncio.get_event_loop().time()
         try:
             # --- Read phase: short-lived connection, released BEFORE the sims ---
-            # A spec is simmed in chunks of SIMC_CHUNK_SIZE profilesets, run
+            # A spec is simmed in chunks (per stage, see _next_stage_work), run
             # BACK-TO-BACK until the spec completes (checkpointing each chunk), so
             # a heavy spec finishes in ~one continuous stretch, survives the
             # ~daily container restart losing at most one chunk, and never blows
@@ -2761,6 +2864,7 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
             reset_progress = False
             stored_baseline = None
             stored_version = None
+            inputs_at = None
             with closing(databaseConnector.get_live_connection()) as conn:
                 cursor = conn.cursor()
                 # autocommit read phase (see configure_read_session); writers open
@@ -2830,6 +2934,7 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                         done = databaseConnector.fetch_simc_progress_means(conn, cursor, spec_id, season)
                         stored_baseline = pmeta.get("baseline_dps")
                         stored_version = pmeta.get("simc_version")
+                        inputs_at = pmeta.get("started_at")
                         _stat_log(stats, f"simc: spec {spec_id} resuming from checkpoint "
                                          f"({len(done)}/{pmeta.get('total_profilesets')} profilesets banked)")
                     else:
@@ -2839,12 +2944,19 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                         reset_progress = True
 
                 if build is None:
+                    inputs_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
                     prep, prep_err = _prepare_spec(
                         spec_id, info, class_info, season, conn, cursor, item_lookup, stats
                     )
                     if prep:
                         build, build_err = _build_run(prep, item_lookup)
                         if build is not None:
+                            names = _revalidate_names(conn, cursor, spec_id, season, build)
+                            if names:
+                                prep["revalidate"] = names
+                                build, build_err = _build_run(prep, item_lookup)
+                                _stat_log(stats, f"simc: spec {spec_id} profile unchanged, "
+                                                 f"revalidating {len(build['revalidate'])} combo(s)")
                             snapshot = _snapshot_prep(prep)
             # connection released here — the sims below hold no DB connection
 
@@ -2870,10 +2982,10 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
             # --- Sim phase: back-to-back chunks, no DB connection held ---
             while not _cancelled():
                 now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-                remaining = [ps for ps in build["profilesets"] if ps[0] not in done]
+                work = _next_stage_work(build, done)
 
-                if not remaining:
-                    # All profilesets banked (or the spec has none). If a previous
+                if work is None:
+                    # Every stage banked (or the spec has none). If a stage-2
                     # chunk already measured the base actor, finalize directly;
                     # otherwise (0-profileset spec, or a crash landed exactly
                     # between the last bank and finalize with no stored baseline)
@@ -2898,8 +3010,9 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                         baseline_dps = parse_baseline_dps(result_json)
                         simc_version = parse_simc_version(result_json)
                     async with _gated():
-                        ok, fin = _finalize_run(spec_id, season, build, done,
-                                                baseline_dps, simc_version, item_lookup)
+                        ok, fin = _finalize_run(spec_id, season, build, _stage_means(done, "s2"),
+                                                baseline_dps, simc_version, item_lookup,
+                                                inputs_at)
                     if ok:
                         if stats is not None:
                             try:
@@ -2919,14 +3032,16 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                             _clear_progress(spec_id, season)
                     break
 
-                chunk = remaining[:SIMC_CHUNK_SIZE]
-                done_n = len(done)
-                _stat_log(stats, f"simc: spec {spec_id} ({spec_label}) simming profilesets "
-                                 f"{done_n + 1}-{done_n + len(chunk)}/{total}"
+                stage, pending, iters, terr, chunk_size = work
+                chunk = pending[:chunk_size]
+                stage_done = len(_stage_means(done, stage))
+                stage_total = stage_done + len(pending)
+                _stat_log(stats, f"simc: spec {spec_id} ({spec_label}) {stage} simming profilesets "
+                                 f"{stage_done + 1}-{stage_done + len(chunk)}/{stage_total}"
                                  + (" [restarting stale progress]" if reset_progress else ""))
                 profile_text = build_profile(build["header"], build["base_full"], chunk,
-                                             iterations=build["combo_iters"])
-                token = f"spec{spec_id}_chunk{done_n // max(1, SIMC_CHUNK_SIZE)}"
+                                             iterations=iters, target_error=terr)
+                token = f"spec{spec_id}_{stage}_chunk{stage_done // max(1, chunk_size)}"
                 result_json, run_err = await run_simc(profile_text, token)
                 now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -2956,7 +3071,8 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                         stats.set_status("simc_build", simc_version)
                     except Exception:
                         pass
-                chunk_means = parse_profileset_means(result_json)
+                chunk_means = {f"{stage}:{n}": m
+                               for n, m in parse_profileset_means(result_json).items()}
                 if not chunk_means:
                     # simc "succeeded" but returned no profileset results — treat
                     # as a failure rather than looping on the same chunk forever.
@@ -2975,6 +3091,10 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                     except Exception:
                         pass
 
+                # Only a full-precision (stage-2) base actor may become the
+                # finalized baseline, so a screening chunk banks none.
+                if stage != "s2":
+                    baseline_dps = None
                 # Bank the chunk before anything else so a crash/restart from here
                 # on can only lose work that was never persisted.
                 async with _gated():
@@ -2983,9 +3103,11 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                                             baseline_dps, simc_version, now)
                 reset_progress = False   # stale rows dropped on the first write
                 done.update(chunk_means)
-                stored_baseline, stored_version = baseline_dps, simc_version
-                _stat_log(stats, f"simc: spec {spec_id} ({spec_label}) progress "
-                                 f"{len(done)}/{total} profilesets")
+                if baseline_dps is not None:
+                    stored_baseline = baseline_dps
+                stored_version = simc_version
+                _stat_log(stats, f"simc: spec {spec_id} ({spec_label}) {stage} progress "
+                                 f"{stage_done + len(chunk_means)}/{stage_total} profilesets")
                 # Brief pause between chunks (keeps the loop responsive to
                 # cancellation and lets other tasks breathe); the next loop pass
                 # sims the following chunk or finalizes.

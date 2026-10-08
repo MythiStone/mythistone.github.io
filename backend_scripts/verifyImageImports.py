@@ -75,7 +75,8 @@ def collect_static_json_refs(tree):
     return names
 
 
-REQUIRED_STATIC_EXTRA = ("consumables.json", "food_buffs.json", "item-sets.json")
+REQUIRED_STATIC_EXTRA = ("consumables.json", "food_buffs.json", "item-sets.json",
+                         "patches.json", "periods.json")
 
 
 def resolves(name, root):

@@ -1,7 +1,8 @@
 """Shared, dependency-light helpers used across page generators, the
 image_generation package and the social_posts package.
 
-Only stdlib + databaseConnector may be imported here; keeping this module
+Only stdlib + databaseConnector (and the stdlib-only computeBuildPhase) may be
+imported here; keeping this module
 free of jinja2/matplotlib/PIL/openai is what breaks the old circular-import
 chains (generateSocialsPost <-> generateSpecPages/generateDashboardPage).
 """
@@ -11,7 +12,9 @@ import json
 import os
 import re
 from collections import Counter
+from datetime import datetime, timedelta, timezone
 
+import computeBuildPhase
 import databaseConnector
 
 LOOKUP_DIR = "data/static"  # Default lookup directory, can be overridden by command line argument
@@ -886,6 +889,37 @@ def load_season_info(lookup_dir=None):
 def current_season_id(lookup_dir=None):
     """Blizzard season id the build renders against. See load_season_info."""
     return int(load_season_info(lookup_dir)["blizzard_season_id"])
+
+
+SIMC_MAX_AGE_DAYS = 7
+
+
+def latest_content_go_live(now=None, lookup_dir=None):
+    """Naive-UTC datetime of the most recent content update (season start or
+    patch, snapped to its reset week) live at `now`, or None pre-season. Same rule
+    as the build cadence (computeBuildPhase.content_update_go_lives)."""
+    lookup_dir = lookup_dir or LOOKUP_DIR
+    now = now or datetime.now(timezone.utc).replace(tzinfo=None)
+    now_ms = int(now.replace(tzinfo=timezone.utc).timestamp() * 1000)
+    go_lives = computeBuildPhase.content_update_go_lives(
+        now_ms,
+        load_json(os.path.join(lookup_dir, "patches.json")),
+        load_json(os.path.join(lookup_dir, "periods.json")),
+        load_season_info(lookup_dir),
+    )
+    if not go_lives:
+        return None
+    return datetime.fromtimestamp(max(go_lives) / 1000, tz=timezone.utc).replace(tzinfo=None)
+
+
+def simc_fresh_cutoff(now=None, lookup_dir=None):
+    """Oldest `simc_bis_meta.inputs_at` whose SimC result pages may still show:
+    the later of SIMC_MAX_AGE_DAYS ago and the latest content go-live. Naive UTC,
+    matching the DB DATETIME columns."""
+    now = now or datetime.now(timezone.utc).replace(tzinfo=None)
+    cutoff = now - timedelta(days=SIMC_MAX_AGE_DAYS)
+    go_live = latest_content_go_live(now, lookup_dir)
+    return max(cutoff, go_live) if go_live else cutoff
 
 
 def current_expansion_id(lookup_dir=None):

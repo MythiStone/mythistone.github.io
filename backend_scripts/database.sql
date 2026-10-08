@@ -708,6 +708,9 @@ CREATE TABLE `simc_bis_meta` (
   `target_error` double DEFAULT NULL,
   `tier_config` varchar(255) DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
+  `inputs_at` datetime DEFAULT NULL,
+  `run_signature` char(64) DEFAULT NULL,
+  `revalidate_set` varchar(512) DEFAULT NULL,
   PRIMARY KEY (`spec_id`,`season`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

@@ -13,6 +13,7 @@ on:
       - 'backend_scripts/stats.py'
       - 'backend_scripts/simcBis.py'
       - 'backend_scripts/commonUtils.py'
+      - 'backend_scripts/computeBuildPhase.py'
       - 'backend_scripts/verifyImageImports.py'
       - 'data/static/dungeons.json'
       - 'data/static/specs.json'
@@ -24,6 +25,11 @@ on:
       - 'data/static/crafting.json'
       - 'data/static/bonuses.json'
       - 'data/static/enchantments.json'
+      - 'data/static/item-sets.json'
+      - 'data/static/patches.json'
+      - 'data/static/periods.json'
+      - 'data/static/consumables.json'
+      - 'data/static/food_buffs.json'
       - 'Dockerfile'
       - 'entrypoint.sh'
       # Also rebuild when the smoke test itself changes, so a broken gate is
@@ -156,13 +162,15 @@ jobs:
           WEBHOOK_URL: https://example.invalid/webhook
           # SimC: a tiny but VALID spec-62 sim that exercises real profile creation.
           # Cap to exactly 3 combinations (not a full profileset), few iterations, and
-          # a high target error so one chunk completes fast; we assert the chunk
-          # SUCCEEDS (a simc_bis result row), not that the DPS is meaningful.
+          # a high target error so the screen and final chunks complete fast; we assert
+          # the spec SUCCEEDS (a simc_bis result row), not that the DPS is meaningful.
           SIMC_ENABLED: 'true'
           SIMC_DOCKER_IMAGE: ghcr.io/mythistone/simc:latest
           SIMC_IO_DIR: /app/data/simc_io
           SIMC_MAX_COMBINATIONS: '3'
           SIMC_COMBO_ITERATIONS: '200'
+          SIMC_SCREEN_ITERATIONS: '100'
+          SIMC_SCREEN_TARGET_ERROR: '1.0'
           SIMC_TARGET_ERROR: '1.0'
           SIMC_RUN_TIMEOUT: '300'
           SIMC_THREADS: '2'

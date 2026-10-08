@@ -1195,7 +1195,7 @@ def seed_standalone(conn, cursor, static, rng, cfg, pools):
     for sid_str in static.specs:
         sid = int(sid_str)
         base_dps = rng.uniform(1.8e6, 3.2e6)
-        meta_rows.append((sid, season, "simc-seed", base_dps, 10000, 0.1, "tww3", now_dt))
+        meta_rows.append((sid, season, "simc-seed", base_dps, 10000, 0.1, "tww3", now_dt, now_dt))
         for slot in EQUIPMENT_SLOTS:
             pool = item_pools.get(slot) or []
             if not pool:
@@ -1212,11 +1212,12 @@ def seed_standalone(conn, cursor, static, rng, cfg, pools):
         prog_meta.append((sid, season, f"{sid:064x}", 120, base_dps, "simc-seed",
                           now_dt, now_dt, 0, None))
         for i in range(rng.randint(3, 8)):
-            prog_rows.append((sid, season, f"pset_{i}", base_dps * rng.uniform(0.98, 1.03), now_dt))
+            prog_rows.append((sid, season, f"s1:g{i + 1}", base_dps * rng.uniform(0.98, 1.03), now_dt))
 
     _insert_many(conn, cursor,
         "INSERT INTO simc_bis_meta (spec_id, season, simc_version, baseline_dps, iterations, "
-        "target_error, tier_config, updated_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", meta_rows)
+        "target_error, tier_config, updated_at, inputs_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        meta_rows)
     _insert_many(conn, cursor,
         "INSERT INTO simc_bis_items (spec_id, season, slot, `rank`, item_id, bonus_list, ilevel, dps, "
         "dps_pct_gain, is_set_piece, item_set_id, enchant_id, gem_ids) "

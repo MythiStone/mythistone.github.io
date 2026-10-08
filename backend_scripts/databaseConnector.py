@@ -1342,19 +1342,22 @@ def fetch_spec_keylevel_total_runs(connection, cursor):
 # --- "best in slot" signals for the item page ------------------------------
 
 FETCH_SIMC_BIS_RANK1_SQL = """
-SELECT spec_id, item_id, dps_pct_gain
-FROM Mythistone.simc_bis_items
-WHERE season = %s AND `rank` = 1;
+SELECT i.spec_id, i.item_id, i.dps_pct_gain
+FROM Mythistone.simc_bis_items i
+JOIN Mythistone.simc_bis_meta m ON m.spec_id = i.spec_id AND m.season = i.season
+WHERE i.season = %s AND i.`rank` = 1 AND m.inputs_at >= %s;
 """
 
 
-def fetch_simc_bis_rank1(connection, cursor, season):
-    """SimulationCraft rank-1 (BiS) pick per spec+slot for the season.
+def fetch_simc_bis_rank1(connection, cursor, season, fresh_since):
+    """SimulationCraft rank-1 (BiS) pick per spec+slot for the season, limited
+    to runs whose gear snapshot is at or after `fresh_since`
+    (commonUtils.simc_fresh_cutoff).
 
     Returns rows: (spec_id, item_id, dps_pct_gain). Used to mark which specs an
     item is the simulated best-in-slot for.
     """
-    return fetch_with_retry(connection, cursor, FETCH_SIMC_BIS_RANK1_SQL, (season,))
+    return fetch_with_retry(connection, cursor, FETCH_SIMC_BIS_RANK1_SQL, (season, fresh_since))
 
 
 FETCH_TOP50_ITEM_COUNTS_SQL = """
@@ -5167,8 +5170,21 @@ WHERE `spec_id` = %s AND `season` = %s
 
 INSERT_SIMC_BIS_META_SQL = """
 INSERT INTO `Mythistone`.`simc_bis_meta`
-(`spec_id`, `season`, `simc_version`, `baseline_dps`, `iterations`, `target_error`, `tier_config`, `updated_at`)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+(`spec_id`, `season`, `simc_version`, `baseline_dps`, `iterations`, `target_error`, `tier_config`, `updated_at`,
+ `inputs_at`, `run_signature`, `revalidate_set`)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+"""
+
+TOUCH_SIMC_BIS_META_SQL = """
+INSERT INTO `Mythistone`.`simc_bis_meta` (`spec_id`, `season`, `updated_at`)
+VALUES (%s, %s, %s)
+ON DUPLICATE KEY UPDATE `updated_at` = VALUES(`updated_at`)
+"""
+
+FETCH_SIMC_BIS_COMPLETED_SQL = """
+SELECT `run_signature`, `revalidate_set`, `inputs_at`
+FROM `Mythistone`.`simc_bis_meta`
+WHERE `spec_id` = %s AND `season` = %s AND `baseline_dps` IS NOT NULL
 """
 
 INSERT_SIMC_BIS_ITEMS_SQL = """
@@ -5178,10 +5194,21 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 
 FETCH_SIMC_BIS_ITEMS_SQL = """
-SELECT `slot`, `rank`, `item_id`, `bonus_list`, `ilevel`, `dps`, `dps_pct_gain`, `is_set_piece`, `item_set_id`, `enchant_id`, `gem_ids`
-FROM `Mythistone`.`simc_bis_items`
-WHERE `spec_id` = %s AND `season` = %s
-ORDER BY `slot`, `rank`
+SELECT i.`slot`, i.`rank`, i.`item_id`, i.`bonus_list`, i.`ilevel`, i.`dps`, i.`dps_pct_gain`,
+       i.`is_set_piece`, i.`item_set_id`, i.`enchant_id`, i.`gem_ids`, m.`inputs_at`
+FROM `Mythistone`.`simc_bis_items` i
+JOIN `Mythistone`.`simc_bis_meta` m ON m.`spec_id` = i.`spec_id` AND m.`season` = i.`season`
+WHERE i.`spec_id` = %s AND i.`season` = %s
+ORDER BY i.`slot`, i.`rank`
+"""
+
+FETCH_SIMC_BIS_ITEMS_FRESH_SQL = """
+SELECT i.`slot`, i.`rank`, i.`item_id`, i.`bonus_list`, i.`ilevel`, i.`dps`, i.`dps_pct_gain`,
+       i.`is_set_piece`, i.`item_set_id`, i.`enchant_id`, i.`gem_ids`, m.`inputs_at`
+FROM `Mythistone`.`simc_bis_items` i
+JOIN `Mythistone`.`simc_bis_meta` m ON m.`spec_id` = i.`spec_id` AND m.`season` = i.`season`
+WHERE i.`spec_id` = %s AND i.`season` = %s AND m.`inputs_at` >= %s
+ORDER BY i.`slot`, i.`rank`
 """
 
 FETCH_SIMC_BIS_UPDATED_AT_SQL = """
@@ -5209,6 +5236,9 @@ def insert_simc_bis_meta(
     target_error=None,
     tier_config=None,
     updated_at=None,
+    inputs_at=None,
+    run_signature=None,
+    revalidate_set=None,
 ):
     """Insert a simc BiS meta row."""
     val = (
@@ -5220,9 +5250,33 @@ def insert_simc_bis_meta(
         target_error,
         tier_config,
         updated_at,
+        inputs_at,
+        run_signature,
+        revalidate_set,
     )
     execute_with_retry(connection, cursor, INSERT_SIMC_BIS_META_SQL, val)
     return cursor.lastrowid
+
+
+def touch_simc_bis_meta(connection, cursor, spec_id, season, updated_at):
+    """Bump only a spec's queue position (`updated_at`) after a failed attempt.
+    The last good items and their `inputs_at` stay, so the page freshness gate,
+    not a failure, decides when they stop showing."""
+    execute_with_retry(connection, cursor, TOUCH_SIMC_BIS_META_SQL, (spec_id, season, updated_at))
+
+
+def fetch_simc_bis_completed(connection, cursor, spec_id, season):
+    """Return {run_signature, revalidate_set, inputs_at} of the spec's last
+    completed run, or None when it has none."""
+    rows = fetch_with_retry(
+        connection, cursor, FETCH_SIMC_BIS_COMPLETED_SQL, (spec_id, season)
+    )
+    if not rows:
+        return None
+    row = rows[0]
+    if isinstance(row, dict):
+        return dict(row)
+    return {"run_signature": row[0], "revalidate_set": row[1], "inputs_at": row[2]}
 
 
 def insert_simc_bis_items_batch(connection, cursor, rows):
@@ -5249,10 +5303,17 @@ def fetch_simc_bis_updated_at(connection, cursor, spec_id, season):
     return row.get("updated_at") if isinstance(row, dict) else row[0]
 
 
-def fetch_simc_bis(connection, cursor, spec_id, season):
+def fetch_simc_bis(connection, cursor, spec_id, season, fresh_since=None):
     """Return simc BiS results as {slot: [ {item_id, bonus_list, ilevel, dps,
-    dps_pct_gain, rank, is_set_piece, item_set_id}, ... ]} ordered by rank (1 = BiS)."""
-    rows = fetch_with_retry(connection, cursor, FETCH_SIMC_BIS_ITEMS_SQL, (spec_id, season))
+    dps_pct_gain, rank, is_set_piece, item_set_id, inputs_at}, ... ]} ordered by
+    rank (1 = BiS). With `fresh_since` (see commonUtils.simc_fresh_cutoff) a run
+    whose gear snapshot is older returns nothing."""
+    if fresh_since is None:
+        rows = fetch_with_retry(connection, cursor, FETCH_SIMC_BIS_ITEMS_SQL, (spec_id, season))
+    else:
+        rows = fetch_with_retry(
+            connection, cursor, FETCH_SIMC_BIS_ITEMS_FRESH_SQL, (spec_id, season, fresh_since)
+        )
     out = {}
     for row in rows:
         if isinstance(row, dict):
@@ -5268,6 +5329,7 @@ def fetch_simc_bis(connection, cursor, spec_id, season):
                 "item_set_id": int(row.get("item_set_id")) if row.get("item_set_id") is not None else None,
                 "enchant_id": int(row.get("enchant_id")) if row.get("enchant_id") is not None else None,
                 "gem_ids": row.get("gem_ids"),
+                "inputs_at": row.get("inputs_at"),
             }
         else:
             slot = row[0]
@@ -5282,6 +5344,7 @@ def fetch_simc_bis(connection, cursor, spec_id, season):
                 "item_set_id": int(row[8]) if row[8] is not None else None,
                 "enchant_id": int(row[9]) if row[9] is not None else None,
                 "gem_ids": row[10],
+                "inputs_at": row[11],
             }
         out.setdefault(slot, []).append(entry)
     return out
