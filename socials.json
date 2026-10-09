@@ -2007,5 +2007,16 @@
         "persona": "lore_nerd",
         "judge_score": 34.0,
         "timestamp": 1791501407082
+    },
+    "data/social/comp_overview_18_2026-10.png": {
+        "title": "Global Top Comps",
+        "post_type": "comp_overview",
+        "link": "https://mythistone.com/pages/comps",
+        "social": "Notes for tonight: the top two groups on the sheet differ by one spec. Elemental Shaman or Demonology Warlock. Same four people. Pull in ten. #WoW #MythicPlus https://mythistone.com/pages/comps",
+        "blog": "Across 4.1 M tracked Mythic+ runs, the most popular group composition is Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman.\n\nBlood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Demonology Warlock sits just behind it.",
+        "post": "Notes for tonight: the top two groups on the sheet differ by one spec. Elemental Shaman or Demonology Warlock. Same four people. Pull in ten. #WoW #MythicPlus https://mythistone.com/pages/comps",
+        "persona": "deadpan_raid_leader",
+        "judge_score": 32.0,
+        "timestamp": 1791585265150
     }
 }
