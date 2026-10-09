@@ -5171,8 +5171,8 @@ WHERE `spec_id` = %s AND `season` = %s
 INSERT_SIMC_BIS_META_SQL = """
 INSERT INTO `Mythistone`.`simc_bis_meta`
 (`spec_id`, `season`, `simc_version`, `baseline_dps`, `iterations`, `target_error`, `tier_config`, `updated_at`,
- `inputs_at`, `run_signature`, `revalidate_set`)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+ `inputs_at`, `run_signature`, `revalidate_set`, `hero_talent_id`, `talent_code`)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 
 TOUCH_SIMC_BIS_META_SQL = """
@@ -5182,7 +5182,7 @@ ON DUPLICATE KEY UPDATE `updated_at` = VALUES(`updated_at`)
 """
 
 FETCH_SIMC_BIS_COMPLETED_SQL = """
-SELECT `run_signature`, `revalidate_set`, `inputs_at`
+SELECT `run_signature`, `revalidate_set`, `inputs_at`, `talent_code`
 FROM `Mythistone`.`simc_bis_meta`
 WHERE `spec_id` = %s AND `season` = %s AND `baseline_dps` IS NOT NULL
 """
@@ -5209,6 +5209,27 @@ FROM `Mythistone`.`simc_bis_items` i
 JOIN `Mythistone`.`simc_bis_meta` m ON m.`spec_id` = i.`spec_id` AND m.`season` = i.`season`
 WHERE i.`spec_id` = %s AND i.`season` = %s AND m.`inputs_at` >= %s
 ORDER BY i.`slot`, i.`rank`
+"""
+
+INSERT_SIMC_BIS_CHOICES_SQL = """
+INSERT INTO `Mythistone`.`simc_bis_choices`
+(`spec_id`, `season`, `category`, `hero_talent_id`, `rank`, `choice`, `dps`, `dps_pct_gain`)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+"""
+
+FETCH_SIMC_BIS_CHOICES_SQL = """
+SELECT c.`category`, c.`hero_talent_id`, c.`rank`, c.`choice`, c.`dps`, c.`dps_pct_gain`,
+       m.`inputs_at`, m.`hero_talent_id` AS `sim_hero_talent_id`
+FROM `Mythistone`.`simc_bis_choices` c
+JOIN `Mythistone`.`simc_bis_meta` m ON m.`spec_id` = c.`spec_id` AND m.`season` = c.`season`
+WHERE c.`spec_id` = %s AND c.`season` = %s AND m.`inputs_at` >= %s
+ORDER BY c.`category`, c.`hero_talent_id`, c.`rank`
+"""
+
+FETCH_SIMC_BIS_TALENT_CODE_SQL = """
+SELECT `talent_code`
+FROM `Mythistone`.`simc_bis_meta`
+WHERE `spec_id` = %s AND `season` = %s AND `talent_code` IS NOT NULL
 """
 
 FETCH_SIMC_BIS_UPDATED_AT_SQL = """
@@ -5239,6 +5260,8 @@ def insert_simc_bis_meta(
     inputs_at=None,
     run_signature=None,
     revalidate_set=None,
+    hero_talent_id=None,
+    talent_code=None,
 ):
     """Insert a simc BiS meta row."""
     val = (
@@ -5253,6 +5276,8 @@ def insert_simc_bis_meta(
         inputs_at,
         run_signature,
         revalidate_set,
+        hero_talent_id,
+        talent_code,
     )
     execute_with_retry(connection, cursor, INSERT_SIMC_BIS_META_SQL, val)
     return cursor.lastrowid
@@ -5266,8 +5291,8 @@ def touch_simc_bis_meta(connection, cursor, spec_id, season, updated_at):
 
 
 def fetch_simc_bis_completed(connection, cursor, spec_id, season):
-    """Return {run_signature, revalidate_set, inputs_at} of the spec's last
-    completed run, or None when it has none."""
+    """Return {run_signature, revalidate_set, inputs_at, talent_code} of the
+    spec's last completed run, or None when it has none."""
     rows = fetch_with_retry(
         connection, cursor, FETCH_SIMC_BIS_COMPLETED_SQL, (spec_id, season)
     )
@@ -5276,7 +5301,8 @@ def fetch_simc_bis_completed(connection, cursor, spec_id, season):
     row = rows[0]
     if isinstance(row, dict):
         return dict(row)
-    return {"run_signature": row[0], "revalidate_set": row[1], "inputs_at": row[2]}
+    return {"run_signature": row[0], "revalidate_set": row[1], "inputs_at": row[2],
+            "talent_code": row[3]}
 
 
 def insert_simc_bis_items_batch(connection, cursor, rows):
@@ -5290,6 +5316,55 @@ def insert_simc_bis_items_batch(connection, cursor, rows):
         return 0
     executemany_with_retry(connection, cursor, INSERT_SIMC_BIS_ITEMS_SQL, rows)
     return cursor.lastrowid
+
+
+def insert_simc_bis_choices_batch(connection, cursor, rows):
+    """Bulk insert simc non-gear choice rows (talents, comps, enchants, ...).
+
+    Each row must match INSERT_SIMC_BIS_CHOICES_SQL:
+    (spec_id, season, category, hero_talent_id, rank, choice, dps, dps_pct_gain)
+    """
+    if not rows:
+        return 0
+    executemany_with_retry(connection, cursor, INSERT_SIMC_BIS_CHOICES_SQL, rows)
+    return cursor.rowcount
+
+
+def fetch_simc_bis_choices(connection, cursor, spec_id, season, fresh_since):
+    """Return the spec's simc choice rankings as {category: [{hero_talent_id,
+    rank, choice, dps, dps_pct_gain, inputs_at, sim_hero_talent_id}, ...]}
+    ordered by tree then rank. `sim_hero_talent_id` is the hero tree the gear and
+    refinement phases ran on. A run older than `fresh_since` returns nothing."""
+    rows = fetch_with_retry(
+        connection, cursor, FETCH_SIMC_BIS_CHOICES_SQL, (spec_id, season, fresh_since)
+    )
+    out = {}
+    for row in rows:
+        if isinstance(row, dict):
+            row = (row.get("category"), row.get("hero_talent_id"), row.get("rank"),
+                   row.get("choice"), row.get("dps"), row.get("dps_pct_gain"),
+                   row.get("inputs_at"), row.get("sim_hero_talent_id"))
+        out.setdefault(row[0], []).append({
+            "hero_talent_id": int(row[1]),
+            "rank": int(row[2]),
+            "choice": row[3],
+            "dps": float(row[4]) if row[4] is not None else None,
+            "dps_pct_gain": float(row[5]) if row[5] is not None else None,
+            "inputs_at": row[6],
+            "sim_hero_talent_id": int(row[7]) if row[7] is not None else None,
+        })
+    return out
+
+
+def fetch_simc_bis_talent_code(connection, cursor, spec_id, season):
+    """The talent export string the spec's last completed sim chose, or None."""
+    rows = fetch_with_retry(
+        connection, cursor, FETCH_SIMC_BIS_TALENT_CODE_SQL, (spec_id, season)
+    )
+    if not rows:
+        return None
+    row = rows[0]
+    return row.get("talent_code") if isinstance(row, dict) else row[0]
 
 
 def fetch_simc_bis_updated_at(connection, cursor, spec_id, season):

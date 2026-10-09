@@ -599,6 +599,7 @@ def build_path_view(tree, nodes, payload):
             "flex_count": len(flex),
             "top50_count": b["top50_count"],
             "top50": b["top50"],
+            "sim": b.get("sim"),
         }
 
     def core_card(c):
@@ -610,10 +611,80 @@ def build_path_view(tree, nodes, payload):
     return {
         "cores": [core_card(c) for c in tree["cores"]],
         "extra": core_card(tree["top50_extra"]) if tree["top50_extra"] else None,
+        "sim_extra": core_card(tree["sim_extra"]) if tree.get("sim_extra") else None,
         "top50_total": tree["top50_total"],
         "other_share": tree["other_share"],
         "low_coverage": tree["low_coverage"],
     }
+
+
+def simc_rank1(simc_choices, category, hero_talent_id=0):
+    """The rank-1 simc_bis_choices row of a category (per hero tree for
+    `talent`), or None."""
+    return next((r for r in (simc_choices or {}).get(category, [])
+                 if r["hero_talent_id"] == hero_talent_id and r["rank"] == 1), None)
+
+
+def simc_pick(row, sub_trees, only=False):
+    """Template view of a simc_bis_choices row for the SIM badge: the gain over
+    the most popular option, the sim date, the hero tree whose build the gear and
+    refinement phases ran with, and `only` when the pick is listed solely because
+    the sim chose it."""
+    at = row.get("inputs_at")
+    tree = (sub_trees or {}).get(str(row.get("sim_hero_talent_id"))) or {}
+    return {
+        "pct": row.get("dps_pct_gain"),
+        "at": f"{at.day} {at:%b %Y}" if at else None,
+        "tree": tree.get("name"),
+        "only": only,
+    }
+
+
+def mark_simc_choice(entries, key_fn, row, make_row, sub_trees):
+    """`entries` as a NEW list with the sim's rank-1 `row` flagged (`simc_pick`)
+    on the matching entry, or a "SimC pick" row from `make_row(choice)` appended
+    when no displayed entry matches. A new list because hero-tree payloads share
+    the combined payload's lists, so appending in place would repeat the row."""
+    out = list(entries or [])
+    if row is None:
+        return out
+    hit = next((e for e in out if key_fn(e) == row["choice"]), None)
+    if hit is not None:
+        hit.setdefault("simc_pick", simc_pick(row, sub_trees))
+        return out
+    extra = make_row(row["choice"])
+    if extra is not None:
+        extra["simc_pick"] = simc_pick(row, sub_trees, only=True)
+        out.append(extra)
+    return out
+
+
+def comp_key(comp, multiset=False):
+    """A displayed comp's canonical id string, the aggregated comp format."""
+    if multiset:
+        ids = [int(e["id"]) for e in comp.get("entries", []) for _ in range(int(e.get("qty", 1)))]
+    else:
+        ids = [int(i) for i in comp.get("ids", [])]
+    return ",".join(str(i) for i in sorted(ids))
+
+
+def annotate_sim_build(tree, row, spec_id, talent_lookup):
+    """A hero tree's build paths with the sim's best build marked: the matching
+    Build card gets `sim`, else a SimC-only card (`sim_extra`) is added."""
+    if not tree or row is None:
+        return tree
+    order, nodes = talent_lookup["fullNodeOrder"], talent_lookup["nodes"]
+    build_id = talentBuilds.match_sim_build(tree, row["choice"], spec_id, order, nodes)
+    cards = list(tree["cores"]) + ([tree["top50_extra"]] if tree["top50_extra"] else [])
+    hit = next((c for c in cards if c["id"] == build_id), None)
+    if hit is not None:
+        hit["sim"] = simc_pick(row, None)
+        return tree
+    extra = talentBuilds.sim_extra_card(tree, row["choice"], spec_id, order, nodes)
+    if extra is None:
+        return tree
+    extra["sim"] = simc_pick(row, None, only=True)
+    return {**tree, "sim_extra": extra}
 
 
 def escape_raidbot_code(code):
@@ -2898,6 +2969,14 @@ def main(template_path, output_dir, debug=False, spec=None):
                 except Exception as e:
                     print(f"Warning: fetch_simc_bis failed: {e}")
                     simc_bis = {}
+                # SimC talent / tier-comp / refinement rankings (simc_bis_choices).
+                try:
+                    simc_choices = databaseConnector.fetch_simc_bis_choices(
+                        conn, cursor, spec_id, current_season_id, simc_cutoff
+                    )
+                except Exception as e:
+                    print(f"Warning: fetch_simc_bis_choices failed: {e}")
+                    simc_choices = {}
                 print(
                     f"[{datetime.now(timezone.utc).isoformat()}] fetching highest run..."
                 )
@@ -3201,6 +3280,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                     "loadout_code": escape_raidbot_code(texts.most_common(1)[0][0]) if texts else None,
                 }
 
+            hero_tree_sim = simc_rank1(simc_choices, "hero_tree")
             hero_variants = []
             for ht in sorted(
                 hero_trees, key=lambda t: t.get("count", 0), reverse=True
@@ -3251,9 +3331,15 @@ def main(template_path, output_dir, debug=False, spec=None):
                     "dungeon_tree_usage": top_dungeon_tree_usage(tid, variant_node_ids),
                     "dungeon_loadouts": dungeon_build_codes(tid),
                     "build_paths": build_path_view(
-                        builds_by_tree.get(int(tid)), talent_lookup["nodes"],
+                        annotate_sim_build(
+                            builds_by_tree.get(int(tid)), simc_rank1(simc_choices, "talent", int(tid)),
+                            spec_id, talent_lookup,
+                        ),
+                        talent_lookup["nodes"],
                         build_payload["builds"].setdefault(str(tid), {}),
                     ),
+                    "sim": (simc_pick(hero_tree_sim, None)
+                            if hero_tree_sim and int(hero_tree_sim["choice"]) == int(tid) else None),
                 })
 
             # One concrete "players swap this in for dungeon X" example for the
@@ -3648,6 +3734,67 @@ def main(template_path, output_dir, debug=False, spec=None):
                 else:
                     sections_by_tree[_tid] = dict(_combined_payload)
 
+            # SimC choice picks (simc_bis_choices) on the rendered overall-cohort
+            # payloads. The rows are spec-wide, so every hero tree view shows them.
+            _weapon_meta = {m["item_id"]: m for m in temp_enchant_index.values()}
+
+            def _consumable_row(choice):
+                iid = int(choice)
+                meta = consumable_lookup.get(iid) or _weapon_meta.get(iid)
+                if not meta:
+                    return None
+                return {"item_id": iid, "name": meta.get("name"),
+                        "icon_url": f"/data/icons/{meta.get('icon')}.png",
+                        "quality": meta.get("quality"),
+                        "slug": consumable_slug_map.get(iid), "count": 0, "pct": 0}
+
+            def _first(rows):
+                return rows[0] if rows else None
+
+            def _annotate_simc(sec):
+                sec = dict(sec)
+                sec["enchant_slots"] = {
+                    grp: mark_simc_choice(
+                        lst, lambda e: str(e.get("id")), simc_rank1(simc_choices, f"enchant:{grp}"),
+                        lambda c: {"id": int(c), "count": 0} if int(c) in enchant_lookup else None,
+                        sub_trees,
+                    )
+                    for grp, lst in (sec.get("enchant_slots") or {}).items()
+                }
+                for key, cat, make in (
+                    ("embellishment_comps", "embellishment", lambda c: _first(build_comps(
+                        [(c, 0, 0, 0)], 0, item_lookup, "embellishment", spec_id, slot_sorted=False))),
+                    ("tier_set_comps", "tier_comp", lambda c: _first(build_comps(
+                        [(c, 0, 0, 0)], 0, item_lookup, "tier set", spec_id, set_meta=tier_set_meta))),
+                    ("gem_comps", "gem", lambda c: _first(build_multiset_comps(
+                        [(c, 0, 0, 0)], socket_lookup, 0))),
+                ):
+                    sec[key] = mark_simc_choice(
+                        sec.get(key), lambda comp, m=(cat == "gem"): comp_key(comp, m),
+                        simc_rank1(simc_choices, cat), make, sub_trees,
+                    )
+                # Missive rows are (item_id, runs, max_timed, max_depleted) tuples,
+                # so their pick rides in a side map like missive_bis.
+                sec["simc_missive"] = {}
+                row = simc_rank1(simc_choices, "missive")
+                if row is not None:
+                    mid = int(row["choice"])
+                    rows = list(sec.get("missives") or [])
+                    listed = any(int(m[0]) == mid for m in rows)
+                    if listed or mid in reagent_lookup:
+                        if not listed:
+                            rows.append((mid, 0, 0, 0))
+                        sec["missives"] = rows
+                        sec["simc_missive"] = {mid: simc_pick(row, sub_trees, only=not listed)}
+                sec["consumable_sections"] = [
+                    {**cs, "entries": mark_simc_choice(
+                        cs["entries"], lambda e: str(e.get("item_id")),
+                        simc_rank1(simc_choices, cs["key"]), _consumable_row, sub_trees,
+                    )}
+                    for cs in sec.get("consumable_sections") or []
+                ]
+                return sec
+
             # Top Players view: one payload per hero tree from that tree's verified
             # loadouts, falling back to all top players for a thin tree.
             top_sections_by_tree = {}
@@ -3666,7 +3813,7 @@ def main(template_path, output_dir, debug=False, spec=None):
             # `hs` keeps accordion/collapse ids unique across entries.
             section_variants = [
                 {"id": _v["id"], "cohort": "all", "is_default": _v["is_default"],
-                 "sec": sections_by_tree[_v["id"]], "hs": f"-h{_v['id']}"}
+                 "sec": _annotate_simc(sections_by_tree[_v["id"]]), "hs": f"-h{_v['id']}"}
                 for _v in hero_variants
             ] + [
                 {"id": _v["id"], "cohort": "top", "is_default": False,

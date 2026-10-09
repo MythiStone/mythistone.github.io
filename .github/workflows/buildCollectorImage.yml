@@ -14,6 +14,7 @@ on:
       - 'backend_scripts/simcBis.py'
       - 'backend_scripts/commonUtils.py'
       - 'backend_scripts/computeBuildPhase.py'
+      - 'backend_scripts/talentBuilds.py'
       - 'backend_scripts/verifyImageImports.py'
       - 'data/static/dungeons.json'
       - 'data/static/specs.json'
@@ -30,6 +31,9 @@ on:
       - 'data/static/periods.json'
       - 'data/static/consumables.json'
       - 'data/static/food_buffs.json'
+      - 'data/static/temp-enchants.json'
+      - 'data/static/missives.json'
+      - 'data/static/talents/**'
       - 'Dockerfile'
       - 'entrypoint.sh'
       # Also rebuild when the smoke test itself changes, so a broken gate is

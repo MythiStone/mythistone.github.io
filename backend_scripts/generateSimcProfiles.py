@@ -335,13 +335,17 @@ def build_profiles(season, target_error, only_specs=None):
                     prep["enchant_map"], prep["gem_ranking"],
                 )
             if bis_gear:
+                # The collector's simmed best build, else the popular one.
+                bis_talents = databaseConnector.fetch_simc_bis_talent_code(
+                    conn, cursor, spec_id, season
+                ) or talents
                 bis_header = build_header(
-                    class_name, spec_name, primary, talents,
+                    class_name, spec_name, primary, bis_talents,
                     actor_name=f"spec{spec_id}_simcbis",
                 )
                 actors["simcbis"].append(_actor_block(bis_header, bis_slots, bis_gear))
                 gear_data.setdefault(spec_id, {})["simcbis"] = _gear_display(
-                    bis_slots, bis_gear, talents, item_lookup, bonus_quality
+                    bis_slots, bis_gear, bis_talents, item_lookup, bonus_quality
                 )
                 built.append("simcbis")
             elif "simcbis" not in skipped:

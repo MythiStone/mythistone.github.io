@@ -409,3 +409,73 @@ def _display(cluster, build_id, src, lead_key):
         "diff": [] if lead_key is None or cluster["key"] == lead_key else diff_nodes(cluster["key"], lead_key),
         "flex": cluster["flex"],
     }
+
+
+def sim_candidates(builds_by_tree):
+    """[(hero_tree_id, build_id, code)] the SimC talent phase sims: every tree's
+    Build cards plus its top-50 extra, each as its most-run variant's string
+    (the code a core card already carries). Class-tree variants are not simmed.
+    The most-run tree comes first, so the first entry is its Build 1. A tree
+    without core cards is skipped, as the page shows no builds for it."""
+    out = []
+    for hero_id in sorted(builds_by_tree, key=lambda h: (-builds_by_tree[h]["runs"], int(h))):
+        tree = builds_by_tree[hero_id]
+        if not tree["cores"]:
+            continue
+        cards = list(tree["cores"]) + ([tree["top50_extra"]] if tree["top50_extra"] else [])
+        for c in cards:
+            out.append((int(hero_id), c["id"], c["code"]))
+    return out
+
+
+def _code_core(code, spec_id, full_node_order, nodes):
+    core, cls, _totals, active = canonical_build(code, spec_id, None, full_node_order, nodes)
+    return (core, active) if cls is not None else (None, None)
+
+
+def match_sim_build(tree, code, spec_id, full_node_order, nodes):
+    """Id of the tree's Build card (core or top-50 extra) the simmed ``code``
+    belongs to: the card whose core equals the code's core, else the nearest
+    within BUILD_MERGE_MAX_POINTS. None when no card matches. Cores are compared,
+    so a card whose most-run variant drifted since the sim still matches."""
+    core, _active = _code_core(code, spec_id, full_node_order, nodes)
+    if core is None or not tree:
+        return None
+    cards = list(tree["cores"]) + ([tree["top50_extra"]] if tree["top50_extra"] else [])
+    best, best_d = None, None
+    for c in cards:
+        card_core, _ = _code_core(c["code"], spec_id, full_node_order, nodes)
+        if card_core is None:
+            continue
+        d = 0 if card_core == core else points_distance(core, card_core)
+        if d <= BUILD_MERGE_MAX_POINTS and (best_d is None or d < best_d):
+            best, best_d = c["id"], d
+    return best
+
+
+def sim_extra_card(tree, code, spec_id, full_node_order, nodes):
+    """A Build card for a simmed build no listed card matches, in the
+    _top_only_extra shape (no population stats). None when ``code`` cannot be
+    decoded."""
+    core, cls, _totals, _active = canonical_build(code, spec_id, None, full_node_order, nodes)
+    if cls is None:
+        return None
+    lead_core = None
+    if tree and tree["cores"]:
+        lead_core, _ = _code_core(tree["cores"][0]["code"], spec_id, full_node_order, nodes)
+    return {
+        "id": "s1",
+        "runs": 0,
+        "share": 0.0,
+        "max_timed_key": 0,
+        "max_depleted_key": 0,
+        "merged": 0,
+        "code": code,
+        "picks": _picks(core, cls),
+        "diff": diff_nodes(core, lead_core) if lead_core else [],
+        "flex": {},
+        "variants": [],
+        "other_variant_share": 0.0,
+        "top50_count": 0,
+        "top50": False,
+    }

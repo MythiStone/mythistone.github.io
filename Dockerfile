@@ -23,6 +23,7 @@ COPY backend_scripts/commonUtils.py ${APP_DIR}/commonUtils.py
 # commonUtils.simc_fresh_cutoff reuses its content-update go-live rule, so the
 # collector's revalidation guard and the pages' SIM freshness gate never disagree.
 COPY backend_scripts/computeBuildPhase.py ${APP_DIR}/computeBuildPhase.py
+COPY backend_scripts/talentBuilds.py ${APP_DIR}/talentBuilds.py
 
 RUN mkdir -p ${APP_DIR}/data/static
 COPY data/static/dungeons.json ${APP_DIR}/data/static/dungeons.json
@@ -57,6 +58,9 @@ COPY data/static/enchantments.json ${APP_DIR}/data/static/enchantments.json
 COPY data/static/item-sets.json ${APP_DIR}/data/static/item-sets.json
 COPY data/static/consumables.json ${APP_DIR}/data/static/consumables.json
 COPY data/static/food_buffs.json ${APP_DIR}/data/static/food_buffs.json
+COPY data/static/temp-enchants.json ${APP_DIR}/data/static/temp-enchants.json
+COPY data/static/missives.json ${APP_DIR}/data/static/missives.json
+COPY data/static/talents/ ${APP_DIR}/data/static/talents/
 # patches.json + periods.json give commonUtils.simc_fresh_cutoff the latest
 # content go-live (read via os.path.join, so listed in REQUIRED_STATIC_EXTRA).
 COPY data/static/patches.json ${APP_DIR}/data/static/patches.json

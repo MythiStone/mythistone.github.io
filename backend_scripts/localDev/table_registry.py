@@ -74,6 +74,7 @@ STANDALONE_TABLES = {
     "top_player_loadout_talents",
     "simc_bis_meta",
     "simc_bis_items",
+    "simc_bis_choices",
     "simc_bis_progress_meta",
     "simc_bis_progress",
     "trend_snapshot",

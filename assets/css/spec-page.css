@@ -788,6 +788,13 @@ a.item-source-badge:hover {
   font-size: 0.7rem;
 }
 
+/* SIM badge flowing inline in a detail row, build card or hero-tree header. */
+.simc-badge-inline {
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: help;
+}
+
 .bis-badge-sm {
   padding: 0.02rem 0.28rem;
   font-size: 0.6rem;

@@ -711,6 +711,8 @@ CREATE TABLE `simc_bis_meta` (
   `inputs_at` datetime DEFAULT NULL,
   `run_signature` char(64) DEFAULT NULL,
   `revalidate_set` varchar(512) DEFAULT NULL,
+  `hero_talent_id` int DEFAULT NULL,
+  `talent_code` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`spec_id`,`season`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -1058,6 +1060,22 @@ CREATE TABLE `simc_bis_items` (
   PRIMARY KEY (`spec_id`,`season`,`slot`,`rank`),
   KEY `idx_simc_bis_items_spec_season` (`spec_id`,`season`),
   CONSTRAINT `fk_simc_bis_items_meta` FOREIGN KEY (`spec_id`, `season`) REFERENCES `simc_bis_meta` (`spec_id`, `season`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.simc_bis_choices definition
+
+CREATE TABLE `simc_bis_choices` (
+  `spec_id` int NOT NULL,
+  `season` int NOT NULL,
+  `category` varchar(32) NOT NULL,
+  `hero_talent_id` int NOT NULL DEFAULT '0',
+  `rank` tinyint unsigned NOT NULL,
+  `choice` varchar(255) NOT NULL,
+  `dps` double DEFAULT NULL,
+  `dps_pct_gain` double DEFAULT NULL,
+  PRIMARY KEY (`spec_id`,`season`,`category`,`hero_talent_id`,`rank`),
+  CONSTRAINT `fk_simc_bis_choices_meta` FOREIGN KEY (`spec_id`, `season`) REFERENCES `simc_bis_meta` (`spec_id`, `season`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 

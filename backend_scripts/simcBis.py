@@ -21,11 +21,14 @@ Runs continuously inside the collector container (registered alongside
   5. Derives a per-slot ranking from the full-set DPS results and persists it to
      ``simc_bis_meta`` / ``simc_bis_items`` for the page build's "SIM" badge.
 
-Enchants and gems are held constant rather than searched: every candidate
-carries the top-50 players' most popular enchant for its slot group and fills
-its sockets from the spec-wide gem ranking (see apply_enchants_and_gems), so
-they never add profilesets — they only make absolute DPS (and thus the
-cross-spec tierlist built from ``baseline_dps``) more realistic.
+A spec run is four phases (see _next_stage_work): ``t`` sims every hero tree's
+Talent Builds cards (talentBuilds.sim_candidates) on the seed gear, the gear
+search (``s1``/``s2``) runs with the best build, and ``r`` refines the best set
+one category at a time (enchant per slot group, gem setup, embellishment comp,
+missive, each consumable). Talent, tier-comp and refinement rankings go to
+``simc_bis_choices``. During the talent and gear phases enchants, gems and
+consumables are held at their most popular option (apply_enchants_and_gems,
+consumable_lines), so they never multiply the gear combinations.
 
 SimulationCraft itself is executed as a short-lived sibling Docker container
 (``docker run --rm``) over a shared volume, so watchtower keeps simc patch-current.
@@ -44,11 +47,13 @@ import hashlib
 import asyncio
 import argparse
 import itertools
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
 import commonUtils
 import databaseConnector
+import talentBuilds
 # Shared with the page generators so the Titan's Grip exception is defined once
 # (re-exported here: generateSimcProfiles imports it from this module).
 from commonUtils import DUAL_WIELD_TWOHAND_SPECS, occupies_both_hands
@@ -139,6 +144,12 @@ SIMC_FINALISTS_MAX = int(os.environ.get("SIMC_FINALISTS_MAX", "40"))
 # Combos a completed run stores for revalidation (plus the per-slot references):
 # when a spec's profile is unchanged only these are re-simmed.
 SIMC_REVALIDATE_TOP = int(os.environ.get("SIMC_REVALIDATE_TOP", "3"))
+# Refinement phase (see _build_refine): each category (enchant group, gem setup,
+# embellishment comp, missive, consumable) sims its top SIMC_REFINE_OPTIONS
+# popular options one at a time on the best gear set, at this precision.
+SIMC_REFINE_OPTIONS = int(os.environ.get("SIMC_REFINE_OPTIONS", "3"))
+SIMC_REFINE_TARGET_ERROR = os.environ.get("SIMC_REFINE_TARGET_ERROR") or SIMC_TARGET_ERROR
+SIMC_REFINE_ITERATIONS = os.environ.get("SIMC_REFINE_ITERATIONS") or SIMC_COMBO_ITERATIONS
 # Drop slot candidates used by fewer than this fraction of the slot's most-popular
 # item (filters stale/old-expansion items that pollute the aggregated pool).
 SIMC_MIN_CANDIDATE_FRACTION = float(os.environ.get("SIMC_MIN_CANDIDATE_FRACTION", "0.02"))
@@ -488,6 +499,40 @@ def load_enchant_static():
     return _ENCHANT_STATIC
 
 
+_CRAFT_STATIC = None
+
+
+def load_craft_static():
+    """Lookups the missive / embellishment refinement needs, from missives.json,
+    embellishments.json and crafting.json (all required):
+
+      missive_bonus:   reagent item id -> missive bonus id (missives.json reversed)
+      reagent_bonuses: reagent item id -> its craftingBonusIds (what applying it adds)
+      emb_slots:       crafting slot id -> set of reagent ids, for the "Add
+                       Embellishment" slots only (host compatibility)
+    """
+    global _CRAFT_STATIC
+    if _CRAFT_STATIC is None:
+        missives = json.loads((STATIC_DIR / "missives.json").read_text(encoding="utf-8"))
+        craft = json.loads((STATIC_DIR / "crafting.json").read_text(encoding="utf-8"))
+        reagent_bonuses = {
+            int(r["itemId"]): [str(b) for b in (r.get("craftingBonusIds") or [])]
+            for r in craft.get("reagents") or []
+            if isinstance(r, dict) and r.get("itemId") is not None
+        }
+        emb_slots = {
+            int(sid): {int(i) for i in (s.get("reagentIds") or [])}
+            for sid, s in (craft.get("slots") or {}).items()
+            if "embellishment" in (s.get("name") or "").lower()
+        }
+        _CRAFT_STATIC = {
+            "missive_bonus": {int(item): str(bonus) for bonus, item in missives.items()},
+            "reagent_bonuses": reagent_bonuses,
+            "emb_slots": emb_slots,
+        }
+    return _CRAFT_STATIC
+
+
 def enchant_group(slot):
     """Group key for enchant popularity lookups.
 
@@ -734,11 +779,17 @@ def gather_candidates(conn, cursor, spec_id, season, item_lookup, top50_gear=Non
 # --------------------------------------------------------------------------
 
 def fetch_enchant_map(conn, cursor, spec_id, season):
-    """Enchant group -> most popular RELEVANT enchantment_id.
+    """Enchant group -> most popular RELEVANT enchantment_id (the head of
+    fetch_enchant_ranking): the constant enchant of the talent and gear phases."""
+    return {grp: ids[0] for grp, ids in fetch_enchant_ranking(conn, cursor, spec_id, season).items()}
 
-    Primary source is the top-50 player loadouts; groups with no top-50 data
-    fall back to the global aggregation (same source as the spec page's enchant
-    dropdowns). Candidates pass through the SAME shared predicate the spec and
+
+def fetch_enchant_ranking(conn, cursor, spec_id, season):
+    """Enchant group -> RELEVANT enchantment_ids, most popular first.
+
+    Primary source is the top-50 player loadouts, followed by the global
+    aggregation (same source as the spec page's enchant dropdowns), so a group
+    with no top-50 data is still ranked. Candidates pass through the SAME shared predicate the spec and
     item pages use, commonUtils.is_enchant_relevant (catalog membership + current
     expansion + equipRequirements slot fit), so the sim can never enchant with an
     old-expansion or slot-incompatible enchant the pages hide -- those are what
@@ -765,11 +816,10 @@ def fetch_enchant_map(conn, cursor, spec_id, season):
                 merged.setdefault(grp, {})
                 merged[grp][eid] = merged[grp].get(eid, 0) + cnt
 
-    out = {grp: max(counts.items(), key=lambda kv: (kv[1], -int(kv[0])))[0]
+    out = {grp: [int(eid) for eid, _ in sorted(counts.items(), key=lambda kv: (-kv[1], int(kv[0])))]
            for grp, counts in merged.items() if counts}
 
-    needed = {enchant_group(s) for s in ALL_SLOTS}
-    for grp in sorted(needed - set(out)):
+    for grp in sorted({enchant_group(s) for s in ALL_SLOTS}):
         try:
             rows = databaseConnector.fetch_top_enchant_for_slot(
                 conn, cursor, spec_id, season, grp, 5
@@ -778,9 +828,8 @@ def fetch_enchant_map(conn, cursor, spec_id, season):
             rows = []
         for row in rows or []:
             eid = row.get("enchantment_id") if isinstance(row, dict) else row[0]
-            if eid is not None and _relevant(int(eid), grp):
-                out[grp] = int(eid)
-                break
+            if eid is not None and _relevant(int(eid), grp) and int(eid) not in out.get(grp, []):
+                out.setdefault(grp, []).append(int(eid))
     return out
 
 
@@ -867,6 +916,102 @@ def apply_enchants_and_gems(candidates, enchant_map, gem_ranking, item_lookup):
             n = cand.get("socket_count", 0)
             if n and slot_gems:
                 cand["gem_ids"] = slot_gems[:n]
+
+
+# --------------------------------------------------------------------------
+# Talent & refinement candidates (popular options only)
+# --------------------------------------------------------------------------
+
+def gather_talent_candidates(conn, cursor, spec_id, season, loadouts):
+    """[{hero, build, code}]: the Talent Builds cards of every hero tree, built
+    by the same talentBuilds call the spec page makes, so the simmed builds are
+    exactly the cards players see. Most-run tree's Build 1 first (the base actor)."""
+    tree = json.loads((STATIC_DIR / "talents" / f"{spec_id}.json").read_text(encoding="utf-8"))
+    rows = databaseConnector.fetch_loadout_key_levels(conn, cursor, spec_id, season)
+    top50 = [(lo["loadout_text"], lo.get("keystone_level"))
+             for lo in loadouts or [] if lo.get("loadout_text")]
+    builds, _drops = talentBuilds.build_hero_tree_builds(
+        rows, spec_id, tree["fullNodeOrder"], tree["nodes"], top50=top50,
+    )
+    out, seen = [], set()
+    for hero, build_id, code in talentBuilds.sim_candidates(builds):
+        if code not in seen:
+            seen.add(code)
+            out.append({"hero": hero, "build": build_id, "code": code})
+    return out
+
+
+def _row_col(row, key, idx):
+    return row.get(key) if isinstance(row, dict) else row[idx]
+
+
+def _comp_ids(comp):
+    return [int(t) for t in str(comp or "").split(",") if t.strip()]
+
+
+def gather_refine_candidates(conn, cursor, spec_id, season, enchant_ranking):
+    """Refinement category -> its top SIMC_REFINE_OPTIONS popular options.
+
+      enchant:<GROUP>  [enchant_id, ...]       (index 0 = the constant enchant)
+      gem              [[gem item id, ...]]     popular gem comps (multisets)
+      embellishment    [[reagent item id, ...]] popular embellishment comps
+      missive          [reagent item id, ...]
+      flask/food/potion/augment/weapon  [{item_id, value}] (index 0 = base pick)
+
+    Consumables resolve exactly like the spec page's consumable section, and
+    `value` is the simc option token from the Raidbots catalogs."""
+    n = SIMC_REFINE_OPTIONS
+    _, gem_lookup = load_enchant_static()
+    craft = load_craft_static()
+    refine = {f"enchant:{grp}": ids[:n] for grp, ids in enchant_ranking.items() if ids}
+
+    def comps(rows, known):
+        out = []
+        for r in rows or []:
+            ids = _comp_ids(_row_col(r, "comp", 0))
+            if ids and all(known(i) for i in ids):
+                out.append(ids)
+            if len(out) >= n:
+                break
+        return out
+
+    gems = comps(databaseConnector.fetch_gem_comps(conn, cursor, spec_id, season),
+                 lambda i: i in gem_lookup)
+    if gems:
+        refine["gem"] = gems
+    embs = comps(databaseConnector.fetch_embellishment_comps(conn, cursor, spec_id, season),
+                 lambda i: i in craft["reagent_bonuses"])
+    if embs:
+        refine["embellishment"] = embs
+    missives = [int(_row_col(r, "item_id", 0))
+                for r in databaseConnector.fetch_missive_count(conn, cursor, spec_id, season) or []
+                if int(_row_col(r, "item_id", 0)) in craft["missive_bonus"]][:n]
+    if missives:
+        refine["missive"] = missives
+
+    ctx = commonUtils.load_consumable_context(str(STATIC_DIR))
+    weapon_rows = databaseConnector.fetch_weapon_temp_enchant_usage(
+        conn, cursor, spec_id, season, ctx["temp_enchant_effect_ids"]
+    )
+    sections = commonUtils.build_consumable_sections(
+        databaseConnector.fetch_consumable_count(conn, cursor, spec_id, season),
+        ctx["consumable_index"], ctx["consumable_lookup"],
+        extra_sections=[commonUtils.build_weapon_enchant_section(weapon_rows, ctx["temp_enchant_index"])],
+    )
+    weapon_values = {m["item_id"]: m["value"] for m in ctx["temp_enchant_index"].values()}
+    for sec in sections:
+        opts = []
+        for e in sec["entries"]:
+            iid = int(e["item_id"])
+            value = (weapon_values.get(iid) if sec["key"] == "weapon"
+                     else (ctx["consumable_lookup"].get(iid) or {}).get("value"))
+            if value:
+                opts.append({"item_id": iid, "value": value})
+            if len(opts) >= n:
+                break
+        if opts:
+            refine[sec["key"]] = opts
+    return refine
 
 
 # --------------------------------------------------------------------------
@@ -1460,7 +1605,8 @@ def build_profile(header, baseline_gear, profilesets, iterations=None, target_er
     """Assemble the full .simc text.
 
     baseline_gear: dict slot -> candidate (the current best-known set).
-    profilesets: list of (name, [(slot, candidate), ...]) overrides.
+    profilesets: list of (name, [override, ...]) where an override is a
+    (slot, candidate) gear swap or a raw actor option line ("talents=...").
     """
     out = []
     out.extend(sim_options(iterations, target_error))
@@ -1479,11 +1625,43 @@ def build_profile(header, baseline_gear, profilesets, iterations=None, target_er
     out.append("### profilesets")
     for name, overrides in profilesets:
         first = True
-        for slot, cand in overrides:
+        for o in overrides:
             op = "=" if first else "+="
-            out.append(f'profileset."{name}"{op}{gear_line(slot, cand)}')
+            out.append(f'profileset."{name}"{op}{o if isinstance(o, str) else gear_line(*o)}')
             first = False
     return "\n".join(out) + "\n"
+
+
+# Consumable category -> simc actor option. Weapon oils use temporary_enchant
+# (see consumable_line).
+CONSUMABLE_OPTIONS = {"flask": "flask", "food": "food", "potion": "potion",
+                      "augment": "augmentation"}
+
+
+def consumable_line(category, value, off_hand_weapon):
+    """One simc consumable option line for a refine category's option value."""
+    if category == "weapon":
+        line = f"temporary_enchant=main_hand:{value}"
+        return line + (f"/off_hand:{value}" if off_hand_weapon else "")
+    return f"{CONSUMABLE_OPTIONS[category]}={value}"
+
+
+def consumable_lines(refine, off_hand_weapon):
+    """The base actor's consumables: each category's most popular option, so
+    talents and gear are simmed with what players actually use instead of
+    simc's per-spec defaults."""
+    return [consumable_line(cat, opts[0]["value"], off_hand_weapon)
+            for cat, opts in sorted(refine.items())
+            if cat in CONSUMABLE_OPTIONS or cat == "weapon"]
+
+
+def _with_talents(header, code):
+    return list(header) + ([f"talents={code}"] if code else [])
+
+
+def _off_hand_weapon(gear, item_lookup):
+    oh = gear.get("OFF_HAND")
+    return bool(oh) and item_lookup.get(oh["item_id"], {}).get("itemClass") == 2
 
 
 def _enumerate_tier_scenarios(candidates, baseline, active_slots, tier_set_id,
@@ -2091,11 +2269,14 @@ def _prepare_spec(spec_id, spec_info, class_info, season, conn, cursor, item_loo
         return None, msg
 
     # constant enchants/gems from the top-50 players (see apply_enchants_and_gems)
-    enchant_map = fetch_enchant_map(conn, cursor, spec_id, season)
+    enchant_ranking = fetch_enchant_ranking(conn, cursor, spec_id, season)
+    enchant_map = {grp: ids[0] for grp, ids in enchant_ranking.items()}
     gem_ranking = fetch_gem_ranking(conn, cursor, spec_id, season)
     apply_enchants_and_gems(candidates, enchant_map, gem_ranking, item_lookup)
+    refine = gather_refine_candidates(conn, cursor, spec_id, season, enchant_ranking)
 
-    # most-popular talent loadout code
+    # most-popular talent loadout code (the CI tierlist's popular actor; the sim
+    # itself picks among the Talent Builds cards, see gather_talent_candidates)
     talents_code = None
     try:
         rows = databaseConnector.fetch_top_loadout(conn, cursor, spec_id, season)
@@ -2112,7 +2293,12 @@ def _prepare_spec(spec_id, spec_info, class_info, season, conn, cursor, item_loo
     except Exception as e:
         _log(f"could not fetch top loadout for spec {spec_id}: {e}")
 
-    header = build_header(class_name, spec_name, spec_info.get("primary_stat"), talents_code)
+    talent_candidates = gather_talent_candidates(conn, cursor, spec_id, season, loadouts)
+    if not talent_candidates and talents_code:
+        talent_candidates = [{"hero": 0, "build": "pop", "code": talents_code}]
+
+    # talents and consumables are added per phase (see _stage_header)
+    header = build_header(class_name, spec_name, spec_info.get("primary_stat"), None)
 
     tier_set_id, tier_slots = detect_tier(candidates)
     _stat_log(stats, f"simc: spec {spec_id} ({class_name}/{spec_name}) "
@@ -2175,7 +2361,8 @@ def _prepare_spec(spec_id, spec_info, class_info, season, conn, cursor, item_loo
         top50_item_bonus, spec_id, enchant_map, gem_ranking,
     )
     _stat_log(stats, f"simc: spec {spec_id} injected_sets={len(injected_sets)} "
-                     f"tier_comps={len(tier_comps)}")
+                     f"tier_comps={len(tier_comps)} talent_builds={len(talent_candidates)} "
+                     f"refine={ {k: len(v) for k, v in refine.items()} }")
 
     return {
         "header": header,
@@ -2187,6 +2374,8 @@ def _prepare_spec(spec_id, spec_info, class_info, season, conn, cursor, item_loo
         "injected_sets": injected_sets,
         "tier_comps": tier_comps,
         "talents_code": talents_code,
+        "talent_candidates": talent_candidates,
+        "refine": refine,
         "enchant_map": enchant_map,
         "gem_ranking": gem_ranking,
     }, None
@@ -2211,12 +2400,14 @@ async def optimize_spec(spec_id, spec_info, class_info, season, conn, cursor,
 # generated profile, mismatch the run signature, and discard all banked chunks —
 # the heaviest specs (the whole reason for chunking) would then never finish.
 _PREP_SNAPSHOT_KEYS = ("header", "candidates", "baseline", "tier_set_id",
-                       "tier_slots", "active_slots", "injected_sets", "tier_comps")
+                       "tier_slots", "active_slots", "injected_sets", "tier_comps",
+                       "talent_candidates", "refine")
 
 
 def _snapshot_prep(prep):
     """Serialize the build-relevant part of a prep dict to compact JSON. The
-    optional `revalidate` name list rides along so a revalidation resumes as one."""
+    optional `revalidate` names (and the talent code they were simmed with) ride
+    along so a revalidation resumes as one."""
     data = {}
     for k in _PREP_SNAPSHOT_KEYS:
         v = prep.get(k)
@@ -2225,6 +2416,7 @@ def _snapshot_prep(prep):
         data[k] = v
     if prep.get("revalidate"):
         data["revalidate"] = list(prep["revalidate"])
+        data["revalidate_talent"] = prep.get("revalidate_talent")
     return json.dumps(data, separators=(",", ":"))
 
 
@@ -2241,17 +2433,46 @@ def _load_prep_snapshot(text):
     return data
 
 
-def _build_run(prep, item_lookup):
-    """Build the deterministic combination set for a prepared spec.
+_TIER_ITEM_SET = None
 
-    Returns a dict describing the whole run — base actor, profileset list,
-    name->combo index, config labels, iteration cap, and a `signature` (SHA-256
-    of the exact full .simc text). The signature is what lets progress be
-    resumed safely: any change to the candidate set, gear, or iteration settings
-    changes the generated profile and therefore the signature, so stale
-    checkpoints are discarded rather than mixed into a new run. The simc *build*
-    is deliberately not part of the signature, so the 6-hourly image pulls don't
-    invalidate a run mid-flight.
+
+def tier_comp_key(full):
+    """A set's tier comp in the aggregated_tier_set_comps `comp` format: the
+    ascending item ids of every set worn at 2+ pieces (sp_agg_eq_comps step 3),
+    or None when no set bonus is active."""
+    global _TIER_ITEM_SET
+    if _TIER_ITEM_SET is None:
+        _TIER_ITEM_SET = commonUtils.load_tier_sets(str(STATIC_DIR))[0]
+    by_set = {}
+    for s in ALL_SLOTS:
+        c = full.get(s)
+        sid = _TIER_ITEM_SET.get(int(c["item_id"])) if c else None
+        if sid is not None:
+            by_set.setdefault(sid, []).append(int(c["item_id"]))
+    ids = sorted(i for v in by_set.values() if len(v) >= 2 for i in v)
+    return ",".join(str(i) for i in ids) or None
+
+
+def _stage_header(header, talents_code, refine, gear, item_lookup):
+    """A phase's base-actor header: class/spec lines, talents, then the popular
+    consumables (the off-hand oil only when `gear` wields an off-hand weapon)."""
+    return (_with_talents(header, talents_code)
+            + consumable_lines(refine, _off_hand_weapon(gear, item_lookup)))
+
+
+def _build_run(prep, item_lookup):
+    """Build the deterministic run for a prepared spec.
+
+    Returns a dict describing the whole run — the talent candidates and their
+    profilesets, the gear base actor, profileset list and name->combo index,
+    config labels, iteration cap, and a `signature`. The signature is what lets
+    progress be resumed safely: it hashes the talent-phase text, the gear screen
+    text (talents as a placeholder, since the winner is only known after the
+    talent phase) and the refinement candidates, so any change to them or to a
+    stage knob discards stale checkpoints rather than mixing them into a new
+    run. The simc *build* is deliberately not part of the signature, so the
+    6-hourly image pulls don't invalidate a run mid-flight. The refinement
+    profilesets are derived later (_build_refine) from the banked gear winner.
 
     Returns (build_dict, None), or (None, reason) when the spec has no legal
     combination — `reason` naming the equip limit and the slots/items that break
@@ -2273,6 +2494,8 @@ def _build_run(prep, item_lookup):
     # snapshot, so a resume rebuilds the identical combos and the same signature.
     injected_sets = prep.get("injected_sets") or []
     tier_comps = prep.get("tier_comps") or []
+    talents = prep.get("talent_candidates") or []
+    refine = prep.get("refine") or {}
 
     # ---- Top-Gear-style full-set combinations ----
     # Evaluate whole-set combinations rather than optimising one slot at a time,
@@ -2296,16 +2519,45 @@ def _build_run(prep, item_lookup):
     if not all_combos:
         return None, reason or "no legal gear combination"
 
-    # profile_signature identifies the full two-stage run (stage-1 text plus the
-    # knobs that decide stage 2) and is what a completed run stores to detect an
-    # unchanged profile. A revalidation sims a subset, so its checkpoint gets its
-    # own signature.
-    screen_text = build_profile(header, base_full, profilesets,
-                                iterations=SIMC_SCREEN_ITERATIONS,
-                                target_error=SIMC_SCREEN_TARGET_ERROR)
+    # A combo that gains or drops an off-hand weapon relative to the base actor
+    # must restate the weapon oil, else it inherits an off_hand oil for an empty
+    # slot (or leaves its new off-hand bare).
+    weapon_value = (refine.get("weapon") or [{}])[0].get("value")
+    if weapon_value:
+        base_ohw = _off_hand_weapon(base_full, item_lookup)
+        for name, overrides in profilesets:
+            ohw = _off_hand_weapon(index[name][0], item_lookup)
+            if ohw != base_ohw:
+                overrides.append(consumable_line("weapon", weapon_value, ohw))
+
+    talent_profilesets = [(f"b{i}", [f"talents={c['code']}"])
+                          for i, c in enumerate(talents) if i > 0]
+    comp_keys = {name: tier_comp_key(full) for name, (full, _) in index.items()}
+    tier_comp_keys = list(dict.fromkeys(
+        k for k in (tier_comp_key(tc["gear"]) for tc in tier_comps) if k
+    ))
+
+    # profile_signature identifies the full run (talent text, stage-1 text and
+    # refinement candidates plus the knobs that decide the later stages) and is
+    # what a completed run stores to detect an unchanged profile. A revalidation
+    # sims a subset, so its checkpoint gets its own signature.
+    first_code = talents[0]["code"] if talents else None
+    talent_text = build_profile(
+        _stage_header(header, first_code, refine, base_full, item_lookup),
+        base_full, talent_profilesets, iterations=combo_iters,
+    )
+    screen_text = build_profile(
+        _stage_header(header, "<talent winner>", refine, base_full, item_lookup),
+        base_full, profilesets,
+        iterations=SIMC_SCREEN_ITERATIONS, target_error=SIMC_SCREEN_TARGET_ERROR,
+    )
     stage_params = (f"final:{SIMC_TARGET_ERROR}/{combo_iters} finalists:{SIMC_FINALISTS}/"
-                    f"{SIMC_FINALIST_KEEP_PCT}/{SIMC_FINALISTS_MAX}")
-    profile_signature = hashlib.sha256((screen_text + stage_params).encode("utf-8")).hexdigest()
+                    f"{SIMC_FINALIST_KEEP_PCT}/{SIMC_FINALISTS_MAX} "
+                    f"refine:{SIMC_REFINE_TARGET_ERROR}/{SIMC_REFINE_ITERATIONS}")
+    profile_signature = hashlib.sha256(
+        (talent_text + screen_text + json.dumps(refine, sort_keys=True) + stage_params)
+        .encode("utf-8")
+    ).hexdigest()
     revalidate = [n for n in prep.get("revalidate") or [] if n in index]
     signature = profile_signature
     if revalidate:
@@ -2319,29 +2571,115 @@ def _build_run(prep, item_lookup):
         "tier_set_id": tier_set_id,
         "base_full": base_full,
         "base_label": all_combos[0][1],
-        "profilesets": profilesets,          # [(name, [(slot, cand), ...]), ...]
+        "profilesets": profilesets,          # [(name, [(slot, cand) | line, ...]), ...]
         "index": index,                      # name -> (full_set, config_label)
         "scenarios": scenarios,
         "combo_iters": combo_iters,
         "n_combos": len(all_combos),
+        "talents": talents,
+        "talent_profilesets": talent_profilesets,
+        "refine": refine,
+        "comp_keys": comp_keys,              # name -> tier comp key
+        "tier_comp_keys": tier_comp_keys,    # popular comps, most popular first
         "signature": signature,
         "profile_signature": profile_signature,
         "revalidate": revalidate,
+        "revalidate_talent": prep.get("revalidate_talent"),
     }, None
 
 
+# Stages whose chunks bank their base actor as a `<stage>:base` row: the
+# reference the talent / gear / refinement rankings are measured against.
+_BASE_STAGES = ("t", "s2", "r")
+
+
 def _stage_means(done, stage):
-    """{profileset_name: mean} of one stage's banked rows (prefix stripped)."""
+    """{profileset_name: mean} of one stage's banked rows (prefix stripped,
+    base row excluded)."""
     prefix = f"{stage}:"
-    return {n[len(prefix):]: m for n, m in done.items() if n.startswith(prefix)}
+    return {n[len(prefix):]: m for n, m in done.items()
+            if n.startswith(prefix) and n != f"{stage}:base"}
+
+
+def _stage_base(done, stage):
+    return done.get(f"{stage}:base")
+
+
+def _chunk_means(stage, result):
+    """A chunk's banked rows: its profileset means plus, for _BASE_STAGES, the
+    base actor's DPS."""
+    means = {f"{stage}:{n}": m for n, m in parse_profileset_means(result).items()}
+    base = parse_baseline_dps(result)
+    if means and stage in _BASE_STAGES and base is not None:
+        means[f"{stage}:base"] = base
+    return means
+
+
+def _talent_dps(build, done):
+    """Candidate index -> DPS once the talent phase is banked, else None. A spec
+    with a single candidate never sims the phase (its DPS stays None)."""
+    talents = build["talents"]
+    if len(talents) <= 1:
+        return {i: None for i in range(len(talents))}
+    means = _stage_means(done, "t")
+    base = _stage_base(done, "t")
+    if base is None or any(name not in means for name, _ in build["talent_profilesets"]):
+        return None
+    return {0: base, **{int(name[1:]): means[name] for name, _ in build["talent_profilesets"]}}
+
+
+def _talent_winner(build, done):
+    """The talent candidate the gear and refinement phases run with."""
+    talents = build["talents"]
+    if not talents:
+        return None
+    dps = _talent_dps(build, done) or {}
+    if len(talents) == 1 or None in dps.values() or not dps:
+        return talents[0]
+    return talents[max(dps, key=lambda i: (dps[i], -i))]
+
+
+def _gear_header(build, done, item_lookup, gear):
+    winner = _talent_winner(build, done)
+    return _stage_header(build["header"], winner["code"] if winner else None,
+                         build["refine"], gear, item_lookup)
+
+
+def _gear_results(build, done, baseline_dps=None):
+    """[(full_set, dps, label, name)] of every final-precision gear result: the
+    base actor (stage-2 base row, else `baseline_dps`) and each stage-2 combo."""
+    base = _stage_base(done, "s2")
+    if base is None:
+        base = baseline_dps
+    out = []
+    if base is not None:
+        out.append((build["base_full"], base, build["base_label"], ""))
+    for name, dps in _stage_means(done, "s2").items():
+        entry = build["index"].get(name)
+        if entry is not None:
+            out.append((entry[0], dps, entry[1], name))
+    return out
+
+
+def _best_gear(results):
+    """The winning (full_set, dps, label, name) of _gear_results, ties by name."""
+    return max(results, key=lambda r: (r[1], r[3]))
+
+
+def _gear_winner(build, done):
+    """The best stage-2 set (the base set when stage 2 never ran)."""
+    results = _gear_results(build, done)
+    return _best_gear(results)[0] if results else build["base_full"]
 
 
 def _rank_with_refs(build, means, top_n):
     """Profileset names to carry forward from `means`: the top_n by DPS plus, per
-    active slot, the best combo wearing that slot's most-equipped candidate. The
-    latter keep _assemble_result's slot_baseline_dps (the "+X% over the
-    most-equipped item" figure) on real numbers. Ties break by name, so a resume
-    recomputes the identical list."""
+    active slot, the best combo wearing that slot's most-equipped candidate, and
+    per popular tier comp, the best combo wearing exactly that comp. The slot refs
+    keep _assemble_result's slot_baseline_dps (the "+X% over the most-equipped
+    item" figure) on real numbers, the comp refs give every popular comp a
+    final-precision number. Ties break by name, so a resume recomputes the
+    identical list."""
     index = build["index"]
     ranked = sorted(((m, n) for n, m in means.items() if n in index),
                     key=lambda x: (-x[0], x[1]))
@@ -2353,6 +2691,10 @@ def _rank_with_refs(build, means, top_n):
         popular = cands[0]["item_id"]
         ref = next((n for _, n in ranked
                     if (index[n][0].get(slot) or {}).get("item_id") == popular), None)
+        if ref is not None:
+            keep.add(ref)
+    for key in build["tier_comp_keys"]:
+        ref = next((n for _, n in ranked if build["comp_keys"].get(n) == key), None)
         if ref is not None:
             keep.add(ref)
     return [n for _, n in ranked if n in keep]
@@ -2369,48 +2711,299 @@ def _select_finalists(build, s1_means):
                            min(max(SIMC_FINALISTS, within), SIMC_FINALISTS_MAX))
 
 
-def _next_stage_work(build, done):
-    """The next chunk to sim as (stage, pending profilesets, iterations,
-    target_error, chunk_size), or None when every stage is banked and the run can
-    finalize. Progress rows are keyed `s1:<name>` (screen) and `s2:<name>`
-    (final). A revalidation skips the screen and finalizes its stored names."""
-    if build["revalidate"]:
+def _bonus_ids(cand):
+    return [b.strip() for b in str(cand.get("bonus_list") or "").split(",") if b.strip()]
+
+
+def _rebonus(cand, bonus_ids, item_lookup):
+    """`cand` with a new bonus list, rebuilt through _make_candidate so its
+    equip limits and sockets follow the new bonuses; enchant and gems carry over."""
+    new = _make_candidate(cand["item_id"], ",".join(bonus_ids), cand.get("count"), item_lookup)
+    for k in ("enchant_id", "gem_ids"):
+        if cand.get(k):
+            new[k] = cand[k]
+    return new
+
+
+def _fit_gems(comp, sockets, gem_lookup, filler):
+    """A popular gem comp fitted to `sockets` sockets: its limit-capped (unique)
+    gems first, then the rest by multiplicity, each capped by its
+    itemLimitCategory, the remainder filled with the comp's most common uncapped
+    gem (else `filler`). None when nothing can fill them."""
+    cnt = Counter(comp)
+    order = sorted(cnt, key=lambda g: (gem_lookup.get(g, {}).get("limit_category") is None, -cnt[g], g))
+    out, cat_used = [], {}
+    for g in order:
+        info = gem_lookup.get(g, {})
+        cat, qty = info.get("limit_category"), info.get("limit_quantity")
+        take = min(cnt[g], sockets - len(out))
+        if cat is not None and qty is not None:
+            take = min(take, qty - cat_used.get(cat, 0))
+            cat_used[cat] = cat_used.get(cat, 0) + max(take, 0)
+        if take > 0:
+            out.extend([g] * take)
+    uncapped = next((g for g in order if gem_lookup.get(g, {}).get("limit_category") is None), filler)
+    if len(out) < sockets:
+        if uncapped is None:
+            return None
+        out.extend([uncapped] * (sockets - len(out)))
+    return out
+
+
+def _multiset_key(ids):
+    """Ascending comma list, the aggregated_*_comps `comp` format."""
+    return ",".join(str(i) for i in sorted(int(i) for i in ids)) or None
+
+
+def _build_refine(build, gear, item_lookup):
+    """The refinement profilesets on `gear` (the gear winner), each changing one
+    category from it: (profilesets, meta, base_keys).
+
+    profilesets : [(name, overrides)] named r1..rN
+    meta        : name -> (category, choice key)
+    base_keys   : category -> the choice key `gear` itself represents (its DPS is
+                  the r:base row), so every category ranks its options together
+                  with the base.
+
+    Choice keys use the formats the spec page lists: enchant id, the
+    aggregated comp strings for gems / embellishments, the reagent item id for
+    missives and the item id for consumables. Options that would break an equip
+    limit, or whose embellishments cannot be placed on this set's crafted pieces,
+    are logged and skipped. Memoized per gear set on the build, since every
+    _next_stage_work call after stage 2 asks for it."""
+    cache_key = _set_dedup_key(gear)
+    cached = build.get("_refine_cache")
+    if cached and cached[0] == cache_key:
+        return cached[1]
+    refine = build["refine"]
+    _, gem_lookup = load_enchant_static()
+    craft = load_craft_static()
+    emb_reagent = {str(b): int(r) for b, r in json.loads(
+        (STATIC_DIR / "embellishments.json").read_text(encoding="utf-8")).items()}
+    variants, seen, base_keys = [], set(), {}
+
+    def add(cat, choice, new, lines=()):
+        overrides = [(s, c) for s, c in new.items() if gear_line(s, c) != gear_line(s, gear[s])]
+        overrides += list(lines)
+        if not overrides:
+            base_keys[cat] = choice
+        elif (cat, choice) not in seen:
+            seen.add((cat, choice))
+            variants.append((cat, choice, overrides))
+
+    # ---- enchants: one slot group at a time ----
+    for cat in sorted(k for k in refine if k.startswith("enchant:")):
+        grp = cat.split(":", 1)[1]
+        slots = [s for s in ALL_SLOTS if gear.get(s) and enchant_group(s) == grp
+                 and (grp != "WEAPON" or item_lookup.get(gear[s]["item_id"], {}).get("itemClass") == 2)]
+        if not slots:
+            continue
+        if gear[slots[0]].get("enchant_id"):
+            base_keys[cat] = str(gear[slots[0]]["enchant_id"])
+        for eid in refine[cat]:
+            add(cat, str(eid), {s: {**gear[s], "enchant_id": eid} for s in slots})
+
+    # ---- gems: whole-set gem setups ----
+    sock_slots = [s for s in ALL_SLOTS if gear.get(s) and gear[s].get("socket_count")]
+    sockets = sum(gear[s]["socket_count"] for s in sock_slots)
+    if sockets and refine.get("gem"):
+        base_gems = [g for s in sock_slots for g in gear[s].get("gem_ids") or []]
+        base_keys["gem"] = _multiset_key(base_gems)
+        filler = next((g for g, _ in Counter(base_gems).most_common()
+                       if gem_lookup.get(g, {}).get("limit_category") is None), None)
+        for comp in refine["gem"]:
+            fitted = _fit_gems(comp, sockets, gem_lookup, filler)
+            if not fitted:
+                continue
+            new, pos = {}, 0
+            for s in sock_slots:
+                n = gear[s]["socket_count"]
+                new[s] = {**gear[s], "gem_ids": fitted[pos:pos + n]}
+                pos += n
+            add("gem", _multiset_key(fitted), new)
+
+    # ---- missives: one stat pair on every crafted piece ----
+    missive_bonus = craft["missive_bonus"]
+    bonus_reagent = {b: r for r, b in missive_bonus.items()}
+    hosts = [s for s in ALL_SLOTS if gear.get(s) and any(b in bonus_reagent for b in _bonus_ids(gear[s]))]
+    if hosts and refine.get("missive"):
+        base_keys["missive"] = str(next(bonus_reagent[b] for b in _bonus_ids(gear[hosts[0]])
+                                        if b in bonus_reagent))
+        for reagent in refine["missive"]:
+            nb = missive_bonus[int(reagent)]
+            add("missive", str(reagent), {
+                s: _rebonus(gear[s], [nb if b in bonus_reagent else b for b in _bonus_ids(gear[s])],
+                            item_lookup)
+                for s in hosts
+            })
+
+    # ---- embellishments: popular comps placed on this set's crafted pieces ----
+    if refine.get("embellishment"):
+        def emb_slot_ids(s):
+            prof = item_lookup.get(gear[s]["item_id"], {}).get("profession") or {}
+            return [o["id"] for o in prof.get("optionalCraftingSlots") or [] if o.get("id") in craft["emb_slots"]]
+
+        def current(s):
+            return [emb_reagent[b] for b in _bonus_ids(gear[s]) if b in emb_reagent]
+
+        emb_hosts = [s for s in ALL_SLOTS if gear.get(s) and emb_slot_ids(s)]
+        fixed = Counter(r for s in ALL_SLOTS if gear.get(s) and s not in emb_hosts for r in current(s))
+        all_now = [r for s in ALL_SLOTS if gear.get(s) for r in current(s)]
+        base_keys["embellishment"] = _multiset_key(all_now)
+        for comp in refine["embellishment"]:
+            need = Counter(comp)
+            if any(fixed[r] > need[r] for r in fixed):
+                continue   # this set wears a built-in embellishment the comp lacks
+            need.subtract(fixed)
+            remaining = sorted(need.elements())
+            assign = {}
+            for s in emb_hosts:   # keep pieces that already carry a needed reagent
+                cur = next(iter(current(s)), None)
+                if cur in remaining:
+                    assign[s] = cur
+                    remaining.remove(cur)
+            for r in list(remaining):
+                s = next((h for h in emb_hosts if h not in assign
+                          and any(r in craft["emb_slots"][sid] for sid in emb_slot_ids(h))), None)
+                if s is None:
+                    break
+                assign[s] = r
+                remaining.remove(r)
+            if remaining:
+                _log(f"refine: embellishment comp {comp} does not fit the crafted pieces "
+                     f"{emb_hosts}, skipping")
+                continue
+            new = {}
+            for s in emb_hosts:
+                drop = set(emb_reagent) | {b for r in current(s)
+                                           for b in craft["reagent_bonuses"].get(r, [])}
+                ids = [b for b in _bonus_ids(gear[s]) if b not in drop]
+                if s in assign:
+                    ids += craft["reagent_bonuses"].get(assign[s], [])
+                new[s] = _rebonus(gear[s], ids, item_lookup)
+            if not set_is_valid({**gear, **new}):
+                _log(f"refine: embellishment comp {comp} breaks an equip limit, skipping")
+                continue
+            add("embellishment", _multiset_key(comp), new)
+
+    # ---- consumables: one category at a time, index 0 is the base pick ----
+    ohw = _off_hand_weapon(gear, item_lookup)
+    for cat in sorted(k for k in refine if k in CONSUMABLE_OPTIONS or k == "weapon"):
+        opts = refine[cat]
+        base_keys[cat] = str(opts[0]["item_id"])
+        for o in opts[1:]:
+            add(cat, str(o["item_id"]), {}, [consumable_line(cat, o["value"], ohw)])
+
+    profilesets, meta = [], {}
+    for i, (cat, choice, overrides) in enumerate(variants, start=1):
+        profilesets.append((f"r{i}", overrides))
+        meta[f"r{i}"] = (cat, choice)
+    build["_refine_cache"] = (cache_key, (profilesets, meta, base_keys))
+    return profilesets, meta, base_keys
+
+
+def _next_stage_work(build, done, item_lookup):
+    """The next chunk to sim, or None when every phase is banked and the run can
+    finalize. A chunk is {stage, pending, iterations, target_error, chunk_size,
+    header, base}: `header` and `base` are the base actor, which changes per
+    phase (talent winner from `t`, gear winner from `s2`).
+
+    Phases: `t` sims the talent candidates on the seed set, `s1` screens every
+    gear combo, `s2` re-sims the finalists, `r` refines the gear winner.
+    Progress rows are keyed `<stage>:<name>`. A revalidation skips the screen
+    and finalizes its stored names, unless the talent winner changed since the
+    run that stored them (then the gear search runs in full)."""
+    base_full = build["base_full"]
+    pending = [ps for ps in build["talent_profilesets"] if f"t:{ps[0]}" not in done]
+    if pending:
+        return {"stage": "t", "pending": pending, "iterations": build["combo_iters"],
+                "target_error": None, "chunk_size": SIMC_CHUNK_SIZE,
+                "header": _stage_header(build["header"], build["talents"][0]["code"],
+                                        build["refine"], base_full, item_lookup),
+                "base": base_full}
+
+    gear_header = _gear_header(build, done, item_lookup, base_full)
+    winner = _talent_winner(build, done)
+    if build["revalidate"] and (winner or {}).get("code") == build["revalidate_talent"]:
         finalists = set(build["revalidate"])
     else:
         pending = [ps for ps in build["profilesets"] if f"s1:{ps[0]}" not in done]
         if pending:
-            return ("s1", pending, SIMC_SCREEN_ITERATIONS, SIMC_SCREEN_TARGET_ERROR,
-                    SIMC_SCREEN_CHUNK_SIZE)
+            return {"stage": "s1", "pending": pending, "iterations": SIMC_SCREEN_ITERATIONS,
+                    "target_error": SIMC_SCREEN_TARGET_ERROR,
+                    "chunk_size": SIMC_SCREEN_CHUNK_SIZE, "header": gear_header, "base": base_full}
         finalists = set(_select_finalists(build, _stage_means(done, "s1")))
     pending = [ps for ps in build["profilesets"]
                if ps[0] in finalists and f"s2:{ps[0]}" not in done]
     if pending:
-        return "s2", pending, build["combo_iters"], None, SIMC_CHUNK_SIZE
+        return {"stage": "s2", "pending": pending, "iterations": build["combo_iters"],
+                "target_error": None, "chunk_size": SIMC_CHUNK_SIZE,
+                "header": gear_header, "base": base_full}
+
+    gear = _gear_winner(build, done)
+    refine_ps, _meta, _base_keys = _build_refine(build, gear, item_lookup)
+    pending = [ps for ps in refine_ps if f"r:{ps[0]}" not in done]
+    if pending:
+        return {"stage": "r", "pending": pending,
+                "iterations": int(SIMC_REFINE_ITERATIONS or 0) or build["combo_iters"],
+                "target_error": SIMC_REFINE_TARGET_ERROR, "chunk_size": SIMC_CHUNK_SIZE,
+                "header": _gear_header(build, done, item_lookup, gear), "base": gear}
     return None
 
 
-def _assemble_result(spec_id, season, build, means, baseline_dps, simc_version):
-    """Turn profileset DPS means into the final per-slot-ranked result dict.
+def _pct(dps, ref):
+    return (dps - ref) / ref * 100.0 if (ref and dps is not None) else None
 
-    `means` is name->mean_dps for every profileset (from one monolithic run, or
-    reassembled from checkpoint chunks — the source doesn't matter). Returns
-    (result_dict, None) or (None, error_str)."""
-    base_full = build["base_full"]
-    base_label = build["base_label"]
-    index = build["index"]
+
+def _ranked_choices(category, hero_id, options, ref_dps):
+    """simc_bis_choices rows for one category: `options` [(choice, dps)] ranked
+    best first (ties by choice key), gains measured against `ref_dps`."""
+    ranked = sorted((o for o in options if o[0] and o[1] is not None),
+                    key=lambda o: (-o[1], o[0]))
+    return [(category, hero_id, rank, choice, dps, _pct(dps, ref_dps))
+            for rank, (choice, dps) in enumerate(ranked, start=1)]
+
+
+def _talent_choices(build, done):
+    """`talent` rows per hero tree (reference: that tree's Build 1) and
+    `hero_tree` rows (each tree's best build; reference: the most-run tree)."""
+    talents = build["talents"]
+    dps = _talent_dps(build, done)
+    if not dps or None in dps.values():
+        return []
+    rows, tree_best = [], {}
+    by_tree = {}
+    for i, c in enumerate(talents):
+        by_tree.setdefault(int(c["hero"]), []).append((i, c))
+    for hero, members in by_tree.items():
+        ref = next((dps[i] for i, c in members if c["build"] == "b1"), dps[members[0][0]])
+        rows += _ranked_choices("talent", hero, [(c["code"], dps[i]) for i, c in members], ref)
+        tree_best[hero] = max(dps[i] for i, _ in members)
+    if len(tree_best) > 1:   # one simmed tree is no comparison
+        ref_tree = tree_best[int(talents[0]["hero"])]
+        rows += _ranked_choices("hero_tree", 0, [(str(h), d) for h, d in tree_best.items()], ref_tree)
+    return rows
+
+
+def _assemble_result(spec_id, season, build, done, baseline_dps, simc_version, item_lookup):
+    """Turn the banked phase rows into the final result dict: the per-slot gear
+    ranking plus the talent, tier-comp and refinement choice rows.
+
+    `done` holds every banked `<stage>:<name>` row (from one in-process run, or
+    reassembled from checkpoint chunks — the source doesn't matter).
+    `baseline_dps` is the stage-2 base actor's DPS when no `s2:base` row exists.
+    Returns (result_dict, None) or (None, error_str)."""
     active_slots = build["active_slots"]
     candidates = build["candidates"]
     tier_set_id = build["tier_set_id"]
 
-    # Reassemble every simmed combo as (full set, dps, config_label).
-    combo_results = [(base_full, baseline_dps, base_label)]
-    for name, dps in means.items():
-        entry = index.get(name)
-        if entry is None:
-            continue   # name not in the current build (defensive; signature guards this)
-        full, label = entry
-        combo_results.append((full, dps, label))
-    best_full, best_dps, tier_config = max(combo_results, key=lambda x: x[1])
+    # Every final-precision combo as (full set, dps, config_label). The winner
+    # uses _gear_winner's tie-break so it is the set the r phase refined.
+    results = _gear_results(build, done, baseline_dps)
+    if not results:
+        return None, f"spec {spec_id} has no final-precision gear result"
+    combo_results = [(full, dps, label) for full, dps, label, _ in results]
+    best_full, best_dps, tier_config, _ = _best_gear(results)
 
     # Per-slot ranking derived from the full-set sims. Every combo in
     # combo_results already passed set_is_valid as a whole set, so rank N per
@@ -2446,6 +3039,31 @@ def _assemble_result(spec_id, season, build, means, baseline_dps, simc_version):
     if not per_slot_ranked:
         return None, f"spec {spec_id} produced no per-slot ranking"
 
+    choices = _talent_choices(build, done)
+
+    comp_best = {}
+    for full, dps, _ in combo_results:
+        key = tier_comp_key(full)
+        if key and dps > comp_best.get(key, float("-inf")):
+            comp_best[key] = dps
+    if comp_best:
+        ref = next((comp_best[k] for k in build["tier_comp_keys"] if k in comp_best),
+                   max(comp_best.values()))
+        choices += _ranked_choices("tier_comp", 0, list(comp_best.items()), ref)
+
+    refine_ps, meta, base_keys = _build_refine(build, best_full, item_lookup)
+    r_base = _stage_base(done, "r")
+    r_means = _stage_means(done, "r")
+    if refine_ps and r_base is not None:
+        by_cat = {}
+        for name, (cat, choice) in meta.items():
+            if name in r_means:
+                by_cat.setdefault(cat, []).append((choice, r_means[name]))
+        for cat, options in sorted(by_cat.items()):
+            options.append((base_keys.get(cat), r_base))
+            choices += _ranked_choices(cat, 0, options, r_base)
+
+    winner = _talent_winner(build, done)
     return {
         "spec_id": spec_id,
         "season": season,
@@ -2456,15 +3074,18 @@ def _assemble_result(spec_id, season, build, means, baseline_dps, simc_version):
         "tier_config": tier_config,
         "per_slot_ranked": per_slot_ranked,
         "combos": len(combo_results),
+        "choices": choices,
+        "hero_talent_id": int(winner["hero"]) if winner else None,
+        "talent_code": winner["code"] if winner else None,
     }, None
 
 
 async def simulate_prepared(spec_id, season, prep, item_lookup, stats=None):
-    """Run a whole spec in one simc invocation (no checkpointing).
+    """Run every phase of a spec back to back, without checkpointing.
 
     Used by the debug CLI. The production collector uses the chunked, resumable
-    path in run_simc_bis instead. Touches no DB; all reads happen in
-    _prepare_spec.
+    path in run_simc_bis instead; both walk the same _next_stage_work phases.
+    Touches no DB; all reads happen in _prepare_spec.
     """
     build, build_err = _build_run(prep, item_lookup)
     if build is None:
@@ -2472,29 +3093,36 @@ async def simulate_prepared(spec_id, season, prep, item_lookup, stats=None):
         _stat_log(stats, f"simc: {msg}")
         return None, msg
 
-    _stat_log(stats, f"simc: spec {spec_id} evaluating {build['n_combos']} full-set combos "
-                     f"across {len(build['scenarios'])} combo group(s)")
-    profile_text = build_profile(build["header"], build["base_full"], build["profilesets"],
-                                 iterations=build["combo_iters"])
-    result, run_err = await run_simc(profile_text, f"spec{spec_id}_topgear")
-    if not result:
-        return None, run_err or "simc produced no result"
-    baseline_dps = parse_baseline_dps(result)
+    _stat_log(stats, f"simc: spec {spec_id} {len(build['talents'])} talent builds, "
+                     f"{build['n_combos']} full-set combos across "
+                     f"{len(build['scenarios'])} combo group(s)")
+    done = {}
+    simc_version = None
+    while True:
+        work = _next_stage_work(build, done, item_lookup)
+        if work is None:
+            break
+        profile_text = build_profile(work["header"], work["base"], work["pending"],
+                                     iterations=work["iterations"], target_error=work["target_error"])
+        result, run_err = await run_simc(profile_text, f"spec{spec_id}_{work['stage']}")
+        if not result:
+            return None, run_err or "simc produced no result"
+        means = _chunk_means(work["stage"], result)
+        if not means:
+            return None, f"{work['stage']} returned no profileset results"
+        done.update(means)
+        simc_version = parse_simc_version(result) or simc_version
+
+    baseline_dps = _stage_base(done, "s2")
     if baseline_dps is None:
-        return None, "could not parse baseline dps from simc result"
-    simc_version = parse_simc_version(result)
-    if simc_version and stats is not None:
-        try:
-            stats.set_status("simc_build", simc_version)
-        except Exception:
-            pass
-    means = parse_profileset_means(result)
-    if stats is not None:
-        try:
-            await stats.increment("simc_profilesets_run", len(means))
-        except Exception:
-            pass
-    return _assemble_result(spec_id, season, build, means, baseline_dps, simc_version)
+        profile_text = build_profile(_gear_header(build, done, item_lookup, build["base_full"]),
+                                     build["base_full"], [], iterations=build["combo_iters"])
+        result, run_err = await run_simc(profile_text, f"spec{spec_id}_base")
+        if not result:
+            return None, run_err or "simc produced no result"
+        baseline_dps = parse_baseline_dps(result)
+        simc_version = parse_simc_version(result) or simc_version
+    return _assemble_result(spec_id, season, build, done, baseline_dps, simc_version, item_lookup)
 
 
 # --------------------------------------------------------------------------
@@ -2565,8 +3193,13 @@ def persist(conn, cursor, result, item_lookup):
             inputs_at=result.get("inputs_at") or now,
             run_signature=result.get("run_signature"),
             revalidate_set=result.get("revalidate_set"),
+            hero_talent_id=result.get("hero_talent_id"),
+            talent_code=result.get("talent_code"),
         )
         databaseConnector.insert_simc_bis_items_batch(conn, cursor, item_rows)
+        databaseConnector.insert_simc_bis_choices_batch(
+            conn, cursor, [(spec_id, season, *row) for row in result.get("choices") or []]
+        )
         databaseConnector.commit_with_retry(conn)
     except Exception as e:
         conn.rollback()
@@ -2660,9 +3293,9 @@ def _touch_progress_attempt(spec_id, season, signature, total, reset, snapshot, 
         _log(f"simc: could not touch progress attempt for spec {spec_id}: {e}")
 
 
-def _finalize_run(spec_id, season, build, all_means, baseline_dps, simc_version, item_lookup,
+def _finalize_run(spec_id, season, build, done, baseline_dps, simc_version, item_lookup,
                   inputs_at):
-    """Assemble the final BiS from the stage-2 means, persist it, and clear the
+    """Assemble the final result from every banked phase row, persist it, and clear the
     checkpoint. Returns (True, result) or (False, error_str). The persist and the
     checkpoint-clear run on one connection; if the process dies between them the
     leftover progress rows just re-finalise (idempotently) on the next visit.
@@ -2670,12 +3303,14 @@ def _finalize_run(spec_id, season, build, all_means, baseline_dps, simc_version,
     freshness clock); the stored signature and revalidate set let the next
     visit re-sim only the leaders when the profile is unchanged."""
     from contextlib import closing
-    result, err = _assemble_result(spec_id, season, build, all_means, baseline_dps, simc_version)
+    result, err = _assemble_result(spec_id, season, build, done, baseline_dps, simc_version,
+                                   item_lookup)
     if not result:
         return False, err
     result["inputs_at"] = inputs_at
     result["run_signature"] = build["profile_signature"]
-    result["revalidate_set"] = ",".join(_rank_with_refs(build, all_means, SIMC_REVALIDATE_TOP))
+    result["revalidate_set"] = ",".join(
+        _rank_with_refs(build, _stage_means(done, "s2"), SIMC_REVALIDATE_TOP))
     with closing(databaseConnector.get_live_connection()) as conn:
         cursor = conn.cursor()
         databaseConnector.configure_read_session(conn, cursor)
@@ -2735,10 +3370,12 @@ def _select_target_spec(conn, cursor, specs, season):
 
 
 def _revalidate_names(conn, cursor, spec_id, season, build):
-    """Stored combo names to re-sim when the spec's profile is unchanged since its
-    last completed run, else None (full two-stage run). A content go-live after
-    that run always forces a full run: new tuning can reorder more than the
-    leaders."""
+    """(stored combo names, the talent code they were simmed with) to re-sim when
+    the spec's profile is unchanged since its last completed run, else None (full
+    run). A content go-live after that run always forces a full run: new tuning
+    can reorder more than the leaders. The talent and refinement phases always
+    run in full; _next_stage_work drops back to a full gear search when the
+    talent winner differs from the stored code."""
     completed = databaseConnector.fetch_simc_bis_completed(conn, cursor, spec_id, season)
     if not completed or completed.get("run_signature") != build["profile_signature"]:
         return None
@@ -2747,7 +3384,7 @@ def _revalidate_names(conn, cursor, spec_id, season, build):
     go_live = commonUtils.latest_content_go_live(lookup_dir=str(STATIC_DIR))
     if not names or inputs_at is None or (go_live is not None and inputs_at < go_live):
         return None
-    return names
+    return names, completed.get("talent_code")
 
 
 # --------------------------------------------------------------------------
@@ -2951,9 +3588,9 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                     if prep:
                         build, build_err = _build_run(prep, item_lookup)
                         if build is not None:
-                            names = _revalidate_names(conn, cursor, spec_id, season, build)
-                            if names:
-                                prep["revalidate"] = names
+                            reval = _revalidate_names(conn, cursor, spec_id, season, build)
+                            if reval:
+                                prep["revalidate"], prep["revalidate_talent"] = reval
                                 build, build_err = _build_run(prep, item_lookup)
                                 _stat_log(stats, f"simc: spec {spec_id} profile unchanged, "
                                                  f"revalidating {len(build['revalidate'])} combo(s)")
@@ -2977,23 +3614,25 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                 await asyncio.sleep(SIMC_SPEC_SLEEP)
                 continue
 
-            total = len(build["profilesets"])
+            total = len(build["talent_profilesets"]) + len(build["profilesets"])
 
             # --- Sim phase: back-to-back chunks, no DB connection held ---
             while not _cancelled():
                 now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-                work = _next_stage_work(build, done)
+                work = _next_stage_work(build, done, item_lookup)
 
                 if work is None:
-                    # Every stage banked (or the spec has none). If a stage-2
+                    # Every phase banked (or the spec has none). If a stage-2
                     # chunk already measured the base actor, finalize directly;
                     # otherwise (0-profileset spec, or a crash landed exactly
                     # between the last bank and finalize with no stored baseline)
                     # run one base-only sim for the reference DPS.
-                    baseline_dps, simc_version = stored_baseline, stored_version
+                    baseline_dps = _stage_base(done, "s2") or stored_baseline
+                    simc_version = stored_version
                     if baseline_dps is None:
-                        profile_text = build_profile(build["header"], build["base_full"], [],
-                                                     iterations=build["combo_iters"])
+                        profile_text = build_profile(
+                            _gear_header(build, done, item_lookup, build["base_full"]),
+                            build["base_full"], [], iterations=build["combo_iters"])
                         result_json, run_err = await run_simc(profile_text, f"spec{spec_id}_base")
                         if not result_json:
                             if not _cancelled():
@@ -3010,7 +3649,7 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                         baseline_dps = parse_baseline_dps(result_json)
                         simc_version = parse_simc_version(result_json)
                     async with _gated():
-                        ok, fin = _finalize_run(spec_id, season, build, _stage_means(done, "s2"),
+                        ok, fin = _finalize_run(spec_id, season, build, done,
                                                 baseline_dps, simc_version, item_lookup,
                                                 inputs_at)
                     if ok:
@@ -3032,15 +3671,16 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                             _clear_progress(spec_id, season)
                     break
 
-                stage, pending, iters, terr, chunk_size = work
+                stage, pending, chunk_size = work["stage"], work["pending"], work["chunk_size"]
                 chunk = pending[:chunk_size]
                 stage_done = len(_stage_means(done, stage))
                 stage_total = stage_done + len(pending)
                 _stat_log(stats, f"simc: spec {spec_id} ({spec_label}) {stage} simming profilesets "
                                  f"{stage_done + 1}-{stage_done + len(chunk)}/{stage_total}"
                                  + (" [restarting stale progress]" if reset_progress else ""))
-                profile_text = build_profile(build["header"], build["base_full"], chunk,
-                                             iterations=iters, target_error=terr)
+                profile_text = build_profile(work["header"], work["base"], chunk,
+                                             iterations=work["iterations"],
+                                             target_error=work["target_error"])
                 token = f"spec{spec_id}_{stage}_chunk{stage_done // max(1, chunk_size)}"
                 result_json, run_err = await run_simc(profile_text, token)
                 now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
@@ -3071,8 +3711,7 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                         stats.set_status("simc_build", simc_version)
                     except Exception:
                         pass
-                chunk_means = {f"{stage}:{n}": m
-                               for n, m in parse_profileset_means(result_json).items()}
+                chunk_means = _chunk_means(stage, result_json)
                 if not chunk_means:
                     # simc "succeeded" but returned no profileset results — treat
                     # as a failure rather than looping on the same chunk forever.
@@ -3107,7 +3746,7 @@ async def run_simc_bis(session, cancel_event=None, stats=None, get_season=None,
                     stored_baseline = baseline_dps
                 stored_version = simc_version
                 _stat_log(stats, f"simc: spec {spec_id} ({spec_label}) {stage} progress "
-                                 f"{stage_done + len(chunk_means)}/{stage_total} profilesets")
+                                 f"{stage_done + len(chunk)}/{stage_total} profilesets")
                 # Brief pause between chunks (keeps the loop responsive to
                 # cancellation and lets other tasks breathe); the next loop pass
                 # sims the following chunk or finalizes.
@@ -3250,6 +3889,13 @@ async def _dry_run_single(spec_id, season):
     print("=== gem ranking (most popular first, fills sockets top-down) ===")
     print(f"  {prep.get('gem_ranking') or []}")
 
+    print("\n=== talent candidates (Talent Builds cards; first = base actor) ===")
+    for c in prep.get("talent_candidates") or []:
+        print(f"  tree {c['hero']:>4} {c['build']:4} {c['code']}")
+    print("\n=== refinement candidates (popular options; index 0 of enchants/consumables = base) ===")
+    for cat, opts in sorted((prep.get("refine") or {}).items()):
+        print(f"  {cat:16} {opts}")
+
     SIMC_IO_DIR.mkdir(parents=True, exist_ok=True)
     written = []
 
@@ -3283,7 +3929,31 @@ async def _dry_run_single(spec_id, season):
     else:
         print(f"  NO VALID COMBINATIONS — {reason}")
 
-    txt = build_profile(header, base_full or baseline, ps, iterations=combo_iters)
+    build, _ = _build_run(prep, item_lookup)
+    if build is not None:
+        talent_txt = build_profile(
+            _stage_header(header, build["talents"][0]["code"] if build["talents"] else None,
+                          build["refine"], build["base_full"], item_lookup),
+            build["base_full"], build["talent_profilesets"], iterations=combo_iters)
+        p = SIMC_IO_DIR / f"dryrun_spec{spec_id}_talents.simc"
+        p.write_text(talent_txt, encoding="utf-8")
+        written.append(p)
+        # Refinement as it would run on the seed set (the real run refines the
+        # stage-2 winner, which needs an actual sim).
+        refine_ps, refine_meta, base_keys = _build_refine(build, build["base_full"], item_lookup)
+        refine_txt = build_profile(
+            _gear_header(build, {}, item_lookup, build["base_full"]),
+            build["base_full"], refine_ps, iterations=combo_iters)
+        p = SIMC_IO_DIR / f"dryrun_spec{spec_id}_refine.simc"
+        p.write_text(refine_txt, encoding="utf-8")
+        written.append(p)
+        print(f"\n=== refinement profilesets on the seed set (base choices {base_keys}) ===")
+        for name, (cat, choice) in refine_meta.items():
+            print(f"  {name:4} {cat:16} {choice}")
+
+    txt = build_profile(_stage_header(header, (prep.get("talent_candidates") or [{}])[0].get("code"),
+                                      prep.get("refine") or {}, base_full or baseline, item_lookup),
+                        base_full or baseline, ps, iterations=combo_iters)
     p = SIMC_IO_DIR / f"dryrun_spec{spec_id}_topgear.simc"
     p.write_text(txt, encoding="utf-8")
     written.append(p)
@@ -3324,6 +3994,9 @@ async def _debug_single(spec_id, season, do_persist=False):
         "tier_set_id": result["tier_set_id"],
         "tier_config": result["tier_config"],
         "combos": result.get("combos"),
+        "hero_talent_id": result.get("hero_talent_id"),
+        "talent_code": result.get("talent_code"),
+        "choices": result.get("choices"),
         "bis_per_slot": {
             slot: {
                 "item_id": ranked[0][0]["item_id"],

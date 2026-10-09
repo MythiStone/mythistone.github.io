@@ -1189,13 +1189,68 @@ def seed_standalone(conn, cursor, static, rng, cfg, pools):
         "INSERT INTO top_player_loadout_talents (spec_id, season, `rank`, map_challenge_mode_id, "
         "node_id, node_rank, entry_id, spell_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", tpl_tal)
 
-    # simc_bis_meta + items
-    meta_rows, item_rows = [], []
+    # simc_bis_meta + items + choices. Choice ids come from the same static lookups
+    # the spec page renders them with (talent strings from the member builds,
+    # consumables.json / temp-enchants.json items, the enchant pools, missives.json
+    # and embellishments.json reagents, item-sets.json pieces), so every pick either
+    # badges a listed row or renders as a "SimC pick" row.
+    try:
+        consumables = load_json(os.path.join(static.dir, "consumables.json"))
+    except (OSError, ValueError):
+        consumables = []
+    cons_items = {}
+    for c in consumables:
+        if c.get("item_id") is not None:
+            cons_items.setdefault(c["category"], []).append(int(c["item_id"]))
+    cur_exp = max((e.get("expansion", 0) for e in static.temp_enchants), default=0)
+    cons_items["weapon"] = [int(e["itemId"]) for e in static.temp_enchants
+                            if e.get("expansion") == cur_exp and e.get("itemId")]
+    emb_reagents = sorted({int(v) for v in static.embellishments.values()})
+    missive_items = sorted({int(v) for v in static.missives.values()})
+    tier_sets = [s for s in static.item_sets if len(s.get("items") or []) >= 4]
+
+    def ranked(category, hero, picks, base_dps):
+        rows = []
+        for rank, choice in enumerate(picks, start=1):
+            gain = round(rng.uniform(0.3, 1.5), 2) if rank == 1 else round(-rng.uniform(0.1, 1.0) * rank, 2)
+            rows.append((sid, season, category, hero, rank, str(choice), base_dps * (1 + gain / 100), gain))
+        return rows
+
+    meta_rows, item_rows, choice_rows = [], [], []
     prog_meta, prog_rows = [], []
     for sid_str in static.specs:
         sid = int(sid_str)
         base_dps = rng.uniform(1.8e6, 3.2e6)
-        meta_rows.append((sid, season, "simc-seed", base_dps, 10000, 0.1, "tww3", now_dt, now_dt))
+        builds = [v for v in variants.get(sid) or [] if v["weight"] > 0 and v["role"] != "incomplete"]
+        tree_best = {}
+        for tree in sorted({v["hero_tree"] for v in builds}):
+            mine = sorted((v for v in builds if v["hero_tree"] == tree), key=lambda v: -v["weight"])
+            codes = list(dict.fromkeys(v["loadout"] for v in mine))[:3]
+            rows = ranked("talent", tree, codes, base_dps)
+            choice_rows += rows
+            tree_best[tree] = (rows[0][6], codes[0])
+        sim_tree = max(tree_best, key=lambda t: tree_best[t][0]) if tree_best else None
+        if tree_best:
+            choice_rows += ranked("hero_tree", 0, sorted(tree_best, key=lambda t: -tree_best[t][0]), base_dps)
+        for grp in sorted(ench_groups):
+            epool = enchant_pools.get(grp) or []
+            if epool:
+                choice_rows += ranked(f"enchant:{grp}", 0, list(dict.fromkeys(epool))[:2], base_dps)
+        if gem_pool:
+            choice_rows += ranked("gem", 0, [",".join(str(g) for g in sorted([gem_pool[0]] * 3))], base_dps)
+        if len(emb_reagents) >= 2:
+            choice_rows += ranked("embellishment", 0,
+                                  [",".join(str(r) for r in sorted(rng.sample(emb_reagents, 2)))], base_dps)
+        if missive_items:
+            choice_rows += ranked("missive", 0, rng.sample(missive_items, min(2, len(missive_items))), base_dps)
+        if tier_sets:
+            pieces = sorted(int(i) for i in rng.choice(tier_sets)["items"][:4])
+            choice_rows += ranked("tier_comp", 0, [",".join(str(i) for i in pieces)], base_dps)
+        for cat, items in sorted(cons_items.items()):
+            if items:
+                choice_rows += ranked(cat, 0, items[:2], base_dps)
+        meta_rows.append((sid, season, "simc-seed", base_dps, 10000, 0.1, "tww3", now_dt, now_dt,
+                          sim_tree, tree_best[sim_tree][1] if sim_tree is not None else None))
         for slot in EQUIPMENT_SLOTS:
             pool = item_pools.get(slot) or []
             if not pool:
@@ -1216,8 +1271,12 @@ def seed_standalone(conn, cursor, static, rng, cfg, pools):
 
     _insert_many(conn, cursor,
         "INSERT INTO simc_bis_meta (spec_id, season, simc_version, baseline_dps, iterations, "
-        "target_error, tier_config, updated_at, inputs_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        "target_error, tier_config, updated_at, inputs_at, hero_talent_id, talent_code) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
         meta_rows)
+    _insert_many(conn, cursor,
+        "INSERT INTO simc_bis_choices (spec_id, season, category, hero_talent_id, `rank`, choice, "
+        "dps, dps_pct_gain) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", choice_rows)
     _insert_many(conn, cursor,
         "INSERT INTO simc_bis_items (spec_id, season, slot, `rank`, item_id, bonus_list, ilevel, dps, "
         "dps_pct_gain, is_set_piece, item_set_id, enchant_id, gem_ids) "
