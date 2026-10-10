@@ -46,9 +46,13 @@ def build_category(entries, category):
     """Collapse a raidbots array to one canonical entry per name family.
 
     Q1/Q2 variants share a base name, so they collapse to the highest
-    craftingQuality variant; its itemId/icon represent the family."""
+    craftingQuality variant; its itemId/icon represent the family. Every variant's
+    itemId is still kept in ``item_ids`` (ascending craftingQuality) for consumers
+    that need the purchasable items rather than the family, e.g. the addon's
+    auction house favorites."""
     current = max((e.get("expansion", 0) for e in entries), default=0)
     families = {}
+    ranks = {}
     for e in entries:
         if e.get("expansion") != current:
             continue
@@ -60,6 +64,9 @@ def build_category(entries, category):
         if not key:
             continue
         cq = e.get("craftingQuality") or 0
+        if e.get("itemId") is not None:
+            # First entry per quality wins, matching the family pick below.
+            ranks.setdefault(key, {}).setdefault(cq, e.get("itemId"))
         prev = families.get(key)
         if prev is None or cq > (prev.get("quality") or 0):
             families[key] = {
@@ -72,6 +79,8 @@ def build_category(entries, category):
                 "norm_name": norm_name,
                 "norm_short": norm_short,
             }
+    for key, family in families.items():
+        family["item_ids"] = [item_id for _, item_id in sorted(ranks.get(key, {}).items())]
     return list(families.values())
 
 

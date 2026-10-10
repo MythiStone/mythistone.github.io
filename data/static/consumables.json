@@ -3,6 +3,9 @@
     "category": "augment",
     "icon": "inv_10_enchanting_crystal_color2",
     "item_id": 259085,
+    "item_ids": [
+      259085
+    ],
     "name": "Void-Touched Augment Rune",
     "norm_name": "void-touched augment rune",
     "norm_short": "void-touched",
@@ -13,6 +16,10 @@
     "category": "flask",
     "icon": "inv_12_profession_alchemy_flask_sindoreipotion_yellow",
     "item_id": 241320,
+    "item_ids": [
+      241321,
+      241320
+    ],
     "name": "Flask of Thalassian Resistance",
     "norm_name": "flask of thalassian resistance",
     "norm_short": "thalassian resistance",
@@ -23,6 +30,10 @@
     "category": "flask",
     "icon": "inv_12_profession_alchemy_flask_sindoreipotion_white_",
     "item_id": 241324,
+    "item_ids": [
+      241325,
+      241324
+    ],
     "name": "Flask of the Blood Knights",
     "norm_name": "flask of the blood knights",
     "norm_short": "blood knights",
@@ -33,6 +44,10 @@
     "category": "flask",
     "icon": "inv_12_profession_alchemy_flask_sindoreipotion_black",
     "item_id": 241322,
+    "item_ids": [
+      241323,
+      241322
+    ],
     "name": "Flask of the Magisters",
     "norm_name": "flask of the magisters",
     "norm_short": "magisters",
@@ -43,6 +58,10 @@
     "category": "flask",
     "icon": "inv_12_profession_alchemy_flask_sindoreipotion_red__",
     "item_id": 241326,
+    "item_ids": [
+      241327,
+      241326
+    ],
     "name": "Flask of the Shattered Sun",
     "norm_name": "flask of the shattered sun",
     "norm_short": "shattered sun",
@@ -53,6 +72,9 @@
     "category": "food",
     "icon": "inv_misc_food_legion_heartyfeast",
     "item_id": 275264,
+    "item_ids": [
+      275264
+    ],
     "name": "Amani Cornucopia",
     "norm_name": "amani cornucopia",
     "norm_short": "amani cornucopia",
@@ -63,6 +85,9 @@
     "category": "food",
     "icon": "inv_cooking_81_paleosteakandpotatoes_color04",
     "item_id": 242287,
+    "item_ids": [
+      242287
+    ],
     "name": "Arcano Cutlets",
     "norm_name": "arcano cutlets",
     "norm_short": "arcano cutlets",
@@ -73,6 +98,9 @@
     "category": "food",
     "icon": "inv_misc_food_168_ricecake01",
     "item_id": 242296,
+    "item_ids": [
+      242296
+    ],
     "name": "Bloodthistle-Wrapped Cutlets",
     "norm_name": "bloodthistle-wrapped cutlets",
     "norm_short": "bloodthistle-wrapped cutlets",
@@ -83,6 +111,9 @@
     "category": "food",
     "icon": "inv_misc_food_cooked_greatpabanquet_wok",
     "item_id": 242273,
+    "item_ids": [
+      242273
+    ],
     "name": "Blooming Feast",
     "norm_name": "blooming feast",
     "norm_short": "blooming feast",
@@ -93,6 +124,9 @@
     "category": "food",
     "icon": "inv_misc_food_legion_fishbrulspecial",
     "item_id": 242276,
+    "item_ids": [
+      242276
+    ],
     "name": "Braised Blood Hunter",
     "norm_name": "braised blood hunter",
     "norm_short": "braised blood hunter",
@@ -103,6 +137,9 @@
     "category": "food",
     "icon": "inv_misc_food_draenor_steamedscorpion",
     "item_id": 242280,
+    "item_ids": [
+      242280
+    ],
     "name": "Buttered Root Crab",
     "norm_name": "buttered root crab",
     "norm_short": "buttered root crab",
@@ -113,6 +150,9 @@
     "category": "food",
     "icon": "inv_misc_food_vendor_poundedricecake_1",
     "item_id": 242274,
+    "item_ids": [
+      242274
+    ],
     "name": "Champion's Bento",
     "norm_name": "champion's bento",
     "norm_short": "champion's bento",
@@ -123,6 +163,9 @@
     "category": "food",
     "icon": "inv_misc_food_cooked_valleystirfry",
     "item_id": 242277,
+    "item_ids": [
+      242277
+    ],
     "name": "Crimson Calamari",
     "norm_name": "crimson calamari",
     "norm_short": "crimson calamari",
@@ -133,6 +176,9 @@
     "category": "food",
     "icon": "inv_cooking_90_bananabeefpudding",
     "item_id": 242292,
+    "item_ids": [
+      242292
+    ],
     "name": "Eversong Pudding",
     "norm_name": "eversong pudding",
     "norm_short": "eversong pudding",
@@ -143,6 +189,9 @@
     "category": "food",
     "icon": "inv_cooking_100_revengeservedcold_color02",
     "item_id": 242286,
+    "item_ids": [
+      242286
+    ],
     "name": "Fel-Kissed Filet",
     "norm_name": "fel-kissed filet",
     "norm_short": "fel-kissed filet",
@@ -153,6 +202,9 @@
     "category": "food",
     "icon": "inv_cooking_100_sidesalad_color04",
     "item_id": 255848,
+    "item_ids": [
+      255848
+    ],
     "name": "Flora Frenzy",
     "norm_name": "flora frenzy",
     "norm_short": "flora frenzy",
@@ -163,6 +215,9 @@
     "category": "food",
     "icon": "inv_misc_food_legion_driedmackerelstrips",
     "item_id": 242291,
+    "item_ids": [
+      242291
+    ],
     "name": "Fried Bloomtail",
     "norm_name": "fried bloomtail",
     "norm_short": "fried bloomtail",
@@ -173,6 +228,9 @@
     "category": "food",
     "icon": "inv_misc_food_160_fish_87",
     "item_id": 242281,
+    "item_ids": [
+      242281
+    ],
     "name": "Glitter Skewers",
     "norm_name": "glitter skewers",
     "norm_short": "glitter skewers",
@@ -183,6 +241,9 @@
     "category": "food",
     "icon": "inv_misc_1h_soup_b_01_misc_1h_soup_b_01",
     "item_id": 255846,
+    "item_ids": [
+      255846
+    ],
     "name": "Harandar Celebration",
     "norm_name": "harandar celebration",
     "norm_short": "harandar celebration",
@@ -193,6 +254,9 @@
     "category": "food",
     "icon": "inv_misc_food_dimsum",
     "item_id": 242295,
+    "item_ids": [
+      242295
+    ],
     "name": "Hearthflame Supper",
     "norm_name": "hearthflame supper",
     "norm_short": "hearthflame supper",
@@ -203,6 +267,9 @@
     "category": "food",
     "icon": "inv_cooking_100_roastduck",
     "item_id": 255847,
+    "item_ids": [
+      255847
+    ],
     "name": "Impossibly Royal Roast",
     "norm_name": "impossibly royal roast",
     "norm_short": "impossibly royal roast",
@@ -213,6 +280,9 @@
     "category": "food",
     "icon": "inv_cooking_10_grandbanquet",
     "item_id": 275265,
+    "item_ids": [
+      275265
+    ],
     "name": "Loa's Gathering",
     "norm_name": "loa's gathering",
     "norm_short": "loa's gathering",
@@ -223,6 +293,9 @@
     "category": "food",
     "icon": "inv_misc_food_draenor_saltedskulker_color01",
     "item_id": 242282,
+    "item_ids": [
+      242282
+    ],
     "name": "Null and Void Plate",
     "norm_name": "null and void plate",
     "norm_short": "null and void plate",
@@ -233,6 +306,9 @@
     "category": "food",
     "icon": "inv_cooking_10_draconicdelicacies",
     "item_id": 242272,
+    "item_ids": [
+      242272
+    ],
     "name": "Quel'dorei Medley",
     "norm_name": "quel'dorei medley",
     "norm_short": "quel'dorei medley",
@@ -243,6 +319,9 @@
     "category": "food",
     "icon": "inv_cooking_100_roastduck",
     "item_id": 242275,
+    "item_ids": [
+      242275
+    ],
     "name": "Royal Roast",
     "norm_name": "royal roast",
     "norm_short": "royal roast",
@@ -253,6 +332,9 @@
     "category": "food",
     "icon": "inv_tradeskill_cooking_feastofblood",
     "item_id": 255845,
+    "item_ids": [
+      255845
+    ],
     "name": "Silvermoon Parade",
     "norm_name": "silvermoon parade",
     "norm_short": "silvermoon parade",
@@ -263,6 +345,9 @@
     "category": "food",
     "icon": "inv_misc_food_cooked_wildfowlroast",
     "item_id": 242283,
+    "item_ids": [
+      242283
+    ],
     "name": "Sun-Seared Lumifin",
     "norm_name": "sun-seared lumifin",
     "norm_short": "sun-seared lumifin",
@@ -273,6 +358,9 @@
     "category": "food",
     "icon": "inv_misc_food_cooked_sauteedcarrots",
     "item_id": 242293,
+    "item_ids": [
+      242293
+    ],
     "name": "Sunwell Delight",
     "norm_name": "sunwell delight",
     "norm_short": "sunwell delight",
@@ -283,6 +371,9 @@
     "category": "food",
     "icon": "inv_cooking_100_revengeservedcold",
     "item_id": 242278,
+    "item_ids": [
+      242278
+    ],
     "name": "Tasty Smoked Tetra",
     "norm_name": "tasty smoked tetra",
     "norm_short": "tasty smoked tetra",
@@ -293,6 +384,9 @@
     "category": "food",
     "icon": "inv_cooking_80_ravenberrytart",
     "item_id": 242284,
+    "item_ids": [
+      242284
+    ],
     "name": "Void-Kissed Fish Rolls",
     "norm_name": "void-kissed fish rolls",
     "norm_short": "void-kissed fish rolls",
@@ -303,6 +397,9 @@
     "category": "food",
     "icon": "inv_cooking_10_grandbanquet",
     "item_id": 242285,
+    "item_ids": [
+      242285
+    ],
     "name": "Warped Wise Wings",
     "norm_name": "warped wise wings",
     "norm_short": "warped wise wings",
@@ -313,6 +410,9 @@
     "category": "food",
     "icon": "inv_misc_food_158_fish_redish",
     "item_id": 242290,
+    "item_ids": [
+      242290
+    ],
     "name": "Wise Tails",
     "norm_name": "wise tails",
     "norm_short": "wise tails",
@@ -323,6 +423,10 @@
     "category": "potion",
     "icon": "inv_121_professions_alchemy_potion_amani_purple",
     "item_id": 271890,
+    "item_ids": [
+      271889,
+      271890
+    ],
     "name": "Alluring Nostrum",
     "norm_name": "alluring nostrum",
     "norm_short": "alluring nostrum",
@@ -333,6 +437,10 @@
     "category": "potion",
     "icon": "inv_12_profession_alchemy_voidpotion_purple",
     "item_id": 241292,
+    "item_ids": [
+      241293,
+      241292
+    ],
     "name": "Draught of Rampant Abandon",
     "norm_name": "draught of rampant abandon",
     "norm_short": "draught of rampant abandon",
@@ -343,6 +451,10 @@
     "category": "potion",
     "icon": "inv_12_profession_alchemy_lightpotion_yellow",
     "item_id": 241308,
+    "item_ids": [
+      241309,
+      241308
+    ],
     "name": "Light's Potential",
     "norm_name": "light's potential",
     "norm_short": "light's potential",
@@ -353,6 +465,10 @@
     "category": "potion",
     "icon": "inv_121_professions_alchemy_potion_amani_blue",
     "item_id": 271887,
+    "item_ids": [
+      271886,
+      271887
+    ],
     "name": "Liquid Luster",
     "norm_name": "liquid luster",
     "norm_short": "liquid luster",
@@ -363,6 +479,10 @@
     "category": "potion",
     "icon": "inv_12_profession_alchemy_voidpotion_red",
     "item_id": 241288,
+    "item_ids": [
+      241289,
+      241288
+    ],
     "name": "Potion of Recklessness",
     "norm_name": "potion of recklessness",
     "norm_short": "potion of recklessness",
@@ -373,6 +493,10 @@
     "category": "potion",
     "icon": "inv_12_profession_alchemy_lightpotion_green",
     "item_id": 241296,
+    "item_ids": [
+      241297,
+      241296
+    ],
     "name": "Potion of Zealotry",
     "norm_name": "potion of zealotry",
     "norm_short": "potion of zealotry",
