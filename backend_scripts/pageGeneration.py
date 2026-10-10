@@ -3,10 +3,53 @@ import json
 import os
 import re
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import databaseConnector
 from commonUtils import slugify, build_consumable_slug_map, rank_run_entries  # noqa: F401 - re-exported
+
+# Whitespace and markup inside these must reach the browser untouched.
+_VERBATIM_RE = re.compile(r"<(script|style|pre|textarea)\b.*?</\1\s*>", re.S | re.I)
+_COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
+_IMG_RE = re.compile(r"<img\b(?![^>]*\bloading\s*=)", re.I)
+_LINE_BREAK_RE = re.compile(r"[ \t]*\r?\n\s*")
+
+
+def _shrink_markup(chunk):
+    chunk = _COMMENT_RE.sub("", chunk)
+    # Unquoted values on purpose: an <img> written inside a quoted attribute (an
+    # html tooltip) would have that attribute closed by a quote added here.
+    chunk = _IMG_RE.sub("<img loading=lazy decoding=async", chunk)
+    # A newline is still whitespace between inline elements, so collapsing each
+    # line break plus its indentation to one newline never changes the layout.
+    return _LINE_BREAK_RE.sub("\n", chunk)
+
+
+def postprocess_html(html):
+    """Shrink a rendered page: drop comments and indentation, and make every
+    <img> without its own ``loading`` attribute lazy. Spec pages carry thousands
+    of icons inside collapsed panels, and indentation was about a third of their
+    bytes. Set ``loading="eager"`` on an image in a template to opt it out."""
+    out = []
+    pos = 0
+    for block in _VERBATIM_RE.finditer(html):
+        out.append(_shrink_markup(html[pos:block.start()]))
+        out.append(block.group(0))
+        pos = block.end()
+    out.append(_shrink_markup(html[pos:]))
+    return "".join(out)
+
+
+class _PageTemplate(Template):
+    """Runs postprocess_html over every top-level page render. Includes and
+    macro imports never go through render(), so only whole pages are touched."""
+
+    def render(self, *args, **kwargs):
+        rendered = super().render(*args, **kwargs)
+        if (self.name or "").endswith(".html"):
+            return postprocess_html(rendered)
+        return rendered
+
 
 def make_jinja_env(template_dir, extensions=None):
     """Shared Environment for every page generator.
@@ -15,13 +58,15 @@ def make_jinja_env(template_dir, extensions=None):
     indentation in the output. A block tag now eats the newline after it, so inline
     text that continues after a tag needs an explicit space.
     """
-    return Environment(
+    env = Environment(
         loader=FileSystemLoader(template_dir),
         autoescape=select_autoescape(["html", "xml"]),
         trim_blocks=True,
         lstrip_blocks=True,
         extensions=extensions or [],
     )
+    env.template_class = _PageTemplate
+    return env
 
 
 def load_notifications(lookup_dir):

@@ -26,6 +26,10 @@ from pageGeneration import (
 # the implementations live in commonUtils so image_generation/social_posts can
 # use them without importing this (jinja2-heavy) module.
 from commonUtils import (
+    LenientLookup,
+    unknown_item_record,
+    unknown_gem_record,
+    report_unknown_ids,
     LOOKUP_DIR,
     SECONDARY_STATS,
     TERTIARY_STATS,
@@ -2408,9 +2412,10 @@ def main(template_path, output_dir, debug=False, spec=None):
     # Expansion the build renders against, so old-expansion enchants people still
     # have equipped are dropped from the gear lists (see is_enchant_relevant).
     current_expansion = commonUtils.current_expansion_id()
-    socket_lookup = {
-        e["itemId"]: e for e in enchant_lookup_all if e.get("slot") == "socket"
-    }
+    socket_lookup = LenientLookup(
+        {e["itemId"]: e for e in enchant_lookup_all if e.get("slot") == "socket"},
+        "gem", unknown_gem_record,
+    )
     # Global gem/enchant catalog for the client-side analyzer. The per-spec
     # spec_meta only carries the single most-popular gem/enchant combo, so a
     # player running anything off that combo (or gear optimised for a different
@@ -2430,9 +2435,11 @@ def main(template_path, output_dir, debug=False, spec=None):
                     processed_stats.append({"type": stat_type, "alloc": s.get("alloc", 0)})
             item["stats"] = processed_stats
 
-    item_lookup = {
-        i["id"]: i for i in equippable_items
-    }
+    # Lenient: an item the collector already sees but equippable-items.json does
+    # not list yet renders as a placeholder instead of failing all 40 pages.
+    item_lookup = LenientLookup(
+        {i["id"]: i for i in equippable_items}, "item", unknown_item_record
+    )
     # item_id -> URL slug for linking to the dedicated item pages (/items/<slug>).
     # Derived from item names; matches the map generateItemPages.py builds.
     item_slug_map = build_item_slug_map(item_lookup)
@@ -2448,7 +2455,10 @@ def main(template_path, output_dir, debug=False, spec=None):
         if sid:
             set_members[sid].append(iid)
     crafting_all = load_json(os.path.join(LOOKUP_DIR, "crafting.json"))
-    reagent_lookup = {r["id"]: r for r in crafting_all.get("reagents", [])}
+    reagent_lookup = LenientLookup(
+        {r["id"]: r for r in crafting_all.get("reagents", [])},
+        "crafting reagent", unknown_item_record,
+    )
     # Normalize reagent stats so templates can rely on `stat.type` and `stat.amount`
     for _rid, _r in reagent_lookup.items():
         stats = _r.get("stats")
@@ -3986,6 +3996,8 @@ def main(template_path, output_dir, debug=False, spec=None):
             )
             traceback.print_exc()
             raise e
+
+    report_unknown_ids()
 
 
 if __name__ == "__main__":

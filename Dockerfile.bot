@@ -55,7 +55,8 @@ RUN chmod +x /entrypoint.sh
 # /app/*.py (the flat backend modules); the package gets its own import smoke.
 COPY backend_scripts/verifyImageImports.py ${APP_DIR}/verifyImageImports.py
 
-RUN pip install --no-cache-dir \
+COPY constraints.txt /tmp/constraints.txt
+RUN pip install --no-cache-dir -c /tmp/constraints.txt \
     "discord.py>=2.4" \
     aiohttp \
     python-dotenv \

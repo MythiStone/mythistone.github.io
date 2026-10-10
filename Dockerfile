@@ -74,15 +74,15 @@ RUN chmod +x /entrypoint.sh
 # in the image: entrypoint.sh re-runs it as a startup preflight).
 COPY backend_scripts/verifyImageImports.py ${APP_DIR}/verifyImageImports.py
 
-# python deps
-RUN pip install --no-cache-dir \
+# python deps, pinned by the repo-wide constraints file so a rebuild (which
+# watchtower deploys straight to prod) never pulls an untested upstream release
+COPY constraints.txt /tmp/constraints.txt
+RUN pip install --no-cache-dir -c /tmp/constraints.txt \
     aiohttp \
     aiohttp_retry \
     aiolimiter \
     python-dotenv \
     mysql-connector-python \
-    aiomysql \
-    pymysql \
     requests \
     discord.py \
     docker

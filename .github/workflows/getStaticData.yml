@@ -20,17 +20,17 @@ jobs:
       DATABASE_NAME: ${{secrets.DATABASE_NAME}} 
       DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 1
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
       - name: Install pandas
-        run: pip install pandas requests aiohttp aiofiles aiolimiter mysql-connector-python pillow
+        run: pip install -c constraints.txt pandas requests aiohttp aiofiles aiolimiter mysql-connector-python pillow
 
       - name: Create data directory
         run: mkdir -p data

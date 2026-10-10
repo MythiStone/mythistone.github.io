@@ -18,7 +18,7 @@ jobs:
       image_filename:   ${{ steps.gen_social.outputs.filename }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
           ref: main
@@ -29,21 +29,21 @@ jobs:
           echo "start_date=$(TZ='Europe/Berlin' date '+%Y-%m-%d')" >> $GITHUB_OUTPUT
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
 
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install openai Pillow matplotlib pandas jinja2 mysql-connector-python requests
+          pip install -c constraints.txt openai Pillow matplotlib pandas jinja2 mysql-connector-python requests
 
       # Checked out BEFORE generation: socials.json (the text records) and
       # social_snapshot.json (weekly standings for the weekly-mover post) live on
       # this branch alongside the images, so the pipeline reads and updates them
       # there instead of in the main repo.
       - name: Checkout social-images branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: social-images
           path: social-images
@@ -314,7 +314,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
           ref: main
@@ -326,12 +326,12 @@ jobs:
           path: uploaded
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
 
       - name: Install dependencies
-        run: pip install requests mysql-connector-python
+        run: pip install -c constraints.txt requests mysql-connector-python
 
       - name: Post to subscribed Discord channels
         env:

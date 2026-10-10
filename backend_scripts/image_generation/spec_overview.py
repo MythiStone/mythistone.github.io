@@ -11,6 +11,9 @@ import aggregateData
 import databaseConnector
 from commonUtils import (
     LOOKUP_DIR,
+    LenientLookup,
+    unknown_gem_record,
+    unknown_item_record,
     fetch_stat_info,
     format_duration,
     get_class_lookup,
@@ -742,10 +745,16 @@ def createSpecOverviewImg(
 
     enchant_lookup_all = load_json(os.path.join(LOOKUP_DIR, "enchantments.json"))
     crafting_all = load_json(os.path.join(LOOKUP_DIR, "crafting.json"))
-    reagent_lookup = {r["id"]: r for r in crafting_all.get("reagents", [])}
-    socket_lookup = {
-        e["itemId"]: e for e in enchant_lookup_all if e.get("slot") == "socket"
-    }
+    # Lenient like the spec page's lookups: an id the static files do not know
+    # yet draws a placeholder icon instead of failing the page build.
+    reagent_lookup = LenientLookup(
+        {r["id"]: r for r in crafting_all.get("reagents", [])},
+        "crafting reagent", unknown_item_record,
+    )
+    socket_lookup = LenientLookup(
+        {e["itemId"]: e for e in enchant_lookup_all if e.get("slot") == "socket"},
+        "gem", unknown_gem_record,
+    )
 
     embellishment_counts = {e[0]: e[1] for e in embellishments}
     missive_counts = {e[0]: e[1] for e in missives}

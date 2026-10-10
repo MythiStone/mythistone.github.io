@@ -1,4 +1,5 @@
 import json
+import os
 import mysql.connector
 import time
 from mysql.connector import errorcode
@@ -27,6 +28,11 @@ def _is_connection_lost(err):
     return isinstance(err, mysql.connector.InterfaceError) or getattr(
         err, "errno", None
     ) in CONNECTION_LOST_ERRNOS
+
+
+def is_connection_lost(err):
+    """Public form of the check above, for callers deciding whether a retry can help."""
+    return _is_connection_lost(err)
 
 
 def close_quietly(conn):
@@ -486,6 +492,212 @@ def insert_stats(
 
 def insert_stats_batch(connection, cursor, eq_vals):
     return executemany_with_retry(connection, cursor, INSERT_STATS_SQL, eq_vals)
+
+
+# ---------------------------------------------------------------------------
+# Atomic run-batch write (collector). A run, its members and all of their gear
+# commit together or not at all: a run row without members can never be repaired
+# later, because INSERT IGNORE then reports the run as a duplicate.
+# ---------------------------------------------------------------------------
+
+TXN_RETRY_ERRNOS = (errorcode.ER_LOCK_WAIT_TIMEOUT, errorcode.ER_LOCK_DEADLOCK)
+
+
+def run_in_transaction(connection, work):
+    """Run ``work(cursor)`` as ONE transaction and return its result.
+
+    The per-statement helpers above answer a lock wait timeout by rolling back
+    and retrying that single statement, which inside a larger unit would commit
+    everything after the retry and silently drop everything before it. Here a
+    lock wait timeout, a deadlock or a dropped connection rolls back and re-runs
+    the whole unit, so ``work`` must be safe to call again from scratch.
+    """
+    attempt = 0
+    while True:
+        cursor = None
+        try:
+            cursor = connection.cursor()
+            result = work(cursor)
+            connection.commit()
+            return result
+        except mysql.connector.Error as err:
+            lost = _is_connection_lost(err)
+            if not lost:
+                connection.rollback()
+            retryable = lost or getattr(err, "errno", None) in TXN_RETRY_ERRNOS
+            if not retryable or attempt >= MAX_LOCK_WAIT_RETRIES:
+                raise
+            wait = random.uniform(LOCK_WAIT_BACKOFF_MIN, LOCK_WAIT_BACKOFF_MAX) * (
+                2**attempt
+            )
+            print(
+                f"Transaction failed ({err}), re-running it in {wait:.2f}s "
+                f"(attempt {attempt + 1}/{MAX_LOCK_WAIT_RETRIES})"
+            )
+            time.sleep(wait)
+            if lost:
+                connection.reconnect(attempts=5, delay=5)
+            attempt += 1
+        except BaseException:
+            try:
+                connection.rollback()
+            except Exception:
+                pass
+            raise
+        finally:
+            if cursor is not None:
+                try:
+                    cursor.close()
+                except Exception:
+                    pass
+
+
+# No IGNORE on the two id-bearing inserts below: their ids are derived from the
+# first id of each multi-row statement, so a row that IGNORE silently skipped
+# would shift every later id onto the wrong parent. A bad row has to raise.
+INSERT_MEMBER_STRICT_SQL = "INSERT INTO members (`spec_id`, `loadout`, `hero_talent_id`, `talent_set_id`) VALUES (%s, %s, %s, %s)"
+INSERT_EQUIPMENT_STRICT_SQL = "INSERT INTO equipment (`member`, `slot`, `item_id`, `item_level`, `bonus_set_id`) VALUES (%s, %s, %s, %s, %s)"
+# IGNORE here so one odd stat value costs that stat row, not the whole run.
+INSERT_STATS_IGNORE_SQL = "INSERT IGNORE INTO character_stats (`member`, stat, raw, percent) VALUES (%s, %s, %s, %s)"
+
+# Rows per multi-row INSERT. One equipment batch is a few thousand short rows,
+# far below max_allowed_packet at this size.
+WRITE_CHUNK_ROWS = 1000
+
+
+def _insert_rows(cursor, sql, rows):
+    for start in range(0, len(rows), WRITE_CHUNK_ROWS):
+        cursor.executemany(sql, rows[start : start + WRITE_CHUNK_ROWS])
+
+
+def _insert_rows_returning_ids(cursor, sql, rows):
+    """Multi-row insert into an AUTO_INCREMENT table; returns one id per row.
+
+    A multi-row INSERT with a known row count gets consecutive ids in every
+    innodb_autoinc_lock_mode, and lastrowid is the first of them.
+    """
+    ids = []
+    for start in range(0, len(rows), WRITE_CHUNK_ROWS):
+        chunk = rows[start : start + WRITE_CHUNK_ROWS]
+        cursor.executemany(sql, chunk)
+        if cursor.rowcount != len(chunk) or not cursor.lastrowid:
+            raise RuntimeError(
+                f"expected {len(chunk)} inserted rows, got {cursor.rowcount}; "
+                "cannot map generated ids"
+            )
+        ids.extend(range(cursor.lastrowid, cursor.lastrowid + len(chunk)))
+    return ids
+
+
+def _insert_socket_rows(cursor, rows):
+    try:
+        _insert_rows(cursor, INSERT_SOCKET_SQL, rows)
+    except mysql.connector.errors.DatabaseError as err:
+        # same 1467 "Failed to read auto-increment" fallback as insert_sockets
+        if err.errno != 1467:
+            raise
+        for row in rows:
+            cursor.execute(INSERT_SOCKET_SQL, row)
+
+
+def insert_run_batch(cursor, runs):
+    """Insert a batch of runs with everything that hangs off them. Does NOT
+    commit: call it through run_in_transaction.
+
+    Each run is ``{"run": (season, region, dungeon_id, keystone_level, duration,
+    timestamp, faction), "members": [...]}``. A member is either
+    ``{"member_id": id}`` (link an existing member row to this run) or a new
+    member::
+
+        {"row": (spec_id, loadout, hero_talent_id, talent_set_id),
+         "talent_rows": [(set_id, tree, talent_id, rank), ...],
+         "character": (region, blizzard_character_id, character_name,
+                       realm_slug, mplus_score),
+         "dungeon_scores": [(dungeon_id, rating), ...],
+         "stats": [(stat, raw, percent), ...],
+         "equipment": [{"row": (slot, item_id, item_level, bonus_set_id),
+                        "bonus_rows": [(set_id, bonus_id), ...],
+                        "enchantments": [enchantment_id, ...],
+                        "sockets": [(socket_type, socket_item_id), ...]}]}
+
+    Returns ``(run_ids, member_ids)``, both aligned with ``runs``: ``run_ids[i]``
+    is None when the run already existed (nothing else is written for it), and
+    ``member_ids[i]`` lists that run's member ids in member order.
+    """
+    run_ids = []
+    for run in runs:
+        cursor.execute(INSERT_RUN_SQL, run["run"])
+        # lastrowid == 0 means INSERT IGNORE skipped a duplicate
+        run_ids.append(cursor.lastrowid or None)
+    member_ids = [[] for _ in runs]
+    new_runs = [(i, run) for i, run in enumerate(runs) if run_ids[i]]
+    if not new_runs:
+        return run_ids, member_ids
+
+    fresh = [m for _, run in new_runs for m in run["members"] if "member_id" not in m]
+
+    # Dictionary rows first. Hitting an existing set makes this transaction hold
+    # a shared lock on it until commit, so the nightly orphan sweep cannot delete
+    # a set this batch is about to reference.
+    talent_sets = {}
+    bonus_sets = {}
+    for m in fresh:
+        if m["talent_rows"]:
+            talent_sets.setdefault(m["talent_rows"][0][0], m["talent_rows"])
+        for eq in m["equipment"]:
+            if eq["bonus_rows"]:
+                bonus_sets.setdefault(eq["bonus_rows"][0][0], eq["bonus_rows"])
+    _insert_rows(
+        cursor, INSERT_TALENT_SET_SQL, [r for rows in talent_sets.values() for r in rows]
+    )
+    _insert_rows(
+        cursor, INSERT_BONUS_SET_SQL, [r for rows in bonus_sets.values() for r in rows]
+    )
+
+    fresh_ids = _insert_rows_returning_ids(
+        cursor, INSERT_MEMBER_STRICT_SQL, [m["row"] for m in fresh]
+    )
+    next_fresh = iter(fresh_ids)
+
+    run_member_rows = []
+    character_rows = []
+    score_rows = []
+    stat_rows = []
+    equipment_rows = []
+    equipment_children = []
+    for i, run in new_runs:
+        collected_ts = run["run"][5]
+        for m in run["members"]:
+            if "member_id" in m:
+                mid = m["member_id"]
+            else:
+                mid = next(next_fresh)
+                character_rows.append((mid, *m["character"], collected_ts))
+                score_rows.extend(
+                    (mid, did, rating, collected_ts) for did, rating in m["dungeon_scores"]
+                )
+                stat_rows.extend((mid, *stat) for stat in m["stats"])
+                for eq in m["equipment"]:
+                    equipment_rows.append((mid, *eq["row"]))
+                    equipment_children.append(eq)
+            member_ids[i].append(mid)
+            run_member_rows.append((run_ids[i], mid))
+
+    _insert_rows(cursor, INSERT_RUN_MEMBER_SQL, run_member_rows)
+    equipment_ids = _insert_rows_returning_ids(
+        cursor, INSERT_EQUIPMENT_STRICT_SQL, equipment_rows
+    )
+    enchant_rows = []
+    socket_rows = []
+    for eq_id, eq in zip(equipment_ids, equipment_children):
+        enchant_rows.extend((eq_id, ench) for ench in eq["enchantments"])
+        socket_rows.extend((eq_id, stype, sid) for stype, sid in eq["sockets"])
+    _insert_rows(cursor, INSERT_ENCHANTMENT_SQL, enchant_rows)
+    _insert_socket_rows(cursor, socket_rows)
+    _insert_rows(cursor, INSERT_STATS_IGNORE_SQL, stat_rows)
+    _insert_rows(cursor, INSERT_MEMBER_CHARACTER_SQL, character_rows)
+    _insert_rows(cursor, INSERT_MEMBER_DUNGEON_SCORE_SQL, score_rows)
+    return run_ids, member_ids
 
 
 INSERT_DUNGEON_SQL = (
@@ -3495,6 +3707,27 @@ def insert_aura_consumable_batch(connection, cursor, consumable_vals):
     executemany_with_retry(connection, cursor, INSERT_AURA_CONSUMABLE_SQL, consumable_vals)
 
 
+FETCH_AURA_RUN_IDS_SQL = "SELECT rio_run_id FROM Mythistone.aura_run"
+
+
+def read_aura_run_ids():
+    """Every raider.io run id whose run-detail has already been collected (the
+    aura tables keep 28 days). The route poller loads this once at startup so a
+    restart does not fetch all of those run-details again. Uses its own pooled
+    connection and returns it before the caller does anything else."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        try:
+            rows = fetch_with_retry(conn, cursor, FETCH_AURA_RUN_IDS_SQL)
+        finally:
+            cursor.close()
+        conn.commit()  # release the read's MDL under the pool's autocommit=0 default
+        return {int(row[0]) for row in rows}
+    finally:
+        close_quietly(conn)
+
+
 UPSERT_INTERESTING_AURA_SQL = """
 INSERT INTO Mythistone.interesting_aura
   (`spell_id`, `name`, `icon`, `school`, `has_cooldown`, `first_seen_ts`, `times_seen`)
@@ -4348,12 +4581,44 @@ WHERE season = %s
 """
 
 def fetch_all_comps(connection, cursor, season: int):
-    return fetch_with_retry(
+    """Every aggregated_dungeon_comps row of a season: (dungeon_id,
+    keystone_level, comp, timed_runs, depleted_runs).
+
+    This is the largest read of a page build and four generators need it
+    (snapshotTrends, comps, spec and dungeon pages). When MYTHISTONE_COMPS_CACHE
+    names a file, the first caller writes the rows there and the later ones read
+    them back instead of pulling the table over the network again. buildPages.yml
+    sets it for the job; unset (local runs, the bot) always queries. Cached rows
+    come back as tuples whatever the cursor type; every consumer indexes by
+    position or handles both shapes.
+    """
+    cache_path = os.environ.get("MYTHISTONE_COMPS_CACHE")
+    if cache_path and os.path.exists(cache_path):
+        with open(cache_path, "r", encoding="utf-8") as f:
+            cached = json.load(f)
+        if cached.get("season") == int(season):
+            return [tuple(row) for row in cached["rows"]]
+
+    rows = fetch_with_retry(
         connection,
         cursor,
         FETCH_ALL_COMPS_SQL,
         (season,)
     )
+    if cache_path:
+        plain = [
+            [row["dungeon_id"], int(row["keystone_level"]), row["comp"],
+             int(row["timed_runs"] or 0), int(row["depleted_runs"] or 0)]
+            if isinstance(row, dict)
+            else [row[0], int(row[1]), row[2], int(row[3] or 0), int(row[4] or 0)]
+            for row in rows
+        ]
+        os.makedirs(os.path.dirname(os.path.abspath(cache_path)), exist_ok=True)
+        tmp_path = f"{cache_path}.tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump({"season": int(season), "rows": plain}, f, separators=(",", ":"))
+        os.replace(tmp_path, cache_path)
+    return rows
 
 
 def fetch_spec_top_comps_all(connection, cursor, season: int):
@@ -5764,6 +6029,43 @@ def set_collector_wipe_state(paused, beat_ms):
         raise
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Nightly aggregation health (see database.sql `agg_pipeline_log`). sp_run_agg_step
+# logs a failed step and carries on, so nothing else reports a broken aggregate.
+# ---------------------------------------------------------------------------
+
+# 'equipment' is the first step sp_run_agg_pipeline calls, so its newest row
+# marks where the latest run begins. season_wipe:* rows share the log but are
+# not pipeline steps.
+FETCH_LATEST_AGG_RUN_SQL = """
+SELECT step, started_at, finished_at, error,
+       TIMESTAMPDIFF(SECOND, started_at, NOW()) AS age_seconds
+FROM agg_pipeline_log
+WHERE started_at >= (
+        SELECT MAX(started_at) FROM agg_pipeline_log WHERE step = 'equipment'
+      )
+  AND LEFT(step, 12) <> 'season_wipe:'
+ORDER BY id
+"""
+
+
+def fetch_latest_agg_run(connection, cursor):
+    """Every step of the most recent nightly pipeline run, oldest first, as
+    dicts: step, started_at, finished_at, error, age_seconds (since the step
+    started, by the DB clock). Empty when the pipeline has never run."""
+    rows = fetch_with_retry(connection, cursor, FETCH_LATEST_AGG_RUN_SQL)
+    return [
+        {
+            "step": row[0],
+            "started_at": row[1],
+            "finished_at": row[2],
+            "error": row[3],
+            "age_seconds": int(row[4]) if row[4] is not None else None,
+        }
+        for row in rows
+    ]
 
 
 # ---------------------------------------------------------------------------

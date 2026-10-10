@@ -173,7 +173,9 @@ databaseConnector.init_connection_pool(
     getenv_clean("DATABASE_PASSWORD"),
     getenv_clean("DATABASE_NAME"),
     getenv_clean("DATABASE_PORT"),
-    DATABASE_WORKERS + 4,  # +route_db_worker +run_raiderio_top_loadouts +simworker +wipe_watch
+    # +route_db_worker +run_raiderio_top_loadouts +simworker +wipe_watch
+    # +route_poller_task's one-off read_aura_run_ids at startup
+    DATABASE_WORKERS + 5,
 )
 
 if args.region:
@@ -279,9 +281,25 @@ for region in REGIONS:
     }
 _token_cache = {}
 
+# Advanced runs whose profile calls failed: run_hash -> failures so far. After
+# ADVANCED_FETCH_RETRIES the run is stored without details instead of retried.
+ADVANCED_FETCH_RETRIES = 3
+advanced_fetch_failures: dict[str, int] = {}
+
 # In-memory cache for previously fetched data
 processed_runs: set[str] = set()
-enqueued_profiles: dict[str, dict[str, Path]] = {}
+# Runs the DB refused: run_hash -> failures so far (see process_batch).
+STORE_RETRIES = 3
+store_failures: dict[str, int] = {}
+
+# Advanced member snapshots that can be shared between runs:
+# (region, blizzard_character_id, spec_id) -> (member id, monotonic expiry).
+# Filled only after the member row is committed. A character that turns up in
+# another run within the window is linked to that row instead of being fetched
+# (4 profile calls) and stored (about 16 gear rows plus children) again.
+MEMBER_REUSE_SECONDS = float(getenv_clean("MEMBER_REUSE_SECONDS", "3600"))
+MEMBER_REUSE_MAX_ENTRIES = 200_000
+enqueued_profiles: dict[tuple, tuple[int, float]] = {}
 
 
 CURRENT_SEASON = ""
@@ -553,9 +571,100 @@ async def fetch_keystone_route(session: ClientSession, route_key: str) -> dict:
             return j.get("data", {}) or {}
     except Exception as e:
         GLOBAL_STATS.console_log(f"ERROR fetching keystone.guru route {route_key}: {e}")
-        if e.response is not None and e.response.status == 401:
+        # only ClientResponseError carries a status; a timeout must not AttributeError here
+        if getattr(e, "status", None) == 401:
             raise RuntimeError("Unauthorized access to keystone.guru API - check credentials and rate limits.")
         return {}
+
+def _store_route_job(name, conn, cursor, aura_season_id, raider_reduced, keystone_route):
+    """Blocking half of route_db_worker, run in a worker thread. Returns
+    "inserted", "duplicate" or "skipped" (run has no eligible route)."""
+    route_key = keystone_route.get("publicKey") or raider_reduced.get("route_key")
+    print(f"[{name}] Processing route {route_key} for run {raider_reduced.get('keystone_run_id')}")
+    rio_run_id = int(raider_reduced.get("keystone_run_id") or 0)
+    mapping_version = int(keystone_route.get("mappingVersion") or 0)
+    enemy_forces = int(keystone_route.get("enemyForces") or 0)
+    timestamp = int(raider_reduced.get("timestamp") or 0)
+    keystone_level = int(raider_reduced.get("mythic_level") or 0)
+    duration = int(raider_reduced.get("duration") or 0)
+    dungeon_id = raider_reduced.get("dungeon_id")
+
+    # Consumables are harvested from EVERY swept run-detail, before
+    # (and independent of) route eligibility, and commit on their own.
+    persist_run_auras(
+        conn, cursor, rio_run_id, raider_reduced.get("roster", []),
+        aura_season_id, dungeon_id, keystone_level, timestamp, None,
+    )
+
+    # Route storage is gated on a valid, timed keystone.guru route
+    # (enemyForces met). Runs without one still had their auras saved
+    # above; just skip the route insert here rather than erroring.
+    ef_actual = keystone_route.get("enemyForces")
+    ef_required = keystone_route.get("enemyForcesRequired")
+    route_eligible = bool(route_key) and rio_run_id and mapping_version \
+        and ef_actual is not None and ef_required is not None \
+        and int(ef_actual) >= int(ef_required)
+    if not route_eligible:
+        conn.rollback()
+        return "skipped"
+
+    rowcount = databaseConnector.insert_route_data(
+        conn, cursor, rio_run_id, mapping_version, enemy_forces, timestamp, keystone_level, duration, dungeon_id, route_key
+    )
+    if rowcount == 0:
+        # Duplicate route, skip inserting specs and pulls
+        conn.rollback() # Or commit(), doesn't matter, just skip
+        print(f"[{name}] Route {route_key} already exists in DB, skipping.")
+        return "duplicate"
+
+    for s in raider_reduced.get("roster_specs", []):
+        try:
+            databaseConnector.insert_route_spec(conn, cursor, route_key, int(s))
+        except Exception as e:
+            print(f"[{name}] Error inserting route spec for route {route_key}: {e}")
+
+    for pull in keystone_route.get("pulls", []) or []:
+        try:
+            new_pull_id = databaseConnector.insert_route_pull(conn, cursor, route_key)
+        except Exception as e:
+            conn.rollback()
+            raise
+
+        counts = aggregate_enemies_occurrence(pull)
+        for npc_id, cnt in counts.items():
+            try:
+                databaseConnector.insert_pull_enemies(conn, cursor, route_key, new_pull_id, int(npc_id), int(cnt))
+            except Exception as e:
+                print(f"[{name}] Error inserting pull enemies for route {route_key}: {e}")
+        for spell in set(pull.get("spells") or []):
+            try:
+                databaseConnector.insert_pull_spells(conn, cursor, route_key, new_pull_id, int(spell))
+            except Exception as e:
+                print(f"[{name}] Error inserting pull spell for route {route_key}: {e}")
+
+    # POV videos and logged-run telemetry (deaths/encounters). Only reached for a
+    # newly-inserted route (duplicates return above), so this is the run stored
+    # in route_data and the telemetry always matches it. Non-fatal per item.
+    for video in raider_reduced.get("videos", []):
+        try:
+            databaseConnector.insert_route_video(conn, cursor, route_key, video)
+        except Exception as e:
+            print(f"[{name}] Error inserting route video for route {route_key}: {e}")
+    for seq, died_at in enumerate(raider_reduced.get("deaths", [])):
+        try:
+            databaseConnector.insert_route_death(conn, cursor, route_key, seq, rio_run_id, died_at)
+        except Exception as e:
+            print(f"[{name}] Error inserting route death for route {route_key}: {e}")
+    for enc in raider_reduced.get("encounters", []):
+        try:
+            databaseConnector.insert_route_encounter(conn, cursor, route_key, rio_run_id, enc)
+        except Exception as e:
+            print(f"[{name}] Error inserting route encounter for route {route_key}: {e}")
+
+    print(f"[{name}] Successfully inserted route {route_key} with {len(raider_reduced.get('roster_specs', []))} specs and {len(keystone_route.get('pulls', []))} pulls.")
+    conn.commit()
+    return "inserted"
+
 
 async def route_db_worker(name: str):
     """
@@ -581,94 +690,17 @@ async def route_db_worker(name: str):
                     break
 
                 raider_reduced, keystone_route = job
-                route_key = keystone_route.get("publicKey") or raider_reduced.get("route_key")
                 await WRITE_GATE.begin()  # yield to a pending season wipe
                 try:
-                    print(f"[{name}] Processing route {route_key} for run {raider_reduced.get('keystone_run_id')}")
-                    rio_run_id = int(raider_reduced.get("keystone_run_id") or 0)
-                    mapping_version = int(keystone_route.get("mappingVersion") or 0)
-                    enemy_forces = int(keystone_route.get("enemyForces") or 0)
-                    timestamp = int(raider_reduced.get("timestamp") or 0)
-                    keystone_level = int(raider_reduced.get("mythic_level") or 0)
-                    duration = int(raider_reduced.get("duration") or 0)
-                    dungeon_id = raider_reduced.get("dungeon_id")
-
-                    # Consumables are harvested from EVERY swept run-detail, before
-                    # (and independent of) route eligibility, and commit on their own.
-                    persist_run_auras(
-                        conn, cursor, rio_run_id, raider_reduced.get("roster", []),
-                        aura_season_id, dungeon_id, keystone_level, timestamp, None,
+                    # a route is a few hundred small statements: keep them off the event loop
+                    status = await asyncio.to_thread(
+                        _store_route_job, name, conn, cursor, aura_season_id,
+                        raider_reduced, keystone_route,
                     )
-
-                    # Route storage is gated on a valid, timed keystone.guru route
-                    # (enemyForces met). Runs without one still had their auras saved
-                    # above; just skip the route insert here rather than erroring.
-                    ef_actual = keystone_route.get("enemyForces")
-                    ef_required = keystone_route.get("enemyForcesRequired")
-                    route_eligible = bool(route_key) and rio_run_id and mapping_version \
-                        and ef_actual is not None and ef_required is not None \
-                        and int(ef_actual) >= int(ef_required)
-                    if not route_eligible:
-                        conn.rollback()
-                        continue
-
-                    rowcount = databaseConnector.insert_route_data(
-                        conn, cursor, rio_run_id, mapping_version, enemy_forces, timestamp, keystone_level, duration, dungeon_id, route_key
-                    )
-                    if rowcount == 0:
-                        # Duplicate route, skip inserting specs and pulls
-                        conn.rollback() # Or commit(), doesn't matter, just skip
+                    if status == "duplicate":
                         await GLOBAL_STATS.increment("duplicate_routes")
-                        print(f"[{name}] Route {route_key} already exists in DB, skipping.")
-                        continue
-                    
-                    for s in raider_reduced.get("roster_specs", []):
-                        try:
-                            databaseConnector.insert_route_spec(conn, cursor, route_key, int(s))
-                        except Exception as e:
-                            print(f"[{name}] Error inserting route spec for route {route_key}: {e}")
-                    
-                    for pull in keystone_route.get("pulls", []) or []:
-                        try:
-                            new_pull_id = databaseConnector.insert_route_pull(conn, cursor, route_key)
-                        except Exception as e:
-                            conn.rollback()
-                            raise
-                            
-                        counts = aggregate_enemies_occurrence(pull)
-                        for npc_id, cnt in counts.items():
-                            try:
-                                databaseConnector.insert_pull_enemies(conn, cursor, route_key, new_pull_id, int(npc_id), int(cnt))
-                            except Exception as e:
-                                print(f"[{name}] Error inserting pull enemies for route {route_key}: {e}")
-                        for spell in set(pull.get("spells") or []):
-                            try:
-                                databaseConnector.insert_pull_spells(conn, cursor, route_key, new_pull_id, int(spell))
-                            except Exception as e:
-                                print(f"[{name}] Error inserting pull spell for route {route_key}: {e}")
-
-                    # POV videos and logged-run telemetry (deaths/encounters). Only reached for a
-                    # newly-inserted route (duplicates `continue` above), so this is the run stored
-                    # in route_data and the telemetry always matches it. Non-fatal per item.
-                    for video in raider_reduced.get("videos", []):
-                        try:
-                            databaseConnector.insert_route_video(conn, cursor, route_key, video)
-                        except Exception as e:
-                            print(f"[{name}] Error inserting route video for route {route_key}: {e}")
-                    for seq, died_at in enumerate(raider_reduced.get("deaths", [])):
-                        try:
-                            databaseConnector.insert_route_death(conn, cursor, route_key, seq, rio_run_id, died_at)
-                        except Exception as e:
-                            print(f"[{name}] Error inserting route death for route {route_key}: {e}")
-                    for enc in raider_reduced.get("encounters", []):
-                        try:
-                            databaseConnector.insert_route_encounter(conn, cursor, route_key, rio_run_id, enc)
-                        except Exception as e:
-                            print(f"[{name}] Error inserting route encounter for route {route_key}: {e}")
-
-                    print(f"[{name}] Successfully inserted route {route_key} with {len(raider_reduced.get('roster_specs', []))} specs and {len(keystone_route.get('pulls', []))} pulls.")
-                    conn.commit()
-                    await GLOBAL_STATS.increment("db_insert_route")
+                    elif status == "inserted":
+                        await GLOBAL_STATS.increment("db_insert_route")
                 except Exception as e:
                     conn.rollback()
                     GLOBAL_STATS.console_log(f"[{name}] DB insert route error: {e}")
@@ -715,8 +747,27 @@ async def route_poller_task(session: ClientSession):
     dungeons = json.loads(DUNGEON_STATIC.read_text())
     dungeon_slugs = [info["slug"] for info in dungeons.values()]
 
+    # Run ids that need no further run-detail fetch: already collected (loaded
+    # from aura_run so a restart does not redo 28 days of them at 10s each),
+    # or settled during this process. A run whose keystone.guru fetch failed is
+    # left out, so later sweeps try it again.
+    try:
+        handled_run_ids = await asyncio.to_thread(databaseConnector.read_aura_run_ids)
+    except Exception as e:
+        GLOBAL_STATS.console_log(f"route poller: could not preload collected run ids: {e}")
+        handled_run_ids = set()
+    GLOBAL_STATS.console_log(
+        f"route poller: {len(handled_run_ids)} run-details already collected"
+    )
+    # Start each sweep one dungeon further along (and somewhere different after
+    # each restart), so the dungeons at the end of the list are not always the
+    # ones a restart cuts off.
+    sweep = int(time.time() // 3600)
+
     while not cancel_event.is_set():
-        for slug in dungeon_slugs:
+        offset = sweep % len(dungeon_slugs)
+        sweep += 1
+        for slug in dungeon_slugs[offset:] + dungeon_slugs[:offset]:
             if cancel_event.is_set(): break
             run_ids_set = set()
             page = 1
@@ -738,15 +789,16 @@ async def route_poller_task(session: ClientSession):
 
                 page += 1
 
-            for run_id in sorted(run_ids_set):
+            for run_id in sorted(run_ids_set - handled_run_ids):
                 if cancel_event.is_set(): break
                 raider = await fetch_run_details(session, run_id, CURRENT_SEASON)
                 await GLOBAL_STATS.increment("rio_routes_checked")
-                if not raider: 
+                if not raider:
                     continue
 
                 ts = raider.get("timestamp")
                 if not ts or int(ts) < int(time.time()) - (28 * 24 * 60 * 60):
+                    handled_run_ids.add(run_id)
                     continue
 
                 # Fetch the keystone.guru route when this run has one, but do NOT gate
@@ -758,6 +810,8 @@ async def route_poller_task(session: ClientSession):
                 if route_key:
                     keystone = await fetch_keystone_route(session, route_key) or {}
                     await GLOBAL_STATS.increment("kg_routes_fetched")
+                if not route_key or keystone:
+                    handled_run_ids.add(run_id)
 
                 await route_db_queue.put((raider, keystone))
 
@@ -961,12 +1015,21 @@ async def get_access_token(session: ClientSession, region: str) -> str:
         return token
 
 
+class FetchFailed(Exception):
+    """A call ran out of retries on 429/5xx. Not the same as a 404, which is a
+    real "no data" answer: storing this as empty would lose the member's gear."""
+
+
 async def fetch_json(
-    session: RetryClient, url: str, params: dict, region: str
+    session: RetryClient, url: str, params: dict, region: str, strict: bool = False
 ) -> dict | None:
     """
     Single-shot fetch through an aiohttp_retry.RetryClient — rate-limited per-region,
     with shared backoff if we see a 429 (via Retry-After).
+
+    The RetryClient has already retried 429/5xx by the time a status reaches this
+    code. ``strict`` callers get FetchFailed for those instead of None, so they can
+    tell "the API gave up" from "there is nothing there".
     """
     # shutdown short-circuit
     if shutdown_event.is_set():
@@ -1005,17 +1068,23 @@ async def fetch_json(
                     region_backoff_until[region] = max(
                         region_backoff_until[region], expiry
                     )
-                # let the RetryClient also see the 429 and retry if it wants,
-                # or we can just return None here if it’s past its retry count
+                # the RetryClient is already past its retry count here
+                if strict:
+                    raise FetchFailed(f"HTTP 429 after retries for {url}")
                 return None
 
             # for everything else, propagate errors & parse JSON
             resp.raise_for_status()
             return await resp.json()
 
+    except FetchFailed:
+        raise
+
     except ClientResponseError as e:
-        # non-retryable server errors (400, 403, etc)
+        # 4xx (400, 403, ...) is a final answer; 5xx here means retries ran out
         GLOBAL_STATS.console_log(f"HTTP {e.status} for {url}")
+        if strict and e.status >= 500:
+            raise FetchFailed(f"HTTP {e.status} after retries for {url}") from e
         return None
 
     except (
@@ -1903,7 +1972,7 @@ async def get_equipment(
 ) -> list:
     url = f"{API_BASE.format(region=region)}/profile/wow/character/{realm_slug}/{name}/equipment"
     params = {"namespace": f"profile-{region}", "locale": LOCALE}
-    data = await fetch_json(session, url, params, region)
+    data = await fetch_json(session, url, params, region, strict=True)
     if not data or "equipped_items" not in data:
         return []
     return data.get("equipped_items", [])
@@ -1932,7 +2001,7 @@ async def get_mythic_keystone_profile(
         f"{realm_slug}/{name}/mythic-keystone-profile"
     )
     params = {"namespace": f"profile-{region}", "locale": LOCALE}
-    data = await fetch_json(session, url, params, region)
+    data = await fetch_json(session, url, params, region, strict=True)
     if not data or "current_mythic_rating" not in data:
         return None, {}
     rating = data["current_mythic_rating"].get("rating")
@@ -2036,7 +2105,7 @@ async def get_stats(
 ) -> list:
     url = f"{API_BASE.format(region=region)}/profile/wow/character/{realm_slug}/{name}/statistics"
     params = {"namespace": f"profile-{region}", "locale": LOCALE}
-    data = await fetch_json(session, url, params, region)
+    data = await fetch_json(session, url, params, region, strict=True)
     if not data:
         return {}
     return normalize_stats(data)
@@ -2047,7 +2116,7 @@ async def get_specializations(
 ) -> list:
     url = f"{API_BASE.format(region=region)}/profile/wow/character/{realm_slug}/{name}/specializations"
     params = {"namespace": f"profile-{region}", "locale": LOCALE}
-    data = await fetch_json(session, url, params, region)
+    data = await fetch_json(session, url, params, region, strict=True)
     if not data or "specializations" not in data:
         return []
     return data.get("specializations", [])
@@ -2066,31 +2135,88 @@ def process_group(
         csv.writer(f).writerow([run_hash])
 
 
-async def realm_poller(region: str, session: ClientSession, max_keys):
-    # fetch once
-    current_season = await get_current_season_id(session, region)
-    active_period = max(await get_season_periods(session, region, current_season))
-    realms = await get_connected_realms(session, region)
+async def realm_poller(region: str, session: ClientSession, max_keys, reporter=None):
+    # Season, period and realm list are resolved once per process (a restart
+    # picks up a new one, see wipe_watch). A failed lookup returns empty rather
+    # than raising, so wait for a real answer instead of dying on max([]).
+    while True:
+        current_season = await get_current_season_id(session, region)
+        periods = (
+            await get_season_periods(session, region, current_season)
+            if current_season
+            else []
+        )
+        realms = await get_connected_realms(session, region) if periods else []
+        if realms:
+            break
+        GLOBAL_STATS.console_log(
+            f"[realm_poller {region}] season/period/realm lookup came back empty, retrying in 60s"
+        )
+        await asyncio.sleep(60)
+    active_period = max(periods)
 
     while True:
+        failed = 0
+        last_error = None
         for realm in realms:
-            dungeons = await get_leaderboard_index(session, region, realm)
-            await GLOBAL_STATS.increment("checked_realm")
-            for dungeon in dungeons:
-                # GLOBAL_STATS.console_log(
-                #     f"{region} {realm} checking dungeon {dungeon['dungeon_id']} for period {active_period}"
-                # )
-                # fetch the leaderboard
-                await fetch_leaderboard_and_queue(
-                    session,
-                    current_season,
-                    region,
-                    realm,
-                    active_period,
-                    dungeon,
-                    max_keys,
+            # One bad realm (retries exhausted, malformed payload) must not end
+            # the region's poller: main() gathers with return_exceptions=True, so
+            # a crash here would go unnoticed until the next daily restart.
+            try:
+                dungeons = await get_leaderboard_index(session, region, realm)
+                await GLOBAL_STATS.increment("checked_realm")
+                for dungeon in dungeons:
+                    await fetch_leaderboard_and_queue(
+                        session,
+                        current_season,
+                        region,
+                        realm,
+                        active_period,
+                        dungeon,
+                        max_keys,
+                    )
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                failed += 1
+                last_error = f"{type(e).__name__}: {e}"
+                GLOBAL_STATS.console_log(
+                    f"[realm_poller {region}] realm {realm} failed: {last_error}"
                 )
+        if failed == len(realms) and reporter is not None:
+            await reporter.send_alert(
+                f"Realm poller {region}: every realm failed",
+                f"All {failed} realms errored in the last pass. Last error: {last_error}",
+                throttle_key=f"realm-poller-all-failed:{region}",
+                throttle_seconds=3600,
+            )
         await asyncio.sleep(POLL_INTERVAL_SECONDS)
+
+
+def watch_task(task: asyncio.Task, name: str, reporter=None):
+    """Surface the death of a task that is meant to run for the process lifetime.
+    main() gathers these with return_exceptions=True and never inspects the
+    result (wipe_watch keeps the gather alive), so without this a crashed poller
+    just stops and nothing says so."""
+
+    def _done(t: asyncio.Task):
+        if t.cancelled():
+            return
+        exc = t.exception()
+        if exc is None:
+            return
+        detail = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+        GLOBAL_STATS.console_log(f"[{name}] task died:\n{detail}")
+        if reporter is not None:
+            asyncio.get_running_loop().create_task(
+                reporter.send_alert(
+                    f"Collector task {name} died",
+                    f"It stays down until the next restart.\n```{detail[-1500:]}```",
+                )
+            )
+
+    task.add_done_callback(_done)
+    return task
 
 
 async def simple_worker(name: str, session: ClientSession):
@@ -2173,25 +2299,29 @@ async def advanced_worker(name: str, session: ClientSession):
             # for each member, fetch equipment & active spec
             for member in group["members"]:
                 profile = member["profile"]
-                profile_hash = hash_object(profile)
-                if profile_hash in enqueued_profiles:
-                    member_id = enqueued_profiles[profile_hash]
-                    run_obj["members"].append(
-                        {
-                            "member_id": member_id["id"],
-                        }
-                    )
+                reuse_key = (region, profile["id"], member["specialization"]["id"])
+                cached = enqueued_profiles.get(reuse_key)
+                if cached and cached[1] > time.monotonic():
+                    # Same character on the same spec, snapshotted moments ago:
+                    # link this run to that member row instead of fetching and
+                    # storing an identical copy. Aggregates count through
+                    # run_members, so a shared member still counts once per run.
+                    run_obj["members"].append({"member_id": cached[0]})
+                    await GLOBAL_STATS.increment("reused_profile")
                 else:
                     name_l = profile["name"].lower()
                     realm_slug = profile["realm"]["slug"].lower()
 
-                    eq_data = await get_equipment(session, region, realm_slug, name_l)
-                    spec_all = await get_specializations(
-                        session, region, realm_slug, name_l
-                    )
-                    stats = await get_stats(session, region, realm_slug, name_l)
-                    mplus_score, dungeon_scores = await get_mythic_keystone_profile(
-                        session, region, realm_slug, name_l
+                    (
+                        eq_data,
+                        spec_all,
+                        stats,
+                        (mplus_score, dungeon_scores),
+                    ) = await asyncio.gather(
+                        get_equipment(session, region, realm_slug, name_l),
+                        get_specializations(session, region, realm_slug, name_l),
+                        get_stats(session, region, realm_slug, name_l),
+                        get_mythic_keystone_profile(session, region, realm_slug, name_l),
                     )
                     await GLOBAL_STATS.increment("fetched_profile")
                     try:
@@ -2254,6 +2384,8 @@ async def advanced_worker(name: str, session: ClientSession):
                                 if item.get("item")
                             ],
                             "stats": stats,
+                            # set once stored, see process_batch
+                            "reuse_key": reuse_key,
                             # Character identity + M+ score at run time. Detailed
                             # fields (name / realm / score) are advanced-only and
                             # purged with the run at 14 days.
@@ -2274,20 +2406,104 @@ async def advanced_worker(name: str, session: ClientSession):
         except Exception as e:
             GLOBAL_STATS.console_log(f"[{name}] fetch error: {e}", flush=True)
             traceback.print_exc()
+            # The run was marked processed when it was queued, so dropping it here
+            # would lose it until the next restart. Forget it so the next
+            # leaderboard poll queues it again; after a few failures store it
+            # without details rather than not at all.
+            run_hash = group["run_hash"]
+            failures = advanced_fetch_failures.get(run_hash, 0) + 1
+            if failures < ADVANCED_FETCH_RETRIES:
+                advanced_fetch_failures[run_hash] = failures
+                processed_runs.discard(run_hash)
+            else:
+                advanced_fetch_failures.pop(run_hash, None)
+                await simple_queue.put(
+                    (region, season, period_id, realm_id, dungeon, group)
+                )
         finally:
             advanced_queue.task_done()
 
 
-def chunked(lst, size):
-    for i in range(0, len(lst), size):
-        yield lst[i : i + size]
+def _shape_run(r):
+    """Turn a queued run object into the row tuples insert_run_batch takes.
+    Pure (no DB access), so a failed batch can be shaped again per run."""
+    members = []
+    for m in r["members"]:
+        if "member_id" in m:
+            members.append({"member_id": m["member_id"]})
+            continue
+        tsid = commonUtils.talent_set_hash(
+            m["class_talents"], m["spec_talents"], m["hero_talents"]
+        )
+        talent_rows = []
+        if tsid is not None:
+            # tree 0 = class, 1 = spec, 2 = hero
+            trees = (m["class_talents"], m["spec_talents"], m["hero_talents"])
+            for tree, picks in enumerate(trees):
+                talent_rows.extend((tsid, tree, t, rk) for t, rk in picks)
+        stat_rows = []
+        for stat, value in (m.get("stats") or {}).items():
+            if isinstance(value, dict):
+                stat_rows.append((stat, value.get("rating", 0), value.get("percent", 0)))
+            else:
+                stat_rows.append((stat, value, None))
+        equipment = []
+        for e in m["equipment"]:
+            bsid = commonUtils.bonus_set_hash(e["bonuses"])
+            equipment.append(
+                {
+                    "row": (e["slot"], e["item_id"], e["item_level"], bsid),
+                    "bonus_rows": [
+                        (bsid, b) for b in sorted({int(x) for x in e["bonuses"]})
+                    ]
+                    if bsid is not None
+                    else [],
+                    "enchantments": e["enchantments"],
+                    "sockets": e["sockets"],
+                }
+            )
+        members.append(
+            {
+                "row": (m["spec_id"], m["loadout"], m["hero_talent_id"], tsid),
+                "talent_rows": talent_rows,
+                # Identity for every new member. Simple members carry only region
+                # + character id; name / realm / score need the advanced calls.
+                "character": (
+                    m["region"],
+                    m["blizzard_character_id"],
+                    m.get("character_name"),
+                    m.get("realm_slug"),
+                    m.get("mplus_score"),
+                ),
+                "dungeon_scores": list((m.get("dungeon_scores") or {}).items()),
+                "stats": stat_rows,
+                "equipment": equipment,
+            }
+        )
+    return {
+        "run": (
+            r["season"],
+            r["region"],
+            r["dungeon_id"],
+            r["keystone_level"],
+            r["duration"],
+            r["timestamp"],
+            r["faction"],
+        ),
+        "members": members,
+    }
 
 
-async def process_batch(name, conn, cursor, batch, stats_collector=None):
-    new_batch = []
-    run_ids: list[int] = []
+def _store_batch(name, conn, batch):
+    """Blocking half of process_batch, run in a worker thread.
 
-    # Try to insert each run individually, skip if already exists
+    Returns ``(stored, failed)``: ``stored`` is ``(run, member_ids)`` for every
+    run newly written, ``failed`` the runs the DB refused.
+    """
+    stored = []
+    failed = []
+    seen = []
+    todo = []
     for r in batch:
         # Belt-and-suspenders against the partial-rollover hazard: never write a
         # run for a season the DB has already been wiped past (see SEASON_FLOOR).
@@ -2295,330 +2511,173 @@ async def process_batch(name, conn, cursor, batch, stats_collector=None):
         # this only catches a stale in-flight item; mark it seen and move on.
         try:
             if SEASON_FLOOR and int(r["season"]) < SEASON_FLOOR:
-                process_group(
-                    r["region"], r["season"], r["period_id"], r["realm"], r["run_hash"]
-                )
+                seen.append(r)
                 continue
         except (TypeError, ValueError):
             pass
-        try:
-            # INSERT IGNORE will skip duplicates (requires IGNORE keyword)
-            databaseConnector.insert_run(
-                conn,
-                cursor,
-                r["season"],
-                r["region"],
-                r["dungeon_id"],
-                r["keystone_level"],
-                r["duration"],
-                r["timestamp"],
-                r["faction"],
-            )
-            # lastrowid == 0 means the row was ignored (duplicate)
-            run_id = cursor.lastrowid
+        todo.append(r)
+
+    def write(runs):
+        shaped = [_shape_run(r) for r in runs]
+        run_ids, member_ids = databaseConnector.run_in_transaction(
+            conn, lambda cursor: databaseConnector.insert_run_batch(cursor, shaped)
+        )
+        for r, run_id, mids in zip(runs, run_ids, member_ids):
+            # a duplicate (run_id None) is already in the DB: seen, nothing stored
+            seen.append(r)
             if run_id:
-                run_ids.append(run_id)
-                new_batch.append(r)
-                databaseConnector.commit_changes(conn)
-            else:
-                continue
+                stored.append((r, mids))
+
+    if todo:
+        try:
+            write(todo)
         except Exception as e:
             GLOBAL_STATS.console_log(
-                f"[{name}] "
-                f"Error inserting run {r['season']}-{r['region']}-"
-                f"{r['realm']}-{r['dungeon_id']}-{r['timestamp']}: {e}"
+                f"[{name}] batch of {len(todo)} runs failed ({type(e).__name__}: {e})"
             )
-            continue
-    # nothing new?
-    if not new_batch or len(new_batch) == 0:
-        batch.clear()
-        for r in batch:
-            process_group(
-                r["region"], r["season"], r["period_id"], r["realm"], r["run_hash"]
-            )
-        return
-
-    if stats_collector:
-        await stats_collector.increment("db_insert_run", len(run_ids))
-
-    # now process members/etc only for new_batch
-    batch = new_batch
-    # members: separate existing vs new
-    member_vals = []
-    existing_member_ids = []
-    counts = []
-    # distinct talent dictionary sets seen in this batch: set_id -> list of
-    # (set_id, tree, talent_id, rank) rows. One set_id covers all three trees for
-    # a member; INSERT IGNORE de-duplicates against sets already in the DB.
-    talent_sets: dict[bytes, list[tuple]] = {}
-    # per-member talent picks, split by tree, counted for every new member (not
-    # deduplicated by set) so the Discord embed shows a real class/spec/hero
-    # breakdown. talent_sets below stays the distinct-set counter.
-    class_talent_rows = 0
-    spec_talent_rows = 0
-    hero_talent_rows = 0
-    for r in batch:
-        counts.append(len(r["members"]))
-        for m in r["members"]:
-            if "member_id" in m:
-                existing_member_ids.append(m["member_id"])
+            if databaseConnector.is_connection_lost(e):
+                # the DB is unreachable: per-run retries would only stall
+                failed.extend(todo)
             else:
-                tsid = commonUtils.talent_set_hash(
-                    m["class_talents"], m["spec_talents"], m["hero_talents"]
-                )
-                member_vals.append(
-                    (m["spec_id"], m["loadout"], m["hero_talent_id"], tsid)
-                )
-                # per-member talent picks (counted for every new member, not
-                # deduplicated by set)
-                class_talent_rows += len(m["class_talents"])
-                spec_talent_rows += len(m["spec_talents"])
-                hero_talent_rows += len(m["hero_talents"])
-                if tsid is not None and tsid not in talent_sets:
-                    rows = []
-                    for t, rk in m["class_talents"]:
-                        rows.append((tsid, 0, t, rk))
-                    for t, rk in m["spec_talents"]:
-                        rows.append((tsid, 1, t, rk))
-                    for t, rk in m["hero_talents"]:
-                        rows.append((tsid, 2, t, rk))
-                    talent_sets[tsid] = rows
-    # insert only new members
-    if member_vals:
-        first_new_id = databaseConnector.insert_members_batch(conn, cursor, member_vals)
-        new_member_ids = list(range(first_new_id, first_new_id + len(member_vals)))
-    else:
-        new_member_ids = []
-    databaseConnector.commit_changes(conn)
+                # one bad run must not cost the rest of the batch
+                for r in todo:
+                    try:
+                        write([r])
+                    except Exception as run_err:
+                        failed.append(r)
+                        GLOBAL_STATS.console_log(
+                            f"[{name}] could not store run {r['season']}-{r['region']}-"
+                            f"{r['realm']}-{r['dungeon_id']}-{r['timestamp']}: "
+                            f"{type(run_err).__name__}: {run_err}"
+                        )
 
-    # persist the distinct talent sets referenced by this batch's new members
-    if talent_sets:
-        ts_rows = [row for rows in talent_sets.values() for row in rows]
-        for sub in chunked(ts_rows, BATCH_SIZE):
-            databaseConnector.insert_talent_sets(conn, cursor, sub)
-            databaseConnector.commit_changes(conn)
-
-    if stats_collector and new_member_ids:
-        await stats_collector.increment("db_insert_member", len(new_member_ids))
-    # reconstruct full member_id list in original order
-    mem_ids = []
-    new_idx = 0
-    exist_idx = 0
-    for r in batch:
-        for m in r["members"]:
-            if "member_id" in m:
-                mem_ids.append(existing_member_ids[exist_idx])
-                exist_idx += 1
-            else:
-                mem_ids.append(new_member_ids[new_idx])
-                new_idx += 1
-
-    # run_members
-    rm_vals = []
-    idx = 0
-    for run_idx, cnt in enumerate(counts):
-        rid = run_ids[run_idx]
-        for _ in range(cnt):
-            rm_vals.append((rid, mem_ids[idx]))
-            idx += 1
-    databaseConnector.insert_run_members_batch(conn, cursor, rm_vals)
-    databaseConnector.commit_changes(conn)
-    # for only newly‑inserted members, insert equipment & stats. Talents are no
-    # longer stored per member: they were hashed into the talent_sets dictionary
-    # above and referenced by members.talent_set_id.
-    ench_vals = []
-    sock_vals = []
-    stat_vals = []
-    # per-new-member character identity rows (member, region, blizzard_character_id,
-    # character_name, realm_slug, mplus_score, collected_ts). collected_ts = the
-    # run's completed timestamp (ms), which drives the 14-day identity purge.
-    mc_vals = []
-    # per-new-member per-dungeon rating rows (member, dungeon_id, rating,
-    # collected_ts). Advanced-only (from the mythic-keystone-profile best_runs
-    # map_rating), purged with the run at 14 days like mc_vals.
-    mds_vals = []
-    # distinct bonus dictionary sets seen in this batch: set_id -> list of
-    # (set_id, bonus_id) rows. One set_id covers an equipped item's whole bonus-id
-    # set; INSERT IGNORE de-duplicates against sets already in the DB.
-    bonus_sets: dict[bytes, list[tuple]] = {}
-    # per-item bonus id count (counted for every equipped item, not deduplicated
-    # by set)
-    bonus_id_rows = 0
-    # offset into new_member_ids to map to batch members
-    new_idx = 0
-
-    for r in batch:
-        for m in r["members"]:
-            if "member_id" in m:
-                continue  # skip existing
-            mid = new_member_ids[new_idx]
-            new_idx += 1
-            # character identity for every new member (simple + advanced). Simple
-            # members carry only region + blizzard_character_id; the detailed
-            # fields default to None. collected_ts is the run's completed_timestamp.
-            mc_vals.append(
-                (
-                    mid,
-                    m["region"],
-                    m["blizzard_character_id"],
-                    m.get("character_name"),
-                    m.get("realm_slug"),
-                    m.get("mplus_score"),
-                    r["timestamp"],
-                )
-            )
-            # per-dungeon rating snapshot (advanced members only; simple members
-            # carry no dungeon_scores). collected_ts drives the 14-day purge.
-            for dungeon_id, rating in (m.get("dungeon_scores") or {}).items():
-                mds_vals.append((mid, dungeon_id, rating, r["timestamp"]))
-            # collect stats
-            for stat, value in m.get("stats", {}).items():
-                if isinstance(value, dict):
-                    stat_vals.append(
-                        (mid, stat, value.get("rating", 0), value.get("percent", 0))
-                    )
-                else:
-                    stat_vals.append((mid, stat, value, None))
-            # collect equipment
-            for e in m["equipment"]:
-                bsid = commonUtils.bonus_set_hash(e["bonuses"])
-                eq_id = databaseConnector.insert_equipment(
-                    conn, cursor, mid, e["slot"], e["item_id"], e["item_level"], bsid
-                )
-                for en in e["enchantments"]:
-                    ench_vals.append((eq_id, en))
-                for stype, iid in e["sockets"]:
-                    sock_vals.append((eq_id, stype, iid))
-                bonus_id_rows += len(e["bonuses"])
-                if bsid is not None and bsid not in bonus_sets:
-                    bonus_sets[bsid] = [
-                        (bsid, b) for b in sorted({int(x) for x in e["bonuses"]})
-                    ]
-    if (
-        len(talent_sets) > 0
-        or len(ench_vals) > 0
-        or len(sock_vals) > 0
-        or len(bonus_sets) > 0
-        or len(stat_vals) > 0
-    ):
-        GLOBAL_STATS.console_log(
-            f"[{name}] Inserting equipment for {len(talent_sets)} talent sets, {len(ench_vals)} enchantments, {len(sock_vals)} sockets and {len(bonus_sets)} bonus sets and {len(stat_vals)} stats"
-        )
-
-    if stats_collector:
-        GLOBAL_STATS.console_log("Incrementing stats with talents and equipment counts")
-        if len(talent_sets) > 0:
-            GLOBAL_STATS.console_log(f"Talent sets: {len(talent_sets)}")
-            await stats_collector.increment("talent_sets", len(talent_sets))
-        if class_talent_rows > 0:
-            GLOBAL_STATS.console_log(f"Class talents: {class_talent_rows}")
-            await stats_collector.increment("class_talents", class_talent_rows)
-        if spec_talent_rows > 0:
-            GLOBAL_STATS.console_log(f"Spec talents: {spec_talent_rows}")
-            await stats_collector.increment("spec_talents", spec_talent_rows)
-        if hero_talent_rows > 0:
-            GLOBAL_STATS.console_log(f"Hero talents: {hero_talent_rows}")
-            await stats_collector.increment("hero_talents", hero_talent_rows)
-        if len(ench_vals) > 0:
-            GLOBAL_STATS.console_log(f"Enchantments: {len(ench_vals)}")
-            await stats_collector.increment("enchantments", len(ench_vals))
-        if len(sock_vals) > 0:
-            GLOBAL_STATS.console_log(f"Sockets: {len(sock_vals)}")
-            await stats_collector.increment("sockets", len(sock_vals))
-        if bonus_id_rows > 0:
-            GLOBAL_STATS.console_log(f"Bonus ids: {bonus_id_rows}")
-            await stats_collector.increment("bonus_ids", bonus_id_rows)
-        if len(bonus_sets) > 0:
-            GLOBAL_STATS.console_log(f"Bonus sets: {len(bonus_sets)}")
-            await stats_collector.increment("bonus_sets", len(bonus_sets))
-        if len(stat_vals) > 0:
-            GLOBAL_STATS.console_log(f"Stats: {len(stat_vals)}")
-            await stats_collector.increment("stats", len(stat_vals))
-
-    if stat_vals and len(stat_vals) > 0:
-        for sub in chunked(stat_vals, BATCH_SIZE):
-            try:
-                databaseConnector.insert_stats_batch(conn, cursor, sub)
-                databaseConnector.commit_changes(conn)
-            except Exception as e:
-                GLOBAL_STATS.console_log(f"sub: {sub}")
-                GLOBAL_STATS.console_log(f"Error inserting stats batch: {e}")
-    if ench_vals and len(ench_vals) > 0:
-        for sub in chunked(ench_vals, BATCH_SIZE):
-            databaseConnector.insert_enchantments(conn, cursor, sub)
-            databaseConnector.commit_changes(conn)
-    if sock_vals and len(sock_vals) > 0:
-        for sub in chunked(sock_vals, BATCH_SIZE):
-            databaseConnector.insert_sockets(conn, cursor, sub)
-            databaseConnector.commit_changes(conn)
-    if bonus_sets:
-        bs_rows = [row for rows in bonus_sets.values() for row in rows]
-        for sub in chunked(bs_rows, BATCH_SIZE):
-            databaseConnector.insert_bonus_sets(conn, cursor, sub)
-            databaseConnector.commit_changes(conn)
-    if mc_vals:
-        for sub in chunked(mc_vals, BATCH_SIZE):
-            databaseConnector.insert_member_character_batch(conn, cursor, sub)
-            databaseConnector.commit_changes(conn)
-    if mds_vals:
-        for sub in chunked(mds_vals, BATCH_SIZE):
-            databaseConnector.insert_member_dungeon_score_batch(conn, cursor, sub)
-            databaseConnector.commit_changes(conn)
-    for r in batch:
+    # only after the commit: a seen-file entry is what stops a run being fetched again
+    for r in seen:
         process_group(
             r["region"], r["season"], r["period_id"], r["realm"], r["run_hash"]
         )
+    return stored, failed
+
+
+_last_reuse_prune = 0.0
+
+
+async def process_batch(name, conn, batch, stats_collector=None):
+    """Store a batch of queued runs.
+
+    Each batch is one transaction (databaseConnector.insert_run_batch), so a run
+    is never left in the DB without its members, and the DB work runs in a worker
+    thread so the fetchers and rate limiters keep going meanwhile.
+    """
+    global _last_reuse_prune
+    stored, failed = await asyncio.to_thread(_store_batch, name, conn, batch)
+
+    now = time.monotonic()
+    counts = Counter()
+    talent_sets = set()
+    bonus_sets = set()
+    for r, member_ids in stored:
+        store_failures.pop(r["run_hash"], None)
+        counts["db_insert_run"] += 1
+        for m, member_id in zip(r["members"], member_ids):
+            if "member_id" in m:
+                continue  # linked to an existing member, nothing new stored
+            counts["db_insert_member"] += 1
+            if m.get("reuse_key"):
+                enqueued_profiles[m["reuse_key"]] = (
+                    member_id,
+                    now + MEMBER_REUSE_SECONDS,
+                )
+            counts["class_talents"] += len(m["class_talents"])
+            counts["spec_talents"] += len(m["spec_talents"])
+            counts["hero_talents"] += len(m["hero_talents"])
+            counts["stats"] += len(m.get("stats") or {})
+            tsid = commonUtils.talent_set_hash(
+                m["class_talents"], m["spec_talents"], m["hero_talents"]
+            )
+            if tsid is not None:
+                talent_sets.add(tsid)
+            for e in m["equipment"]:
+                counts["enchantments"] += len(e["enchantments"])
+                counts["sockets"] += len(e["sockets"])
+                counts["bonus_ids"] += len(e["bonuses"])
+                bsid = commonUtils.bonus_set_hash(e["bonuses"])
+                if bsid is not None:
+                    bonus_sets.add(bsid)
+    counts["talent_sets"] = len(talent_sets)
+    counts["bonus_sets"] = len(bonus_sets)
+
+    for r in failed:
+        # A failed run is in processed_runs (marked when queued) but in no
+        # seen-file. Forget it so the next leaderboard poll queues it again, a
+        # few times at most so a run the DB keeps refusing cannot loop forever.
+        failures = store_failures.get(r["run_hash"], 0) + 1
+        if failures < STORE_RETRIES:
+            store_failures[r["run_hash"]] = failures
+            processed_runs.discard(r["run_hash"])
+        else:
+            store_failures.pop(r["run_hash"], None)
+
+    if now - _last_reuse_prune > 600:
+        _last_reuse_prune = now
+        for key in [k for k, v in enqueued_profiles.items() if v[1] <= now]:
+            del enqueued_profiles[key]
+        if len(enqueued_profiles) > MEMBER_REUSE_MAX_ENTRIES:
+            enqueued_profiles.clear()
+
+    if stats_collector:
+        for key, amount in counts.items():
+            if amount:
+                await stats_collector.increment(key, amount)
 
 
 async def database_worker(name: str):
     """
-    Pull full run payloads from load_queue in batches and write them using
-    databaseConnector's batch insert helpers.
+    Pull full run payloads from database_queue and store them in batches.
     """
     with closing(databaseConnector.get_connection()) as conn:
-        cursor = conn.cursor()
         batch: list[dict] = []
+
+        async def flush():
+            if not batch:
+                return
+            await WRITE_GATE.begin()  # yield to a pending season wipe
+            try:
+                await process_batch(name, conn, batch, GLOBAL_STATS)
+            except Exception as err:
+                GLOBAL_STATS.console_log(
+                    f"{name}: batch of {len(batch)} runs failed: {err}"
+                )
+                traceback.print_exc()
+            finally:
+                # task_done only now, so database_queue.join() at shutdown waits
+                # for the rows to be written, not merely dequeued
+                for _ in batch:
+                    database_queue.task_done()
+                batch.clear()
+                WRITE_GATE.end()
 
         while True:
             # pull next payload or break on shutdown
             try:
                 run_obj = await asyncio.wait_for(database_queue.get(), timeout=5.0)
             except asyncio.TimeoutError:
+                # quiet period: do not sit on a partial batch
+                await flush()
                 if cancel_event.is_set() and database_queue.empty():
                     break
                 continue
-            batch.append(run_obj)
-            database_queue.task_done()
             if run_obj is None:
-                if batch:
-                    # same gating as the steady-state flush below: a shutdown
-                    # landing mid-wipe must not write into tables the DB event
-                    # is about to truncate
-                    await WRITE_GATE.begin()
-                    try:
-                        await process_batch(name, conn, cursor, batch, GLOBAL_STATS)
-                    finally:
-                        WRITE_GATE.end()
+                database_queue.task_done()
+                await flush()
                 break
+            batch.append(run_obj)
             if len(batch) >= BATCH_SIZE:
-                await WRITE_GATE.begin()  # yield to a pending season wipe
-                try:
-                    await process_batch(name, conn, cursor, batch, GLOBAL_STATS)
-                    batch.clear()
-                except Exception as err:
-                    GLOBAL_STATS.console_log(
-                        f"{name}: batch failed skipping {len(batch)} rows: {err}"
-                    )
-                    traceback.print_exc()
-                    conn.rollback()
-                    continue
-                finally:
-                    WRITE_GATE.end()
+                await flush()
 
         # `with closing(...)` returns the pooled connection exactly once on exit;
         # do not call conn.close() here or it double-returns and injects a surplus
         # connection into the shared pool ("Failed adding connection; queue is full").
-        cursor.close()
 
 
 async def wipe_watch():
@@ -2770,7 +2829,6 @@ async def main():
         keepalive_timeout=75,
         force_close=False,
         enable_cleanup_closed=True,
-        ssl=False,
     )
     timeout = ClientTimeout(total=60)
     retry_options = ExponentialRetry(
@@ -2892,10 +2950,30 @@ async def main():
                 continue
 
             # For each realm, create its single worker
-            tasks.append(asyncio.create_task(realm_poller(region, session, max_keys)))
+            tasks.append(
+                watch_task(
+                    asyncio.create_task(
+                        realm_poller(region, session, max_keys, reporter)
+                    ),
+                    f"realm_poller-{region}",
+                    reporter,
+                )
+            )
 
-        tasks.append(asyncio.create_task(route_poller_task(session)))
-        tasks.append(asyncio.create_task(run_raiderio_top_loadouts(session)))
+        tasks.append(
+            watch_task(
+                asyncio.create_task(route_poller_task(session)),
+                "route_poller",
+                reporter,
+            )
+        )
+        tasks.append(
+            watch_task(
+                asyncio.create_task(run_raiderio_top_loadouts(session)),
+                "raiderio_top_loadouts",
+                reporter,
+            )
+        )
         # Season-rollover wipe handshake: pauses DB writers while a wipe runs.
         tasks.append(asyncio.create_task(wipe_watch()))
 

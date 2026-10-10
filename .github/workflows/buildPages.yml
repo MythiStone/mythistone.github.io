@@ -126,9 +126,11 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
+          cache: pip
+          cache-dependency-path: constraints.txt
 
       - name: Install dependencies
-        run: pip install mysql-connector-python
+        run: pip install -c constraints.txt mysql-connector-python
 
       # Gate: does the resolved season have any runs? During the pre-season gap
       # (and just after a wipe) it does not, and the generators crash on empty
@@ -143,6 +145,20 @@ jobs:
           DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
         run: python backend_scripts/seasonHasData.py --season "${{ steps.resolve.outputs.season_id }}"
+
+      # Gate: a failed aggregation step is only recorded in agg_pipeline_log, so
+      # without this the build would publish yesterday's numbers unnoticed. Fails
+      # the run when the latest nightly pipeline has an errored step or is stale.
+      # Skipped while the season has no data (the build is skipped then anyway).
+      - name: Check the nightly aggregation ran cleanly
+        if: ${{ steps.datacheck.outputs.has_data == 'true' }}
+        env:
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORT }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+        run: python backend_scripts/aggPipelineHealth.py
 
       # Cadence gate: on a `schedule` run, decide whether today builds based on
       # days since the most recent content update (season start or a .5/.7 patch).
@@ -181,11 +197,13 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
+          cache: pip
+          cache-dependency-path: constraints.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mysql-connector-python requests pyyaml
+          pip install -c constraints.txt mysql-connector-python requests pyyaml
 
       - name: Generate SimulationCraft tierlist profiles
         env:
@@ -382,6 +400,10 @@ jobs:
     needs: [resolve-season, prepare-sims]
     env:
       MYTHISTONE_SEASON_INFO: ${{ needs.resolve-season.outputs.season_info }}
+      # snapshotTrends and the comps / spec / dungeon generators all need the full
+      # aggregated_dungeon_comps table. The first one stores it here and the rest
+      # read the file (databaseConnector.fetch_all_comps).
+      MYTHISTONE_COMPS_CACHE: /tmp/mythistone_comps_cache.json
     runs-on: ubuntu-latest
     steps:
       - name: Clone project
@@ -401,11 +423,13 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
+          cache: pip
+          cache-dependency-path: constraints.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install jinja2 pyyaml requests mysql-connector-python bs4 openai Pillow matplotlib pandas aiohttp
+          pip install -c constraints.txt jinja2 pyyaml requests mysql-connector-python bs4 openai Pillow matplotlib pandas aiohttp
 
       - name: Clean up old dynamic assets
         run: |
@@ -665,11 +689,13 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
+          cache: pip
+          cache-dependency-path: constraints.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install jinja2 pillow mysql-connector-python rcssmin rjsmin
+          pip install -c constraints.txt jinja2 pillow mysql-connector-python rcssmin rjsmin
 
       - name: Download generated site
         uses: actions/download-artifact@v4

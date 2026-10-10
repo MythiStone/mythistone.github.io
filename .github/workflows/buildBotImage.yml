@@ -31,6 +31,7 @@ on:
       - 'assets/fonts/BebasNeue-Regular.ttf'
       - 'assets/img/favicon/favicon-96x96.png'
       - 'Dockerfile.bot'
+      - 'constraints.txt'
       - 'entrypoint_bot.sh'
   workflow_dispatch: {}
 
@@ -46,10 +47,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -58,7 +59,7 @@ jobs:
           python -m pip install --upgrade pip
           # Seeder + bot-test runtime deps. Source B (comps/items/spec_meta/simdps
           # JSON) is fetched live from mythistone.com and soft-skips off-season.
-          pip install mysql-connector-python "discord.py>=2.4" aiohttp matplotlib requests
+          pip install -c constraints.txt mysql-connector-python "discord.py>=2.4" aiohttp matplotlib requests
 
       - name: Seed throwaway test DB
         run: python backend_scripts/localDev/seed_test_db.py
@@ -77,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3

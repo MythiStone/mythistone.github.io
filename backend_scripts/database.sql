@@ -1037,6 +1037,8 @@ CREATE TABLE `runs` (
   `season` int NOT NULL,
   PRIMARY KEY (`run_id`),
   UNIQUE KEY `runs_unique` (`dungeon_id`,`keystone_level`,`duration`,`timestamp`,`faction`,`region`,`season`),
+  KEY `runs_season_dungeon_level_IDX` (`season`,`dungeon_id`,`keystone_level`),
+  KEY `runs_timestamp_IDX` (`timestamp`),
   CONSTRAINT `runs_dungeon_data_FK` FOREIGN KEY (`dungeon_id`) REFERENCES `dungeon_data` (`dungeon_id`)
 ) /*!50100 TABLESPACE `ts_runs` */ ENGINE=InnoDB AUTO_INCREMENT=5630726 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -1273,9 +1275,9 @@ BEGIN
         JOIN Mythistone.members M ON RM.member = M.member
         JOIN Mythistone.equipment EQ ON M.member = EQ.member
         JOIN Mythistone.bonus_sets B ON B.set_id = EQ.bonus_set_id
-        /* handle both seconds and milliseconds storage: check both ranges */
-        WHERE (R.`timestamp` BETWEEN start_sec AND end_sec)
-           OR (R.`timestamp` BETWEEN start_sec * 1000 AND end_sec * 1000)
+        /* runs.timestamp is ms; a plain range keeps runs_timestamp_IDX usable */
+        WHERE R.`timestamp` >= start_sec * 1000
+          AND R.`timestamp` <  (end_sec + 1) * 1000
         GROUP BY R.run_id, EQ.equipment_id
       ) AS occ
       WHERE occ.bonus_list <> ''
@@ -1981,6 +1983,7 @@ BEGIN
   DECLARE v_max_run     INT UNSIGNED DEFAULT 0;
   DECLARE v_cur         INT UNSIGNED DEFAULT 0;
   DECLARE v_batch_size  INT UNSIGNED DEFAULT 200000; -- tune: 200K runs × 5 members = ~1M rows/pass
+  DECLARE v_cutoff_ms   BIGINT       DEFAULT 0;
 
   CALL sp_agg_session_setup();
 
@@ -1991,11 +1994,17 @@ BEGIN
   -- (run, member) and can never span a batch boundary; the ON DUPLICATE KEY
   -- UPDATE accumulates the per-batch partial aggregates.
 
+  -- Same 14-day window as the other gear aggregates. Older runs have no gear
+  -- left to join (or soon will not, the purge laps slowly), so walking their
+  -- run_ids only costs index probes.
+  SET v_cutoff_ms = UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 14 DAY)) * 1000;
+
   -- run_id boundaries (NULL-safe: if no runs exist, the WHILE never executes)
   SELECT COALESCE(MIN(run_id), 1),
          COALESCE(MAX(run_id), 0)
     INTO v_min_run, v_max_run
-  FROM Mythistone.runs;
+  FROM Mythistone.runs
+  WHERE `timestamp` > v_cutoff_ms;
 
   DROP TABLE IF EXISTS Mythistone.aggregated_embellishment_comps_new, Mythistone.aggregated_embellishment_comps_old,
                        Mythistone.aggregated_crafted_comps_new,       Mythistone.aggregated_crafted_comps_old,
@@ -2050,6 +2059,7 @@ BEGIN
           JOIN Mythistone.bonus_sets B      ON B.set_id = EQ.bonus_set_id
           JOIN Mythistone.embellishments EM ON EM.bonus_id = B.bonus_id
         WHERE R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+          AND R.`timestamp` > v_cutoff_ms
       ) p
       GROUP BY p.run_id, p.member, p.spec_id, p.season, p.hero_talent_id,
                p.keystone_level, p.timed
@@ -2097,6 +2107,7 @@ BEGIN
           JOIN Mythistone.equipment EQ       ON M.member = EQ.member
           JOIN Mythistone.crafted_item_ids CII ON EQ.item_id = CII.item_id
         WHERE R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+          AND R.`timestamp` > v_cutoff_ms
       ) p
       GROUP BY p.run_id, p.member, p.spec_id, p.season, p.hero_talent_id,
                p.keystone_level, p.timed
@@ -2151,6 +2162,7 @@ BEGIN
             JOIN Mythistone.equipment EQ       ON M.member = EQ.member
             JOIN Mythistone.tier_set_items TSI ON EQ.item_id = TSI.item_id
           WHERE R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+            AND R.`timestamp` > v_cutoff_ms
         ) p
       ) q
       WHERE q.set_piece_count >= 2
@@ -2203,6 +2215,7 @@ BEGIN
           JOIN Mythistone.equipment EQ    ON M.member = EQ.member
           JOIN Mythistone.sockets SO      ON SO.equipment_id = EQ.equipment_id
         WHERE R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+          AND R.`timestamp` > v_cutoff_ms
       ) p
       GROUP BY p.run_id, p.member, p.spec_id, p.season, p.hero_talent_id,
                p.keystone_level, p.timed
@@ -2252,6 +2265,7 @@ BEGIN
           JOIN Mythistone.equipment EQ     ON M.member = EQ.member
           JOIN Mythistone.enchantments E   ON E.equipment_id = EQ.equipment_id
         WHERE R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+          AND R.`timestamp` > v_cutoff_ms
       ) p
       GROUP BY p.run_id, p.member, p.spec_id, p.season, p.hero_talent_id,
                p.keystone_level, p.timed
@@ -2535,9 +2549,9 @@ BEGIN
     r.dungeon_id,
     r.keystone_level,
     CASE
-      WHEN r.duration <= dd.upgrade_1_duration THEN '1'
-      WHEN r.duration <= dd.upgrade_2_duration THEN '2'
       WHEN r.duration <= dd.upgrade_3_duration THEN '3'
+      WHEN r.duration <= dd.upgrade_2_duration THEN '2'
+      WHEN r.duration <= dd.upgrade_1_duration THEN '1'
       ELSE 'depleted'
     END AS upgrade_tier,
     COALESCE(m.hero_talent_id, 0) AS hero_talent_id,

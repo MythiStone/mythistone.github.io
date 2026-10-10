@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import re
+import weakref
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 
@@ -65,6 +66,75 @@ def bonus_set_hash(bonus_ids):
         return None
     canonical = ",".join(str(b) for b in ids)
     return hashlib.md5(canonical.encode("utf-8")).digest()
+
+
+class LenientLookup(dict):
+    """A static id lookup that survives ids its file does not know yet.
+
+    A game patch puts new items, gems and talents into the collected data
+    before the weekly static-data refresh, and a single unguarded ``lookup[id]``
+    (generators and templates are full of them) used to fail the whole build.
+    Subscripting an unknown id here returns a placeholder record and remembers
+    the id. ``.get()`` and ``in`` behave as on a plain dict, so code that
+    already checks for a missing id is unaffected.
+
+    Every generator that builds one must call report_unknown_ids() before it
+    exits: that prints what was papered over and still fails the build when so
+    many ids are unknown that the lookup file itself must be broken or stale.
+    """
+
+    # weak references: image renders build fresh lookups on every call, and a
+    # long-lived process must not keep every one of them alive
+    _instances = []
+
+    def __init__(self, data, label, placeholder):
+        super().__init__(data)
+        self.label = label
+        self._placeholder = placeholder
+        self.unknown = set()
+        live = [ref for ref in LenientLookup._instances if ref() is not None]
+        live.append(weakref.ref(self))
+        LenientLookup._instances[:] = live
+
+    def __missing__(self, key):
+        self.unknown.add(key)
+        return self._placeholder(key)
+
+
+def unknown_item_record(item_id):
+    """Placeholder shaped like an equippable-items.json / crafting.json reagent row."""
+    return {"id": item_id, "itemId": item_id, "name": f"Unknown item {item_id}",
+            "icon": "inv_misc_questionmark", "quality": 1}
+
+
+def unknown_gem_record(item_id):
+    """Placeholder shaped like an enchantments.json socket row."""
+    return {"id": item_id, "itemId": item_id, "slot": "socket",
+            "itemName": f"Unknown gem {item_id}", "displayName": f"Unknown gem {item_id}",
+            "itemIcon": "inv_misc_questionmark", "spellIcon": "inv_misc_questionmark",
+            "quality": 1, "stats": []}
+
+
+def report_unknown_ids():
+    """Print every id a LenientLookup had to substitute, and raise when one
+    lookup missed more than MYTHISTONE_MAX_UNKNOWN_IDS (default 50) distinct ids."""
+    limit = int(os.environ.get("MYTHISTONE_MAX_UNKNOWN_IDS", "50"))
+    broken = []
+    for ref in LenientLookup._instances:
+        lookup = ref()
+        if lookup is None or not lookup.unknown:
+            continue
+        ids = sorted(lookup.unknown, key=str)
+        print(f"Unknown {lookup.label} ids rendered as placeholders "
+              f"({len(ids)}): {', '.join(str(i) for i in ids[:100])}")
+        if len(ids) > limit:
+            broken.append(f"{lookup.label} ({len(ids)})")
+    if broken:
+        raise RuntimeError(
+            f"More than {limit} unknown ids in: {', '.join(broken)}. "
+            "The static lookup file is broken or far out of date."
+        )
+
 
 SECONDARY_STATS = ["haste", "versatility", "mastery", "crit"]
 TERTIARY_STATS = [

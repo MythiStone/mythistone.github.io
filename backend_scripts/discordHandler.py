@@ -651,6 +651,7 @@ class DiscordReporter:
             ("Checked Runs", window_counts.get("checked_runs", 0)),
             ("Enqueued Runs", window_counts.get("enqueued_runs", 0)),
             ("Fetched Profiles", window_counts.get("fetched_profile", 0)),
+            ("Reused Profiles", window_counts.get("reused_profile", 0)),
             ("No Active Spec", window_counts.get("no_active_spec", 0)),
         ])
         add_section(embed, "💾 Stored", [
@@ -721,6 +722,7 @@ class DiscordReporter:
             ("Checked Runs", totals.get("checked_runs", 0)),
             ("Enqueued Runs", totals.get("enqueued_runs", 0)),
             ("Fetched Profiles", totals.get("fetched_profile", 0)),
+            ("Reused Profiles", totals.get("reused_profile", 0)),
             ("No Active Spec", totals.get("no_active_spec", 0)),
         ])
         add_section(totals_embed, "💾 Stored", [
