@@ -61,6 +61,7 @@
       // which the full header now pushes down into place.
       chrome.classList.remove("is-condensed", "notes-open");
       publishHeight();
+      window.scrollTo({ top: 0, behavior: "instant" });
       setBellExpanded(false);
     }
   }

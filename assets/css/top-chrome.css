@@ -62,6 +62,10 @@ html {
 }
 .page-top-chrome.is-condensed.notes-open .top-chrome-notes { display: block; }
 
+@media (max-width: 767.98px), (max-height: 599.98px) {
+  .page-top-chrome:not(.is-condensed) { position: static; }
+}
+
 /* ---- phones: only the navbar stays once condensed ---- */
 @media (max-width: 767.98px) {
   /* Collapsed to zero height rather than display:none so trends-bar.js can
