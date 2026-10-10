@@ -2018,5 +2018,16 @@
         "persona": "deadpan_raid_leader",
         "judge_score": 32.0,
         "timestamp": 1791585265150
+    },
+    "data/social/dungeon_overview_587_2026-10.png": {
+        "title": "Murder Row Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/murder-row",
+        "social": "91% timed on Murder Row. 3 points above average. Healers finally breathing. #WoW #MythicPlus https://mythistone.com/dungeons/murder-row",
+        "blog": "This overview of Murder Row draws on 1.9 M tracked Mythic+ runs.\n\nThe most common group through it is Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. The most-used route right now is keystone.guru/wdb0CJn.",
+        "post": "91% timed on Murder Row. 3 points above average. Healers finally breathing. #WoW #MythicPlus https://mythistone.com/dungeons/murder-row",
+        "persona": "hype_caster",
+        "judge_score": 37.0,
+        "timestamp": 1791669670459
     }
 }
