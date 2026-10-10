@@ -666,7 +666,8 @@ CREATE TABLE `members` (
 
 CREATE TABLE `missives` (
   `bonus_id` int unsigned NOT NULL,
-  `item_id` int unsigned NOT NULL
+  `item_id` int unsigned NOT NULL,
+  PRIMARY KEY (`bonus_id`,`item_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -1231,67 +1232,79 @@ CREATE TABLE `run_members` (
 
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_bonus_lists`()
 BEGIN
-  DECLARE i INT DEFAULT 0;
-  DECLARE v_day DATE;
-  DECLARE start_sec BIGINT;
-  DECLARE end_sec BIGINT;
+  -- Full rebuild of the trailing 14 days into a shadow table, then swap, in
+  -- run_id batches like the other gear aggregates.
+  DECLARE v_cutoff_ms  BIGINT       DEFAULT 0;
+  DECLARE v_min_run    INT UNSIGNED DEFAULT 1;
+  DECLARE v_max_run    INT UNSIGNED DEFAULT 0;
+  DECLARE v_cur        INT UNSIGNED DEFAULT 0;
+  DECLARE v_batch_size INT UNSIGNED DEFAULT 200000;
 
   CALL sp_agg_session_setup();
+
+  SET v_cutoff_ms = UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 14 DAY)) * 1000;
+
+  SELECT COALESCE(MIN(run_id), 1), COALESCE(MAX(run_id), 0)
+    INTO v_min_run, v_max_run
+  FROM Mythistone.runs
+  WHERE `timestamp` > v_cutoff_ms;
 
   DROP TABLE IF EXISTS Mythistone.aggregated_bonus_lists_new, Mythistone.aggregated_bonus_lists_old;
   CREATE TABLE Mythistone.aggregated_bonus_lists_new LIKE Mythistone.aggregated_bonus_lists;
 
-  SET i = 0;
-  WHILE i < 14 DO
-    SET v_day = DATE_SUB(CURDATE(), INTERVAL i DAY);
+  -- equipment.bonus_set_id already identifies an item's sorted, distinct bonus
+  -- ids, so the batches below only count rows per set id. The readable list is
+  -- built here once per distinct set. Building it per equipped item instead
+  -- (GROUP_CONCAT over every bonus row of a whole day of runs) needed temp
+  -- space no nightly run could rely on.
+  DROP TEMPORARY TABLE IF EXISTS tmp_bonus_list;
+  CREATE TEMPORARY TABLE tmp_bonus_list (
+    set_id     BINARY(16) NOT NULL PRIMARY KEY,
+    bonus_list TEXT NOT NULL
+  ) ENGINE=InnoDB;
 
-    /* compute numeric bounds in seconds */
-    SET start_sec = UNIX_TIMESTAMP(v_day);
-    SET end_sec   = UNIX_TIMESTAMP(DATE_ADD(v_day, INTERVAL 1 DAY)) - 1;
+  INSERT INTO tmp_bonus_list (set_id, bonus_list)
+  SELECT set_id, GROUP_CONCAT(bonus_id ORDER BY bonus_id ASC SEPARATOR ',')
+  FROM Mythistone.bonus_sets
+  GROUP BY set_id;
 
-    INSERT LOW_PRIORITY INTO Mythistone.aggregated_bonus_lists_new
+  SET v_cur = v_min_run;
+
+  WHILE v_cur <= v_max_run DO
+
+    INSERT INTO Mythistone.aggregated_bonus_lists_new
       (spec_id, season, hero_talent_id, item_id, bonus_list, run_count)
-    SELECT spec_id, season, hero_talent_id, item_id, bonus_list, run_count
+    SELECT c.spec_id, c.season, c.hero_talent_id, c.item_id, BL.bonus_list, c.run_count
     FROM (
+      -- one count per equipped item occurrence (run x member x item)
       SELECT
-        occ.spec_id,
-        occ.season,
-        occ.hero_talent_id,
-        occ.item_id,
-        occ.bonus_list,
+        M.spec_id,
+        R.season,
+        COALESCE(M.hero_talent_id, 0) AS hero_talent_id,
+        EQ.item_id,
+        EQ.bonus_set_id,
         COUNT(*) AS run_count
-      FROM (
-        /* one row per equipment occurrence for runs in this day that have bonus rows */
-        SELECT
-          M.spec_id,
-          R.season,
-          COALESCE(M.hero_talent_id, 0) AS hero_talent_id,
-          EQ.item_id,
-          COALESCE(GROUP_CONCAT(DISTINCT B.bonus_id ORDER BY B.bonus_id ASC SEPARATOR ','), '') AS bonus_list,
-          R.run_id,
-          EQ.equipment_id
-        FROM Mythistone.runs R
+      FROM Mythistone.runs R
         JOIN Mythistone.run_members RM ON R.run_id = RM.run_id
-        JOIN Mythistone.members M ON RM.member = M.member
-        JOIN Mythistone.equipment EQ ON M.member = EQ.member
-        JOIN Mythistone.bonus_sets B ON B.set_id = EQ.bonus_set_id
-        /* runs.timestamp is ms; a plain range keeps runs_timestamp_IDX usable */
-        WHERE R.`timestamp` >= start_sec * 1000
-          AND R.`timestamp` <  (end_sec + 1) * 1000
-        GROUP BY R.run_id, EQ.equipment_id
-      ) AS occ
-      WHERE occ.bonus_list <> ''
-      GROUP BY occ.spec_id, occ.season, occ.hero_talent_id, occ.item_id, occ.bonus_list
-    ) AS dt
+        JOIN Mythistone.members M      ON RM.member = M.member
+        JOIN Mythistone.equipment EQ   ON M.member = EQ.member
+      WHERE R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+        AND R.`timestamp` > v_cutoff_ms
+        AND EQ.bonus_set_id IS NOT NULL
+      GROUP BY M.spec_id, R.season, COALESCE(M.hero_talent_id, 0), EQ.item_id, EQ.bonus_set_id
+    ) c
+    JOIN tmp_bonus_list BL ON BL.set_id = c.bonus_set_id
     ON DUPLICATE KEY UPDATE
-      run_count = Mythistone.aggregated_bonus_lists_new.run_count + dt.run_count;
+      -- qualified: the derived table has a run_count column too
+      run_count = Mythistone.aggregated_bonus_lists_new.run_count + c.run_count;
 
-    SET i = i + 1;
+    SET v_cur = v_cur + v_batch_size;
+
   END WHILE;
 
-  RENAME TABLE Mythistone.aggregated_bonus_lists     TO Mythistone.aggregated_bonus_lists_old,
-               Mythistone.aggregated_bonus_lists_new TO Mythistone.aggregated_bonus_lists;
-  DROP TABLE Mythistone.aggregated_bonus_lists_old;
+  DROP TEMPORARY TABLE IF EXISTS tmp_bonus_list;
+
+  CALL sp_swap_public_table('aggregated_bonus_lists');
 END;
 
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_bonus_sets_gc`()
@@ -2977,6 +2990,16 @@ BEGIN
 
   DELETE FROM Mythistone.agg_pipeline_log WHERE started_at < NOW() - INTERVAL 30 DAY;
   DELETE FROM Mythistone.agg_lock_diag    WHERE captured_at < NOW() - INTERVAL 30 DAY;
+
+  -- A step whose session was killed, or lost to a server restart, never reaches
+  -- its own log update and would look like it is still running forever. Nothing
+  -- else can be mid-step here (the caller holds the agg_pipeline lock), so every
+  -- open row belongs to a run that died.
+  UPDATE Mythistone.agg_pipeline_log
+     SET finished_at = NOW(),
+         error = 'interrupted: the session ended before this step finished (server restart or KILL)'
+   WHERE finished_at IS NULL
+     AND LEFT(step, 12) <> 'season_wipe:';
 
   -- detail aggregates
   CALL sp_run_agg_step('equipment');

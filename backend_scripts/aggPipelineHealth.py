@@ -4,10 +4,12 @@
 sp_run_agg_step records a failed step in agg_pipeline_log and moves on, so a
 broken aggregate would otherwise ship as yesterday's numbers with nothing
 flagging it. This fails the build when the latest pipeline run has a step that
-errored, or when no run started within --max-age-hours.
+errored, when a step was left unfinished by a dead session (the log shows it
+open but nothing holds the pipeline lock), or when no run started within
+--max-age-hours.
 
-A run that is still in progress is reported but does not fail: every aggregate
-swaps in atomically, so a build reading mid-run sees consistent tables.
+A run that really is still in progress is reported but does not fail: every
+aggregate swaps in atomically, so a build reading mid-run sees consistent tables.
 """
 import argparse
 import os
@@ -61,6 +63,16 @@ def main():
     failed = [s for s in steps if s["error"] and not s["error"].startswith("[ok after")]
     running = [s for s in steps if s["finished_at"] is None]
 
+    if running and not steps[0]["lock_held"]:
+        # The nightly event holds the agg_pipeline lock for its whole run. An open
+        # step with the lock free means the session died mid-step (killed, or the
+        # server restarted), so every step after it never ran either.
+        _summary(
+            f"Aggregation run from {steps[0]['started_at']} died during "
+            f"`{running[-1]['step']}`: the step never finished and no pipeline is running. "
+            "The aggregates built by the later steps are stale."
+        )
+        sys.exit(1)
     if failed:
         _summary(f"Aggregation run from {steps[0]['started_at']} has {len(failed)} failed step(s):")
         for s in failed:

@@ -6041,7 +6041,8 @@ def set_collector_wipe_state(paused, beat_ms):
 # not pipeline steps.
 FETCH_LATEST_AGG_RUN_SQL = """
 SELECT step, started_at, finished_at, error,
-       TIMESTAMPDIFF(SECOND, started_at, NOW()) AS age_seconds
+       TIMESTAMPDIFF(SECOND, started_at, NOW()) AS age_seconds,
+       IS_USED_LOCK('agg_pipeline') IS NOT NULL AS lock_held
 FROM agg_pipeline_log
 WHERE started_at >= (
         SELECT MAX(started_at) FROM agg_pipeline_log WHERE step = 'equipment'
@@ -6054,7 +6055,12 @@ ORDER BY id
 def fetch_latest_agg_run(connection, cursor):
     """Every step of the most recent nightly pipeline run, oldest first, as
     dicts: step, started_at, finished_at, error, age_seconds (since the step
-    started, by the DB clock). Empty when the pipeline has never run."""
+    started, by the DB clock) and lock_held. Empty when the pipeline has never run.
+
+    lock_held is whether a session holds the agg_pipeline named lock right now,
+    which the nightly event does for its whole run. A step with no finished_at
+    while the lock is free did not finish: its session was killed or the server
+    restarted, and sp_run_agg_step never got to write the error."""
     rows = fetch_with_retry(connection, cursor, FETCH_LATEST_AGG_RUN_SQL)
     return [
         {
@@ -6063,6 +6069,7 @@ def fetch_latest_agg_run(connection, cursor):
             "finished_at": row[2],
             "error": row[3],
             "age_seconds": int(row[4]) if row[4] is not None else None,
+            "lock_held": bool(row[5]),
         }
         for row in rows
     ]
