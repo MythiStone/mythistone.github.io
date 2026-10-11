@@ -43,3 +43,6 @@ data/socials.json
 data/social
 data/simc_io
 data/static/hotfixes.json
+assets/json/simdps_tierlist.json
+assets/json/talent_tags_index.json
+assets/json/tierlist_gear.json
