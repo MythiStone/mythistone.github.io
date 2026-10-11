@@ -2029,5 +2029,16 @@
         "persona": "hype_caster",
         "judge_score": 37.0,
         "timestamp": 1791669670459
+    },
+    "data/social/shortest_run_mplus_584_2_493785_1791408399000.png": {
+        "title": "Fastest Run: +2 The Blinding Vale",
+        "post_type": "shortest_run",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Someone ran a +2 Blinding Vale with 21 minutes to spare. The dungeon barely loaded #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "A +2 The Blinding Vale blitzed in 08:13.785 on the EU region is the quickest clear on record this season.\n\nCredit the group that ran it: Guardian Druid, Restoration Shaman, Retribution Paladin, Feral Druid, Elemental Shaman. That was 4 days ago. Every record here keeps moving as new keys get pushed.",
+        "post": "Someone ran a +2 Blinding Vale with 21 minutes to spare. The dungeon barely loaded #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "snarky_analyst",
+        "judge_score": 34.0,
+        "timestamp": 1791755531821
     }
 }
