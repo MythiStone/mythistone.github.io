@@ -354,6 +354,16 @@ CREATE TABLE `aggregated_npc_skip_rates` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.aggregated_record_runs definition
+
+CREATE TABLE `aggregated_record_runs` (
+  `season` int NOT NULL,
+  `record` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `run_id` int unsigned NOT NULL,
+  PRIMARY KEY (`season`,`record`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.aggregated_runs_per_dungeon_per_level definition
 
 CREATE TABLE `aggregated_runs_per_dungeon_per_level` (
@@ -366,6 +376,23 @@ CREATE TABLE `aggregated_runs_per_dungeon_per_level` (
   `depleted` bigint unsigned NOT NULL DEFAULT '0',
   `total_runs` bigint unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`season`,`dungeon_id`,`keystone_level`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.aggregated_runs_per_period_per_day definition
+
+CREATE TABLE `aggregated_runs_per_period_per_day` (
+  `season` int NOT NULL,
+  `region` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `period_id` int unsigned NOT NULL,
+  `day_in_week` tinyint unsigned NOT NULL,
+  `dungeon_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `tier_3` bigint unsigned NOT NULL DEFAULT '0',
+  `tier_2` bigint unsigned NOT NULL DEFAULT '0',
+  `tier_1` bigint unsigned NOT NULL DEFAULT '0',
+  `depleted` bigint unsigned NOT NULL DEFAULT '0',
+  `total_runs` bigint unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`season`,`region`,`period_id`,`day_in_week`,`dungeon_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -2662,6 +2689,96 @@ BEGIN
   DROP TABLE Mythistone.aggregated_missives_old;
 END;
 
+CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_record_runs`()
+BEGIN
+  -- Picks the season's record runs ('longest' = greatest duration, 'highest' =
+  -- top key level, then most time left on the timer) so page builds and the bot
+  -- resolve them by run_id instead of sorting the whole season. runs has no index
+  -- on either ordering, so each batch is a primary-key range and the batch winner
+  -- is compared against the running best. Ties keep the smallest run_id.
+  DECLARE v_max_season  INT          DEFAULT 0;
+  DECLARE v_min_run     INT UNSIGNED DEFAULT 0;
+  DECLARE v_max_run     INT UNSIGNED DEFAULT 0;
+  DECLARE v_cur         INT UNSIGNED DEFAULT 0;
+  DECLARE v_batch_size  INT UNSIGNED DEFAULT 200000; -- run_ids per pass
+  DECLARE v_run         INT UNSIGNED DEFAULT NULL;
+  DECLARE v_level       INT UNSIGNED DEFAULT NULL;
+  DECLARE v_metric      BIGINT       DEFAULT NULL;
+  DECLARE v_long_run    INT UNSIGNED DEFAULT NULL;
+  DECLARE v_long_dur    BIGINT       DEFAULT NULL;
+  DECLARE v_high_run    INT UNSIGNED DEFAULT NULL;
+  DECLARE v_high_level  INT UNSIGNED DEFAULT NULL;
+  DECLARE v_high_left   BIGINT       DEFAULT NULL;
+
+  CALL sp_agg_session_setup();
+
+  -- 1. Resolve current season
+  SELECT MAX(season) INTO v_max_season FROM Mythistone.runs;
+
+  -- 2. Find the run_id boundaries for this season
+  SELECT COALESCE(MIN(run_id), 1),
+         COALESCE(MAX(run_id), 0)
+    INTO v_min_run, v_max_run
+  FROM Mythistone.runs
+  WHERE season = v_max_season;
+
+  SET v_cur = v_min_run;
+
+  WHILE v_cur <= v_max_run DO
+
+    -- an empty batch leaves the INTO targets untouched, hence the reset
+    SET v_run = NULL;
+    SELECT R.run_id, R.duration
+      INTO v_run, v_metric
+    FROM Mythistone.runs R
+    WHERE R.season = v_max_season
+      AND R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+    ORDER BY R.duration DESC, R.run_id ASC
+    LIMIT 1;
+
+    IF v_run IS NOT NULL AND (v_long_run IS NULL OR v_metric > v_long_dur) THEN
+      SET v_long_run = v_run, v_long_dur = v_metric;
+    END IF;
+
+    -- CAST to SIGNED because duration is unsigned; over-time runs would underflow
+    SET v_run = NULL;
+    SELECT R.run_id, R.keystone_level,
+           CAST(DD.upgrade_1_duration AS SIGNED) - CAST(R.duration AS SIGNED)
+      INTO v_run, v_level, v_metric
+    FROM Mythistone.runs R
+    JOIN Mythistone.dungeon_data DD ON DD.dungeon_id = R.dungeon_id
+    WHERE R.season = v_max_season
+      AND R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+    ORDER BY R.keystone_level DESC,
+             (CAST(DD.upgrade_1_duration AS SIGNED) - CAST(R.duration AS SIGNED)) DESC,
+             R.run_id ASC
+    LIMIT 1;
+
+    IF v_run IS NOT NULL AND (v_high_run IS NULL
+        OR v_level > v_high_level
+        OR (v_level = v_high_level AND v_metric > v_high_left)) THEN
+      SET v_high_run = v_run, v_high_level = v_level, v_high_left = v_metric;
+    END IF;
+
+    SET v_cur = v_cur + v_batch_size;
+
+  END WHILE;
+
+  DROP TABLE IF EXISTS Mythistone.aggregated_record_runs_new, Mythistone.aggregated_record_runs_old;
+  CREATE TABLE Mythistone.aggregated_record_runs_new LIKE Mythistone.aggregated_record_runs;
+
+  IF v_long_run IS NOT NULL THEN
+    INSERT INTO Mythistone.aggregated_record_runs_new (season, record, run_id)
+    VALUES (v_max_season, 'longest', v_long_run);
+  END IF;
+  IF v_high_run IS NOT NULL THEN
+    INSERT INTO Mythistone.aggregated_record_runs_new (season, record, run_id)
+    VALUES (v_max_season, 'highest', v_high_run);
+  END IF;
+
+  CALL sp_swap_public_table('aggregated_record_runs');
+END;
+
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_runs_per_dungeon_per_level`()
 BEGIN
   DECLARE v_max_season  INT          DEFAULT 0;
@@ -2729,6 +2846,78 @@ BEGIN
   RENAME TABLE Mythistone.aggregated_runs_per_dungeon_per_level     TO Mythistone.aggregated_runs_per_dungeon_per_level_old,
                Mythistone.aggregated_runs_per_dungeon_per_level_new TO Mythistone.aggregated_runs_per_dungeon_per_level;
   DROP TABLE Mythistone.aggregated_runs_per_dungeon_per_level_old;
+END;
+
+CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_runs_per_period_per_day`()
+BEGIN
+  -- Season run counts per (region, reset period, day of that region's week,
+  -- dungeon), split by upgrade tier. One rollup for every dashboard read that
+  -- would otherwise range-join the whole runs table against season_periods at
+  -- page-build time: keys per week, the week-1 daily breakdown and the
+  -- last-two-weeks dungeon shares. Uses the same runs<->season_periods join as
+  -- sp_agg_key_throughput, so both tables cover the same (region, period) set.
+  DECLARE v_max_season  INT          DEFAULT 0;
+  DECLARE v_min_run     INT UNSIGNED DEFAULT 0;
+  DECLARE v_max_run     INT UNSIGNED DEFAULT 0;
+  DECLARE v_cur         INT UNSIGNED DEFAULT 0;
+  DECLARE v_batch_size  INT UNSIGNED DEFAULT 200000; -- run_ids per pass
+
+  CALL sp_agg_session_setup();
+
+  -- 1. Resolve current season
+  SELECT MAX(season) INTO v_max_season FROM Mythistone.runs;
+
+  -- 2. Find the run_id boundaries for this season
+  SELECT COALESCE(MIN(run_id), 1),
+         COALESCE(MAX(run_id), 0)
+    INTO v_min_run, v_max_run
+  FROM Mythistone.runs
+  WHERE season = v_max_season;
+
+  DROP TABLE IF EXISTS Mythistone.aggregated_runs_per_period_per_day_new, Mythistone.aggregated_runs_per_period_per_day_old;
+  CREATE TABLE Mythistone.aggregated_runs_per_period_per_day_new LIKE Mythistone.aggregated_runs_per_period_per_day;
+
+  SET v_cur = v_min_run;
+
+  WHILE v_cur <= v_max_run DO
+
+    INSERT INTO Mythistone.aggregated_runs_per_period_per_day_new
+      (season, region, period_id, day_in_week, dungeon_id, tier_3, tier_2, tier_1, depleted, total_runs)
+    SELECT
+      R.season,
+      R.region,
+      SP.period_id,
+      LEAST(GREATEST(FLOOR((R.timestamp - SP.start_timestamp) / 86400000) + 1, 1), 7) AS day_in_week,
+      R.dungeon_id,
+      SUM(CASE WHEN R.duration <= DD.upgrade_3_duration THEN 1 ELSE 0 END) AS tier_3,
+      SUM(CASE WHEN R.duration <= DD.upgrade_2_duration
+                   AND R.duration > DD.upgrade_3_duration THEN 1 ELSE 0 END) AS tier_2,
+      SUM(CASE WHEN R.duration <= DD.upgrade_1_duration
+                   AND R.duration > DD.upgrade_2_duration THEN 1 ELSE 0 END) AS tier_1,
+      SUM(CASE WHEN R.duration > DD.upgrade_1_duration THEN 1 ELSE 0 END) AS depleted,
+      COUNT(*) AS total_runs
+    FROM Mythistone.runs R
+    JOIN Mythistone.season_periods SP
+      ON SP.region = R.region
+     AND SP.season = R.season
+     AND R.timestamp >= SP.start_timestamp
+     AND R.timestamp <  SP.end_timestamp
+    JOIN Mythistone.dungeon_data DD ON DD.dungeon_id = R.dungeon_id
+    WHERE R.season = v_max_season
+      AND R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+    GROUP BY R.season, R.region, SP.period_id, day_in_week, R.dungeon_id
+    ON DUPLICATE KEY UPDATE
+      tier_3     = tier_3     + VALUES(tier_3),
+      tier_2     = tier_2     + VALUES(tier_2),
+      tier_1     = tier_1     + VALUES(tier_1),
+      depleted   = depleted   + VALUES(depleted),
+      total_runs = total_runs + VALUES(total_runs);
+
+    SET v_cur = v_cur + v_batch_size;
+
+  END WHILE;
+
+  CALL sp_swap_public_table('aggregated_runs_per_period_per_day');
 END;
 
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_session_setup`()
@@ -3026,6 +3215,8 @@ BEGIN
   CALL sp_run_agg_step('dungeon_comps');
   CALL sp_run_agg_step('dungeon_analytics');
   CALL sp_run_agg_step('key_throughput');
+  CALL sp_run_agg_step('runs_per_period_per_day');
+  CALL sp_run_agg_step('record_runs');
   CALL sp_run_agg_step('completion_heatmap');
   CALL sp_run_agg_step('runs_per_dungeon_per_level');
   -- reads runs_per_dungeon_per_level for the season dungeon list, so must run after it

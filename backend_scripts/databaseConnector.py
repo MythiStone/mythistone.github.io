@@ -2154,11 +2154,15 @@ WHERE season = %s
 """
 
 
-def _fetch_runs_rollup_with_fallback(connection, cursor, preagg_sql, fallback_sql, params):
-    """Read the nightly aggregated_runs_per_dungeon_per_level rollup; fall back
-    to the live full-season runs scan when the rollup is missing (migration not
+def _fetch_runs_rollup_with_fallback(
+    connection, cursor, preagg_sql, fallback_sql, params, fallback_params=None
+):
+    """Read a nightly runs rollup (aggregated_runs_per_dungeon_per_level,
+    aggregated_runs_per_period_per_day, aggregated_record_runs); fall back to
+    the live full-season runs scan when the rollup is missing (migration not
     applied yet) or holds nothing for the requested season (e.g. the season
-    flipped before the nightly pipeline ran)."""
+    flipped before the nightly pipeline ran). ``fallback_params`` defaults to
+    ``params``."""
     try:
         rows = fetch_with_retry(connection, cursor, preagg_sql, params)
     except mysql.connector.DatabaseError as err:
@@ -2171,8 +2175,11 @@ def _fetch_runs_rollup_with_fallback(connection, cursor, preagg_sql, fallback_sq
         for v in (row.values() if isinstance(row, dict) else row)
     ):
         return rows
-    print("aggregated_runs_per_dungeon_per_level unavailable or empty, falling back to live runs scan")
-    return fetch_with_retry(connection, cursor, fallback_sql, params)
+    print("nightly runs rollup unavailable or empty, falling back to live runs scan")
+    return fetch_with_retry(
+        connection, cursor, fallback_sql,
+        params if fallback_params is None else fallback_params,
+    )
 
 
 def fetch_total_season_runs(connection, cursor, season):
@@ -2342,6 +2349,36 @@ def fetch_max_key_run_per_spec(connection, cursor, spec_id, season):
     return top_run
 
 
+# A season record run resolved through the nightly aggregated_record_runs pick
+# (sp_agg_record_runs). Column order matches FETCH_MAX_KEY_SQL and
+# FETCH_LONGEST_KEY_RUN_SQL, the live full-season scans it stands in for.
+FETCH_RECORD_RUN_SQL = """
+SELECT r.dungeon_id,
+       r.keystone_level,
+       r.duration,
+       r.timestamp,
+       r.faction,
+       r.run_id,
+       r.region,
+       r.season,
+       rm.member,
+       m.spec_id
+FROM aggregated_record_runs ar
+JOIN runs r               ON r.run_id = ar.run_id
+LEFT JOIN run_members rm  ON rm.run_id = r.run_id
+LEFT JOIN members m       ON m.member = rm.member
+WHERE ar.season = %s AND ar.record = %s
+ORDER BY rm.member;
+"""
+
+
+def _fetch_record_run_rows(connection, cursor, season, record, live_sql):
+    return _fetch_runs_rollup_with_fallback(
+        connection, cursor, FETCH_RECORD_RUN_SQL, live_sql,
+        (season, record), fallback_params=(season,),
+    )
+
+
 FETCH_MAX_KEY_SQL = """
 SELECT cr.*, mb.member AS member_id, mb.spec_id AS member_spec_id
 FROM runs cr
@@ -2364,9 +2401,8 @@ ORDER BY mb.member;
 
 
 def fetch_max_key_run(connection, cursor, season):
-    """Fetch the max key run for a specific spec and season from the database."""
-    params = (season,)
-    raw = fetch_with_retry(connection, cursor, FETCH_MAX_KEY_SQL, params)
+    """Fetch the season's highest key run (nightly pick, live scan as fallback)."""
+    raw = _fetch_record_run_rows(connection, cursor, season, "highest", FETCH_MAX_KEY_SQL)
 
     if not raw:
         print(f"No runs found in season {season}")
@@ -2446,8 +2482,9 @@ def fetch_longest_run(connection, cursor, season):
     Fetch the single longest run for a season (ties broken by smallest run_id),
     returning the same top_run dict structure as fetch_max_key_run.
     """
-    params = (season,)
-    rows = fetch_with_retry(connection, cursor, FETCH_LONGEST_KEY_RUN_SQL, params)
+    rows = _fetch_record_run_rows(
+        connection, cursor, season, "longest", FETCH_LONGEST_KEY_RUN_SQL
+    )
 
     if not rows:
         print(f"No runs found in season {season}")
@@ -2694,165 +2731,165 @@ def fetch_spec_mean_character_score_above(connection, cursor, season, min_score)
     ]
 
 
-FETCH_RUNS_PER_PERIOD = """
--- params: (season, season)
-SELECT
-  t.week,
-  t.day_in_week,
-  SUM(CASE WHEN t.upgrade_tier = '3' THEN 1 ELSE 0 END) AS tier_3,
-  SUM(CASE WHEN t.upgrade_tier = '2' THEN 1 ELSE 0 END) AS tier_2,
-  SUM(CASE WHEN t.upgrade_tier = '1' THEN 1 ELSE 0 END) AS tier_1,
-  SUM(CASE WHEN t.upgrade_tier = 'depleted' THEN 1 ELSE 0 END) AS depleted,
-  COUNT(*) AS total_runs
-FROM (
-  SELECT
-    rp.week_number AS week,
-    LEAST(GREATEST(FLOOR((r.timestamp - rp.start_timestamp) / 86400000) + 1, 1), 7) AS day_in_week,
-    CASE
-      WHEN r.duration IS NOT NULL AND dd.upgrade_3_duration IS NOT NULL AND r.duration <= dd.upgrade_3_duration THEN '3'
-      WHEN r.duration IS NOT NULL AND dd.upgrade_2_duration IS NOT NULL AND r.duration <= dd.upgrade_2_duration THEN '2'
-      WHEN r.duration IS NOT NULL AND dd.upgrade_1_duration IS NOT NULL AND r.duration <= dd.upgrade_1_duration THEN '1'
-      ELSE 'depleted'
-    END AS upgrade_tier
-  FROM runs r
-  LEFT JOIN dungeon_data dd ON dd.dungeon_id = r.dungeon_id
-  JOIN (
-    -- compute week_number per (season, region) without window functions
-    SELECT
-      sp.region,
-      sp.season,
-      sp.period_id,
-      sp.start_timestamp,
-      sp.end_timestamp,
-      (
-        SELECT COUNT(*)
-        FROM season_periods sp2
-        WHERE sp2.season = sp.season
-          AND sp2.region = sp.region
-          AND (
-               sp2.start_timestamp < sp.start_timestamp
-               OR (sp2.start_timestamp = sp.start_timestamp AND sp2.period_id <= sp.period_id)
-          )
-      ) AS week_number
-    FROM season_periods sp
-    WHERE sp.season = %s
-  ) AS rp
-    ON r.region = rp.region
-   AND r.season = rp.season
-   AND r.timestamp >= rp.start_timestamp
-   AND r.timestamp < rp.end_timestamp
-  WHERE r.season = %s
-) AS t
-GROUP BY t.week, t.day_in_week
-ORDER BY t.week, t.day_in_week;
+# Upgrade-tier split of a `runs r` / `dungeon_data dd` join. Shared by the live
+# per-period reads below so they bucket runs exactly like
+# sp_agg_runs_per_period_per_day.
+_RUN_TIER_COUNTS_SQL = """
+  SUM(CASE WHEN r.duration <= dd.upgrade_3_duration THEN 1 ELSE 0 END) AS tier_3,
+  SUM(CASE WHEN r.duration <= dd.upgrade_2_duration
+               AND r.duration > dd.upgrade_3_duration THEN 1 ELSE 0 END) AS tier_2,
+  SUM(CASE WHEN r.duration <= dd.upgrade_1_duration
+               AND r.duration > dd.upgrade_2_duration THEN 1 ELSE 0 END) AS tier_1,
+  SUM(CASE WHEN r.duration > dd.upgrade_1_duration THEN 1 ELSE 0 END) AS depleted,
+  COUNT(*) AS total_runs"""
+
+PREAGG_RUNS_PER_PERIOD_PER_DAY_SQL = """
+SELECT region, period_id, day_in_week,
+       SUM(tier_3), SUM(tier_2), SUM(tier_1), SUM(depleted), SUM(total_runs)
+FROM aggregated_runs_per_period_per_day
+WHERE season = %s
+GROUP BY region, period_id, day_in_week;
 """
 
-
-def fetch_runs_per_period(connection, cursor, season):
-    params = (season, season)
-    rows = fetch_with_retry(connection, cursor, FETCH_RUNS_PER_PERIOD, params)
-    if not rows:
-        return []
-    return [
-        {
-            "week": int(row[0]),
-            "day": int(row[1]),
-            "upgrade_3": int(row[2]),
-            "upgrade_2": int(row[3]),
-            "upgrade_1": int(row[4]),
-            "depleted": int(row[5]),
-            "total_runs": int(row[6]),
-        }
-        for row in rows
-    ]
-
-
-# Per-(region, period, day) run counts straight from the runs table. Used only
-# for the season week-1 "Key Throughput" daily breakdown, where per-region daily
-# lines are needed but aggregated_key_throughput has no per-day grain. Keyed by
-# period_id (not a COUNT-derived week number) so callers can line each region up
-# with the SAME period_id it carries in aggregated_key_throughput. The join is
-# the exact runs<->season_periods timestamp join sp_agg_key_throughput uses to
-# build aggregated_key_throughput, so a (region, period) present there resolves
-# to the same day rows here. day_in_week is region-relative (days counted from
-# that region's own period start).
-FETCH_RUNS_PER_REGION_DAY = """
--- params: (season,)
+LIVE_RUNS_PER_PERIOD_PER_DAY_SQL = f"""
 SELECT
-  sp.region,
+  r.region,
   sp.period_id,
-  LEAST(GREATEST(FLOOR((r.timestamp - sp.start_timestamp) / 86400000) + 1, 1), 7) AS day_in_week,
-  COUNT(*) AS run_count
+  LEAST(GREATEST(FLOOR((r.timestamp - sp.start_timestamp) / 86400000) + 1, 1), 7) AS day_in_week,{_RUN_TIER_COUNTS_SQL}
 FROM runs r
 JOIN season_periods sp
   ON sp.region = r.region
  AND sp.season = r.season
  AND r.timestamp >= sp.start_timestamp
  AND r.timestamp <  sp.end_timestamp
+JOIN dungeon_data dd ON dd.dungeon_id = r.dungeon_id
 WHERE r.season = %s
-GROUP BY sp.region, sp.period_id, day_in_week
-ORDER BY sp.region, sp.period_id, day_in_week;
+GROUP BY r.region, sp.period_id, day_in_week;
 """
 
 
-def fetch_runs_per_region_day(connection, cursor, season):
-    params = (season,)
-    rows = fetch_with_retry(connection, cursor, FETCH_RUNS_PER_REGION_DAY, params)
-    if not rows:
-        return []
+def fetch_runs_per_period_per_day(connection, cursor, season):
+    """Season run counts per (region, reset period, day of that region's week),
+    split by upgrade tier. Feeds the dashboard "Keys per Week" card and the
+    season week-1 daily "Key Throughput" lines.
+
+    Reads the nightly aggregated_runs_per_period_per_day rollup
+    (sp_agg_runs_per_period_per_day) instead of range-joining the whole runs
+    table against season_periods at page-build time. day is region-relative
+    (days counted from that region's own period start), and the (region, period)
+    set matches aggregated_key_throughput because both procs use one join.
+    """
+    rows = _fetch_runs_rollup_with_fallback(
+        connection, cursor,
+        PREAGG_RUNS_PER_PERIOD_PER_DAY_SQL, LIVE_RUNS_PER_PERIOD_PER_DAY_SQL, (season,),
+    )
     return [
         {
             "region": row[0],
             "period_id": int(row[1]),
             "day": int(row[2]),
-            "run_count": int(row[3]),
+            "upgrade_3": int(row[3]),
+            "upgrade_2": int(row[4]),
+            "upgrade_1": int(row[5]),
+            "depleted": int(row[6]),
+            "total_runs": int(row[7]),
         }
-        for row in rows
+        for row in rows or []
     ]
 
 
-# Latest run timestamp per region for a season. The dashboard generator's period
-# self-heal compares this against the last season_period end it knows about to
-# detect a region whose current period is missing from season_periods.
-FETCH_REGION_RUN_EXTENT = """
-SELECT region, MAX(timestamp) AS max_ts
-FROM runs
-WHERE season = %s
-GROUP BY region;
+FETCH_SEASON_PERIOD_WEEKS_SQL = """
+-- week number per (season, region) without window functions
+SELECT
+  sp.region,
+  sp.period_id,
+  (
+    SELECT COUNT(*)
+    FROM season_periods sp2
+    WHERE sp2.season = sp.season
+      AND sp2.region = sp.region
+      AND (
+           sp2.start_timestamp < sp.start_timestamp
+           OR (sp2.start_timestamp = sp.start_timestamp AND sp2.period_id <= sp.period_id)
+      )
+  ) AS week_number
+FROM season_periods sp
+WHERE sp.season = %s;
 """
 
 
-def fetch_region_run_extent(connection, cursor, season):
-    rows = fetch_with_retry(connection, cursor, FETCH_REGION_RUN_EXTENT, (season,))
-    if not rows:
-        return {}
-    return {
-        (row[0].lower() if isinstance(row[0], str) else row[0]): (
-            int(row[1]) if row[1] is not None else None
+def fetch_season_period_weeks(connection, cursor, season):
+    """{(region, period_id): week number}, ranking each region's periods by
+    start within the season, so regions with different period ids for the same
+    reset week land in one weekly bucket."""
+    rows = fetch_with_retry(connection, cursor, FETCH_SEASON_PERIOD_WEEKS_SQL, (season,))
+    return {(row[0].lower(), int(row[1])): int(row[2]) for row in rows or []}
+
+
+# Newest run of one region at/after a timestamp. The lower bound plus the
+# descending LIMIT 1 keep this on runs_timestamp_IDX: it stops at the first
+# matching row instead of scanning the season.
+FETCH_REGION_LATEST_RUN_SINCE = """
+SELECT timestamp
+FROM runs
+WHERE season = %s AND region = %s AND timestamp >= %s
+ORDER BY timestamp DESC
+LIMIT 1;
+"""
+
+
+def fetch_region_run_extent(connection, cursor, season, region_since):
+    """{region: latest run timestamp} for every region in ``region_since``
+    ({region: lower-bound ts}) that has a run at or after its bound. The
+    dashboard generator's period self-heal passes each region's last known
+    season_period end, so a region appears here exactly when its current period
+    is missing from season_periods."""
+    extents = {}
+    for region, since_ts in region_since.items():
+        rows = fetch_with_retry(
+            connection, cursor, FETCH_REGION_LATEST_RUN_SINCE, (season, region, since_ts)
         )
-        for row in rows
-    }
+        if rows:
+            extents[region] = int(rows[0][0])
+    return extents
 
 
-# run_count + max_ts for one (region, period) window straight from runs, matching
-# the runs<->season_periods timestamp join. Lets the self-heal inject a healed
-# region's throughput row in memory without rebuilding aggregated_key_throughput.
-FETCH_PERIOD_RUN_STATS = """
-SELECT COUNT(*) AS run_count, MAX(timestamp) AS max_ts
-FROM runs
-WHERE season = %s AND region = %s AND timestamp >= %s AND timestamp < %s;
+# Per-day run counts + latest run ts for one (region, period) window straight
+# from runs, with the same day/tier bucketing as sp_agg_runs_per_period_per_day.
+# The timestamp range keeps it on runs_timestamp_IDX.
+FETCH_PERIOD_RUNS_PER_DAY = f"""
+-- params: (period start, season, region, period start, period end)
+SELECT
+  LEAST(GREATEST(FLOOR((r.timestamp - %s) / 86400000) + 1, 1), 7) AS day_in_week,{_RUN_TIER_COUNTS_SQL},
+  MAX(r.timestamp) AS max_ts
+FROM runs r
+JOIN dungeon_data dd ON dd.dungeon_id = r.dungeon_id
+WHERE r.season = %s AND r.region = %s AND r.timestamp >= %s AND r.timestamp < %s
+GROUP BY day_in_week;
 """
 
 
-def fetch_period_run_stats(connection, cursor, season, region, start_ts, end_ts):
+def fetch_period_runs_per_day(connection, cursor, season, region, start_ts, end_ts):
+    """Live rows for one (region, period) window, shaped like
+    fetch_runs_per_period_per_day minus region/period_id and plus ``max_ts``.
+    Lets the self-heal fold a just-healed period into this render without
+    waiting for the nightly rollups to pick it up."""
     rows = fetch_with_retry(
-        connection, cursor, FETCH_PERIOD_RUN_STATS, (season, region, start_ts, end_ts)
+        connection, cursor, FETCH_PERIOD_RUNS_PER_DAY,
+        (start_ts, season, region, start_ts, end_ts),
     )
-    if not rows:
-        return {"run_count": 0, "max_ts": None}
-    run_count = int(rows[0][0] or 0)
-    max_ts = int(rows[0][1]) if rows[0][1] is not None else None
-    return {"run_count": run_count, "max_ts": max_ts}
+    return [
+        {
+            "day": int(row[0]),
+            "upgrade_3": int(row[1]),
+            "upgrade_2": int(row[2]),
+            "upgrade_1": int(row[3]),
+            "depleted": int(row[4]),
+            "total_runs": int(row[5]),
+            "max_ts": int(row[6]),
+        }
+        for row in rows or []
+    ]
 
 
 FETCH_KEY_THROUGHPUT_SQL = """
@@ -3334,14 +3371,34 @@ JOIN dungeon_data dd ON dd.dungeon_id = r.dungeon_id
 GROUP BY sp.period_id, r.dungeon_id
 """
 
+PREAGG_DUNGEON_TIMED_RUNS_LAST_TWO_PERIODS_SQL = """
+-- params: (season, season)
+SELECT
+  a.period_id,
+  a.dungeon_id,
+  SUM(a.tier_3 + a.tier_2 + a.tier_1) AS timed_runs
+FROM (
+  SELECT MAX(period_id) AS cur_period
+  FROM season_periods
+  WHERE season = %s
+    AND start_timestamp <= CAST(UNIX_TIMESTAMP() * 1000 AS UNSIGNED)
+) AS latest
+JOIN aggregated_runs_per_period_per_day a
+  ON a.season = %s
+ AND a.period_id >= latest.cur_period - 1
+GROUP BY a.period_id, a.dungeon_id
+"""
+
 
 def fetch_dungeon_timed_runs_last_two_periods(connection, cursor, season):
     """Timed-run counts per dungeon for the two most recent weekly periods that
     have started (per-region reset windows from season_periods). Feeds the
     week-over-week trend panel on the dungeon popularity image."""
     params = (season, season)
-    rows = fetch_with_retry(
-        connection, cursor, DUNGEON_TIMED_RUNS_LAST_TWO_PERIODS_SQL, params
+    rows = _fetch_runs_rollup_with_fallback(
+        connection, cursor,
+        PREAGG_DUNGEON_TIMED_RUNS_LAST_TWO_PERIODS_SQL,
+        DUNGEON_TIMED_RUNS_LAST_TWO_PERIODS_SQL, params,
     )
     if not rows:
         return []

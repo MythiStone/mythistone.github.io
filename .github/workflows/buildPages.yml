@@ -464,6 +464,7 @@ jobs:
           # Thursday). Gated + fail-soft: absent creds just skip the heal.
           BLIZ_CLIENT_ID: ${{ secrets.BLIZ_CLIENT_ID }}
           BLIZ_CLIENT_SECRET: ${{ secrets.BLIZ_CLIENT_SECRET }}
+          PYTHONUNBUFFERED: "1"
         run: |
           python backend_scripts/generateDashboardPage.py \
             --template templates/dashboard.html \

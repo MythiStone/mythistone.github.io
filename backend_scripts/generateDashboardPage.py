@@ -29,7 +29,7 @@ try:
         4,
     )
 except Exception as pool_err:
-    print(f"WARNING: database connection pool unavailable: {pool_err}")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] WARNING: database connection pool unavailable: {pool_err}")
 
 # Re-exported from chartData for existing importers; the implementations moved
 # there so the image_generation renderers can use them without this module.
@@ -45,9 +45,29 @@ from chartData import (
 METRIC_KEYS = ("total_runs", "depleted", "upgrade_1", "upgrade_2", "upgrade_3")
 
 
+def collapse_runs_per_week_day(period_day_rows, period_weeks):
+    """Fold the per-(region, period, day) rows of fetch_runs_per_period_per_day
+    into one row per (week, day) across regions, the shape createKeysPerWeek
+    consumes. ``period_weeks`` is fetch_season_period_weeks. Rows whose period
+    is no longer in season_periods (a removed pre-season period) are dropped.
+    """
+    buckets = defaultdict(lambda: dict.fromkeys(METRIC_KEYS, 0))
+    for r in period_day_rows:
+        week = period_weeks.get((r["region"].lower(), r["period_id"]))
+        if week is None:
+            continue
+        bucket = buckets[(week, r["day"])]
+        for k in METRIC_KEYS:
+            bucket[k] += r[k]
+    return [
+        {"week": week, "day": day, **counts}
+        for (week, day), counts in sorted(buckets.items())
+    ]
+
+
 def createKeysPerWeek(rows):
     """Build the "Keys per Week" datasets + labels from the per-(week, day) rows
-    returned by fetch_runs_per_period.
+    returned by collapse_runs_per_week_day.
 
     Two grains, decided by how much of the season has elapsed:
       * >= 2 weeks of data -> one point per week (the normal weekly view).
@@ -376,6 +396,15 @@ def build_period_bounds(period_info):
     return bounds
 
 
+def _region_last_period_ends(period_bounds):
+    """{region: end of the last season_period we know about}."""
+    region_max_end = {}
+    for (reg, _pid), (_start, end) in period_bounds.items():
+        if end is not None:
+            region_max_end[reg] = max(region_max_end.get(reg, end), end)
+    return region_max_end
+
+
 def _region_period_gaps(period_bounds, region_extents):
     """Regions whose latest run falls at/after the last season_period we know
     about — i.e. their current period is missing from season_periods/periods.json.
@@ -386,10 +415,7 @@ def _region_period_gaps(period_bounds, region_extents):
     when a region's current period is absent, e.g. KR/TW between the Wednesday
     getStaticData period fetch and their Thursday reset.
     """
-    region_max_end = {}
-    for (reg, _pid), (_start, end) in period_bounds.items():
-        if end is not None:
-            region_max_end[reg] = max(region_max_end.get(reg, end), end)
+    region_max_end = _region_last_period_ends(period_bounds)
     gaps = []
     for reg, max_ts in region_extents.items():
         if max_ts is None:
@@ -419,9 +445,9 @@ def _rewrite_periods_json(healed):
                 periods.sort(key=lambda p: int(p["start_timestamp"]))
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
-        print(f"Self-heal: rewrote {path} with {len(healed)} healed period(s)")
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Self-heal: rewrote {path} with {len(healed)} healed period(s)")
     except Exception as e:
-        print(f"WARNING: self-heal could not rewrite periods.json: {e}")
+        print(f"[{datetime.now(timezone.utc).isoformat()}] WARNING: self-heal could not rewrite periods.json: {e}")
 
 
 def heal_missing_periods(
@@ -470,7 +496,7 @@ def heal_missing_periods(
             )
             period_bounds[(region, pid)] = (start, end)
             healed.append((region, pid, start, end))
-            print(f"Self-heal: added missing period {pid} for {region}")
+            print(f"[{datetime.now(timezone.utc).isoformat()}] Self-heal: added missing period {pid} for {region}")
     if healed:
         databaseConnector.commit_changes(conn)
         _rewrite_periods_json(healed)
@@ -483,15 +509,15 @@ def _daily_throughput_series(rows, period_bounds, region_day_rows):
     aggregated_key_throughput is keyed per (season, region, period) with only a
     run_count + max_ts, so it has no per-day grain and must not gain one. In the
     season's first week a single weekly point looks sparse, so the chart is drawn
-    from raw per-(region, period, day) run counts (fetch_runs_per_region_day).
+    from per-(region, period, day) run counts (fetch_runs_per_period_per_day).
     The KPI headline still comes from the weekly rows (see compute_key_throughput);
     only the chart labels + series switch to day grain.
 
     The region set is taken from the aggregated `rows` (the SAME canonical set
-    the weekly chart draws), NOT from the runs query, so the two charts never
+    the weekly chart draws), NOT from the per-day rows, so the two charts never
     disagree on which regions appear. Each region is lined up with the exact
     period_id it carries in `rows`, and its day counts are pulled for that same
-    period_id (aggregated_key_throughput and the runs query share one
+    period_id (aggregated_key_throughput and the per-day rollup share one
     runs<->season_periods join, so a region present in `rows` resolves to day
     rows here). A region in `rows` with no day rows for its period draws an
     all-None (empty) line rather than being dropped, keeping the legend in step.
@@ -872,13 +898,13 @@ def write_dashboard_data(
     out_path = os.path.join(json_out_dir, "dashboard_data.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(dashboard_data, f, separators=(",", ":"))
-    print(f"Wrote {out_path}")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Wrote {out_path}")
 
 
 def main(template_path, output_dir):
 
     from image_generation.dungeon_popularity_ease import create_dungeon_popularity_vs_ease_img
-    print("Generating Dashboard page...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Generating Dashboard page...")
     env = make_jinja_env(os.path.dirname(template_path))
     env.filters["humanize"] = humanize_number
     env.filters["duration"] = format_duration
@@ -901,7 +927,7 @@ def main(template_path, output_dir):
     dungeon_nav = generateDungeonNav(dungeon_lookup)
 
     template = env.get_template(os.path.basename(template_path))
-    print("Fetching data from database...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching data from database...")
     current_season_id = int(season_info["blizzard_season_id"])
     # Static period bounds from periods.json (the self-heal below may add to this
     # in memory and rewrite the file). compute_key_throughput reads bounds from
@@ -912,47 +938,51 @@ def main(template_path, output_dir):
     with closing(databaseConnector.get_connection()) as conn:
         cursor = conn.cursor()
         databaseConnector.configure_read_session(conn, cursor)
-        print("fetching runs...")
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching runs...")
         longest_run = databaseConnector.fetch_longest_run(
             conn, cursor, current_season_id
         )
         highest_run = databaseConnector.fetch_max_key_run(
             conn, cursor, current_season_id
         )
-        print("fetching spec run counts...")
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching spec run counts...")
         spec_run_counts = databaseConnector.fetch_spec_run_counts(
             conn, cursor
         )
-        print("fetching spec run counts per level...")
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching spec run counts per level...")
         counts_per_level = databaseConnector.fetch_spec_run_counts_per_level(
             conn, cursor
         )
-        print("fetching runs per period...")
-        runs_per_period = databaseConnector.fetch_runs_per_period(
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching runs per period...")
+        runs_per_period_day = databaseConnector.fetch_runs_per_period_per_day(
             conn, cursor, current_season_id
         )
-        print("fetching dungeon run data...")
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching dungeon run data...")
         dungeon_data = databaseConnector.fetch_runs_per_dungeon(
             conn, cursor, current_season_id
         )
-        print("fetching dungeon runs per level...")
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching dungeon runs per level...")
         dungeon_runs_per_level = databaseConnector.fetch_runs_per_dungeon_per_level(
             conn, cursor, current_season_id
         )
-        print("fetching spec upgrades...")
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching spec upgrades...")
         spec_upgrades = databaseConnector.fetch_spec_upgrades(
             conn, cursor
         )
-        print("fetching top-50 average score...")
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching top-50 average score...")
         top50_avg_score = databaseConnector.fetch_top50_avg_score(
             conn, cursor, current_season_id
         )
-        print("fetching per-spec mean character score above top-1% cutoff...")
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching per-spec mean character score above top-1% cutoff...")
         elite_char_score = databaseConnector.fetch_spec_mean_character_score_above(
             conn, cursor, current_season_id, top1pct_score
         )
-        print("fetching key throughput...")
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching key throughput...")
         key_throughput_rows = databaseConnector.fetch_key_throughput(
+            conn, cursor, current_season_id
+        )
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching completion heatmap...")
+        completion_heatmap_rows = databaseConnector.fetch_completion_heatmap(
             conn, cursor, current_season_id
         )
         # On-demand period self-heal (gated, fail-soft): if any region has runs
@@ -960,8 +990,14 @@ def main(template_path, output_dir):
         # e.g. KR/TW between the Wednesday period fetch and their Thursday reset),
         # fetch the missing bounds from Blizzard so the region rejoins the runs.
         # Wrapped so any failure just renders with the data we already have.
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Checking for missing season periods...")
+        region_since = _region_last_period_ends(period_bounds)
+        # a region with runs (per the heatmap rollup) but no known period at all
+        # is probed from 0, which reports it as a gap
+        for r in completion_heatmap_rows:
+            region_since.setdefault(r["region"].lower(), 0)
         region_extents = databaseConnector.fetch_region_run_extent(
-            conn, cursor, current_season_id
+            conn, cursor, current_season_id, region_since
         )
         healed_periods = []
         try:
@@ -970,52 +1006,73 @@ def main(template_path, output_dir):
             )
         except Exception as heal_err:
             print(
-                f"WARNING: period self-heal skipped (rendering with existing "
+                f"[{datetime.now(timezone.utc).isoformat()}] WARNING: period self-heal skipped (rendering with existing "
                 f"data): {heal_err}"
             )
         if healed_periods:
-            # the healed regions' late runs now join season_periods: refresh the
-            # run-based series and inject the healed (region, period) throughput
-            # rows in memory (no aggregated_key_throughput rebuild / RENAME).
-            runs_per_period = databaseConnector.fetch_runs_per_period(
-                conn, cursor, current_season_id
-            )
+            # A healed (region, period) only reaches the nightly rollups on the
+            # pipeline run after its season_periods row exists. Until then fold
+            # it into this render from a live read bounded to that one window
+            # (no rollup rebuild / RENAME). Once a rollup carries it, skip it
+            # there or the period would be counted twice.
+            in_throughput = {
+                (r["region"].lower(), r["period_id"]) for r in key_throughput_rows
+            }
+            in_period_days = {
+                (r["region"].lower(), r["period_id"]) for r in runs_per_period_day
+            }
             for region, pid, start, end in healed_periods:
-                stats = databaseConnector.fetch_period_run_stats(
+                if (region, pid) in in_throughput and (region, pid) in in_period_days:
+                    continue
+                day_rows = databaseConnector.fetch_period_runs_per_day(
                     conn, cursor, current_season_id, region, start, end
                 )
-                if stats["run_count"]:
+                if not day_rows:
+                    continue
+                if (region, pid) not in in_period_days:
+                    runs_per_period_day.extend(
+                        {"region": region, "period_id": pid, **d} for d in day_rows
+                    )
+                if (region, pid) not in in_throughput:
                     key_throughput_rows.append(
                         {
                             "region": region,
                             "period_id": pid,
-                            "run_count": stats["run_count"],
-                            "max_ts": stats["max_ts"],
+                            "run_count": sum(d["total_runs"] for d in day_rows),
+                            "max_ts": max(d["max_ts"] for d in day_rows),
                         }
                     )
+        # week numbers are read after the self-heal so healed periods have one
+        runs_per_period = collapse_runs_per_week_day(
+            runs_per_period_day,
+            databaseConnector.fetch_season_period_weeks(
+                conn, cursor, current_season_id
+            ),
+        )
         # Season week 1 (single week of data) redraws the throughput chart as
-        # per-region daily lines. Fetch the raw per-(region, day) run counts only
-        # then, so the normal 2+ week path pays for no extra scan. Same
-        # single-week rule createKeysPerWeek uses to pick the "day" grain. Done
-        # after the self-heal so healed periods are included.
+        # per-region daily lines. Same single-week rule createKeysPerWeek uses
+        # to pick the "day" grain.
         key_throughput_region_day_rows = None
         if len({r["week"] for r in runs_per_period}) == 1:
-            print("fetching per-region daily runs (season week 1)...")
-            key_throughput_region_day_rows = (
-                databaseConnector.fetch_runs_per_region_day(
-                    conn, cursor, current_season_id
-                )
-            )
-        print("fetching completion heatmap...")
-        completion_heatmap_rows = databaseConnector.fetch_completion_heatmap(
+            key_throughput_region_day_rows = [
+                {
+                    "region": r["region"],
+                    "period_id": r["period_id"],
+                    "day": r["day"],
+                    "run_count": r["total_runs"],
+                }
+                for r in runs_per_period_day
+            ]
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Fetching dungeon share trend...")
+        dungeon_period_rows = databaseConnector.fetch_dungeon_timed_runs_last_two_periods(
             conn, cursor, current_season_id
         )
-    print("Creating Keys Per Week...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Creating Keys Per Week...")
     # grain ("week" vs the season-week-1 "day" breakdown) is decided here from
     # the per-(week, day) run counts and shared with the throughput chart below
     # so both cards stay in the same grain.
     period_datasets, period_labels, period_grain = createKeysPerWeek(runs_per_period)
-    print("Computing key throughput...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Computing key throughput...")
     generated_at = datetime.now(timezone.utc).timestamp()
     key_throughput = compute_key_throughput(
         key_throughput_rows,
@@ -1023,12 +1080,12 @@ def main(template_path, output_dir):
         now_ts=generated_at * 1000.0,
         daily_region_rows=key_throughput_region_day_rows,
     )
-    print("Computing patch annotations...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Computing patch annotations...")
     patch_list = load_json(os.path.join(LOOKUP_DIR, "patches.json"))
     patch_annotations = compute_patch_annotations(patch_list, period_bounds)
-    print("Computing completion heatmap...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Computing completion heatmap...")
     completion_heatmap = compute_completion_heatmap(completion_heatmap_rows)
-    print("Assembling Spec Run Counts per Level...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Assembling Spec Run Counts per Level...")
     key_levels, datasets_json = assemble_spec_level_datasets(
         counts_per_level,
         spec_lookup=spec_lookup,
@@ -1036,15 +1093,15 @@ def main(template_path, output_dir):
         top_n=None,  # list all
         include_other=True,
     )
-    print("Creating Spec Scatter...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Creating Spec Scatter...")
     scatter_data = create_spec_scatter(
         spec_upgrades, spec_lookup, class_lookup, highest_run
     )
-    print("Creating Top-50 Score Scatter...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Creating Top-50 Score Scatter...")
     top50_score_scatter = create_spec_score_scatter(
         top50_avg_score, spec_run_counts, spec_lookup, class_lookup, "avg_score"
     )
-    print("Creating Top-1% Character Score Scatters...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Creating Top-1% Character Score Scatters...")
     # x = avg spec score of characters whose spec score clears the top-1% cutoff.
     # Graph A vs overall popularity, Graph B vs the count of those elite chars.
     elite_char_overall_scatter = create_spec_score_scatter(
@@ -1056,19 +1113,19 @@ def main(template_path, output_dir):
     elite_char_top_scatter = create_spec_score_scatter(
         elite_char_score, elite_char_counts, spec_lookup, class_lookup, "mean_score"
     )
-    print("Creating Dungeon Popularity...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Creating Dungeon Popularity...")
     dungeon_chart = createDungeonPopularity(dungeon_data, dungeon_lookup)
-    print("Creating Dungeon Ease...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Creating Dungeon Ease...")
     ease_data = create_dungeon_ease(dungeon_runs_per_level, dungeon_lookup)
     runs = [
         {"name": "Longest", "data": longest_run, "icon": "hourglass_bottom"},
         {"name": "Highest", "data": highest_run, "icon": "leaderboard"},
     ]
-    print("Building overall spec chart data...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Building overall spec chart data...")
     overall_chart = build_overall_spec_chart(
         spec_run_counts, spec_lookup, class_lookup
     )
-    print("Writing dashboard chart data JSON...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Writing dashboard chart data JSON...")
     write_dashboard_data(
         overall_chart=overall_chart,
         key_levels=key_levels,
@@ -1086,7 +1143,7 @@ def main(template_path, output_dir):
         completion_heatmap=completion_heatmap,
         patch_annotations=patch_annotations,
     )
-    print("Rendering template...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Rendering template...")
 
     output_html = template.render(
         trends=build_global_trends(),
@@ -1137,16 +1194,18 @@ def main(template_path, output_dir):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(output_html)
-    print(f"Generated {out_path}")
-    print("Generating dungeon popularity vs ease image...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Generated {out_path}")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Generating dungeon popularity vs ease image...")
     preview_path = os.path.join("assets", "img", "previews", "dungeon_popularity_across_keylevels.png")
     os.makedirs(os.path.dirname(preview_path), exist_ok=True)
-    # dungeon_runs_per_level was already fetched for the page above
+    # both inputs were already fetched on the page's read session above, so the
+    # renderer opens no connection of its own
     create_dungeon_popularity_vs_ease_img(
         preview_path, current_season_id,
         dungeon_runs_per_level=dungeon_runs_per_level,
+        period_rows=dungeon_period_rows,
     )
-    print("Done.")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Generated {preview_path}")
 
 
 if __name__ == "__main__":
