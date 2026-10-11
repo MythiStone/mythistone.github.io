@@ -886,7 +886,7 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
               </span>
               <span class="text-xs text-secondary mt-1">
                 Success: <span class="${successClass} pe-2">${pair.hk_success}%</span>
-                Runs: <span class="text-body-emphasis pe-2">${pair.total_runs}</span>
+                Runs: <span class="text-body-emphasis pe-2">${Number(pair.total_runs).toLocaleString('en-US')}</span>
                 Max: <span class="text-body-emphasis pe-2">+${pair.max_key}</span>
               </span>
             </div>

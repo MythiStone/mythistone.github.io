@@ -429,10 +429,10 @@
                                                     {% set base_name = npcs.get('en_US', {}).get(n, n) %}
                                                     {% set name = (cnt ~ 'x ' ~ base_name) if cnt > 1 else base_name %}
                                                     {% set is_boss = n|int in bosses %}
-                                                    <li class="mb-1">
+                                                    <li class="mb-1 d-flex align-items-center">
                                                         {% if n in npc_icons %}
                                                         <img src="/data/icons/npc_{{ n }}.png" alt="{{ name }}"
-                                                            class="me-1 img-fluid align-middle"
+                                                            class="me-1 flex-shrink-0 align-middle"
                                                             style="width:30px;height:30px;object-fit:contain;" {% if
                                                             is_boss %}data-wowhead="npc={{ n }}" {% else
                                                             %}data-bs-toggle="tooltip" data-bs-html="true"

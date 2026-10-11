@@ -225,6 +225,10 @@
   cursor: default;
 }
 @media (max-width: 575.98px) {
+  #best-pairs-list .list-group-item {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
   .spec-count-row {
     flex-direction: column;
   }
