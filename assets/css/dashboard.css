@@ -45,6 +45,11 @@
   height: 420px;
 }
 
+/* Four tabs in a half-width card: two rows of two instead of three ragged ones. */
+#perfTabs .nav-item {
+  flex: 1 1 50%;
+}
+
 /* Heatmap legend swatches */
 .dash-heat-swatch {
   display: inline-block;

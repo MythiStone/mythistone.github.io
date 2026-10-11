@@ -583,7 +583,7 @@
       <h1 class="h3"> <span class="class-{{ class_info.name | default('Unknown') | replace(' ', '') }}-text">{{
           spec.name }} {{ class_info.name }} </span> Mythic+ Build &amp; Gear Guide in {{ season_info.name }}</h1>
         <div class="row justify-content-center text-start gx-4 align-items-stretch text-body-emphasis">
-          <div class="col-xl-4 col-sm-6 mb-xl-0 mb-4">
+          <div class="col-xl-4 col-12 mb-xl-0 mb-4">
             <div class="card h-100" style="
               background-image: url('/data/icons/{{ spec_lookup[spec_id|string].SpellIconFileId }}.jpg');
               background-size: cover;
@@ -951,7 +951,7 @@
               </div>
 
               <div class="row my-2 justify-content-center">
-                <div class="col-12 col-md-10 col-lg-8">
+                <div class="col-12">
                   <h6 class="mb-1 text-center">Tertiary Priority</h6>
                   <div class="row justify-content-center">
                     {% for s in tertiary_priority %}

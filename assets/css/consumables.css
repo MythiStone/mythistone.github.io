@@ -106,8 +106,10 @@
 .consumables-browse .consumable-card .name {
   font-weight: 600;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 .consumables-browse .consumable-card .sub {
   font-size: 0.72rem;
@@ -145,4 +147,5 @@
   }
   .consumables-browse .consumables-filter-row > .filter-search { flex-grow: 2; min-width: 10rem; }
   .consumables-browse .consumables-filter-row > .filter-class { flex-grow: 2; min-width: 10rem; }
+  .consumables-browse .consumables-filter-row > .filter-category { min-width: 10rem; }
 }

@@ -143,6 +143,14 @@
   padding: 0.35rem 0.4rem;
 }
 
+/* Between the two sidebars the xxl split leaves the tables less room than they
+   need, so they stay stacked a little longer. */
+@media (min-width: 1400px) and (max-width: 1599.98px) {
+  .streamer-run-tables > [class*="col-xxl-"] {
+    width: 100%;
+  }
+}
+
 /* VODs | Streamers segmented switch on pages/vods. */
 .vod-view-switch {
   display: inline-flex;

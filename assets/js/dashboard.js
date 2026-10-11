@@ -173,7 +173,10 @@
                 color: MythiChart.colors.tickText,
                 autoSkip: false,
                 maxRotation: 0,
-                minRotation: 0
+                minRotation: 0,
+                callback: function (value) {
+                  return String(this.getLabelForValue(value)).replace(/^(Week|Day)\s+/, '');
+                }
               }
             },
             y: {
@@ -426,7 +429,24 @@
                 max: xMax,
                 grid: { color: MythiChart.colors.grid },
                 afterBuildTicks: scale => {
-                  scale.ticks = xTickValues.map(v => ({ value: v }));
+                  // The transform packs ticks around 0%: working outwards, drop any
+                  // that would touch a neighbour (pixels are not laid out yet here).
+                  const zero = xForward(avgPerf);
+                  const pxPerUnit = scale.width / (xMax - xMin);
+                  const keep = side => {
+                    let last = zero;
+                    return xTickValues.filter(v => side * (v - zero) > 0)
+                      .sort((a, b) => side * (a - b))
+                      .filter(v => {
+                        if (Math.abs(v - last) * pxPerUnit < 36) return false;
+                        last = v;
+                        return true;
+                      });
+                  };
+                  scale.ticks = [...keep(-1), zero, ...keep(1)]
+                    .filter(v => v >= xMin && v <= xMax)
+                    .sort((a, b) => a - b)
+                    .map(v => ({ value: v }));
                 },
                 title: { display: true, text: 'Performance vs Average', color: MythiChart.colors.axisText },
                 ticks: {

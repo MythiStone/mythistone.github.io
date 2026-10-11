@@ -431,8 +431,10 @@
 .items-browse .item-card .name {
   font-weight: 600;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 .items-browse .item-card .sub {
   font-size: 0.72rem;
