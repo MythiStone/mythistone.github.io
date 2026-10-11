@@ -17,9 +17,10 @@ vanilla JS, no bundler or framework.
 Pick by concern:
 - **Modals, dropdowns, collapse, tabs, tooltips** to Bootstrap 5 via `data-bs-*` attributes.
   Tooltips auto-init in `material-dashboard.js`; do not hand-roll these.
-- **Selects** to bootstrap-select (`plugins/bootstrap-select.min.js` + `plugins/bootstrap-select.min.css`), which adds search, multi-select, and icon support. Include per-page that uses it.
-- **Icon multi-selects** to bootstrap-select (`.selectpicker`, `data-content` for icon markup).
-  Loaded globally in `templates/javascript_imports.html`.
+- **Selects and icon multi-selects** to bootstrap-select (`.selectpicker`, `data-content` for icon
+  markup), which adds search, multi-select and icon support. It is loaded globally
+  (`plugins/bootstrap-select.min.js` in `javascript_imports.html`, `bootstrap-select.min.css` in
+  `header_imports.html`), so pages need no extra include.
 - **Sortable / searchable tables** to DataTables (Bootstrap 5 build). Include
   `plugins/dataTables.min.js` + `datatables.min.css` per page that uses it.
 - **Charts** to Chart.js v4 with `plugins/chartjs.min.js`; theme chrome via [[chart-theming]].

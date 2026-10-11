@@ -28,8 +28,7 @@ the footer reserves no space, so the fixed-height list box physically extends *b
 sidenav aside is transparent (the dark backdrop is painted by `<body>`), so nav items paint through
 the footer and its `border-top` slices across an item mid-row whenever the footer's real content
 (~295px: two buttons + the share row) is taller than the gap left below the 72vh box. A
-`padding-bottom` value only reserves scroll distance and cannot stop the paint-through; it was
-replaced.
+`padding-bottom` value only reserves scroll distance and cannot stop the paint-through.
 
 TWO TRAPS when touching this:
 
@@ -40,8 +39,7 @@ TWO TRAPS when touching this:
 - Do not "fix" a reported overlap by reintroducing absolute positioning, a magic `padding-bottom`,
   or a fixed vh height on the list. The flow layout is the fix; those are what caused the bug.
 
-The Browser pane could not composite raster frames in the render environment used here, so verify
-sidenav geometry with DOM measurement (`listBottom <= footerTop`, zero items straddling
+The Browser pane may not composite raster frames, so verify sidenav geometry with DOM measurement (`listBottom <= footerTop`, zero items straddling
 `footerTop`, footer + all six share buttons on-screen) at a short (~800px tall) and a tall desktop
 height plus the `<1200px` offcanvas, rather than by eye. See [[local-test-render]].
 

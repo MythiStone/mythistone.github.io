@@ -55,7 +55,9 @@ Body: the rule, why it holds, and how to work with it.
   empty or wrong `files:` list is never surfaced.
 - After adding, renaming or editing a gotcha's frontmatter, run `python .claude/kb/kb.py --index`
   (regenerates the gotcha table in each domain `SKILL.md`) and `python .claude/kb/kb.py lint`
-  until it is clean.
+  until it is clean. `python .claude/kb/kb.py --strict` also lists cited names that appear nowhere
+  in the source; review those (external API fields and placeholders are expected), since a renamed
+  function only shows up there.
 - Quote a `description` that contains `: ` or ` #` (`description: "..."`). Unquoted, YAML rejects
   the first and silently truncates at the second.
 - **State only the current truth, never history.** No "this used to be X", changelogs, migration

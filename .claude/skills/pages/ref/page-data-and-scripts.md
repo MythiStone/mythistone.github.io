@@ -18,7 +18,7 @@ choice is **how the page consumes the data, not the page's cardinality**:
 - **Fetched JSON file** when the data only feeds content rendered *asynchronously* and nothing needs
   it synchronously. The generator writes a compact `assets/json/<page>_data.json`
   (`os.makedirs("assets/json")`, `json.dump(data, f, separators=(",", ":"))`, add the filename to
-  `.gitignore` by the other generated JSON) and the page JS `fetch`es it. `dashboard.py` is the
+  `.gitignore` by the other generated JSON) and the page JS `fetch`es it. `generateDashboardPage.py` is the
   reference: its charts build async (icons load via promises) and it registers no deep-link state, so
   a file keeps the large heatmap/scatter payload out of the HTML. `build_overall_spec_chart` +
   `write_dashboard_data` assemble the payload in Python (label/colour/icon precompute included), and

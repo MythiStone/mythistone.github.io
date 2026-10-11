@@ -100,9 +100,10 @@ Routing (a subagent starts cold, so delegation only pays for itself on real work
 ## Templating
 
 Jinja2 **composition** via `{% include %}` and `{% macro %}`. Pages are **standalone full HTML
-documents** that assemble the chrome (`sidenav.html`, `navbar.html`, `notifications.html`,
-`trends_bar.html`, `footer.html`, `right_aside.html`, `fixed_plugin.html`, `header_imports.html`,
-`javascript_imports.html`) via includes. `base_template.html` is only a bare skeleton reference;
+documents** that assemble the chrome via includes: `header_imports.html`, `sidenav.html`,
+`top_chrome.html` (the sticky header wrapping `navbar.html`, `notifications.html` and
+`trends_bar.html`; never include those three directly), `footer.html`, `right_aside.html`,
+`fixed_plugin.html`, `javascript_imports.html`. `base_template.html` is only a bare skeleton reference;
 pages do **not** `extends` it. Comp markup uses `_team_comp_macros.html`. There are **zero**
 `extends`/`block` in `templates/` and no Flask. Reuse the filters registered on the `Environment`
 in the generators (`humanize`, `duration`, `format_ts`, `upgrade_info`, etc.) rather than

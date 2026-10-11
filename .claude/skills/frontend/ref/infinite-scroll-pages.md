@@ -2,6 +2,7 @@
 name: infinite-scroll-pages
 description: How paginated listing pages (blog, items, routes) load more entries via the shared window.MythiInfinite sentinel helper, and the server-render-page-1 + JSON-manifest + shared-card pattern. Use when adding or editing infinite scroll on a listing, touching assets/js/infinite-scroll.js, blog-infinite.js, items.js, finder.js, generateBlogPage.py, or verifying scroll loading in the Browser pane.
 files:
+  - assets/js/consumables.js
   - assets/js/infinite-scroll.js
   - assets/js/blog-infinite.js
   - assets/js/items.js
@@ -11,7 +12,7 @@ files:
 
 # Infinite-scroll listing pages
 
-Listing pages append the next batch of entries as a sentinel near the bottom scrolls into view, with no page-number clicks or "load more" button. Three pages use this: the blog, the items page, and the route finder.
+Listing pages append the next batch of entries as a sentinel near the bottom scrolls into view, with no page-number clicks or "load more" button. Pages using it: the blog (`blog-infinite.js`), the items page (`items.js`), the consumables page (`consumables.js`), and the route and VOD finders (the shared `finder.js` engine).
 
 ## The shared sentinel helper (`assets/js/infinite-scroll.js`)
 
@@ -25,7 +26,7 @@ Listing pages append the next batch of entries as a sentinel near the bottom scr
 
 The blog is the reference for a page whose data is generated offline. `backend_scripts/generateBlogPage.py` renders **only** `blog.html` with the first `per_page` posts (SEO, first paint, no-JS see real cards) and writes every later post to one manifest, `assets/json/blog_index.json`. No `blog-2.html … blog-N.html` exist. The manifest path is gitignored alongside `items_index.json` / `compRoutes.json` (the `.gitignore` lists these per-file, not a wildcard, so a new manifest must be added there). `assets/js/blog-infinite.js` fetches the manifest once and appends it in batches through `MythiInfinite`.
 
-The items and routes pages hold all their data client-side already: `assets/js/items.js` slices a local filtered array; the route and VOD finders' shared engine `assets/js/finder.js` asks `finder-worker.js` for the next page (`renderMatches(results, append=true)`) and tracks `loadedCount` against the worker's `total`.
+The items, consumables and finder pages hold all their data client-side already: `assets/js/items.js` and `assets/js/consumables.js` slice a local filtered array (`renderMore`); the route and VOD finders' shared engine `assets/js/finder.js` asks `finder-worker.js` for the next page (`renderMatches(results, append=true)`) and tracks `loadedCount` against the worker's `total`.
 
 ## One card definition for both render paths (DRY)
 
@@ -37,8 +38,8 @@ Appended nodes miss the one-shot passes in `javascript_imports.html`, so re-init
 
 The Browser pane keeps its tabs in `visibilityState: hidden` with the rendering lifecycle paused, so `requestAnimationFrame` and `IntersectionObserver` never fire on scroll in-pane. A real scroll gesture cannot demonstrate loading there. Verify by driving the real `onLoadMore`/append code path directly instead:
 
-- Routes exposes top-level `loadMoreRoutes()` / `doQuery()` / `loadedCount` / `lastResults`; call `loadMoreRoutes()` repeatedly and assert the accordion and summary grow and terminate.
-- Items' `renderMore` first-batch + filter-change `reset()`/`finish()` are reachable by dispatching input/change events and reading the grid and sentinel.
+- The finders run inside `MythiFinder.create(...)`, which returns only `{ doQuery }`; `loadMore`, `loadedCount` and `lastResults` are closure-private. Drive them with the IntersectionObserver stub below, or call the returned `doQuery({ page, append: true })` and assert the accordion and summary grow and terminate.
+- Items' and consumables' `renderMore` first-batch + filter-change `reset()`/`finish()` are reachable by dispatching input/change events and reading the grid and sentinel.
 - For a closure-only page like the blog, stub `window.IntersectionObserver` with one that calls its callback synchronously on `observe()`, then re-run the page script's source; this drives the real `MythiInfinite` loop and the real `buildCard`. Restore the real observer afterward.
 
 See [[local-test-render]] for seeding and serving on 8099, [[minify-assets]] for how first-party JS is served, [[deep-links]] for the sentinel-adjacent share/scroll behavior, and [[artifact-only-deploy]] for why generated manifests stay gitignored.

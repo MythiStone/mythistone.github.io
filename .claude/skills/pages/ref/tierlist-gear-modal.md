@@ -3,6 +3,8 @@ name: tierlist-gear-modal
 description: The sim tierlist's per-bar gear/talents modal is client-rendered from a tierlist_gear.json emitted by the profile builder and reuses the analyzer's shipped catalogs. Use when editing the Popular/SimC BIS/Top 50 bar modal on the tierlist, assets/js/tierlist-modal.js, the tierlist_gear.json emit in generateSimcProfiles.py, the sim gearset matrix in buildPages.yml, or its assemble-job staging.
 files:
   - assets/js/tierlist-modal.js
+  - assets/js/loadout-view.js
+  - assets/css/loadout-view.css
   - backend_scripts/generateSimcProfiles.py
   - backend_scripts/generateTierlistPage.py
   - templates/simc_tierlist.html
@@ -10,7 +12,7 @@ files:
 
 # Sim tierlist gear/talents modal
 
-Each DPS bar on the sim tierlist (`templates/simc_tierlist.html`) is a keyboard-accessible button (`gear_bar` macro, `data-gear-open`) that opens one shared `#gearModal`. The modal shows the exact gear (spec-page double-column armory layout) and talents (positioned tree) that gear set was simmed with. It is rendered entirely CLIENT-SIDE by `assets/js/tierlist-modal.js`.
+Each DPS bar on the sim tierlist (`templates/simc_tierlist.html`) is a keyboard-accessible button (`gear_bar` macro, `data-gear-open`) that opens one shared `#gearModal`. The modal shows the exact gear (spec-page double-column armory layout) and talents (positioned tree) that gear set was simmed with. It is rendered entirely CLIENT-SIDE: `assets/js/tierlist-modal.js` owns the modal, the fetches and the deep link, and draws the gear + talents through the shared `assets/js/loadout-view.js` (`window.MythiLoadout.render`, styled by `assets/css/loadout-view.css`), which the streamer pages use too. `loadout-view.js` must load first.
 
 ## The three gear sets
 
@@ -31,16 +33,16 @@ Adding a set touches every place the set list lives: `GEAR_SETS` in both generat
 
 ## What the modal reuses (do not duplicate)
 
-`tierlist-modal.js` lazy-fetches and renders against the SAME shipped catalogs the analyzer uses, plus the spec-page CSS (`stat-colors.css` + `spec-page.css`, `.tt-*` / `border-quality-*`):
+`tierlist-modal.js` lazy-fetches the SAME shipped catalogs the analyzer uses and hands them to `MythiLoadout.render`, styled with the spec-page CSS (`stat-colors.css` + `spec-page.css`, `.tt-*` / `border-quality-*`) plus `loadout-view.css`:
 
 - `assets/json/tierlist_gear.json` — the per-spec gear/talent data above.
 - `assets/json/talent_trees/<spec>.json` — tree geometry (`fullNodeOrder` + positioned nodes).
 - `assets/json/gem_enchant_index.json` — enchant/gem icons + links.
 - `assets/json/items_index.json` — `/items` slugs for item links.
 
-These catalogs are baked by the analyzer/spec-page generators, so the tierlist modal depends on those pages being built in the same run. The ~40-line Blizzard v2 loadout decoder in `tierlist-modal.js` deliberately mirrors `decodeLoadout()` in `analyzer.js` (kept separate because the analyzer renderer is entangled with its meta-comparison state). A missing `tierlist_gear.json` (404) is treated as empty: the modal shows a per-spec "no gear recorded" notice rather than erroring, so the `--debug` template-preview path (which fabricates only bars) degrades gracefully.
+These catalogs are baked by the analyzer/spec-page generators, so the tierlist modal depends on those pages being built in the same run. The Blizzard v2 loadout decoder in `loadout-view.js` deliberately mirrors `decodeLoadout()` in `analyzer.js` (kept separate because the analyzer renderer is entangled with its meta-comparison state), so a format change must update both. A missing `tierlist_gear.json` (404) is treated as empty: the modal shows a per-spec "no gear recorded" notice rather than erroring, so the `--debug` template-preview path (which fabricates only bars) degrades gracefully.
 
-The baked `talent_trees/<spec>.json` already has non-existent nodes filtered out of its `nodes` dict (via `commonUtils.filter_talent_tree_nodes` in `generateAnalyzerPage.write_talent_trees`, see [[analyzer-page]]), so the modal draws the same tree the spec page does. `fullNodeOrder` stays COMPLETE there for decode alignment; `ttNode()` returns null for a node absent from `nodes` and the render skips it, so no per-consumer JS filter is needed.
+The baked `talent_trees/<spec>.json` already has non-existent nodes filtered out of its `nodes` dict (via `commonUtils.filter_talent_tree_nodes` in `generateAnalyzerPage.write_talent_trees`, see [[analyzer-page]]), so the modal draws the same tree the spec page does. `fullNodeOrder` stays COMPLETE there for decode alignment; `ttNode()` in `loadout-view.js` returns null for a node absent from `nodes` and the render skips it, so no per-consumer JS filter is needed.
 
 ## Deep link (`#gearModal&gear=<specId>-<gearset>`)
 

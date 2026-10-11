@@ -14,8 +14,8 @@ content is, measured in days since the **most recent content update** (season st
 
 | Phase | Days since latest content update | Scheduled build days | Net (incl. Wed anchor) |
 |---|---|---|---|
-| `daily`     | `< 14`      | Sun,Mon,Tue,Thu,Fri,Sat | every day |
-| `three_day` | `14`–`41`   | Mon, Fri | Mon/Wed/Fri |
+| `daily`     | `< 7`       | Sun,Mon,Tue,Thu,Fri,Sat | every day |
+| `three_day` | `7`–`41`    | Mon, Fri | Mon/Wed/Fri |
 | `weekly`    | `>= 42`     | none | Wed only |
 
 ## How it is wired
@@ -41,7 +41,7 @@ content is, measured in days since the **most recent content update** (season st
   leads go-live by a few days, so it must be snapped to the reset week, not used raw). Keep the two in
   sync if either changes.
 - `most_recent = max(go-lives <= now)`; `days_since = (now - most_recent) / 86_400_000`.
-- Thresholds are the module constants `DAILY_PHASE_DAYS = 14` and `THREE_DAY_PHASE_DAYS = 42`; the
+- Thresholds are the module constants `DAILY_PHASE_DAYS = 7` and `THREE_DAY_PHASE_DAYS = 42`; the
   `three_day` build days are `THREE_DAY_BUILD_WEEKDAYS = {0, 4}` (Mon, Fri — Wed omitted on purpose).
 - **Pre-season**: if no content update is live yet (`now` < season start), it emits
   `phase=pre_season, should_build=false` and does **not** raise — the `has_data` gate

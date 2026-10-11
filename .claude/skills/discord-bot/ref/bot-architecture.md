@@ -13,26 +13,32 @@ Standalone Discord slash-command bot (discord.py 2.x, `app_commands`, slash-only
 message-content intent). Ships as its own image `ghcr.io/mythistone/mythistone-bot` via
 `Dockerfile.bot` + `entrypoint_bot.sh` + `.github/workflows/buildBotImage.yml`, a separate compose
 service auto-updated by watchtower. Needs only the populated MySQL DB plus `DISCORD_BOT_TOKEN`.
-Season id comes from a baked `seasonInfo.json`.
+The image bakes the `data/static` lookups the bot reads (`specs`, `classes`, `dungeons`,
+`seasonInfo`, `groupbuffs`, `periods`, `patches`, `npcs`, `consumables`, the `talents/` shards);
+`config.SEASON` comes from the baked `seasonInfo.json`. A new lookup the bot reads must be added to
+the `COPY` list in `Dockerfile.bot`, or the bot fails in the container while passing locally.
 
 **Hybrid data.** Aggregates come live from MySQL through `databaseConnector.py` via
 `discord_bot/db.py` (async bridge: checkout to `configure_read_session` to query to release on a
 ThreadPoolExecutor). CI-computed features come from published site JSON (`comps_index`,
 `compRoutes`, `items_index`, `gem_enchant_index`, `spec_meta/<id>`, `simdps_tierlist`) via
-`site_data.py` with a TTL cache. Reuses `commonUtils`, `chartData`, `tierMath` (flat-copied into the
-image like the collector).
+`site_data.py` with a TTL cache. Reuses `commonUtils`, `chartData`, `tierMath`, `season_gate` and
+`computeBuildPhase` (flat-copied into `/app` like the collector) plus `image_generation/`.
 
 **Cogs** live in `discord_bot/cogs/`: `analyze.py`, `comps.py`, `consumables.py`, `dungeon.py`,
 `items.py`, `meta.py`, `news.py`, `routes.py`, `season.py`, `spec.py`, `stats.py`, `vods.py`. `/news`
 (daily-post channel subscriptions) is covered in [[bot-news-channel-subscriptions]]. Several top-level commands (`/lust`, `/routes`,
 `/analyze`) live on cogs as `@app_commands.command`, not group subcommands. `/meta specs|dungeons|
 popularity|simdps` render the site's exact og:images by reusing `image_generation` renderers via
-`social_render.py`, not text embeds. `/analyze` ("Am I meta?") ports `assets/js/analyzer.js`,
+`social_render.py`, not text embeds. `/meta weekly` renders a matplotlib chart from `charts.py`
+(cached per key by `charts.cached_path` / `charts.render`). `/analyze` ("Am I meta?") ports `assets/js/analyzer.js`,
 scoring a pasted simc string against `spec_meta`.
 
 **Guards.** A tree-wide `bot.tree.interaction_check = guards.season_guard` short-circuits every
-command to a friendly "season hasn't started" embed during the pre-season gap, keyed off
-`databaseConnector.season_has_runs` (cached, fail-open). Related: [[season-rollover-wipe]].
+command to a friendly "season hasn't started" embed during the pre-season gap. It first checks the
+launch window, then `season_gate.season_has_started` (the same gate the social auto-poster uses),
+cached for 300 s and fail-open on any DB error. Related: [[season-launch-day-presentation]],
+[[season-rollover-wipe]].
 
 **Usage tracking and ops output.** Every invocation is recorded in `bot_command_usage` and summarised
 in a self-updating webhook embed, see [[bot-command-usage-tracking]]. Which webhook carries that

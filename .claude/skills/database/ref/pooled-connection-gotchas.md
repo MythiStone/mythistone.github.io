@@ -14,9 +14,9 @@ Two independent traps with `mysql.connector`'s `PooledMySQLConnection` in `backe
 
 ## 1. `.autocommit` attribute does not reach the server
 
-The pooled wrapper swallows the `.autocommit` setter: `conn.autocommit = True` sets a Python attribute but the server session stays `autocommit=0` (confirmed: `SELECT @@autocommit` returns 0 after the attribute set). Consequence: any WRITE on such a session sits in an open transaction and is rolled back when the connection returns to the pool, with no error. This is what made `snapshotTrends.py` report "upsert 10885 rows" yet leave `trend_snapshot` empty. Reads were unaffected, so it hid for a long time, and it also meant `configure_read_session`'s per-statement MDL release never actually happened on pooled connections.
+The pooled wrapper swallows the `.autocommit` setter: `conn.autocommit = True` sets a Python attribute but the server session stays `autocommit=0` (`SELECT @@autocommit` returns 0 after the attribute set). Consequence: any WRITE on such a session sits in an open transaction and is rolled back when the connection returns to the pool, with no error. A writer can log "upserted N rows" and leave the table empty. Reads are unaffected, which is why this hides.
 
-Apply: `databaseConnector.configure_read_session` now also runs `cursor.execute("SET SESSION autocommit = 1")` (SQL reaches the server, the attribute set does not) alongside READ UNCOMMITTED and the lock timeouts. For any writer on a pooled connection, still call `commit_with_retry(conn)` explicitly rather than trusting the attribute.
+Apply: `databaseConnector.configure_read_session` runs `cursor.execute("SET SESSION autocommit = 1")` (SQL reaches the server, the attribute set does not) alongside READ UNCOMMITTED and the lock timeouts; that is also what makes its per-statement MDL release work on pooled connections. For any writer on a pooled connection, call `commit_with_retry(conn)` explicitly rather than trusting the attribute.
 
 ## 2. Never hold a pooled connection across a long blocking op
 

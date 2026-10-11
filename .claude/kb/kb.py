@@ -16,6 +16,7 @@ CLI (works without MCP, e.g. from Codex/Cline):
     python .claude/kb/kb.py gotcha pooled-connection-gotchas
     python .claude/kb/kb.py search "RENAME contention"
     python .claude/kb/kb.py lint
+    python .claude/kb/kb.py --strict     # lint + cited names missing from the source (noisy, review)
     python .claude/kb/kb.py --write      # emit .claude/kb/map/*.md (gitignored)
     python .claude/kb/kb.py --index      # regenerate the gotcha table in each domain SKILL.md
 """
@@ -38,7 +39,7 @@ DOMAINS = {
     "database": {
         "agent": "database",
         "skills": ["database", "local-test-render"],
-        "verify": "database ref verify-database-sql (ephemeral MySQL 8); seeder classify_all must pass",
+        "verify": "procs: gotcha verify-database-sql (ephemeral MySQL 8); schema: seed_test_db.py (classify_all must pass)",
     },
     "discord-bot": {
         "agent": "discord-bot",
@@ -48,7 +49,7 @@ DOMAINS = {
     "collector-infra": {
         "agent": "collector-infra",
         "skills": ["collector-simc", "season-ops", "social"],
-        "verify": "collector-simc ref collector-smoke-test; docker build + run; social ref social-image-mock-harness",
+        "verify": "collector: gotcha collector-smoke-test (build + run the image); social images: gotcha social-image-mock-harness; workflows: trace each changed step",
     },
     "pages": {
         "agent": "pages",
@@ -259,7 +260,7 @@ class KB:
                 "kind": kind.lower(),
                 "body": body,
                 "line": sql.count("\n", 0, pos) + 1,
-                "calls": sorted(set(re.findall(r"\bCALL\s+(?:`?\w+`?\.)?`?(\w+)`?", body, re.I))
+                "calls": sorted({c for c in re.findall(r"\bCALL\s+(?:`?\w+`?\.)?`?(\w+)`?", body, re.I) if not c.endswith("_")}
                                | {"sp_agg_" + s for s in re.findall(r"sp_run_agg_step\s*\(\s*'(\w+)'", body)}),
             }
         self._table_re = {t: re.compile(r"\b" + re.escape(t) + r"\b", re.I) for t in self.tables}
@@ -669,6 +670,36 @@ class KB:
         out += [f"bot /{c}" for c in self.bot_commands if q in c]
         return "\n".join(out[:limit]) + (f"\n... {len(out) - limit} more" if len(out) > limit else "") if out else f"No match for `{query}`."
 
+    def _source_words(self):
+        words = set()
+        for f in self.files:
+            if f.startswith(".claude/") or not f.endswith((".py", ".sql", ".html", ".js", ".css", ".yml", ".yaml", ".sh", ".md")):
+                continue
+            try:
+                if os.path.getsize(ROOT / f) < 3_000_000:
+                    words |= set(re.findall(r"[A-Za-z_]\w*", (ROOT / f).read_text(encoding="utf-8", errors="ignore")))
+            except OSError:
+                pass
+        return words
+
+    def lint_strict(self):
+        """lint plus every backticked snake_case/camelCase name a gotcha cites that appears nowhere in
+        the source. Expect some noise (external API fields, MySQL internals); review, do not auto-fix."""
+        words = self._source_words()
+        unknown = []
+        for gid, g in sorted(self.gotchas.items()):
+            prose = re.sub(r"```.*?```", "", g["body"], flags=re.S)
+            names = set()
+            for tok in re.findall(r"`([^`\n]+)`", prose):
+                for ident in re.findall(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*", tok):
+                    last = ident.split(".")[-1]
+                    if len(last) >= 4 and ("_" in last.strip("_") or re.search(r"[a-z][A-Z]", last)) and last not in words:
+                        names.add(ident)
+            if names:
+                unknown.append(f"{g['path']}: {', '.join(sorted(names))}")
+        report = self.lint()
+        return report + ("\nunverified names (not found in source):\n" + "\n".join(unknown) if unknown else "\nunverified names: none")
+
     def lint(self):
         """Stale references in curated knowledge: cited paths/symbols that no longer exist."""
         corpus_files = set(self.files)
@@ -773,6 +804,9 @@ def main(argv):
         return 0
     if argv[0] == "--write":
         print(kb.write_map())
+        return 0
+    if argv[0] == "--strict":
+        print(kb.lint_strict())
         return 0
     if argv[0] == "--index":
         print(kb.write_indexes())

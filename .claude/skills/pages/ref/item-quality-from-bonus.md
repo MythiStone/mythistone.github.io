@@ -17,13 +17,15 @@ quality (PvP tracks, upgrade tracks, crafted tiers); `processBonusIds.build_bonu
 writes those as a `bonusId -> quality` map to `data/static/bonus_quality_map.json`
 (keys are strings).
 
-Both generators resolve the override through one shared helper,
+Every generator resolves the override through one shared helper,
 `commonUtils.resolve_bonus_quality(bonus_ids, bonus_quality_lookup)`. It accepts a
 list of ids or a comma/colon-delimited string, and when several bonus ids set a
 quality the last one wins. Do not re-implement this lookup.
 
-- **Spec page** (`generateSpecPages._apply_item_bonuses`): resolves each equipped
-  item's `quality_override` from its comma-joined `bonus.ids`.
+- **Spec page** (`generateSpecPages.convert_slots`): resolves each equipped
+  item's `quality_override` from its bonus ids.
+- **Streamer/VOD pages** (`generateVodsPage.py`): resolves each gear item's quality
+  from its `bonus` list.
 - **Items page** (`generateItemPages.build_payloads`): resolves the payload's
   `quality_override` from the item's most-used variant (`top_variant`, the
   colon-joined bonus string of `global.variants[0]`). The item page header link and
