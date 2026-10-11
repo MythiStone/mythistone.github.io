@@ -265,7 +265,7 @@ GLOBAL_RAIDER_BACKOFF = {"until": 0, "lock": asyncio.Lock()}
 run_details_cache: dict[int, dict] = {}
 CACHE_MAX_SIZE = 5000
 
-ROUTE_PAGES_PER_DUNGEON = 100
+# raider.io /mythic-plus/runs pages are 0-indexed (page 0 = ranks 1-20).
 ROUTE_PAGES_PER_DUNGEON = 500
 
 for region in REGIONS:
@@ -486,6 +486,10 @@ async def fetch_raider_page(session: ClientSession, dungeon_slug: str, page: int
     await RAIDER_RATE_LIMIT.acquire()
     try:
         async with session.get(url, params=params) as resp:
+            if resp.status == 400:
+                # raider.io answers 400 past its last page ("page must be less than or
+                # equal to N"): end of the leaderboard, not an error.
+                return {"rankings": [], "params": {}}
             resp.raise_for_status()
             return await resp.json()
     except Exception as e:
@@ -560,12 +564,16 @@ async def fetch_run_details(session: ClientSession, run_id: int, season: str) ->
             await asyncio.sleep(2**attempt)
     return {}
 
-async def fetch_keystone_route(session: ClientSession, route_key: str) -> dict:
+async def fetch_keystone_route(session: ClientSession, route_key: str) -> dict | None:
+    """The keystone.guru route, {} when keystone.guru has no such route (404), or
+    None on any other failure so the caller retries the run on a later sweep."""
     url = f"https://keystone.guru/api/v1/route/{route_key}"
     await KEYSTONE_RATE_LIMIT.acquire()
     auth = BasicAuth(login=KEYSTONE_USER, password=KEYSTONE_PW)
     try:
         async with session.get(url, auth=auth) as resp:
+            if resp.status == 404:
+                return {}
             resp.raise_for_status()
             j = await resp.json()
             return j.get("data", {}) or {}
@@ -574,7 +582,7 @@ async def fetch_keystone_route(session: ClientSession, route_key: str) -> dict:
         # only ClientResponseError carries a status; a timeout must not AttributeError here
         if getattr(e, "status", None) == 401:
             raise RuntimeError("Unauthorized access to keystone.guru API - check credentials and rate limits.")
-        return {}
+        return None
 
 def _store_route_job(name, conn, cursor, aura_season_id, raider_reduced, keystone_route):
     """Blocking half of route_db_worker, run in a worker thread. Returns
@@ -770,8 +778,8 @@ async def route_poller_task(session: ClientSession):
         for slug in dungeon_slugs[offset:] + dungeon_slugs[:offset]:
             if cancel_event.is_set(): break
             run_ids_set = set()
-            page = 1
-            while page <= ROUTE_PAGES_PER_DUNGEON and not cancel_event.is_set():
+            page = 0
+            while page < ROUTE_PAGES_PER_DUNGEON and not cancel_event.is_set():
                 data = await fetch_raider_page(session, slug, page)
                 await GLOBAL_STATS.increment("rio_pages_checked")
                 rankings = data.get("rankings", [])
@@ -808,10 +816,15 @@ async def route_poller_task(session: ClientSession):
                 keystone = {}
                 route_key = raider.get("route_key")
                 if route_key:
-                    keystone = await fetch_keystone_route(session, route_key) or {}
+                    keystone = await fetch_keystone_route(session, route_key)
                     await GLOBAL_STATS.increment("kg_routes_fetched")
-                if not route_key or keystone:
-                    handled_run_ids.add(run_id)
+                if keystone is None:
+                    # Transient keystone.guru failure: queue nothing, so no aura_run
+                    # row marks the run collected for the next restart's preload,
+                    # and a later sweep retries the whole run (route + videos).
+                    await asyncio.sleep(10)
+                    continue
+                handled_run_ids.add(run_id)
 
                 await route_db_queue.put((raider, keystone))
 
