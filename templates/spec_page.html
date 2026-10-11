@@ -236,10 +236,9 @@
     <div class="d-flex flex-column">
       <div class="stat-chip-name" style="color: var(--stat-{{ stat|lower }}, var(--bs-emphasis-color));">{{ label }}</div>
       <div class="stat-chip-value text-body-emphasis small">
+        {{ s.avg_raw | humanize }}
         {% if pct is not none %}
-          {% if pct > 0 and pct < 1 %}&lt;1%{% else %}{{ '%.1f' % pct }}%{% endif +%}
-        {% else %}
-          {{ s.avg_raw | humanize }}
+          <span class="opacity-7">· {% if pct > 0 and pct < 1 %}&lt;1%{% else %}{{ '%.1f' % pct }}%{% endif %}</span>
         {% endif %}
       </div>
     </div>

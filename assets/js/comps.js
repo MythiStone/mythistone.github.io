@@ -580,7 +580,7 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
           <div class="d-flex align-items-center">
             ${specImgs}
             <div class="ms-3">
-              <div class="text-sm font-weight-bolder">${runs} runs${meta ? META_BADGE : ''}</div>
+              <div class="text-sm font-weight-bolder">${runs.toLocaleString('en-US')} runs${meta ? META_BADGE : ''}</div>
               <div class="text-xs text-secondary">Max: ${mk} &nbsp; Success %: ${winRate}%</div>
             </div>
           </div>
@@ -1064,7 +1064,7 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
           <div class="d-flex align-items-center">
             <div class="archetype-slots d-flex">${slots}</div>
             <div class="ms-3">
-              <div class="text-sm font-weight-bolder">${statRuns} ${statLabel}${isMeta ? META_BADGE : ''}</div>
+              <div class="text-sm font-weight-bolder">${Number(statRuns).toLocaleString('en-US')} ${statLabel}${isMeta ? META_BADGE : ''}</div>
               <div class="text-xs text-secondary">${sub} &nbsp; &middot; ${arch.members} comps</div>
             </div>
           </div>

@@ -14,7 +14,7 @@
     <img src="/data/icons/{{ item.icon }}.png" alt="{{ item.name }}" loading="lazy" class="border border-grey-100">
     <div class="meta flex-grow-1">
       <div class="name">{{ item.name }}</div>
-      <div class="sub">{{ item.category_label or item.category }} · {{ "{:,}".format(item.runs) }} runs{% if spec %} · mostly {{ spec.name }} {{ spec.className }}{% endif %}</div>
+      <div class="sub">{{ item.category_label or item.category }} · {{ "{:,}".format(item.runs) }} {{ 'run' if item.runs == 1 else 'runs' }}{% if spec %} · mostly {{ spec.name }} {{ spec.className }}{% endif %}</div>
     </div>
   </a>
 </div>

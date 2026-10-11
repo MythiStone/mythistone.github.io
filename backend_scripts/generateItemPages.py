@@ -1057,6 +1057,17 @@ def _spec_display(specs_map, spec_id):
     return f"{s['name']} {s['className']}".strip() if s else None
 
 
+def _spec_listing(specs_map, entries, cap=3):
+    """'A, B and C', or 'A, B, C and 4 other specs' past the cap."""
+    names = [n for n in (_spec_display(specs_map, e["spec_id"]) for e in entries) if n]
+    shown, rest = names[:cap], len(names) - cap
+    if rest > 0:
+        return f"{', '.join(shown)} and {rest} other spec{'' if rest == 1 else 's'}"
+    if len(shown) > 1:
+        return f"{', '.join(shown[:-1])} and {shown[-1]}"
+    return shown[0] if shown else None
+
+
 def build_item_intro(payload, specs_map, dungeons_map, season_name):
     """Two short paragraphs of prose summarizing the item's tracked data.
 
@@ -1087,7 +1098,7 @@ def build_item_intro(payload, specs_map, dungeons_map, season_name):
     total = g.get("total_runs") or 0
     if g.get("adoption") is not None and g.get("slot_runs"):
         p1.append(rng.choice([
-            f"It was equipped in {total:,} tracked runs this season — {g['adoption']}% of the "
+            f"It was equipped in {total:,} tracked runs this season, {g['adoption']}% of the "
             f"{g['slot_runs']:,} runs that filled the {payload['slot'].lower()} slot.",
             f"So far it shows up in {total:,} of the {g['slot_runs']:,} tracked runs with this slot "
             f"filled, an adoption rate of {g['adoption']}%.",
@@ -1108,16 +1119,16 @@ def build_item_intro(payload, specs_map, dungeons_map, season_name):
     p2 = []
     sim = payload.get("simc_bis_specs") or []
     top_picks = payload.get("top_specs") or []
-    sim_names = [n for n in (_spec_display(specs_map, s["spec_id"]) for s in sim[:3]) if n]
+    sim_names = _spec_listing(specs_map, sim)
     if sim_names:
         p2.append(rng.choice([
-            f"SimulationCraft rates it best-in-slot for {', '.join(sim_names)}.",
-            f"For {', '.join(sim_names)}, SimulationCraft currently sims it as the best pick in this slot.",
+            f"SimulationCraft rates it best-in-slot for {sim_names}.",
+            f"SimulationCraft currently sims it as the best pick in this slot for {sim_names}.",
         ]))
     elif top_picks:
-        pick_names = [n for n in (_spec_display(specs_map, s["spec_id"]) for s in top_picks[:3]) if n]
+        pick_names = _spec_listing(specs_map, top_picks)
         if pick_names:
-            p2.append(f"Among the top-rated players it is a staple for {', '.join(pick_names)}.")
+            p2.append(f"Among the top-rated players it is a staple for {pick_names}.")
 
     if g.get("max_timed_key"):
         p2.append(rng.choice([

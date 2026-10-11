@@ -241,7 +241,7 @@
     var sub = document.createElement("div");
     sub.className = "sub";
     var spec = item.top_spec != null ? SPECS[String(item.top_spec)] : null;
-    sub.textContent = (item.category_label || item.category) + " · " + fmt(item.runs) + " runs" +
+    sub.textContent = (item.category_label || item.category) + " · " + fmt(item.runs) + (item.runs === 1 ? " run" : " runs") +
       (spec ? " · mostly " + spec.name + " " + spec.className : "");
     meta.appendChild(name); meta.appendChild(sub);
     a.appendChild(img); a.appendChild(meta);

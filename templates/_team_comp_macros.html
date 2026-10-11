@@ -55,7 +55,7 @@
   <div class="d-flex align-items-center">
     {{ comp_slots(arch) }}
     <div class="ms-3">
-      <div class="text-sm font-weight-bolder">{{ stat_runs }} {{ stat_label }}{% if is_meta %}{{ meta_badge | safe }}{% endif %}</div>
+      <div class="text-sm font-weight-bolder">{{ "{:,}".format(stat_runs) }} {{ stat_label }}{% if is_meta %}{{ meta_badge | safe }}{% endif %}</div>
       <div class="text-xs text-secondary">{{ sub }} &nbsp; Success %: {{ win_rate }}% &nbsp; &middot; {{ arch.members }} comps</div>
     </div>
   </div>

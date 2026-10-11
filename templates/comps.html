@@ -233,7 +233,7 @@
                         <span class="text-xs text-secondary mt-1">
                           Success: <span
                             class="{{ 'text-success' if pair.hk_success >= 70 else 'text-warning' }} pe-2">{{ pair.hk_success }}%</span>
-                          Runs: <span class="text-body-emphasis pe-2">{{ pair.total_runs }}</span>
+                          Runs: <span class="text-body-emphasis pe-2">{{ "{:,}".format(pair.total_runs) }}</span>
                           Max: <span class="text-body-emphasis pe-2">+{{ pair.max_key }}</span>
                         </span>
                       </div>

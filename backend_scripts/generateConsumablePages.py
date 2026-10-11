@@ -209,7 +209,8 @@ def build_payloads(season, ctx):
             denom = cat_spec_total[cat].get(sp, 0)
             # Share of this spec's own usage in the category that went to this
             # consumable (same "share within category" semantics as the spec page).
-            share = round(runs / denom * 100, 1) if denom else None
+            share = (round(runs / denom * 100, 1)
+                     if denom >= commonUtils.CONSUMABLE_MIN_TOTAL else None)
             specs_rank.append({
                 "spec_id": int(sp),
                 "runs": int(runs),

@@ -169,7 +169,8 @@
               <div class="card-body pt-3 card-scroll-body">
                 <div class="card-scroll custom-scrollbar" style="--card-scroll-max: 520px;">
                   {% for s in consumable.specs %}
-                  {{ usage_row(s.spec_id, s.share, (s.share ~ '% · ' ~ '{:,}'.format(s.runs) ~ ' runs') if s.share is not none else ('{:,}'.format(s.runs) ~ ' runs')) }}
+                  {% set runs_text = '{:,}'.format(s.runs) ~ (' run' if s.runs == 1 else ' runs') %}
+                  {{ usage_row(s.spec_id, s.share, (s.share ~ '% · ' ~ runs_text) if s.share is not none else runs_text) }}
                   {% endfor %}
                 </div>
               </div>
@@ -188,7 +189,7 @@
                     <img src="/data/icons/{{ sib.icon }}.png" alt="" width="32" height="32"
                       class="rounded border border-grey-100">
                     <span class="sibling-name flex-grow-1">{{ sib.name }}</span>
-                    <span class="text-xs opacity-7">{{ "{:,}".format(sib.runs) }} runs</span>
+                    <span class="text-xs opacity-7">{{ "{:,}".format(sib.runs) }} {{ 'run' if sib.runs == 1 else 'runs' }}</span>
                   </a>
                   {% endfor %}
                 </div>

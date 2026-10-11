@@ -457,7 +457,7 @@
       bar.className = "key-bar";
       bar.setAttribute("data-level", String(k.level));
       bar.style.height = Math.max(6, k.adoption / maxAdopt * 100) + "%";
-      bar.title = "+" + k.level + ": " + k.adoption + "% of runs (" + fmt(k.runs) + ") — click to filter";
+      bar.title = "+" + k.level + ": " + k.adoption + "% of runs (" + fmt(k.runs) + "), click to filter";
       bar.addEventListener("click", function () { toggleLevel(k.level); });
       var num = document.createElement("span");
       num.className = "key-num"; num.textContent = k.level;
@@ -499,7 +499,7 @@
     rows.sort(function (a, b) { return (b.adoption || 0) - (a.adoption || 0) || b.runs - a.runs; });
     var maxAdopt = Math.max.apply(null, rows.map(function (r) { return r.adoption || 0; })) || 1;
     var maxRuns = Math.max.apply(null, rows.map(function (r) { return r.runs || 0; })) || 1;
-    var suffix = levels.length ? " runs at " + formatLevels(levels) : " runs";
+    var atLevels = levels.length ? " at " + formatLevels(levels) : "";
     rows.forEach(function (r) {
       var d = r.d, dung = DUNGEONS[String(d.id)] || {};
       var img = document.createElement("img");
@@ -508,7 +508,8 @@
       img.alt = "";
       var hasPct = r.adoption != null;
       var right = (hasPct ? r.adoption + "% · " : "") + fmt(r.runs) +
-        (levels.length ? suffix : suffix + " · max +" + d.max_key);
+        (r.runs === 1 ? " run" : " runs") + atLevels +
+        (levels.length ? "" : " · max +" + d.max_key);
       var barPct = hasPct ? (r.adoption / maxAdopt * 100) : (r.runs / maxRuns * 100);
       box.appendChild(usageRow(img, dung.name || "Dungeon " + d.id, barPct, right));
     });
