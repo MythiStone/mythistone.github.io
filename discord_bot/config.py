@@ -72,6 +72,10 @@ def load_env() -> dict:
         )
 
     env["WEBHOOK_URL"] = _clean(os.environ.get("WEBHOOK_URL"))
+    # The self-editing usage embed can live in its own channel, away from alerts.
+    env["STATUS_WEBHOOK_URL"] = (
+        _clean(os.environ.get("STATUS_WEBHOOK_URL")) or env["WEBHOOK_URL"]
+    )
     env["BOT_DB_POOL_SIZE"] = int(_clean(os.environ.get("BOT_DB_POOL_SIZE")) or 5)
     env["BOT_DATA_ROLLOVER_UTC_HOUR"] = int(
         _clean(os.environ.get("BOT_DATA_ROLLOVER_UTC_HOUR")) or 22

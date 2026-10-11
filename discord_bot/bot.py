@@ -36,9 +36,10 @@ class MythistoneBot(commands.Bot):
         self.tree.interaction_check = guards.season_guard
         await self._sync_tree()
         self.prune_loop.start()
-        if self.webhook_url:
+        status_webhook_url = self.env.get("STATUS_WEBHOOK_URL")
+        if status_webhook_url:
             self.usage_reporter = usage_stats.UsageReporter(
-                self.webhook_url,
+                status_webhook_url,
                 self.site_data.session,
                 config.USAGE_EMBED_INTERVAL_MINUTES * 60,
             )

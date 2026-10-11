@@ -54,7 +54,7 @@ def collect_static_json_refs(tree):
     -- the two forms the collector modules use. Deliberately narrow: only a
     literal filename whose left-hand path is anchored to STATIC_DIR or a "static"
     segment counts, so runtime-built paths (SIMC_IO_DIR / f"{token}.json",
-    data/discord_status.json) are not mistaken for shipped lookup data.
+    data/state/discord_status.json) are not mistaken for shipped lookup data.
     """
     names = set()
     for node in ast.walk(tree):

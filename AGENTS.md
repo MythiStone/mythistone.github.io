@@ -94,7 +94,8 @@ template uses.
 
 ## Working preferences (always apply)
 
-- **Fail loudly.** Missing data files or failed fetches must raise, never warn-and-continue.
+- **Fail loudly.** Missing data files or failed fetches must raise, never warn-and-continue (unless
+  a skill documents an intentional fail-soft, like raids.json or icon self-heal).
 - **No git interaction.** Never run git write commands (`commit`, `push`, `add`, `reset`,
   `checkout`, `merge`, `rebase`). You are not able to run the commands even with permission so never ask the user to run them. The user commits and pushes and decides when to do it. Read-only git is fine.
 - **User-facing copy.** No em dashes. Never end a sentence with a semicolon. Do not imply "most
@@ -103,6 +104,11 @@ template uses.
   or fetch them.
 - **KISS and DRY.** Smallest change that fits the existing pipeline; reuse/modify existing helpers,
   macros, and lookups before adding code.
+- **Comment sparingly.** Do not narrate what the code already says or add a block that re-explains
+  each line. A comment earns its place only when it records the non-obvious "why" (a gotcha, a
+  cross-file coupling, a constraint that is not visible locally), and then it is one short line or
+  two, not a paragraph. Prefer a clear name or a `docstring` "why" over inline commentary. When in
+  doubt, leave it out.
 
 ## Recording new knowledge (always apply)
 

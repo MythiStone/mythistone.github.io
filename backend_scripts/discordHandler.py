@@ -8,7 +8,9 @@ from typing import Optional
 import discord
 import shutil
 
-STATUS_FILE = Path("data/discord_status.json")
+# data/state is a docker volume: the message id has to outlive a watchtower
+# recreate, or every image update posts a new status message.
+STATUS_FILE = Path("data/state/discord_status.json")
 
 
 def _format_duration(seconds: int) -> str:
@@ -44,6 +46,9 @@ class DiscordReporter:
     Supports two modes:
       - WEBHOOK_URL: uses discord.Webhook.from_url + aiohttp session
       - WEBHOOK_TOKEN + WEBHOOK_CHANNEL: uses a discord.Client bot instance
+
+    In webhook mode the status message goes to STATUS_WEBHOOK_URL (default:
+    WEBHOOK_URL) so it can sit in its own channel; alerts always use WEBHOOK_URL.
 
     Usage:
       reporter = DiscordReporter(stats_collector, session, interval_seconds=300)
@@ -92,6 +97,7 @@ class DiscordReporter:
         self.startTime = datetime.now(timezone.utc)
         # config
         self.webhook_url = os.getenv("WEBHOOK_URL")
+        self.status_webhook_url = os.getenv("STATUS_WEBHOOK_URL") or self.webhook_url
         self.bot_token = os.getenv("WEBHOOK_TOKEN")
         self.channel_id = os.getenv("WEBHOOK_CHANNEL")
         self._low_space_warn_sent: dict[str, bool] = {}
@@ -126,8 +132,22 @@ class DiscordReporter:
         self._ready_event = asyncio.Event()
         self._created_message_id: Optional[int] = None
 
-        # webhook object cached (only for webhook mode)
+        # webhook objects cached (only for webhook mode)
         self._webhook: Optional[discord.Webhook] = None
+        self._status_webhook: Optional[discord.Webhook] = None
+
+    def _make_webhook(self, url) -> Optional[discord.Webhook]:
+        try:
+            return discord.Webhook.from_url(url, session=self.session)
+        except Exception as e:
+            self._log(f"DiscordReporter: failed to create webhook object: {e}")
+            return None
+
+    def _log(self, message: str):
+        try:
+            self.stats.console_log(message)
+        except Exception:
+            pass
 
     def _disk_usage_info(self, path: str | None = None):
         """Return (mount, total, used, free, free_pct, total_hr, free_hr)."""
@@ -384,7 +404,7 @@ class DiscordReporter:
                 pass
         # final update
         if self.mode == "webhook":
-            if self._webhook:
+            if self._status_webhook:
                 await self._update_embed(final=True)
         elif self.mode == "bot":
             await self._update_embed(final=True)
@@ -425,12 +445,7 @@ class DiscordReporter:
         try:
             if self.mode == "webhook":
                 if not self._webhook:
-                    try:
-                        self._webhook = discord.Webhook.from_url(
-                            self.webhook_url, session=self.session
-                        )
-                    except Exception:
-                        self._webhook = None
+                    self._webhook = self._make_webhook(self.webhook_url)
                 if self._webhook:
                     await self._webhook.send(embed=embed, wait=False)
             elif self.mode == "bot" and self._client:
@@ -491,44 +506,36 @@ class DiscordReporter:
     # Ensure initial message exists (webhook / bot)
     # -------------------------
     async def _ensure_webhook_message(self):
-        # create webhook object using discord.py
-        # discord.Webhook.from_url accepts an aiohttp session object for async operations
-        try:
-            self._webhook = discord.Webhook.from_url(
-                self.webhook_url, session=self.session
-            )
-        except Exception as e:
-            # fallback: try basic construction (older versions)
-            try:
-                self._webhook = discord.Webhook.from_url(
-                    self.webhook_url, session=self.session
-                )
-            except Exception as e:
-                print(f"Failed to create webhook object: {e}")
-                self._webhook = None
+        self._webhook = self._make_webhook(self.webhook_url)
+        self._status_webhook = self._make_webhook(self.status_webhook_url)
+        if not self._status_webhook:
+            return
         # try to edit existing message if we have id
-        if self._webhook and self.message_id:
+        if self.message_id:
             try:
                 embed = self._build_embed(probe=True)
-                await self._webhook.edit_message(
+                await self._status_webhook.edit_message(
                     message_id=self.message_id, embed=embed
                 )
                 return
-            except Exception:
+            except discord.NotFound:
                 self.message_id = None
-        # create new message
-        if self._webhook:
-            embed = self._build_embed()
-            # create message; wait=True returns created message
-            try:
-                msg = await self._webhook.send(embed=embed, wait=True)
-                if msg and getattr(msg, "id", None):
-                    self.message_id = int(msg.id)
-                    self._persist()
             except Exception as e:
-                # swallow error but don't crash reporter
-                print(f"Failed to create webhook message: {e}")
-                pass
+                # Keep the id: re-posting on a transient failure would leave the
+                # old message orphaned in the channel.
+                self._log(f"DiscordReporter: status message probe failed: {e}")
+                return
+        # create message; wait=True returns created message
+        try:
+            msg = await self._status_webhook.send(
+                embed=self._build_embed(), wait=True
+            )
+            if msg and getattr(msg, "id", None):
+                self.message_id = int(msg.id)
+                self._persist()
+        except Exception as e:
+            # swallow error but don't crash reporter
+            self._log(f"DiscordReporter: failed to create status message: {e}")
 
     async def _ensure_bot_message(self):
         # create and start a lightweight discord.Client in background
@@ -877,41 +884,33 @@ class DiscordReporter:
 
         # send/edit depending on mode
         if self.mode == "webhook":
-            if not self._webhook:
+            if not self._status_webhook:
                 # attempt to create webhook object if missing
-                try:
-                    self._webhook = discord.Webhook.from_url(
-                        self.webhook_url, session=self.session
-                    )
-                except Exception:
-                    self._webhook = None
-            if not self._webhook:
+                self._status_webhook = self._make_webhook(self.status_webhook_url)
+            if not self._status_webhook:
                 return
             # try edit first if we have message id
             if self.message_id:
                 try:
-                    await self._webhook.edit_message(
+                    await self._status_webhook.edit_message(
                         message_id=self.message_id, embeds=embedlist
                     )
                     return
-                except Exception:
-                    # fallback to creating a new webhook message
-                    try:
-                        msg = await self._webhook.send(embeds=embedlist, wait=True)
-                        if msg and getattr(msg, "id", None):
-                            self.message_id = int(msg.id)
-                            self._persist()
-                        return
-                    except Exception:
-                        return
-            else:
-                try:
-                    msg = await self._webhook.send(embeds=embedlist, wait=True)
-                    if msg and getattr(msg, "id", None):
-                        self.message_id = int(msg.id)
-                        self._persist()
-                except Exception:
+                except discord.NotFound:
+                    self.message_id = None
+                except Exception as e:
+                    # Only a deleted message is re-posted. Any other failure keeps
+                    # the id and retries next tick, so no orphan is left behind.
+                    self._log(f"DiscordReporter: status message edit failed: {e}")
                     return
+            try:
+                msg = await self._status_webhook.send(embeds=embedlist, wait=True)
+                if msg and getattr(msg, "id", None):
+                    self.message_id = int(msg.id)
+                    self._persist()
+            except Exception as e:
+                self._log(f"DiscordReporter: failed to create status message: {e}")
+                return
 
         elif self.mode == "bot":
             if not self._client or not self._ready_event.is_set():

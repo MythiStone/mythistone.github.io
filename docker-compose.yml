@@ -7,6 +7,8 @@ services:
     volumes:
       - ./.env:/app/.env:ro
       - ./runs:/app/data/runs
+      # keeps the status embed's message id across watchtower recreates
+      - collector_state:/app/data/state
       # shared with the short-lived simc sibling containers
       - simc_io:/app/data/simc_io
       # lets the collector launch simc sibling containers via the Docker SDK
@@ -94,6 +96,10 @@ services:
       - WATCHTOWER_POLL_INTERVAL=600
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_TIMEOUT=1200
+      # One report per real update or failure, nothing for a no-op scan or a
+      # watchtower start, so the alert channel is not flooded with log lines.
+      - WATCHTOWER_NO_STARTUP_MESSAGE=true
+      - WATCHTOWER_NOTIFICATION_REPORT=true
       - WATCHTOWER_NOTIFICATION_URL=discord://${WEBHOOK_TOKEN}@${WEBHOOK_CHANNEL}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -104,6 +110,9 @@ volumes:
   # of the compose project prefix.
   simc_io:
     name: mythistone_simc_io
+  # Message id of the collector's self-editing Discord status embed.
+  collector_state:
+    name: mythistone_collector_state
   # Rendered-chart disk cache for the Discord bot.
   bot_cache:
     name: mythistone_bot_cache

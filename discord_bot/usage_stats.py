@@ -1,8 +1,8 @@
 """Command-usage tracking and the self-updating usage embed.
 
 Every slash-command invocation is written to ``bot_command_usage`` (one row per
-call, with an outcome), and a single webhook message on ``WEBHOOK_URL`` is edited
-every few minutes with the last 24h of usage, mirroring the collector's status
+call, with an outcome), and a single webhook message on ``STATUS_WEBHOOK_URL``
+(default ``WEBHOOK_URL``) is edited every few minutes with the last 24h of usage, mirroring the collector's status
 embed (``backend_scripts/discordHandler.py``). The message id is persisted in the
 ``bot_cache`` volume so restarts keep editing the same message.
 
