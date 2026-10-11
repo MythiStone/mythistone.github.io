@@ -322,8 +322,8 @@ def build_scope(total, max_timed, max_depleted, gem_runs, variant_runs,
                 dungeon_keylevel_totals=None, reagent_lookup=None):
     """Assemble one scope payload (global or a single spec) from raw counters.
 
-    ``dungeon_totals`` / ``keylevel_totals`` are this scope's item-independent run
-    totals ({dungeon_id: runs} / {level: runs}); they turn the dungeon and
+    ``dungeon_totals`` / ``keylevel_totals`` are this scope's runs with any item
+    in this slot ({dungeon_id: runs} / {level: runs}); they turn the dungeon and
     key-level usage into adoption rates (% of that dungeon's / key level's runs
     that used the item) rather than raw counts.
     """
@@ -626,6 +626,9 @@ def build_payloads(season, ctx, only_item=None):
     # have used this item"), mirroring the spec page's per-slot slot_count rather
     # than dividing by the spec's total runs across every slot.
     slot_spec_total = defaultdict(lambda: defaultdict(int))
+    slot_dungeon_total = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))   # spec -> slot -> dungeon
+    slot_keylevel_total = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))  # spec -> slot -> level
+    slot_dungeon_keylevel_total = defaultdict(lambda: defaultdict(int))               # slot -> (dungeon, level)
 
     # Sweep one spec at a time so every query is index-assisted (each table's PK
     # starts with spec_id) and result sets stay bounded.
@@ -665,21 +668,13 @@ def build_payloads(season, ctx, only_item=None):
                 d["by_key"][int(lvl)] += runs
                 if timed > 0 and int(lvl) > d["max_key"]:
                     d["max_key"] = int(lvl)
-
-        # Item-independent run totals, for adoption-rate (% of runs) metrics.
-        print(f"[{datetime.now(timezone.utc).isoformat()}] fetching run-total denominators...")
-        spec_total = databaseConnector.fetch_spec_total_runs(conn, cursor, season)
-        dungeon_spec_total = databaseConnector.fetch_dungeon_spec_total_runs(conn, cursor, season)
-        keylevel_spec_total = databaseConnector.fetch_spec_keylevel_total_runs(conn, cursor)
-        dungeon_total_global = {
-            str(r["dungeon_id"]): r["total_runs"]
-            for r in databaseConnector.fetch_runs_per_dungeon(conn, cursor, season)
-        }
-        keylevel_total_global = defaultdict(int)
-        dungeon_keylevel_total_global = {}
-        for r in databaseConnector.fetch_runs_per_dungeon_per_level(conn, cursor, season):
-            keylevel_total_global[int(r["keystone_level"])] += r["total_runs"]
-            dungeon_keylevel_total_global[(str(r["dungeon_id"]), int(r["keystone_level"]))] = r["total_runs"]
+                it_slot = item_lookup.get(int(item_id)) if str(item_id).isdigit() else None
+                if it_slot:
+                    skey = slot_for_item(it_slot)[1]
+                    for scope_sp in (sp, None):
+                        slot_dungeon_total[scope_sp][skey][str(did)] += runs
+                        slot_keylevel_total[scope_sp][skey][int(lvl)] += runs
+                    slot_dungeon_keylevel_total[skey][(str(did), int(lvl))] += runs
 
         # "Best in slot" signals (item-level), fetched once.
         print(f"[{datetime.now(timezone.utc).isoformat()}] fetching BiS / enchant signals...")
@@ -747,14 +742,6 @@ def build_payloads(season, ctx, only_item=None):
     enchant_spec_all = {key: _all_enchants(ench_spec_sg[key], ench_spec_sg_total[key])
                         for key in ench_spec_sg}
 
-    # Per-spec total maps (built once) for the bySpec scopes.
-    dungeon_totals_by_spec = defaultdict(dict)
-    for (sp, did), v in dungeon_spec_total.items():
-        dungeon_totals_by_spec[sp][did] = v
-    keylevel_totals_by_spec = defaultdict(dict)
-    for (sp, lvl), v in keylevel_spec_total.items():
-        keylevel_totals_by_spec[sp][lvl] = v
-
     # ---- decide which items get a page ----------------------------------
     # Denominator per slot: runs that equipped *any* item in that slot (the
     # same figure the adoption percentages divide by).
@@ -811,6 +798,10 @@ def build_payloads(season, ctx, only_item=None):
         # for context). Dividing by the per-slot total (not the spec's overall run
         # count) makes this match the spec page's per-slot popularity %.
         mult = SLOT_MULTIPLICITY.get(key, 1)
+
+        def per_run(sub_slot_totals):
+            return {k: v / mult for k, v in sub_slot_totals.items()}
+
         specs_rank = []
         for sp, runs in per_spec.items():
             slot_denom = slot_spec_total.get(sp, {}).get(key, 0) / mult
@@ -855,9 +846,10 @@ def build_payloads(season, ctx, only_item=None):
             max(spec_maxtimed[item_id].values(), default=0),
             max(spec_maxdep[item_id].values(), default=0),
             g_gems, g_variants, g_dungeons, gem_lookup, bonus_lookup,
-            dungeon_total_global, keylevel_total_global,
+            per_run(slot_dungeon_total[None].get(key, {})),
+            per_run(slot_keylevel_total[None].get(key, {})),
             embellishment_lookup, missive_lookup, item_lookup,
-            dungeon_keylevel_total_global, reagent_lookup,
+            per_run(slot_dungeon_keylevel_total.get(key, {})), reagent_lookup,
         )
         global_scope["specs"] = specs_rank
         # Item-wide slot denominator (runs that equipped any item in this slot,
@@ -878,7 +870,8 @@ def build_payloads(season, ctx, only_item=None):
                 variant_runs[item_id].get(sp, {}),
                 dungeon_runs[item_id].get(sp, {}),
                 gem_lookup, bonus_lookup,
-                dungeon_totals_by_spec.get(sp, {}), keylevel_totals_by_spec.get(sp, {}),
+                per_run(slot_dungeon_total[sp].get(key, {})),
+                per_run(slot_keylevel_total[sp].get(key, {})),
                 embellishment_lookup, missive_lookup, item_lookup,
                 None, reagent_lookup,
             )

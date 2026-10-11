@@ -1501,56 +1501,6 @@ def fetch_item_dungeon_usage(connection, cursor, season, spec_id):
     )
 
 
-# --- Denominators for adoption-rate (% of runs) metrics on the item page ----
-# These are item-independent run totals: how many runs each spec / dungeon /
-# key level had overall, so the item page can show "X% of this spec's runs use
-# the item" instead of raw counts that just track how much each spec is played.
-
-FETCH_SPEC_TOTAL_RUNS_SQL = """
-SELECT spec_id, run_count
-FROM Mythistone.aggregated_dungeon_global_specs
-WHERE season = %s;
-"""
-
-
-def fetch_spec_total_runs(connection, cursor, season):
-    """Total runs per spec for the season: {str(spec_id): run_count}."""
-    rows = fetch_with_retry(connection, cursor, FETCH_SPEC_TOTAL_RUNS_SQL, (season,))
-    return {str(sp): int(rc) for sp, rc in rows}
-
-
-FETCH_DUNGEON_SPEC_TOTAL_RUNS_SQL = """
-SELECT spec_id, dungeon_id, run_count
-FROM Mythistone.aggregated_dungeon_specs
-WHERE season = %s;
-"""
-
-
-def fetch_dungeon_spec_total_runs(connection, cursor, season):
-    """Total runs per (spec, dungeon): {(str(spec_id), str(dungeon_id)): run_count}."""
-    rows = fetch_with_retry(
-        connection, cursor, FETCH_DUNGEON_SPEC_TOTAL_RUNS_SQL, (season,)
-    )
-    return {(str(sp), str(did)): int(rc) for sp, did, rc in rows}
-
-
-FETCH_SPEC_KEYLEVEL_TOTAL_RUNS_SQL = """
-SELECT spec_id, keystone_level, SUM(run_count) AS total_runs
-FROM Mythistone.aggregated_spec
-GROUP BY spec_id, keystone_level;
-"""
-
-
-def fetch_spec_keylevel_total_runs(connection, cursor):
-    """Total runs per (spec, key level): {(str(spec_id), int(level)): run_count}.
-
-    aggregated_spec has no season column (it holds the current season), so no
-    season filter is applied.
-    """
-    rows = fetch_with_retry(connection, cursor, FETCH_SPEC_KEYLEVEL_TOTAL_RUNS_SQL)
-    return {(str(sp), int(lvl)): int(rc) for sp, lvl, rc in rows}
-
-
 # --- "best in slot" signals for the item page ------------------------------
 
 FETCH_SIMC_BIS_RANK1_SQL = """
