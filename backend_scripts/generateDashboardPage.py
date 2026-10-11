@@ -78,7 +78,7 @@ def createKeysPerWeek(rows):
     keeps this axis numbered identically to the ordinal "Key Throughput" axis
     and makes it resilient to a stale Blizzard pre-season period lingering in
     season_periods (which would otherwise inflate every week number by one; see
-    .claude/skills/blizzard-preseason-period). Gaps between real weeks are left
+    .claude/skills/season-ops/ref/blizzard-preseason-period.md). Gaps between real weeks are left
     intact rather than compressed. Returns (datasets, labels, grain).
     """
     if not rows:

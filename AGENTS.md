@@ -1,8 +1,8 @@
 # AGENTS.md
 
 Cross-tool guidance for AI coding assistants (Claude Code, Codex, Cline, etc.) working in
-**MythiStone**. This is the always-on source of repo truth. Task-specific gotchas live as
-progressive-disclosure skills under `.claude/skills/`; read those when a task matches one.
+**MythiStone**. This is the always-on source of repo truth. Look things up in the knowledge map and
+the domain gotchas (see **Knowledge and routing**) instead of reading large files.
 
 ## What this is
 
@@ -19,13 +19,53 @@ collectors (fetch*/collect*/download*.py)
 Collect offline, render static, host static. The published site is plain HTML/CSS/JS. There is
 **no web framework** and no request-time code.
 
+## Knowledge and routing
+
+Two layers, both in the repo:
+
+1. **Code map (generated, never stale).** The `mythi-kb` MCP server (`.mcp.json`) parses the code on
+   demand. Without MCP, run `python .claude/kb/kb.py <tool> <arg>` (`--write` emits
+   `.claude/kb/map/*.md`). Ask it before opening a large file to find something:
+   `databaseConnector.py` (~57k tokens), `database.sql` (~40k), `generateSpecPages.py`,
+   `spec_page.html` and `simcBis.py` (~48k each). Then read only the range it points to.
+   - `kb_table <name>`: columns, keys, storage, the procs and SQL constants that read or write it,
+     and their wrapper functions.
+   - `kb_symbol <name>`: a function, `*_SQL` constant or proc, with its location, SQL, tables,
+     callers and callees.
+   - `kb_page <name>`: generator, workflow args, `render()` keys, template includes, assets,
+     connector functions.
+   - `kb_bot_command <name>`: handler, helpers, connector functions, site JSON.
+   - `kb_file <path>`: owning domain and agent, verification step, and the gotchas for that file.
+   - `kb_search`, `kb_gotcha`, `kb_overview`, `kb_lint`.
+2. **Gotchas (curated).** One rule per file under `.claude/skills/<domain>/ref/<id>.md`, indexed by
+   its domain skill. Before editing a file, read the gotchas `kb_file` lists for it.
+
+| Domain | Owns | Agent | Skills | Verify |
+|---|---|---|---|---|
+| database | `database.sql`, `databaseConnector.py`, `localDev/` | `database` | `database` | ephemeral MySQL 8 for procs; seeder `classify_all` |
+| pages | `generate*.py`, `templates/`, `assets/`, shared generator modules | `pages` | `pages`, `frontend` | `local-test-render` |
+| discord bot | `discord_bot/`, `Dockerfile.bot`, bot CI, ops webhooks | `discord-bot` | `discord-bot` | `db_smoke_test` + run the bot |
+| collector/infra | collectors, simc, Docker images, workflows, season ops, social posts | `collector-infra` | `collector-simc`, `season-ops`, `social` | collector smoke test, image build |
+
+Routing (a subagent starts cold, so delegation only pays for itself on real work):
+
+- **Lookups:** call the kb tools directly. Use `Explore` (knowledge-map first, read-only) only
+  for open-ended sweeps.
+- **A few files in one domain:** work in the main session and load that domain's skill.
+- **Multi-file work in one domain:** delegate to the domain agent with a context packet (files and
+  symbols, tables, gotcha ids, constraints, verify step, done-when).
+- **Cross-domain or unclear scope:** run `planner` first. It returns ordered steps, each with an
+  owning agent and a packet. Run the steps in order and pass each one the previous step's handoff.
+  Agents share knowledge only through packets, handoffs and these files, never by re-exploring.
+- Domain agents end with a handoff note: Changed, Verified, Not verified, Follow-ups, KB findings.
+
 ## Directory map
 
 - `backend_scripts/`: all Python.
   - Collectors/ingestion: `fetch*.py`, `collect*.py`, `download*.py`.
   - Transforms: `process*.py`.
   - Page generators: `generate*.py` (one per page/artifact).
-  - Shared: `databaseConnector.py` (the entire MySQL data-access layer, ~160 KB, every SQL
+  - Shared: `databaseConnector.py` (the entire MySQL data-access layer; every SQL
     statement lives here), `pageGeneration.py`, `aggregateData.py`, `commonUtils.py`.
   - `localDev/`: throwaway MySQL seeder for offline rendering (see the `local-test-render` skill).
   - `image_generation/`: Matplotlib/PIL social + preview image renderers.
@@ -72,7 +112,7 @@ reimplementing formatting.
 id its lookup lacks. New id-bearing data must be seeded from the *same* static-file lookup the
 template uses.
 
-## Frontend stack (summary; detail in the design skills)
+## Frontend stack (summary; detail in the `frontend` skill)
 
 - **Material Dashboard 3 v3.2.0** on **Bootstrap 5.3.3**.
 - **No build step.** Vanilla JS via plain `<script>` includes; app singletons use the
@@ -81,8 +121,7 @@ template uses.
   deliberately ignored); a `mythistone:themechange` window event drives re-theming.
 - Fonts: **Inter** + **Material Symbols Rounded**.
 - Compose Bootstrap/MD utility classes first; **never hardcode** class/stat/rarity hex. Use the
-  design tokens (see the `frontend-design-tokens`, `frontend-framework-choices`, `build-new-page`,
-  and `chart-theming` skills).
+  design tokens (see the `frontend` skill, and the `build-new-page` gotcha in `pages`).
 
 ## Tooling reality
 
@@ -112,16 +151,13 @@ template uses.
 
 ## Recording new knowledge (always apply)
 
-When you finish a task that produced newly gained durable knowledge or important findings
-(non-obvious mechanics, cross-file coupling, gotchas, corrected assumptions), **ask the user for
-permission to record it** — as the **last line of your final message** for that task. Do not record
-first and ask later, and do not record silently: the user decides. Store agreed knowledge as a narrow
-skill under `.claude/skills/` or a section of this file. Never use a tool's private auto-memory — it
-does not transfer across machines or tools; only in-repo notes do.
-
-See the `knowledgebase-authoring` skill for the full protocol: when to skip the ask, how to gauge
-"new" against the knowledgebase, and the writing rules (present-tense only, no history/dates, no
-line-number references).
+When a task produced durable knowledge (non-obvious mechanics, cross-file coupling, gotchas,
+corrected assumptions), **ask the user for permission to record it** as the **last line of your
+final message**. Do not record first, and do not record silently. Agreed knowledge becomes a gotcha
+under `.claude/skills/<domain>/ref/` or a section of this file. Never hand-write facts the code map
+derives, and never use a tool's private auto-memory or the subagent `memory:` field. See the
+`knowledgebase-authoring` skill for the gotcha format and the writing rules (present tense, no
+history, no line numbers), and run `python .claude/kb/kb.py lint` after editing knowledge.
 
 ## Verifying page work
 

@@ -1,6 +1,15 @@
 ---
 name: local-test-render
 description: How to render MythiStone pages locally against a throwaway seeded MySQL. Use whenever you change a templates/*.html, a backend_scripts/generate*.py, pageGeneration.py/aggregateData.py/commonUtils.py, or page CSS/JS, and must verify the rendered page before handing it back.
+files:
+  - templates/*
+  - backend_scripts/generate*.py
+  - backend_scripts/pageGeneration.py
+  - backend_scripts/aggregateData.py
+  - backend_scripts/commonUtils.py
+  - assets/js/*
+  - assets/css/*
+  - backend_scripts/localDev/*
 ---
 
 # Local test render workflow
