@@ -101,6 +101,8 @@ CHART_CACHE_DIR = os.path.join("data", "bot_cache", "charts")
 TREE_HASH_FILE = os.path.join("data", "bot_cache", "tree_hash.txt")
 # Webhook message id of the self-updating command-usage embed (see usage_stats).
 USAGE_STATUS_FILE = os.path.join("data", "bot_cache", "usage_status.json")
+# Written by the collector (discordHandler.STATUS_FILE), mounted read-only.
+COLLECTOR_STATUS_FILE = os.path.join("data", "state", "discord_status.json")
 USAGE_EMBED_INTERVAL_MINUTES = 5
 
 

@@ -4,7 +4,8 @@ Every slash-command invocation is written to ``bot_command_usage`` (one row per
 call, with an outcome), and a single webhook message on ``STATUS_WEBHOOK_URL``
 (default ``WEBHOOK_URL``) is edited every few minutes with the last 24h of usage, mirroring the collector's status
 embed (``backend_scripts/discordHandler.py``). The message id is persisted in the
-``bot_cache`` volume so restarts keep editing the same message.
+``bot_cache`` volume so restarts keep editing the same message. When the collector
+re-posts its status message, the usage message is re-posted too so it stays below it.
 
 Outcomes: ``ok`` (completed), ``blocked`` (season guard), ``user_error`` (bad
 input / cooldown), ``error`` (DB or site data unavailable), ``crash`` (unhandled).
@@ -124,9 +125,22 @@ def build_embed(rows, next_update_epoch: int) -> discord.Embed:
     return embed
 
 
+def _collector_message_id():
+    """Id of the collector's status message, or None when it is unknown."""
+    try:
+        with open(config.COLLECTOR_STATUS_FILE, "r", encoding="utf-8") as fh:
+            return int(json.load(fh)["message_id"])
+    except FileNotFoundError:
+        return None
+    except Exception:
+        log.warning("unreadable %s; not reordering the usage message", config.COLLECTOR_STATUS_FILE, exc_info=True)
+        return None
+
+
 class UsageReporter:
     """Owns the single usage webhook message: edits it in place, recreating it
-    (and persisting the new id) when it was deleted or never existed."""
+    (and persisting the new id) when it was deleted, never existed, or sits above
+    the collector's status message."""
 
     def __init__(self, webhook_url: str, session, interval_seconds: int):
         self.webhook = discord.Webhook.from_url(webhook_url, session=session)
@@ -152,6 +166,15 @@ class UsageReporter:
     async def update(self):
         rows = await db.run(databaseConnector.fetch_bot_command_usage_24h)
         embed = build_embed(rows, int(time.time()) + self.interval)
+        collector_id = _collector_message_id()
+        # Snowflakes are time ordered: a greater collector id was posted after us.
+        if self.message_id is not None and collector_id is not None and collector_id > self.message_id:
+            log.info("collector status %s is newer; re-posting the usage message below it", collector_id)
+            try:
+                await self.webhook.delete_message(self.message_id)
+            except discord.NotFound:
+                pass
+            self.message_id = None
         if self.message_id is not None:
             try:
                 await self.webhook.edit_message(self.message_id, embed=embed)

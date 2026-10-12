@@ -499,8 +499,8 @@ class DiscordReporter:
             self.status_file.write_text(
                 json.dumps({"mode": self.mode, "message_id": self.message_id})
             )
-        except Exception:
-            pass
+        except Exception as e:
+            self._log(f"DiscordReporter: failed to persist status message id: {e}")
 
     # -------------------------
     # Ensure initial message exists (webhook / bot)
@@ -536,6 +536,17 @@ class DiscordReporter:
         except Exception as e:
             # swallow error but don't crash reporter
             self._log(f"DiscordReporter: failed to create status message: {e}")
+            return
+        # Off a volume the id dies with the container, so the next recreate
+        # posts another status message and orphans this one.
+        if not os.path.ismount(self.status_file.parent):
+            await self.send_alert(
+                "Status message id is not persisted",
+                f"`{self.status_file.parent.as_posix()}` is not a docker volume. "
+                "Every restart will post a new status embed. "
+                "Redeploy docker-compose.yml on the server.",
+                level="warning",
+            )
 
     async def _ensure_bot_message(self):
         # create and start a lightweight discord.Client in background

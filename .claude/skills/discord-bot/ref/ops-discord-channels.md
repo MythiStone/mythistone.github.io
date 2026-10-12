@@ -32,6 +32,14 @@ Rules that keep the embeds single and visible:
   image update, so an id kept in the container filesystem is lost and a fresh message is posted,
   leaving the old one behind. The collector's id is in `data/state/discord_status.json`
   (`collector_state` volume), the bot's in `data/bot_cache/usage_status.json` (`bot_cache` volume).
+  `DiscordReporter._ensure_webhook_message` sends a warning to `WEBHOOK_URL` when it has to create
+  the status message at startup while `data/state` is not a mount, because that is the only sign
+  the volume is missing on the server.
+- **The usage message sits below the collector status.** The bot mounts `collector_state`
+  read-only and `UsageReporter.update` compares the collector's message id
+  (`config.COLLECTOR_STATUS_FILE`) with its own. Snowflakes are time ordered, so a greater
+  collector id means the status was posted later, and the bot deletes and re-posts its usage
+  message. Without the file (no collector on the host) the bot never reorders.
 - **Both reporters re-post only on `discord.NotFound`.** Any other edit failure (timeout, 5xx, rate
   limit) keeps the id, logs one line and retries on the next tick. Do not widen that to a generic
   `except`, it is what prevents orphaned duplicates.

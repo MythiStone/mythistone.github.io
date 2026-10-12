@@ -80,6 +80,7 @@ services:
       - ./.env:/app/.env:ro
       # persists the rendered-chart disk cache across restarts
       - bot_cache:/app/data/bot_cache
+      - collector_state:/app/data/state:ro
     env_file: .env
     logging:
       options:
