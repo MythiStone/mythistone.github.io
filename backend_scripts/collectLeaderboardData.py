@@ -267,6 +267,8 @@ CACHE_MAX_SIZE = 5000
 
 # raider.io /mythic-plus/runs pages are 0-indexed (page 0 = ranks 1-20).
 ROUTE_PAGES_PER_DUNGEON = 500
+# The route poller rescans every leaderboard this often.
+ROUTE_SWEEP_SECONDS = 6 * 3600
 
 for region in REGIONS:
     id_var = f"BLIZ_CLIENT_ID_{region.upper()}"
@@ -475,7 +477,30 @@ def build_aura_rows(full: dict) -> list[dict]:
     return rows
 
 
-async def fetch_raider_page(session: ClientSession, dungeon_slug: str, page: int) -> dict:
+def listed_video_ids(run: dict) -> set[int]:
+    """Ids of the POV videos a leaderboard list entry carries (the list payload has
+    the same `videos` array as run-details)."""
+    return {v["video_id"] for v in build_video_rows(run, 0)}
+
+
+def order_route_sweep(listed: dict, handled_run_ids: set, known_video_ids: set) -> list[tuple]:
+    """(has a video not stored yet, run_id) for every listed run that needs a
+    run-details fetch, VOD runs first and then newest first. `listed` is
+    {run_id: video ids in the list payload}. A handled run comes back only for a
+    video that is not stored: raider.io links VODs after a run was first collected,
+    and a run can be marked collected without its route having been stored."""
+    pending = []
+    for run_id, video_ids in listed.items():
+        new_video = bool(video_ids - known_video_ids)
+        if new_video or run_id not in handled_run_ids:
+            pending.append((new_video, run_id))
+    pending.sort(reverse=True)
+    return pending
+
+
+async def fetch_raider_page(session: ClientSession, dungeon_slug: str, page: int) -> dict | None:
+    """One leaderboard page, empty rankings past the last page, or None when the
+    request failed."""
     url = "https://raider.io/api/v1/mythic-plus/runs"
     params = {
         "region": "world",
@@ -494,7 +519,7 @@ async def fetch_raider_page(session: ClientSession, dungeon_slug: str, page: int
             return await resp.json()
     except Exception as e:
         GLOBAL_STATS.console_log(f"ERROR fetching page {page} for dungeon '{dungeon_slug}': {e}")
-        return {"rankings": [], "params": {}}
+        return None
 
 async def fetch_run_details(session: ClientSession, run_id: int, season: str) -> dict:
     global run_details_cache
@@ -586,7 +611,8 @@ async def fetch_keystone_route(session: ClientSession, route_key: str) -> dict |
 
 def _store_route_job(name, conn, cursor, aura_season_id, raider_reduced, keystone_route):
     """Blocking half of route_db_worker, run in a worker thread. Returns
-    "inserted", "duplicate" or "skipped" (run has no eligible route)."""
+    ("inserted" | "duplicate" | "skipped" (run has no eligible route), number of
+    POV videos newly stored)."""
     route_key = keystone_route.get("publicKey") or raider_reduced.get("route_key")
     print(f"[{name}] Processing route {route_key} for run {raider_reduced.get('keystone_run_id')}")
     rio_run_id = int(raider_reduced.get("keystone_run_id") or 0)
@@ -614,16 +640,23 @@ def _store_route_job(name, conn, cursor, aura_season_id, raider_reduced, keyston
         and int(ef_actual) >= int(ef_required)
     if not route_eligible:
         conn.rollback()
-        return "skipped"
+        return "skipped", 0
 
     rowcount = databaseConnector.insert_route_data(
         conn, cursor, rio_run_id, mapping_version, enemy_forces, timestamp, keystone_level, duration, dungeon_id, route_key
     )
     if rowcount == 0:
-        # Duplicate route, skip inserting specs and pulls
-        conn.rollback() # Or commit(), doesn't matter, just skip
+        # Duplicate route: specs and pulls are already stored. Its videos still go
+        # in, because raider.io links a VOD after the run was first collected.
         print(f"[{name}] Route {route_key} already exists in DB, skipping.")
-        return "duplicate"
+        videos_stored = 0
+        for video in raider_reduced.get("videos", []):
+            try:
+                videos_stored += databaseConnector.insert_route_video_for_run(conn, cursor, route_key, video)
+            except Exception as e:
+                print(f"[{name}] Error inserting route video for route {route_key}: {e}")
+        conn.commit()
+        return "duplicate", videos_stored
 
     for s in raider_reduced.get("roster_specs", []):
         try:
@@ -653,9 +686,10 @@ def _store_route_job(name, conn, cursor, aura_season_id, raider_reduced, keyston
     # POV videos and logged-run telemetry (deaths/encounters). Only reached for a
     # newly-inserted route (duplicates return above), so this is the run stored
     # in route_data and the telemetry always matches it. Non-fatal per item.
+    videos_stored = 0
     for video in raider_reduced.get("videos", []):
         try:
-            databaseConnector.insert_route_video(conn, cursor, route_key, video)
+            videos_stored += databaseConnector.insert_route_video(conn, cursor, route_key, video)
         except Exception as e:
             print(f"[{name}] Error inserting route video for route {route_key}: {e}")
     for seq, died_at in enumerate(raider_reduced.get("deaths", [])):
@@ -671,7 +705,7 @@ def _store_route_job(name, conn, cursor, aura_season_id, raider_reduced, keyston
 
     print(f"[{name}] Successfully inserted route {route_key} with {len(raider_reduced.get('roster_specs', []))} specs and {len(keystone_route.get('pulls', []))} pulls.")
     conn.commit()
-    return "inserted"
+    return "inserted", videos_stored
 
 
 async def route_db_worker(name: str):
@@ -701,7 +735,7 @@ async def route_db_worker(name: str):
                 await WRITE_GATE.begin()  # yield to a pending season wipe
                 try:
                     # a route is a few hundred small statements: keep them off the event loop
-                    status = await asyncio.to_thread(
+                    status, videos_stored = await asyncio.to_thread(
                         _store_route_job, name, conn, cursor, aura_season_id,
                         raider_reduced, keystone_route,
                     )
@@ -709,6 +743,11 @@ async def route_db_worker(name: str):
                         await GLOBAL_STATS.increment("duplicate_routes")
                     elif status == "inserted":
                         await GLOBAL_STATS.increment("db_insert_route")
+                    elif status == "skipped" and raider_reduced.get("videos"):
+                        # route_videos needs a route_data row, so these VODs are lost
+                        await GLOBAL_STATS.increment("vod_runs_without_route")
+                    if videos_stored:
+                        await GLOBAL_STATS.increment("db_insert_route_video", videos_stored)
                 except Exception as e:
                     conn.rollback()
                     GLOBAL_STATS.console_log(f"[{name}] DB insert route error: {e}")
@@ -764,24 +803,33 @@ async def route_poller_task(session: ClientSession):
     except Exception as e:
         GLOBAL_STATS.console_log(f"route poller: could not preload collected run ids: {e}")
         handled_run_ids = set()
+    # Video ids already stored, or already tried by this process. A handled run is
+    # fetched again only while the leaderboard lists a video outside this set.
+    try:
+        known_video_ids = await asyncio.to_thread(databaseConnector.read_route_video_ids)
+    except Exception as e:
+        GLOBAL_STATS.console_log(f"route poller: could not preload stored video ids: {e}")
+        known_video_ids = set()
     GLOBAL_STATS.console_log(
-        f"route poller: {len(handled_run_ids)} run-details already collected"
+        f"route poller: {len(handled_run_ids)} run-details already collected, "
+        f"{len(known_video_ids)} videos stored"
     )
-    # Start each sweep one dungeon further along (and somewhere different after
-    # each restart), so the dungeons at the end of the list are not always the
-    # ones a restart cuts off.
-    sweep = int(time.time() // 3600)
 
     while not cancel_event.is_set():
-        offset = sweep % len(dungeon_slugs)
-        sweep += 1
-        for slug in dungeon_slugs[offset:] + dungeon_slugs[:offset]:
-            if cancel_event.is_set(): break
-            run_ids_set = set()
-            page = 0
-            while page < ROUTE_PAGES_PER_DUNGEON and not cancel_event.is_set():
+        sweep_started = time.monotonic()
+        listed = {}  # run_id -> video ids the leaderboard lists for it
+        for slug in dungeon_slugs:
+            failed_pages = 0
+            for page in range(ROUTE_PAGES_PER_DUNGEON):
+                if cancel_event.is_set(): break
                 data = await fetch_raider_page(session, slug, page)
                 await GLOBAL_STATS.increment("rio_pages_checked")
+                if data is None:
+                    # one bad page is skipped, a run of them means raider.io is down
+                    failed_pages += 1
+                    if failed_pages >= 3: break
+                    continue
+                failed_pages = 0
                 rankings = data.get("rankings", [])
                 if not rankings: break
 
@@ -793,44 +841,64 @@ async def route_poller_task(session: ClientSession):
                     if not run or run.get("logged_run_id") is None: continue
                     keystone_id = run.get("keystone_run_id")
                     if keystone_id is not None:
-                        run_ids_set.add(keystone_id)
+                        listed[keystone_id] = listed_video_ids(run)
 
-                page += 1
+        if not listed:
+            await asyncio.sleep(600)  # nothing came back at all: rescan soon
+            continue
 
-            for run_id in sorted(run_ids_set - handled_run_ids):
-                if cancel_event.is_set(): break
-                raider = await fetch_run_details(session, run_id, CURRENT_SEASON)
-                await GLOBAL_STATS.increment("rio_routes_checked")
-                if not raider:
-                    continue
+        pending = order_route_sweep(listed, handled_run_ids, known_video_ids)
+        GLOBAL_STATS.console_log(
+            f"route poller: {len(listed)} logged runs listed, "
+            f"{sum(1 for ids in listed.values() if ids)} with videos, {len(pending)} queued, "
+            f"{sum(1 for new_video, _ in pending if new_video)} of them for a video not stored yet"
+        )
 
-                ts = raider.get("timestamp")
-                if not ts or int(ts) < int(time.time()) - (28 * 24 * 60 * 60):
-                    handled_run_ids.add(run_id)
-                    continue
+        for new_video, run_id in pending:
+            if cancel_event.is_set(): break
+            # The queue is rebuilt from a fresh scan every ROUTE_SWEEP_SECONDS, so new
+            # VOD runs never wait behind a multi-day backlog.
+            if time.monotonic() - sweep_started >= ROUTE_SWEEP_SECONDS: break
+            if new_video:
+                # a copy cached before the video was linked has no videos
+                run_details_cache.pop(run_id, None)
+            raider = await fetch_run_details(session, run_id, CURRENT_SEASON)
+            await GLOBAL_STATS.increment("rio_routes_checked")
+            if not raider:
+                continue
 
-                # Fetch the keystone.guru route when this run has one, but do NOT gate
-                # on it here: consumables/auras must be collected for every logged run
-                # in the sweep. route_db_worker persists auras first, then stores the
-                # route only when it is eligible (enemyForces check moved there).
-                keystone = {}
-                route_key = raider.get("route_key")
-                if route_key:
-                    keystone = await fetch_keystone_route(session, route_key)
-                    await GLOBAL_STATS.increment("kg_routes_fetched")
-                if keystone is None:
-                    # Transient keystone.guru failure: queue nothing, so no aura_run
-                    # row marks the run collected for the next restart's preload,
-                    # and a later sweep retries the whole run (route + videos).
-                    await asyncio.sleep(10)
-                    continue
+            ts = raider.get("timestamp")
+            if not ts or int(ts) < int(time.time()) - (28 * 24 * 60 * 60):
                 handled_run_ids.add(run_id)
+                known_video_ids.update(listed[run_id])
+                continue
 
-                await route_db_queue.put((raider, keystone))
+            # Fetch the keystone.guru route when this run has one, but do NOT gate
+            # on it here: consumables/auras must be collected for every logged run
+            # in the sweep. route_db_worker persists auras first, then stores the
+            # route only when it is eligible (enemyForces check moved there).
+            keystone = {}
+            route_key = raider.get("route_key")
+            if route_key:
+                keystone = await fetch_keystone_route(session, route_key)
+                await GLOBAL_STATS.increment("kg_routes_fetched")
+            if keystone is None:
+                # Transient keystone.guru failure: queue nothing, so no aura_run
+                # row marks the run collected for the next restart's preload,
+                # and a later sweep retries the whole run (route + videos).
+                await asyncio.sleep(10)
+                continue
+            handled_run_ids.add(run_id)
+            known_video_ids.update(listed[run_id])
+            known_video_ids.update(v["video_id"] for v in raider.get("videos", []))
 
-                await asyncio.sleep(10) # slow running
+            await route_db_queue.put((raider, keystone))
 
-        await asyncio.sleep(3600) # wait an hour before fetching again
+            await asyncio.sleep(10) # slow running
+
+        remaining = ROUTE_SWEEP_SECONDS - (time.monotonic() - sweep_started)
+        if remaining > 0:
+            await asyncio.sleep(remaining)
 
 # Utils
 async def get_max_keys_by_dungeon(session: ClientSession) -> dict[int, int]:
