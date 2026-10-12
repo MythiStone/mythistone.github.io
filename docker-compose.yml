@@ -97,10 +97,9 @@ services:
       - WATCHTOWER_POLL_INTERVAL=600
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_TIMEOUT=1200
-      # One report per real update or failure, nothing for a no-op scan or a
-      # watchtower start, so the alert channel is not flooded with log lines.
+      # NOTIFICATION_REPORT stays off: this fork's report mode posts a summary
+      # for every scan, the default log mode only posts when something changed.
       - WATCHTOWER_NO_STARTUP_MESSAGE=true
-      - WATCHTOWER_NOTIFICATION_REPORT=true
       - WATCHTOWER_NOTIFICATION_URL=discord://${WEBHOOK_TOKEN}@${WEBHOOK_CHANNEL}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
