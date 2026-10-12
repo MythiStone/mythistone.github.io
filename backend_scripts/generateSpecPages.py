@@ -3273,6 +3273,14 @@ def main(template_path, output_dir, debug=False, spec=None):
                 if _t is not None:
                     top_by_tree[int(_t)].append(_lo)
 
+            def hero_tree_nodes(hero_tree_id):
+                """Every node of one hero tree. Passed to build_ui_tree without
+                is_hero, it yields the whole positioned tree, not just the choices."""
+                return [
+                    n for n in tree_nodes.get("heroNodes", [])
+                    if n.get("subTreeId") == hero_tree_id
+                ]
+
             def top_talent_view(hero_tree_id):
                 """Talent trees + export string from this hero tree's top-player
                 loadouts (Top Players view). None when no top player runs it."""
@@ -3287,6 +3295,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                     "ui_hero_tree": build_ui_tree(
                         tree_nodes.get("heroNodes", []), pop, is_hero=True, pop_hero_tree_id=hero_tree_id,
                     ),
+                    "ui_hero_full": build_ui_tree(hero_tree_nodes(hero_tree_id), pop),
                     "loadout_code": escape_raidbot_code(texts.most_common(1)[0][0]) if texts else None,
                 }
 
@@ -3329,6 +3338,10 @@ def main(template_path, output_dir, debug=False, spec=None):
                     "ui_class_tree": ui_class_tree,
                     "ui_spec_tree": ui_spec_tree,
                     "ui_hero_tree": ui_hero_tree,
+                    "ui_hero_full": build_ui_tree(
+                        hero_tree_nodes(tid), hero_by_tree.get(tid, {}),
+                        top_pct_map=top_pct_map, top_entry_pct_map=top_entry_pct_map,
+                    ),
                     "loadout_code": escape_raidbot_code(
                         loadouts.get(tid, {}).get("loadout")
                     ),

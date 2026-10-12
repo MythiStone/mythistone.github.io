@@ -340,6 +340,21 @@
 </div>
 {%- endmacro %}
 
+{# Node of the full hero tree (hero tree modal). Only choice nodes carry pick rates:
+   every other hero node is always taken, and may have no usage rows at all. #}
+{% macro render_hero_full_node(n) -%}
+{% if n.type == 'choice' %}
+{# --tt-node-left keeps the choice popup inside the tree's width (spec-page.css). #}
+<div class="tt-hero-full-choice" style="--tt-node-left: {{n.left}}%;">{{ render_tree_node(n) }}</div>
+{% else %}
+<div class="tt-node" data-ntype="{{n.type}}" style="position: absolute; left: {{n.left}}%; top: {{n.top}}%; transform: translate(-50%, -50%); z-index: 2;">
+  <a href="https://www.wowhead.com/spell={{n.spellId}}" target="_blank" rel="noopener">
+    <img src="/data/icons/{{n.icon}}.png" alt="Icon" width="32" height="32" style="border-radius: {% if n.type == 'passive' %}50%{% else %}10%{% endif %}; border: 1px solid #ffb000;" onerror="this.src='/data/icons/inv_misc_questionmark.png'">
+  </a>
+</div>
+{% endif %}
+{%- endmacro %}
+
 {# Talent build list pieces. key_badge mirrors the item max-key badge (render_slot). #}
 {% macro key_badge(b) -%}
 {% if b.max_timed_key or b.max_depleted_key %}
@@ -953,6 +968,10 @@
                     {{ render_hero_node(n) }}
                     {% endfor %}
                   </div>
+                  {% if tv.ui_hero_full and tv.ui_hero_full.nodes %}
+                  <button type="button" class="text-xs text-secondary tt-hero-detail-btn"
+                    data-bs-toggle="modal" data-bs-target="#heroTreeModal" title="See every talent in {{ v.name }}">View full tree</button>
+                  {% endif %}
                 </div>
                 {% endif %}
 
@@ -2792,6 +2811,51 @@
       </div>
     </div>
   </div>
+  {# The whole hero tree, opened by "View full tree" under the hero choices. The
+     blocks follow the page's hero tree and Top 50 switch (spec-page.js). Not
+     modal-dialog-scrollable: its overflow would clip the choice popups. #}
+  <div class="modal fade" id="heroTreeModal" tabindex="-1" aria-labelledby="heroTreeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content card">
+        <div class="modal-header">
+          <h5 class="modal-title" id="heroTreeModalLabel">Hero tree</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-sm mb-3">
+            Every talent in a hero tree is taken at max level. Only the choice talents, shown as octagons, differ
+            between builds. Hover a talent for its Wowhead tooltip or click it to open it on Wowhead.
+          </p>
+          {% for cohort in (['all', 'top'] if has_top_view else ['all']) %}
+          {% for v in hero_variants %}
+          {% set is_top_cohort = cohort == 'top' %}
+          {% set tv = (v.top_view or v) if is_top_cohort else v %}
+          {% set share = v.top_pct if is_top_cohort else v.pct %}
+          <div class="hero-section-variant" data-cohort="{{ cohort }}" data-hero-tree-id="{{ v.id }}"{% if is_top_cohort or not v.is_default %} style="display: none;"{% endif %}>
+            <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+              <img src="/data/icons/{{ v.icon }}.png" alt="" width="36" height="36" class="rounded-circle" onerror="this.src='/data/icons/inv_misc_questionmark.png'">
+              <h6 class="mb-0">{{ v.name }}</h6>
+              <span class="text-sm text-secondary">{{ share | round | int }}%{% if is_top_cohort %} of top player loadouts{% else %} of players{% endif %}</span>
+            </div>
+            {% if tv.ui_hero_full and tv.ui_hero_full.nodes %}
+            <div class="tt-column tt-tree-column tt-hero-full">
+              <svg class="tt-edges">
+                {% for e in tv.ui_hero_full.edges %}
+                <line x1="{{e.x1}}%" y1="{{e.y1}}%" x2="{{e.x2}}%" y2="{{e.y2}}%" style="stroke: #ffb000; stroke-width: 2px;"></line>
+                {% endfor %}
+              </svg>
+              {% for n in tv.ui_hero_full.nodes %}
+              {{ render_hero_full_node(n) }}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
   {# "How to read the talents" explainer, opened by the info button by the talent tree. #}
   <div class="modal fade" id="talentInfoModal" tabindex="-1" aria-labelledby="talentInfoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
@@ -2830,6 +2894,8 @@
             {% if top_hero_tree_name %} The top&nbsp;50 ranked players most often prefer
             <strong>{{ top_hero_tree_name }}</strong>{% if top_hero_tree_pct %} ({{ '{:.0f}'.format(top_hero_tree_pct)
             }}%){% endif %}, which can differ from the wider field's favourite.{% endif %}
+            Under the icon are only that tree's choice talents, because the rest of a hero tree is the same for
+            everyone. <strong>View full tree</strong> opens the whole hero tree.
           </p>
           {% if has_builds %}
           <p>

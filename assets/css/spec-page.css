@@ -278,6 +278,30 @@
   text-align: center;
 }
 
+/* Full hero tree (hero tree modal): every hero tree is 1-4-4-4-1 rows. */
+.tt-hero-full {
+  max-width: 380px;
+  aspect-ratio: 0.78;
+}
+.tt-hero-full-choice { display: contents; }
+/* A hero choice node is always taken, so its node-level pick rate says nothing. */
+.tt-hero-full .tt-badge { display: none; }
+/* Shift the popup by the node's own x position, so it never leaves the tree
+   (a centred popup is cut off at the screen edge on phones). */
+.tt-hero-full .tt-custom-tooltip { transform: translateX(calc(-1 * var(--tt-node-left, 50%))) !important; }
+/* Clears the pct chip hanging under the last hero choice node. */
+.tt-hero-detail-btn {
+  margin-top: 2.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  letter-spacing: 0.3px;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.tt-hero-detail-btn:hover,
+.tt-hero-detail-btn:focus-visible { color: var(--bs-emphasis-color) !important; }
+
 .tt-choice-inner {
   position: relative;
   display: inline-flex;

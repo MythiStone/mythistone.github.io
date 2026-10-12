@@ -267,7 +267,7 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
       const clone = source.cloneNode(true);
       clearTree(clone);  // the page tree may be showing a build
       clone.querySelectorAll(
-        '.tt-top-badge, .tt-choice-pct, .tt-choice-badge, .tt-hero-top-hint, .tt-hero-switch-label, .tt-hero-switch-hint'
+        '.tt-top-badge, .tt-choice-pct, .tt-choice-badge, .tt-hero-top-hint, .tt-hero-switch-label, .tt-hero-switch-hint, .tt-hero-detail-btn'
       ).forEach((el) => el.remove());
       clone.querySelectorAll('.tt-hero-switch').forEach((el) => {
         el.classList.remove('tt-hero-switch-active');
