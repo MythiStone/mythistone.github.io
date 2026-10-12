@@ -953,16 +953,33 @@ a.item-source-badge:hover {
   }
 }
 
-/* Talent Builds modal (see talentBuilds.py): core build rows on the left, class tree
-   variant pills plus the painted tree on the right, stacked below xl. */
-@media (min-width: 1200px) {
-  .tt-builds-dialog { max-width: min(1500px, 96vw); }
-  /* the tree sets the row height and the list scrolls inside it, so no empty space
-     is left under the tree */
-  .tt-build-list-col { position: relative; }
-  .tt-build-list { position: absolute; inset: 0 0.75rem 0 calc(var(--bs-gutter-x) * 0.5); overflow-y: auto; padding-right: 0.25rem; }
-}
+/* Talent section: the build list (see talentBuilds.py) as a rail, the tree it
+   paints and the tree's actions under the rail. When narrow, the
+   rail stacks above the tree and the actions below it. A container query, not a
+   viewport one, because the sidenav and the ad aside take a varying share of the
+   viewport. */
+.tt-panel-wrap { container-type: inline-size; }
+.tt-panel { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "rail" "tree" "actions"; gap: 1rem 1.5rem; }
+.tt-panel-rail { grid-area: rail; min-width: 0; }
+.tt-panel-actions { grid-area: actions; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+.tt-panel-tree { grid-area: tree; min-width: 0; }
+.tt-panel-view { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.6rem; min-height: 1.5rem; }
+.tt-panel-view-title { font-size: 0.95rem; font-weight: 700; color: var(--bs-emphasis-color); }
+.tt-panel-view-sub { font-size: 0.75rem; color: var(--mythi-text-muted); }
 .tt-build-list { display: flex; flex-direction: column; gap: 0.4rem; }
+@container (min-width: 1300px) {
+  .tt-panel { grid-template-columns: 21rem minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "rail tree" "actions tree"; }
+  /* The tree sets the section height. The list fills the rail and scrolls inside it,
+     and spec-page.js syncVariants opens class tree variants to fill what is left. */
+  .tt-panel-rail { position: relative; min-height: 16rem; }
+  .tt-build-list { position: absolute; inset: 0; overflow-y: auto; }
+  .tt-panel-actions { flex-direction: column; flex-wrap: nowrap; }
+}
+@container (max-width: 1299.98px) {
+  /* stacked: rows side by side and a capped height keep the tree in reach */
+  .tt-build-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); align-items: start; max-height: 20rem; overflow-y: auto; padding-right: 0.25rem; }
+  .tt-build-list > :not(.tt-build-card) { grid-column: 1 / -1; }
+}
 .tt-build-list-title {
   font-size: 0.7rem;
   font-weight: 600;
@@ -977,9 +994,9 @@ a.item-source-badge:hover {
   width: 100%;
   padding: 0.45rem 0.65rem;
   text-align: left;
-  border: 1px solid var(--mythi-border-strong);
+  border: 1px solid var(--mythi-border-subtle);
   border-radius: 0.5rem;
-  background: var(--mythi-surface-raised);
+  background: var(--mythi-chip-bg);
   color: var(--bs-body-color);
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
@@ -988,10 +1005,10 @@ a.item-source-badge:hover {
 .tt-build-card:focus-visible { border-color: var(--bs-primary); }
 .tt-build-card.is-active {
   border-color: var(--bs-primary);
-  background: color-mix(in srgb, var(--bs-primary) 10%, var(--mythi-surface-raised));
+  background: color-mix(in srgb, var(--bs-primary) 12%, transparent);
 }
 .tt-build-head { display: flex; align-items: center; gap: 0.5rem; }
-.tt-build-label { font-size: 0.85rem; font-weight: 700; }
+.tt-build-label { font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
 .tt-build-end { display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; }
 .tt-build-share { min-width: 2.6em; text-align: right; font-size: 0.9rem; font-weight: 700; color: var(--bs-primary); cursor: help; }
 .tt-build-head .max-key-badge { font-size: 0.7rem; }
@@ -1007,6 +1024,8 @@ a.item-source-badge:hover {
   cursor: help;
 }
 .tt-build-top50.is-top { background: #ffd100; color: #000; }
+/* a Top 50 list row ends on this share instead of the run share */
+.tt-build-end .tt-build-top50 { font-size: 0.8rem; }
 .tt-build-sub { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
 /* one line; spec-page.js fitChips hides what does not fit behind "+N more" */
 .tt-build-chips { display: flex; flex: 1 1 auto; min-width: 0; align-items: center; gap: 0.35rem; overflow: hidden; padding: 0 5px 5px 0; }
@@ -1046,10 +1065,11 @@ a.item-source-badge:hover {
 .tt-build-variants { display: flex; flex-direction: column; gap: 0.4rem; margin-left: 0.75rem; padding-left: 0.65rem; border-left: 2px solid var(--bs-primary); }
 .tt-build-variants[hidden] { display: none; }
 
-.tt-build-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.5rem; }
-.tt-build-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--mythi-text-muted); }
-.tt-build-legend li { display: inline-flex; align-items: center; gap: 0.4rem; }
+/* samples of the build marks in the "How to read the talents" text */
 .tt-legend-icon {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 3px;
   width: 16px;
   height: 16px;
   border-radius: 50%;
@@ -1068,12 +1088,10 @@ a.item-source-badge:hover {
 }
 .tt-legend-pct { border: 1px dashed var(--bs-primary); }
 .tt-legend-rank { border: 1px solid #ffb000; }
-.tt-build-tree-mount .talent-tree-wrapper { gap: 1rem !important; padding: 0.5rem 0; }
-.tt-build-tree-mount .tt-hero-switch { cursor: default; }
 
-/* A build painted onto the modal's tree clone: pick-rate badges hide, unpicked
-   nodes go dim grey, picked edges light up. The !important rules beat the inline
-   grayscale/stroke the cloned pick-rate tree is rendered with. */
+/* A build painted onto the page tree (.tt-variant.tt-build-view): pick-rate badges
+   hide, unpicked nodes go dim grey, picked edges light up. The !important rules
+   beat the inline grayscale/stroke the pick-rate tree is rendered with. */
 .tt-build-view .tt-badge,
 .tt-build-view .tt-hero-share,
 .tt-build-view .tt-hero-node-pct,
@@ -1105,7 +1123,7 @@ a.item-source-badge:hover {
   white-space: nowrap;
 }
 .tt-build-rank { top: -6px; right: -6px; border: 1px solid #ffb000; }
-/* added / dropped vs Build 1 (or Variant 1); also the legend sample */
+/* added / dropped vs the Standard build (or the standard class tree) */
 .tt-build-change {
   display: inline-flex;
   align-items: center;
@@ -1120,8 +1138,7 @@ a.item-source-badge:hover {
 }
 .tt-build-change.is-plus { background: var(--mythi-text-success); }
 .tt-build-change.is-minus { background: var(--mythi-text-danger); }
-.tt-build-tree-mount .tt-build-change { position: absolute; top: -6px; left: -6px; z-index: 5; cursor: help; }
-.tt-build-legend .tt-build-change + .tt-build-change { margin-left: -0.2rem; }
+.tt-build-view .tt-build-change { position: absolute; top: -6px; left: -6px; z-index: 5; cursor: help; }
 .tt-build-flex-badge { bottom: -8px; right: -8px; border: 1px dashed var(--bs-primary); cursor: help; }
 
 /* Top Players switch (spec-page.js toggles body.spec-cohort-top): the theme's

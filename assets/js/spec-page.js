@@ -144,12 +144,29 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
         }
       });
     })();
+    // Filled in by the talent builds block below: the export string of the build
+    // painted on a hero tree, and a hook for when the visible tree or list changes.
+    const talentBuilds = { codeFor: () => '', onViewChange: () => {} };
+
+    // Export Talent String copies the build painted on the visible tree, else
+    // that tree's most-used loadout.
+    function syncExport() {
+      const btnText = document.getElementById('btnText');
+      const copyBtn = document.getElementById('copyBtn');
+      const active = Array.from(document.querySelectorAll('.tt-variant')).find((el) => el.style.display !== 'none');
+      if (!btnText || !copyBtn || !active) return;
+      const loadout = talentBuilds.codeFor(active.getAttribute('data-hero-tree-id')) ||
+        active.getAttribute('data-loadout') || '';
+      btnText.setAttribute('data-loadout', loadout);
+      copyBtn.style.display = loadout ? '' : 'none';
+    }
+
     // View switcher: the hero tree (cycled by clicking the hero icon) and the Top
     // Players toggle together pick which server-rendered blocks are visible. Every
     // switchable block carries data-hero-tree-id; blocks that differ per data
     // source also carry data-cohort ("all" | "top", see section_variants in
-    // generateSpecPages.py). Blocks without data-cohort (per-dungeon talent diffs,
-    // Talent Builds) follow the hero tree only.
+    // generateSpecPages.py). Blocks without data-cohort (per-dungeon talent diffs)
+    // follow the hero tree only.
     (function () {
       const variants = Array.from(document.querySelectorAll('.tt-variant'));
       if (!variants.length) return;
@@ -158,15 +175,6 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
       );
       const treeIds = [...new Set(variants.map((el) => el.getAttribute('data-hero-tree-id')))];
       const cohortSwitch = document.getElementById('cohort-toggle');
-
-      function syncExport(variantEl) {
-        const btnText = document.getElementById('btnText');
-        const copyBtn = document.getElementById('copyBtn');
-        if (!btnText || !copyBtn) return;
-        const loadout = variantEl.getAttribute('data-loadout') || '';
-        btnText.setAttribute('data-loadout', loadout);
-        copyBtn.style.display = loadout ? '' : 'none';
-      }
 
       // The server-rendered default: the visible overall-data tree.
       const initial = variants.find((el) => el.style.display !== 'none') || variants[0];
@@ -180,11 +188,11 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
           const match = el.getAttribute('data-hero-tree-id') === treeId && (!elCohort || elCohort === cohort);
           el.style.display = match ? '' : 'none';
         });
-        const active = variants.find((el) => el.style.display !== 'none');
-        if (active) syncExport(active);
+        syncExport();
         const isTop = cohort === 'top';
         document.body.classList.toggle('spec-cohort-top', isTop);
         if (cohortSwitch) cohortSwitch.checked = isTop;
+        talentBuilds.onViewChange();
       }
       show();
 
@@ -239,6 +247,16 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
       }
     })();
 
+    // Strips a painted build (paintTree below) from a talent tree.
+    function clearTree(root) {
+      root.querySelectorAll('.tt-build-rank, .tt-build-flex-badge, .tt-build-change, .tt-build-choice-pct').forEach((el) => el.remove());
+      root.querySelectorAll('.is-picked, .is-flex').forEach((el) => el.classList.remove('is-picked', 'is-flex'));
+      root.querySelectorAll('img[data-orig-src]').forEach((img) => {
+        img.setAttribute('src', img.getAttribute('data-orig-src'));
+        img.removeAttribute('data-orig-src');
+      });
+    }
+
     // A copy of one hero tree's page talent tree for a modal to repaint, with the
     // season-wide badges and the page-only hero switcher stripped.
     function cloneTalentTree(treeId) {
@@ -247,6 +265,7 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
       );
       if (!source) return null;
       const clone = source.cloneNode(true);
+      clearTree(clone);  // the page tree may be showing a build
       clone.querySelectorAll(
         '.tt-top-badge, .tt-choice-pct, .tt-choice-badge, .tt-hero-top-hint, .tt-hero-switch-label, .tt-hero-switch-hint'
       ).forEach((el) => el.remove());
@@ -266,27 +285,22 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
       return clone;
     }
 
-    // Talent Builds modal: a build card paints that exact build onto a clone of
-    // its hero tree's talent tree and points "Copy this build" at its (real,
-    // collected) string. The paint is class-driven (.tt-build-view, see
-    // spec-page.css), so repainting another build needs no saved node state.
+    // Talent build list: a build card paints that exact build onto its hero
+    // tree's page talent tree and points Export Talent String at its (real,
+    // collected) string; the "Overview" card (empty id) restores the pick rates.
+    // The paint is class-driven (.tt-build-view, see spec-page.css), so it needs
+    // no saved node state. Lists exist per (cohort, hero tree), the selection per
+    // hero tree.
     (function () {
-      const modal = document.getElementById('talentBuildsModal');
+      const root = document.getElementById('static-talent-tree');
       const paths = SPEC.buildPaths || {};
       const choiceSpells = paths.choiceSpells || {};
       const buildsByTree = paths.builds || {};
-      const panels = modal ? Array.from(modal.querySelectorAll('.tt-builds')) : [];
+      const panels = root ? Array.from(root.querySelectorAll('.tt-builds')) : [];
       if (!panels.length) return;
-      const selected = {};  // hero tree id -> build id
-
-      function clearTree(mount) {
-        mount.querySelectorAll('.tt-build-rank, .tt-build-flex-badge, .tt-build-change, .tt-build-choice-pct').forEach((el) => el.remove());
-        mount.querySelectorAll('.is-picked, .is-flex').forEach((el) => el.classList.remove('is-picked', 'is-flex'));
-        mount.querySelectorAll('img[data-orig-src]').forEach((img) => {
-          img.setAttribute('src', img.getAttribute('data-orig-src'));
-          img.removeAttribute('data-orig-src');
-        });
-      }
+      const viewTitle = root.querySelector('.tt-panel-view-title');
+      const viewSub = root.querySelector('.tt-panel-view-sub');
+      const selected = {};  // hero tree id -> build id, unset on Overview
 
       function addBadge(node, cls, text, title) {
         const el = document.createElement('span');
@@ -363,9 +377,35 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
           btn.classList.toggle('is-active', on);
           btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
-        panel.querySelectorAll('.tt-build-variants').forEach((row) => {
-          row.hidden = row.getAttribute('data-core') !== core;
+        syncVariants(panel);
+      }
+
+      // Class tree variants show for the selected build. When the list is as
+      // tall as the tree (absolutely positioned in the wide layout, see
+      // spec-page.css), the other builds' variants open too while they fit, so
+      // a short list fills the rail. `refill` redoes that fill, as does going
+      // back to the Overview; picking a build keeps it, so the rows above the
+      // clicked build do not move.
+      function syncVariants(panel, refill) {
+        const list = panel.querySelector('.tt-build-list');
+        const core = (selected[treeIdOf(panel)] || '').split('.')[0];
+        const rows = Array.from(panel.querySelectorAll('.tt-build-variants'));
+        refill = refill || !core;
+        if (refill) rows.forEach((row) => row.removeAttribute('data-fill'));
+        rows.forEach((row) => {
+          row.hidden = row.getAttribute('data-core') !== core && !row.hasAttribute('data-fill');
         });
+        if (refill && list.clientHeight && getComputedStyle(list).position === 'absolute') {
+          for (const row of rows) {
+            if (!row.hidden) continue;
+            row.hidden = false;
+            if (list.scrollHeight > list.clientHeight) {
+              row.hidden = true;
+              break;
+            }
+            row.setAttribute('data-fill', '');
+          }
+        }
         fitChips(panel);
       }
 
@@ -418,27 +458,76 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
         });
       }
 
-      // Returns false for an id this hero tree does not have.
-      function select(panel, id) {
-        const treeId = panel.getAttribute('data-hero-tree-id');
-        const build = (buildsByTree[treeId] || {})[id];
-        const mount = panel.querySelector('.tt-build-tree-mount');
-        if (!build || !mount) return false;
-        if (!mount.firstChild) {
-          const clone = cloneTalentTree(treeId);
-          if (!clone) return false;
-          mount.appendChild(clone);
-        }
-        paintTree(mount, build, id.indexOf('.') >= 0 ? 'Variant 1' : 'Build 1');
-        panel.querySelector('.js-copy-build').setAttribute('data-loadout', build.code);
-        selected[treeId] = id;
-        syncCards(panel, id);
-        return true;
+      function treeIdOf(panel) {
+        return panel.getAttribute('data-hero-tree-id');
       }
 
       function visiblePanel() {
-        return panels.find((p) => p.closest('.hero-section-variant').style.display !== 'none');
+        return panels.find((p) => p.style.display !== 'none');
       }
+
+      // The id a card selects. A Top 50 list's core card leads with the class
+      // tree variant those players favour instead of the most-run one.
+      function cardTarget(card) {
+        return card.getAttribute('data-lead') || card.getAttribute('data-build');
+      }
+
+      // The title over the tree names the visible tree's selection (the class
+      // tree variant only when it is not the standard one), the Overview adds
+      // its caption, and the export follows.
+      function syncView() {
+        const panel = visiblePanel();
+        const onBuild = !!(panel && selected[treeIdOf(panel)]);
+        const active = panel ? Array.from(panel.querySelectorAll('.tt-build-card.is-active')) : [];
+        const caption = panel && panel.querySelector('[data-build=""] .tt-build-sub');
+        viewTitle.textContent = active
+          .filter((card) => !card.getAttribute('data-build').endsWith('.v1'))
+          .map((card) => card.querySelector('.tt-build-label').textContent)
+          .join(', ') || 'Overview';
+        if (caption) viewSub.textContent = caption.textContent;
+        viewSub.hidden = onBuild;
+        syncExport();
+      }
+
+      // An empty id is the Overview. Returns false for an id this hero tree does not have.
+      function select(treeId, id) {
+        const build = id ? (buildsByTree[treeId] || {})[id] : null;
+        if (id && !build) return false;
+        root.querySelectorAll('.tt-variant[data-hero-tree-id="' + treeId + '"]').forEach((variant) => {
+          variant.classList.toggle('tt-build-view', !!build);
+          if (build) paintTree(variant, build, id.indexOf('.') >= 0 ? 'the standard class tree' : 'the Standard build');
+          else clearTree(variant);
+        });
+        if (build) selected[treeId] = id;
+        else delete selected[treeId];
+        panels.forEach((panel) => {
+          if (treeIdOf(panel) === treeId) syncCards(panel, id || '');
+        });
+        syncView();
+        return true;
+      }
+
+      talentBuilds.codeFor = function (treeId) {
+        const build = (buildsByTree[treeId] || {})[selected[treeId]];
+        return build ? build.code : '';
+      };
+
+      // The Top 50 list drops builds none of those players run, so a selection the
+      // visible list cannot show moves to its build card, else back to the Overview.
+      talentBuilds.onViewChange = function () {
+        const panel = visiblePanel();
+        const id = panel && selected[treeIdOf(panel)];
+        if (id) {
+          const card = panel.querySelector('[data-build="' + id + '"]');
+          if (!card || card.hasAttribute('data-lead')) {
+            const core = card || panel.querySelector('[data-build="' + id.split('.')[0] + '"]');
+            select(treeIdOf(panel), core ? cardTarget(core) : '');
+            return;
+          }
+        }
+        if (panel) syncVariants(panel, true);
+        syncView();
+      };
 
       panels.forEach((panel) => {
         panel.addEventListener('click', (e) => {
@@ -447,7 +536,7 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
           // Chips are Wowhead links for the hover tooltip; a plain click picks the
           // row instead, while Ctrl/Cmd/Shift-click still opens Wowhead.
           if (e.target.closest('.tt-diff-chip') && !(e.ctrlKey || e.metaKey || e.shiftKey)) e.preventDefault();
-          select(panel, btn.getAttribute('data-build'));
+          select(treeIdOf(panel), cardTarget(btn));
           if (window.MythiLink) MythiLink.sync();
         });
         panel.addEventListener('keydown', (e) => {
@@ -458,34 +547,27 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
         });
       });
 
-      modal.addEventListener('shown.bs.modal', () => fitChips(modal));
-      // Observes the body, not the window, so any width change (scrollbar, zoom) refits.
+      // A list is refitted whenever its size changes, which includes becoming
+      // visible on a hero tree or Top 50 switch.
       let resizeTimer;
-      new ResizeObserver(() => {
+      const observer = new ResizeObserver(() => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-          if (modal.classList.contains('show')) fitChips(modal);
-        }, 150);
-      }).observe(modal.querySelector('.modal-body'));
-
-      // Trees are cloned on first open, not at load, since most visitors never open the modal.
-      modal.addEventListener('show.bs.modal', () => {
-        panels.forEach((panel) => {
-          if (!selected[panel.getAttribute('data-hero-tree-id')]) select(panel, 'b1');
-        });
+        resizeTimer = setTimeout(() => panels.forEach((panel) => syncVariants(panel, true)), 150);
       });
+      panels.forEach((panel) => observer.observe(panel.querySelector('.tt-build-list')));
+      panels.forEach((panel) => syncVariants(panel, true));
 
-      // Registered after 'hero', so a link's hero tree is shown before its build applies.
+      // Registered after 'cohort' and 'hero', so a link's tree and list are shown
+      // before its build applies.
       if (window.MythiLink) {
         MythiLink.registerState('build', {
           read: function () {
             const panel = visiblePanel();
-            const id = panel && selected[panel.getAttribute('data-hero-tree-id')];
-            return modal.classList.contains('show') && id && id !== 'b1' ? id : null;
+            return (panel && selected[treeIdOf(panel)]) || null;
           },
           apply: function (id) {
             const panel = visiblePanel();
-            if (panel) select(panel, id);
+            if (panel && select(treeIdOf(panel), id)) talentBuilds.onViewChange();
           }
         });
       }

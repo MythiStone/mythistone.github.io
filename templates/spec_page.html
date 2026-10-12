@@ -340,7 +340,7 @@
 </div>
 {%- endmacro %}
 
-{# Talent Builds modal pieces. key_badge mirrors the item max-key badge (render_slot). #}
+{# Talent build list pieces. key_badge mirrors the item max-key badge (render_slot). #}
 {% macro key_badge(b) -%}
 {% if b.max_timed_key or b.max_depleted_key %}
 <span class="badge py-1 px-2 max-key-badge" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-html="true"
@@ -393,17 +393,21 @@
   title="Few or no sampled players run this. It is listed because SimulationCraft ranks it best.">SimC pick</p>
 {%- endmacro %}
 
-{% macro build_card(b, title, parent, top_total, top_parent) -%}
-<div class="tt-build-card" role="button" tabindex="0" data-build="{{ b.id }}" aria-pressed="false">
+{# ``by_top``: a Top 50 list row, which ends on the top-50 share it is sorted by.
+   ``lead``: the variant a Top 50 core row selects when it is not the standard class tree. #}
+{% macro build_card(b, title, parent, top_total, top_parent, by_top=false, lead='') -%}
+<div class="tt-build-card" role="button" tabindex="0" data-build="{{ b.id }}"{% if lead %} data-lead="{{ lead }}"{% endif %} aria-pressed="false">
   <span class="tt-build-head">
     <span class="tt-build-label">{{ title }}</span>
-    {{ simc_badge(b.sim, 'build on ' ~ top_parent, 'Build 1') }}
+    {{ simc_badge(b.sim, 'build on ' ~ top_parent, 'the Standard build') }}
     {# One badge for the top-50 share: solid gold when the build earns TOP, outlined otherwise. #}
-    {% if b.top50_count %}<span class="badge tt-build-top50{% if b.top50 %} is-top{% endif %}" data-bs-toggle="tooltip" data-bs-placement="top"
-      title="Used in {{ b.top50_count }} of {{ top_total }} top 50 {{ spec.name }} {{ class_info.name }} loadouts on {{ top_parent }}{% if b.top50 %}, a top 50 favourite{% endif %}">{{ '{:.0f}'.format(b.top50_count / top_total * 100) if b.top50_count / top_total >= 0.01 else '<1' }}%</span>{% endif %}
+    {% set top_badge %}{% if b.top50_count %}<span class="badge tt-build-top50{% if b.top50 %} is-top{% endif %}" data-bs-toggle="tooltip" data-bs-placement="top"
+      title="Used in {{ b.top50_count }} of {{ top_total }} top 50 {{ spec.name }} {{ class_info.name }} loadouts on {{ top_parent }}{% if b.top50 %}, a top 50 favourite{% endif %}">{{ '{:.0f}'.format(b.top50_count / top_total * 100) if b.top50_count / top_total >= 0.01 else '<1' }}%</span>{% endif %}{% endset %}
+    {% if not by_top %}{{ top_badge }}{% endif %}
     <span class="tt-build-end">
       {{ key_badge(b) }}
-      {% if b.sim and b.sim.only %}{{ simc_share() }}{% else %}
+      {% if by_top %}{{ top_badge }}
+      {% elif b.sim and b.sim.only %}{{ simc_share() }}{% else %}
       <span class="tt-build-share" data-bs-toggle="tooltip" data-bs-placement="top"
         title="{% if b.runs %}{{ '{:.1f}'.format(b.share) }}% of {{ parent }} ({{ b.runs | humanize }} runs){% else %}Not seen in the general population sample, only in top-50 loadouts{% endif %}">{{ '{:.0f}'.format(b.share) if b.share >= 1 or not b.runs else '<1' }}%</span>{% endif %}
     </span>
@@ -413,6 +417,54 @@
     {% if b.adds or b.swaps or b.drops %}{{ diff_chips(b) }}{% endif %}
     {{ flex_note(b) }}
   </span>
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{# The pick-rate tree's entry in a build list (empty data-build). #}
+{% macro overview_card(v, cohort) -%}
+<div class="tt-build-card is-active" role="button" tabindex="0" data-build="" aria-pressed="true">
+  <span class="tt-build-head"><span class="tt-build-label">Overview</span></span>
+  <span class="tt-build-sub"><span class="tt-build-flex">{% if cohort == 'top' and v.top_view %}Pick rates of the top 50 players{% else %}Pick rate of every talent{% endif %}</span></span>
+</div>
+{%- endmacro %}
+
+{# The build list beside the talent tree, one per (cohort, hero tree). The top cohort
+   lists only the builds top-50 players run, most used first. The most played build is
+   the Standard build and the rest are numbered alternatives, in both cohorts, because
+   the change chips compare against the Standard build. Class tree variants of a build
+   are named the same way. #}
+{% macro build_list(v, cohort) -%}
+{% set bp = v.build_paths %}
+{% set cards = bp.cores + ([bp.extra] if bp.extra else []) + ([bp.sim_extra] if bp.sim_extra else []) %}
+{% set titles = {} %}
+{% for b in cards %}{% set _ = titles.update({b.id: 'Top 50 build' if b.id == 't1' else ('SimC build' if b.id == 's1' else ('Standard build' if loop.first else 'Alternative ' ~ (loop.index - 1)))}) %}{% endfor %}
+{% set top_cards = cards | selectattr('top50_count') | sort(attribute='top50_count', reverse=true) %}
+{% set by_top = cohort == 'top' and top_cards | length > 0 %}
+<div class="tt-build-list">
+  <div class="tt-build-list-title">Builds on {{ v.name }}{% if by_top %}, by top 50 usage{% endif %}</div>
+  {% if cohort == 'top' and not by_top %}<div class="tt-build-other">No top 50 player runs one of these builds on {{ v.name }}. Showing all builds.</div>{% endif %}
+  {{ overview_card(v, cohort) }}
+  {% for b in (top_cards if by_top else cards) %}
+  {% set core_title = titles[b.id] %}
+  {% set variants = (b.variants | selectattr('top50_count') | sort(attribute='top50_count', reverse=true)) if by_top else b.variants %}
+  {% set has_variants = b.variants | length > 1 and variants | length > 0 %}
+  {{ build_card(b, core_title, 'runs on ' ~ v.name, bp.top50_total, v.name, by_top,
+                variants[0].id if (by_top and has_variants and variants[0].id != b.id ~ '.v1') else '') }}
+  {% if has_variants %}
+  <div class="tt-build-variants" data-core="{{ b.id }}" hidden>
+    <div class="tt-build-list-title">Class tree variants</div>
+    {% for c in variants %}
+    {% set variant_no = c.id.split('.v') | last | int %}
+    {{ build_card(c, 'Standard class tree' if variant_no == 1 else 'Class variant ' ~ (variant_no - 1), core_title ~ ' runs', b.top50_count, core_title, by_top) }}
+    {% endfor %}
+    {% if not by_top and b.other_variant_share >= 1 %}<div class="tt-build-other">Other variants: {{ '{:.0f}'.format(b.other_variant_share) }}%</div>{% endif %}
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% if not by_top %}
+  {% if bp.other_share >= 1 %}<div class="tt-build-other">Other builds: {{ '{:.0f}'.format(bp.other_share) }}% of runs, each too rare to list</div>{% endif %}
+  {% if bp.low_coverage %}<div class="tt-build-other">No dominant build: players spread across many small variations.</div>{% endif %}
   {% endif %}
 </div>
 {%- endmacro %}
@@ -765,8 +817,12 @@
           {% set overall_variants = section_variants | selectattr('cohort', 'equalto', 'all') | list %}
 
           {% if hero_variants and hero_variants | length > 0 %}
-          <div id="static-talent-tree">
+          {# data-share: the copied link carries the hero tree, Top 50 switch and picked build. #}
+          <div id="static-talent-tree" class="mt-4" data-share>
             {% set default_ht = (hero_variants | selectattr('is_default') | first) or (hero_variants | first) %}
+            {% set cohorts = ['all', 'top'] if has_top_view else ['all'] %}
+            {% set has_builds = hero_variants | selectattr('build_paths') | list | length > 0 %}
+            {% set has_any_loadout = hero_variants | selectattr('loadout_code') | selectattr('loadout_code.code') | list | length > 0 %}
             <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
               <h6 class="mb-0">Talents</h6>
               <button type="button"
@@ -786,17 +842,61 @@
               <a href="https://www.wowhead.com/spell={{ talent_swap_highlight.spellId }}?spec={{ spec_id }}"
                 target="_blank" rel="noopener"><strong>{{ talent_swap_highlight.talent_name }}</strong></a>, which far
               more players run in <strong>{{ talent_swap_highlight.dungeon_name }}</strong> than anywhere else. Open
-              <strong>Talents per Dungeon</strong> below to see every swap like this.
+              <strong>Talents per Dungeon</strong> to see every swap like this.
               {% else %}
-              This build barely changes between dungeons. Open <strong>Talents per Dungeon</strong> below for the few
+              This build barely changes between dungeons. Open <strong>Talents per Dungeon</strong> for the few
               tweaks that do show up.
+              {% endif %}
+              {% if has_builds %}
+              The build list holds the complete builds players run. Click one to see it on the tree.
               {% endif %}
             </p>
             {% endif %}
+            {# The build list (talentBuilds.py) as a rail, the tree it paints and the tree's
+               actions. One list per (cohort, hero tree), switched with the tree;
+               spec-page.js paints the picked build onto that tree. #}
+            <div class="tt-panel-wrap mb-3">
+            <div class="tt-panel">
+            <div class="tt-panel-rail">
+              {% for cohort in cohorts %}
+              {% for v in hero_variants %}
+              <div class="hero-section-variant tt-builds" data-cohort="{{ cohort }}" data-hero-tree-id="{{ v.id }}"{% if cohort == 'top' or not v.is_default %} style="display:none;"{% endif %}>
+                {% if v.build_paths %}
+                {{ build_list(v, cohort) }}
+                {% else %}
+                <div class="tt-build-list">
+                  <div class="tt-build-list-title">Builds on {{ v.name }}</div>
+                  {{ overview_card(v, cohort) }}
+                  <div class="tt-build-other">Not enough recorded runs on {{ v.name }} yet to show its builds.</div>
+                </div>
+                {% endif %}
+              </div>
+              {% endfor %}
+              {% endfor %}
+            </div>
+            <div class="tt-panel-actions">
+              {% if has_any_loadout %}
+              {% set default_loadout = default_ht.loadout_code.original if (default_ht and default_ht.loadout_code) else '' %}
+              <button id="copyBtn" class="btn btn-primary d-flex align-items-center justify-content-center mb-0"{% if not default_loadout %} style="display: none;"{% endif %}>
+                <i class="fas fa-copy me-2"></i>
+                <span id="btnText" data-loadout="{{ default_loadout }}" data-text="Export Talent String">Export Talent String</span>
+              </button>
+              {% endif %}
+              <button class="btn btn-outline-primary d-flex align-items-center justify-content-center mb-0" data-bs-toggle="modal"
+                data-bs-target="#talentModal">
+                Talents per Dungeon
+              </button>
+            </div>
+            <div class="tt-panel-tree">
+            {# What the tree shows right now (spec-page.js). #}
+            <div class="tt-panel-view">
+              <span class="tt-panel-view-title">Overview</span>
+              <span class="tt-panel-view-sub">Pick rate of every talent</span>
+            </div>
             {# One .tt-variant per (cohort, hero tree). The "top" cohort is the Top
                Players view, built from verified top-player loadouts (v.top_view);
                a tree no top player runs keeps its overall trees with a note. #}
-            {% for cohort in (['all', 'top'] if has_top_view else ['all']) %}
+            {% for cohort in cohorts %}
             {% for v in hero_variants %}
             {% set is_top_cohort = cohort == 'top' %}
             {% set tv = (v.top_view or v) if is_top_cohort else v %}
@@ -871,6 +971,9 @@
             {% endif %}
             {% endfor %}
             {% endfor %}
+            </div>
+            </div>
+            </div>
           </div>
           {% endif %}
           <div class="row align-items-center justify-content-center my-2">
@@ -888,33 +991,7 @@
               </button>
             </div>
             {% endif %}
-            {% set default_variant = ((hero_variants | selectattr('is_default') | first) or (hero_variants | first)) if hero_variants else None %}
-            {% set has_any_loadout = (hero_variants | selectattr('loadout_code') | selectattr('loadout_code.code') | list | length > 0) if hero_variants else False %}
-            {% if has_any_loadout %}
-            {% set default_loadout = default_variant.loadout_code.original if (default_variant and default_variant.loadout_code) else '' %}
-            <div class="col-12 col-md-auto d-flex justify-content-center mb-2 mb-md-0">
-              <button id="copyBtn" class="btn btn-primary d-flex align-items-center"{% if not default_loadout %} style="display: none;"{% endif %}>
-                <i class="fas fa-copy me-2"></i>
-                <span id="btnText" data-loadout="{{ default_loadout }}" data-text="Export Talent String">Export
-                  Talent
-                  String</span>
-              </button>
-            </div>
-            {% endif %}
-            <div class="col-12 col-md-auto d-flex justify-content-center mb-2 mb-md-0">
-              <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
-                data-bs-target="#talentModal">
-                Talents per Dungeon
-              </button>
-            </div>
-            {% if hero_variants | selectattr('build_paths') | list %}
-            <div class="col-12 col-md-auto d-flex justify-content-center mb-2 mb-md-0">
-              <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
-                data-bs-target="#talentBuildsModal">
-                Talent Builds
-              </button>
-            </div>
-            {% endif %}
+            {# Export Talent String and Talents per Dungeon sit by the talent tree above. #}
 
             <!-- Gear Overview -->
             {# data-share: deep-link.js pins a copy-link button to the corner (assets/js/deep-link.js). #}
@@ -2401,72 +2478,6 @@
         </div>
         {% include "footer.html" %}
   </main>
-  {# Talent build paths (talentBuilds.py). One .hero-section-variant per hero tree, so the
-     page's hero switcher swaps them; spec-page.js paints the picked build onto a clone of
-     that tree's talent tree in .tt-build-tree-mount. #}
-  <div class="modal fade" id="talentBuildsModal" tabindex="-1" aria-labelledby="talentBuildsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable modal-xl modal-dialog-centered tt-builds-dialog">
-      <div class="modal-content card">
-        <div class="modal-header">
-          <h5 class="modal-title" id="talentBuildsModalLabel">Talent Builds</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p class="text-sm mb-3">
-            The complete talent builds {{ spec.name }} {{ class_info.name }} players run, most played first. Builds that
-            differ by a single talent point count as one build. Pick a build to see it on the tree and copy it.
-          </p>
-          {% for v in hero_variants %}
-          <div class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display:none;"{% endif %}>
-            {% set bp = v.build_paths %}
-            {% if bp %}
-            <div class="tt-builds row g-4" data-hero-tree-id="{{ v.id }}">
-              <div class="col-12 col-xl-4 tt-build-list-col">
-                <div class="tt-build-list">
-                  <div class="tt-build-list-title">Builds on {{ v.name }}</div>
-                  {% for b in bp.cores + ([bp.extra] if bp.extra else []) + ([bp.sim_extra] if bp.sim_extra else []) %}
-                  {% set core_title = 'Top 50 build' if b.id == 't1' else ('SimC build' if b.id == 's1' else 'Build ' ~ loop.index) %}
-                  {{ build_card(b, core_title, 'runs on ' ~ v.name, bp.top50_total, v.name) }}
-                  {% if b.variants | length > 1 %}
-                  <div class="tt-build-variants" data-core="{{ b.id }}" hidden>
-                    <div class="tt-build-list-title">Class tree variants of {{ core_title }}</div>
-                    {% for c in b.variants %}{{ build_card(c, 'Variant ' ~ loop.index, core_title ~ "'s runs", b.top50_count, core_title) }}{% endfor %}
-                    {% if b.other_variant_share >= 1 %}<div class="tt-build-other">Other variants: {{ '{:.0f}'.format(b.other_variant_share) }}%</div>{% endif %}
-                  </div>
-                  {% endif %}
-                  {% endfor %}
-                  {% if bp.other_share >= 1 %}<div class="tt-build-other">Other builds: {{ '{:.0f}'.format(bp.other_share) }}% of runs, each too rare to list</div>{% endif %}
-                  {% if bp.low_coverage %}<div class="tt-build-other">No dominant build: players spread across many small variations.</div>{% endif %}
-                </div>
-              </div>
-              <div class="col-12 col-xl-8">
-                <div class="tt-build-toolbar">
-                  <ul class="tt-build-legend">
-                    <li><span class="tt-legend-icon"></span>Taken</li>
-                    <li><span class="tt-legend-icon is-off"></span>Not taken</li>
-                    <li title="Share of this build's runs that take the talent"><span class="tt-legend-icon is-flex"></span><span class="tt-legend-pct">60%</span>Flexible</li>
-                    <li><span class="tt-legend-rank">1/2</span>Points spent</li>
-                    <li title="Builds are compared to Build 1 on the spec and hero trees, class tree variants to Variant 1 on the class tree"><span class="tt-build-change is-plus">+</span><span class="tt-build-change is-minus">&minus;</span>Added / dropped</li>
-                  </ul>
-                  <button type="button" class="btn btn-sm btn-primary d-flex align-items-center mb-0 js-copy-build"
-                    data-loadout="{{ bp.cores[0].code }}">
-                    <i class="fas fa-copy me-2"></i>
-                    <span class="js-copy-build-text" data-text="Copy this build">Copy this build</span>
-                  </button>
-                </div>
-                <div class="tt-build-tree-mount tt-build-view"></div>
-              </div>
-            </div>
-            {% else %}
-            <p class="text-sm text-secondary mb-0">Not enough recorded runs on {{ v.name }} yet to show its builds.</p>
-            {% endif %}
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="modal fade" id="talentModal" tabindex="-1" aria-labelledby="talentModalLabel" aria-hidden="true">
     {# xl: the per-dungeon talent tree needs the room the diff lists never did #}
     <div class="modal-dialog modal-dialog-scrollable modal-xl modal-dialog-centered">
@@ -2793,44 +2804,66 @@
           {% set class_slug = class_info.name | default('Unknown') | replace(' ', '') %}
           {% set default_ht = (hero_variants | selectattr('is_default') | first) or (hero_variants | first) %}
           <p>
-            The tree above is the talent build that most
+            When the page opens, the tree shows the <strong>Overview</strong>: how often
             <span class="class-{{ class_slug }}-text">{{ spec.name }} {{ class_info.name }}</span>
-            players run in high Mythic+ keys, taken from the same top-key runs described at the top of the page. It is a
-            good default build to copy if you are unsure where to start.
+            players in high Mythic+ keys take each talent, taken from the same top-key runs described at the top of the
+            page.
           </p>
           <p>
             The percentage under each talent is its <strong>pick rate</strong>: the share of those players who chose it.
             A talent near 100% is effectively part of the core build that almost everyone takes, while lower numbers mark
             flexible or situational picks that players swap depending on the dungeon or their group. Talents that almost
-            nobody takes are shown faded.
-          </p>
-          <p>
-            The two large icons in the middle are the <strong>hero trees</strong>, the spec's big talent-branch choice.
-            {% if default_ht and default_ht.name %}Most players build into <strong>{{ default_ht.name }}</strong>{% if
-            hero_variants | length > 1 and default_ht.pct %} ({{ default_ht.pct | round | int }}%){% endif %}{% if
-            hero_variants | length > 1 %}, and you can click the hero icon to view the other branch{% endif %}.{% endif +%}
-            {% if top_hero_tree_name %} The top&nbsp;50 ranked players most often prefer
-            <strong>{{ top_hero_tree_name }}</strong>{% if top_hero_tree_pct %} ({{ '{:.0f}'.format(top_hero_tree_pct)
-            }}%){% endif %}, which can differ from the wider field's favourite.{% endif %}
-          </p>
-          <p>
-            <strong>Talent Builds</strong> groups whole talent builds on the shown hero tree. Builds that
-            differ by a single talent point count as one build, and the talents they disagree on are ringed as
-            flexible. Each build shows its share of runs, its run count and the highest key it was timed in. The small
-            icons list the talents a build adds or drops compared to Build 1. Click a build to see it on the tree and
-            copy exactly that build, or pick one of its class tree variants below it.
-          </p>
-          <p>
-            In <strong>Talent Builds</strong>, the gold percentage next to a build is its share of the top&nbsp;50
-            players' loadouts (one per player per dungeon). It is filled in when at least a quarter of them use the
-            build. When the top&nbsp;50's favourite build is not among the most played ones, it is listed as
-            <strong>Top 50 build</strong>.
+            nobody takes are shown faded. A small number in a talent's corner is the average number of points spent in
+            it.
           </p>
           <p>
             A <span class="badge tt-top-badge tt-top-badge-inline">TOP</span> badge marks the picks favoured by the
             top&nbsp;50 Raider.io-ranked players, so you can quickly spot where the very best players differ from
             everyone else.
           </p>
+          <p>
+            The large icon in the middle is the <strong>hero tree</strong>, the spec's big talent-branch choice.
+            {% if default_ht and default_ht.name %}Most players build into <strong>{{ default_ht.name }}</strong>{% if
+            hero_variants | length > 1 and default_ht.pct %} ({{ default_ht.pct | round | int }}%){% endif %}{% if
+            hero_variants | length > 1 %}, and you can click the icon to switch to the other hero tree. The build list
+            switches with it{% endif %}.{% endif +%}
+            {% if top_hero_tree_name %} The top&nbsp;50 ranked players most often prefer
+            <strong>{{ top_hero_tree_name }}</strong>{% if top_hero_tree_pct %} ({{ '{:.0f}'.format(top_hero_tree_pct)
+            }}%){% endif %}, which can differ from the wider field's favourite.{% endif %}
+          </p>
+          {% if has_builds %}
+          <p>
+            The <strong>build list</strong> by the tree holds the complete talent builds players run on the shown hero
+            tree. The most played one is the <strong>Standard build</strong> and the others are numbered
+            <strong>Alternative 1</strong>, <strong>Alternative 2</strong> and so on. Builds that differ by a single
+            talent point count as one build. Each build shows its share of runs and the highest key it was timed in, and
+            the small icons are the talents it adds, swaps or drops compared to the Standard build.
+          </p>
+          <p>
+            A build can come with <strong>class tree variants</strong>, listed under it: the
+            <strong>Standard class tree</strong> is the one most of that build's players run, and the numbered
+            <strong>Class variants</strong> are the others. Their icons compare against the standard class tree.
+          </p>
+          <p>
+            Click a build or a variant to see it on the tree. The talents it takes stay in colour
+            <span class="tt-legend-icon"></span> and the rest are greyed out <span class="tt-legend-icon is-off"></span>.
+            A dashed ring <span class="tt-legend-icon is-flex"></span>&nbsp;<span class="tt-legend-pct">60%</span> marks a
+            flexible talent, one that players of this build disagree on, with the share of them who take it.
+            <span class="tt-legend-rank">1/2</span> is the number of points spent in a talent with several ranks.
+            <span class="tt-build-change is-plus">+</span> and <span class="tt-build-change is-minus">&minus;</span> mark
+            the talents added or dropped compared to the Standard build, or to the standard class tree for a class
+            variant. <strong>Overview</strong> brings the pick rates back.
+          </p>
+          <p>
+            The gold percentage next to a build is its share of the top&nbsp;50 players' loadouts (one per player per
+            dungeon). It is filled in when at least a quarter of them use the build. When the top&nbsp;50's favourite
+            build is not among the most played ones, it is listed as <strong>Top 50 build</strong>.{% if has_top_view %}
+            With <strong>Top 50 only</strong> switched on, the list keeps only the builds those players run and puts the
+            most used one first.{% endif +%}
+            A <span class="badge simc-badge simc-badge-inline">SIM</span> badge marks the build SimulationCraft rates
+            best on that hero tree.
+          </p>
+          {% endif %}
           <p>
             Why does the build change per dungeon? Each dungeon asks for something different. Trash-heavy dungeons with
             big pulls reward cleave and area-of-effect talents. Dungeons built around tough single targets or bosses
@@ -2839,8 +2872,9 @@
             are just the handful of talents worth swapping to match the fight.
           </p>
           <p class="mb-0">
-            Under the tree, <strong>Talents per Dungeon</strong> shows how the build changes for individual dungeons, and
-            <strong>Export Talent String</strong> copies the full build so you can paste it straight into the game.
+            <strong>Talents per Dungeon</strong> shows how the build changes for individual dungeons.
+            <strong>Export Talent String</strong> copies the build on the tree so you can paste it straight into the
+            game. With a build selected in the list, it copies exactly that build.
           </p>
         </div>
         <div class="modal-footer">

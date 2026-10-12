@@ -1,8 +1,8 @@
 """Talent build paths: hero tree -> core build -> class variant.
 
 Pure (no DB, no Jinja). Input is ``databaseConnector.fetch_loadout_key_levels``
-rows plus the top-50 players' export strings; output feeds the spec page's
-Talent Builds modal. See AGENTS.md "Talent build paths" for why each rule exists.
+rows plus the top-50 players' export strings; output feeds the build list
+beside the spec page's talent tree.
 """
 import math
 from collections import Counter, defaultdict
@@ -415,7 +415,7 @@ def sim_candidates(builds_by_tree):
     """[(hero_tree_id, build_id, code)] the SimC talent phase sims: every tree's
     Build cards plus its top-50 extra, each as its most-run variant's string
     (the code a core card already carries). Class-tree variants are not simmed.
-    The most-run tree comes first, so the first entry is its Build 1. A tree
+    The most-run tree comes first, so the first entry is its most played build. A tree
     without core cards is skipped, as the page shows no builds for it."""
     out = []
     for hero_id in sorted(builds_by_tree, key=lambda h: (-builds_by_tree[h]["runs"], int(h))):
