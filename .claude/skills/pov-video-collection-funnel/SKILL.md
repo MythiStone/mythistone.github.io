@@ -34,9 +34,6 @@ passes every gate below, in order.
    run. `route_videos` has a foreign key to `route_data`, so a logged run without an eligible
    keystone.guru route keeps no videos. Those count as `vod_runs_without_route` in the collector
    stats and are re-checked once per collector restart.
-   for good. `_store_route_job` stores videos only for a newly inserted, eligible route
-   (`route_key`, `mappingVersion`, `enemyForces >= enemyForcesRequired`): `route_videos` has a
-   foreign key to `route_data`, so a logged run without a keystone.guru route keeps no videos.
 
 ## Diagnosing a missing VOD
 
@@ -47,3 +44,8 @@ shows `videos`, `logged_run_id`, `logged_details.route_key` and `clear_time_ms` 
 `keystone_time_ms`. Scanning the dungeon's `/mythic-plus/runs` pages gives the run's page.
 The live site's compVods.json (https://mythistone.com/assets/json/compVods.json) is what was
 actually collected (keyed `route_key_video_id`, with `run_id`).
+
+The collector status embed's Routes section (`discordHandler.py`) shows "VODs Stored"
+(`db_insert_route_video`, video rows written) and "VODs w/o Route" (`vod_runs_without_route`).
+The second one is the size of gate 3. Read it before deciding whether `route_videos` should stop
+depending on `route_data`.
