@@ -16,6 +16,8 @@
       "Bash(git log:*)",
       "Bash(git diff:*)",
       "Bash(git show:*)",
+      "mcp__mythi-kb",
+      "Bash(python .claude/kb/kb.py:*)"
     ],
     "deny": [
       "Bash(git commit:*)",
@@ -28,7 +30,8 @@
       "Bash(git cherry-pick:*)",
       "Bash(git revert:*)",
       "Bash(git stash:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Agent(Plan)"
     ]
   },
   "hooks": {
@@ -49,14 +52,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/remind-test-render.py\""
-          },
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/kb-file-context.py\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/remind-update-skills.py\""
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/kb-session-start.py\""
           }
         ]
       }
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "mythi-kb"
+  ]
 }

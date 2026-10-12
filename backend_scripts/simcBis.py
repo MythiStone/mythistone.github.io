@@ -605,7 +605,7 @@ def _make_candidate(item_id, bonus_list, count, item_lookup,
     popular one.
 
     Sockets are inherent + bonus, via the one shared commonUtils helper the spec
-    page's convert_slots also uses (see the item-socket-count skill), so the
+    page's convert_slots also uses (commonUtils.count_item_sockets), so the
     simmed item's gem count matches the one shown there. Only the embellishments
     that actually consume an equip budget constrain the set; several consume
     nothing (see load_embellishment_limits)."""

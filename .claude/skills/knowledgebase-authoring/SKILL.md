@@ -1,38 +1,69 @@
 ---
 name: knowledgebase-authoring
-description: How to record and write MythiStone durable knowledge (when to record, and the present-tense / no-history / no-line-number style rules). Use when creating or editing a skill under .claude/skills/, editing AGENTS.md, or deciding whether to record a finding after a task.
+description: How MythiStone durable knowledge is laid out (code-derived map vs curated gotchas in domain skills) and how to record a finding (ask first, present tense, no history or line numbers). Use when adding or editing a gotcha, a domain skill or AGENTS.md, or deciding whether to record something after a task.
+files:
+  - .claude/skills/*
+  - .claude/kb/*
+  - AGENTS.md
 ---
 
 # Authoring the knowledgebase
 
-Durable repo knowledge lives in two places: narrow **skills** under `.claude/skills/` (one gotcha per
-skill) and **`AGENTS.md`** (always-on repo truth). Never use a tool's private auto-memory. It does not
-transfer across machines or tools; only in-repo notes do.
+Durable repo knowledge has two layers. Never use a tool's private auto-memory or the subagent
+`memory:` field. Neither transfers across machines and tools, and both split knowledge per agent.
+
+- **The map is generated, never hand-written.** `.claude/kb/kb.py` parses tables, procs, `*_SQL`
+  constants, connector functions, callers, generator → template → asset wiring and bot commands from
+  the code on demand (served by the `mythi-kb` MCP server). Do not restate any of that in prose: a
+  column list, a function inventory or "X calls Y" in a gotcha goes stale. If the map gets a fact
+  wrong, fix the parser in `kb.py`.
+- **Gotchas are curated.** Gotchas cover what the code cannot tell you: why something is the way it
+  is, cross-file couplings, traps, and rejected approaches. Each gotcha is one file,
+  `.claude/skills/<domain>/ref/<id>.md`, under the domain skill that owns it (`database`, `pages`,
+  `frontend`, `discord-bot`, `collector-simc`, `season-ops`, `social`). Only domain skills appear
+  in the per-turn skill listing, so never add a new top-level skill for a single gotcha.
+- **`AGENTS.md`** holds always-on repo truth and the routing table. Keep it short. It is loaded
+  every session.
 
 ## When to record
 
-After finishing a task that produced newly gained durable knowledge (non-obvious mechanics, cross-file
-coupling, gotchas, corrected assumptions), **record it whenever it is relevant** without asking for
-permission first. Store it as a narrow skill (update an existing skill rather than duplicating it) or a
-section of `AGENTS.md`, then note in your final message what you recorded and where, so the user can
-review or revert it.
+When a task produced durable knowledge (non-obvious mechanics, cross-file coupling, gotchas,
+corrected assumptions), **ask the user for permission to record it** as the last line of your final
+message. Do not record first, and do not record silently. A domain agent proposes findings in its
+handoff note; the main session asks the user.
 
-- **Skip the ask entirely when there is nothing new to record:** planning-only work that changed
-  nothing, or a bug / wrong behavior whose mechanics are already documented in the knowledgebase.
-- **Gauge "new" against the knowledgebase, not the code.** Record when this file + the skills do not
-  already capture it, *not* merely when it is absent from the code. Much of the codebase is still
-  undocumented; a finding being derivable from the code is not a reason to skip it if the
-  knowledgebase does not yet capture it.
+- Skip the ask when nothing is new: planning-only work, or a behavior a gotcha already documents.
+- Judge "new" against the knowledgebase, not the code. A fact derivable from the code still
+  deserves a gotcha if it is a trap nobody would spot without reading three files.
 
-## How to write it
+## How to write a gotcha
 
-- **State only the current truth, never history.** Skills and `AGENTS.md` describe how the project
-  works *right now* and what caveats exist *right now*. Do not write "this used to work like X and we
-  changed it to Y", changelog entries, migration notes, or dated "verified/changed on <date>" lines.
-  When something changes, edit the affected notes so they read as if the new behavior was always the
-  behavior, and delete any prose that only existed to contrast against the old way.
-- **No line-number references.** Never anchor a note to a line ("around line 182", "line 20"). Lines
-  shift and the reference rots into noise. Identify code by stable names: file, function, proc, SQL
-  constant, class, or CSS selector.
-- **One gotcha per skill, narrowly scoped.** Give it a `description` that names when to use it. Link
-  related skills with `[[skill-name]]`.
+```markdown
+---
+name: <id, kebab-case, unique across all domains>
+description: <one sentence stating the rule>. Use when <the trigger>.
+files:
+  - <repo-relative glob of every file where this rule bites>
+---
+
+# Title
+
+Body: the rule, why it holds, and how to work with it.
+```
+
+- `files:` drives `kb_file`, the per-file hook reminder and the domain index. A gotcha with an
+  empty or wrong `files:` list is never surfaced.
+- After adding, renaming or editing a gotcha's frontmatter, run `python .claude/kb/kb.py --index`
+  (regenerates the gotcha table in each domain `SKILL.md`) and `python .claude/kb/kb.py lint`
+  until it is clean. `python .claude/kb/kb.py --strict` also lists cited names that appear nowhere
+  in the source; review those (external API fields and placeholders are expected), since a renamed
+  function only shows up there.
+- Quote a `description` that contains `: ` or ` #` (`description: "..."`). Unquoted, YAML rejects
+  the first and silently truncates at the second.
+- **State only the current truth, never history.** No "this used to be X", changelogs, migration
+  notes or dated lines. When behavior changes, edit the gotcha so it reads as if the new behavior
+  was always the behavior.
+- **No line-number references.** Identify code by file, function, proc, SQL constant, class or CSS
+  selector. Lines shift, and `kb_symbol` gives the live location.
+- **One rule per gotcha.** Link related gotchas with `[[id]]`. `kb lint` rejects links to ids
+  that do not exist.

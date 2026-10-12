@@ -682,6 +682,8 @@ class DiscordReporter:
             ("RIO Pages", window_counts.get("rio_pages_checked", 0)),
             ("RIO Routes", window_counts.get("rio_routes_checked", 0)),
             ("KG Routes", window_counts.get("kg_routes_fetched", 0)),
+            ("VODs Stored", window_counts.get("db_insert_route_video", 0)),
+            ("VODs w/o Route", window_counts.get("vod_runs_without_route", 0)),
         ])
         simc_current = self.stats.get_status("simc_current", "idle") if hasattr(self.stats, "get_status") else "n/a"
         simc_build = self.stats.get_status("simc_build", "?") if hasattr(self.stats, "get_status") else "?"
@@ -753,6 +755,8 @@ class DiscordReporter:
             ("RIO Pages", totals.get("rio_pages_checked", 0)),
             ("RIO Routes", totals.get("rio_routes_checked", 0)),
             ("KG Routes", totals.get("kg_routes_fetched", 0)),
+            ("VODs Stored", totals.get("db_insert_route_video", 0)),
+            ("VODs w/o Route", totals.get("vod_runs_without_route", 0)),
         ])
         add_section(totals_embed, "SimulationCraft", [
             ("Profilesets", totals.get("simc_profilesets_run", 0)),

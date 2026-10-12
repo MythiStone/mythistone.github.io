@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "mythi-kb": {
+      "type": "stdio",
+      "command": "python",
+      "args": [".claude/kb/server.py"]
+    }
+  }
+}

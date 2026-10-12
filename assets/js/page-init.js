@@ -1,7 +1,7 @@
 // Shared page bootstrap, included from javascript_imports.html on every page
 // (after material-dashboard.js, so sidebarColor is defined). timeAgo and
-// formatDuration are intentionally global function declarations: route-search.js,
-// blog-infinite.js and some page templates call them.
+// formatDuration are intentionally global function declarations: finder.js,
+// routes-finder.js, vods-finder.js, blog-infinite.js and some page templates call them.
 
 // Smooth scrollbar on the sidenav (Windows only, where the native scrollbar is
 // heavy). Scrollbar comes from plugins/smooth-scrollbar.min.js.

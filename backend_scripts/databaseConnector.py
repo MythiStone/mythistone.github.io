@@ -3608,12 +3608,9 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
 """
 
 
-def insert_route_video(connection, cursor, route_key, video):
-    """Insert one POV video row for a route. `video` is the compact dict built by the collector."""
-    val = (
-        route_key,
-        video["video_id"],
-        video["rio_run_id"],
+def _route_video_fields(video):
+    """The route_videos columns from video_type on, in column order."""
+    return (
         video["video_type"],
         video["video_ref"],
         video.get("start_seconds"),
@@ -3628,8 +3625,52 @@ def insert_route_video(connection, cursor, route_key, video):
         video.get("pov_persona_id"),
         video.get("pov_spec_id"),
     )
+
+
+def insert_route_video(connection, cursor, route_key, video):
+    """Insert one POV video row for a route. `video` is the compact dict built by the collector."""
+    val = (route_key, video["video_id"], video["rio_run_id"], *_route_video_fields(video))
     execute_with_retry(connection, cursor, INSERT_ROUTE_VIDEO_SQL, val)
     return cursor.rowcount
+
+
+INSERT_ROUTE_VIDEO_FOR_RUN_SQL = """
+INSERT IGNORE INTO Mythistone.route_videos
+  (`route_key`, `video_id`, `rio_run_id`, `video_type`, `video_ref`, `start_seconds`,
+   `duration`, `thumbnail_url`, `season_slug`, `created_by_user_id`, `pov_character_name`,
+   `pov_realm_slug`, `pov_region`, `pov_character_id`, `pov_persona_id`, `pov_spec_id`)
+SELECT rd.route_key, %s, rd.rio_run_id, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+FROM Mythistone.route_data rd
+WHERE rd.route_key = %s AND rd.rio_run_id = %s;
+"""
+
+
+def insert_route_video_for_run(connection, cursor, route_key, video):
+    """Insert a POV video for a route that is already stored, only when that route
+    belongs to the video's own run. Returns 0 when it does not or the video exists."""
+    val = (video["video_id"], *_route_video_fields(video), route_key, video["rio_run_id"])
+    execute_with_retry(connection, cursor, INSERT_ROUTE_VIDEO_FOR_RUN_SQL, val)
+    return cursor.rowcount
+
+
+FETCH_ROUTE_VIDEO_IDS_SQL = "SELECT video_id FROM Mythistone.route_videos"
+
+
+def read_route_video_ids():
+    """Every stored raider.io video id. The route poller loads this once at startup
+    to spot leaderboard runs whose videos are not stored yet. Uses its own pooled
+    connection, like read_aura_run_ids."""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        try:
+            rows = fetch_with_retry(conn, cursor, FETCH_ROUTE_VIDEO_IDS_SQL)
+        finally:
+            cursor.close()
+        conn.commit()  # release the read's MDL under the pool's autocommit=0 default
+        return {int(row[0]) for row in rows}
+    finally:
+        close_quietly(conn)
 
 
 INSERT_ROUTE_DEATH_SQL = """
