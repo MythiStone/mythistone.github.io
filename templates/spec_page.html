@@ -2817,26 +2817,25 @@
   <div class="modal fade" id="heroTreeModal" tabindex="-1" aria-labelledby="heroTreeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content card">
+        {# The tree's icon, blurred into a colour wash behind the modal (spec-page.css). #}
+        {% for v in hero_variants %}
+        <div class="hero-section-variant tt-hero-modal-bg" data-hero-tree-id="{{ v.id }}" aria-hidden="true"
+          style="--tt-hero-icon: url('/data/icons/{{ v.icon }}.png');{% if not v.is_default %} display: none;{% endif %}"></div>
+        {% endfor %}
         <div class="modal-header">
-          <h5 class="modal-title" id="heroTreeModalLabel">Hero tree</h5>
+          <h5 class="modal-title" id="heroTreeModalLabel">
+            {% for v in hero_variants %}
+            <span class="hero-section-variant" data-hero-tree-id="{{ v.id }}"{% if not v.is_default %} style="display: none;"{% endif %}>{{ v.name }}</span>
+            {% endfor %}
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p class="text-sm mb-3">
-            Every talent in a hero tree is taken at max level. Only the choice talents, shown as octagons, differ
-            between builds. Hover a talent for its Wowhead tooltip or click it to open it on Wowhead.
-          </p>
           {% for cohort in (['all', 'top'] if has_top_view else ['all']) %}
           {% for v in hero_variants %}
           {% set is_top_cohort = cohort == 'top' %}
           {% set tv = (v.top_view or v) if is_top_cohort else v %}
-          {% set share = v.top_pct if is_top_cohort else v.pct %}
           <div class="hero-section-variant" data-cohort="{{ cohort }}" data-hero-tree-id="{{ v.id }}"{% if is_top_cohort or not v.is_default %} style="display: none;"{% endif %}>
-            <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
-              <img src="/data/icons/{{ v.icon }}.png" alt="" width="36" height="36" class="rounded-circle" onerror="this.src='/data/icons/inv_misc_questionmark.png'">
-              <h6 class="mb-0">{{ v.name }}</h6>
-              <span class="text-sm text-secondary">{{ share | round | int }}%{% if is_top_cohort %} of top player loadouts{% else %} of players{% endif %}</span>
-            </div>
             {% if tv.ui_hero_full and tv.ui_hero_full.nodes %}
             <div class="tt-column tt-tree-column tt-hero-full">
               <svg class="tt-edges">

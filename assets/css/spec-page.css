@@ -283,6 +283,24 @@
   max-width: 380px;
   aspect-ratio: 0.78;
 }
+.tt-hero-modal-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.tt-hero-modal-bg::before {
+  content: "";
+  position: absolute;
+  /* Oversized so the round icon and its rim fall outside the modal's corners. */
+  inset: -35%;
+  background: var(--tt-hero-icon) center / cover no-repeat;
+  filter: blur(8px);
+  opacity: 0.18;
+}
+#heroTreeModal .modal-header,
+#heroTreeModal .modal-body { position: relative; z-index: 1; }
 .tt-hero-full-choice { display: contents; }
 /* A hero choice node is always taken, so its node-level pick rate says nothing. */
 .tt-hero-full .tt-badge { display: none; }
