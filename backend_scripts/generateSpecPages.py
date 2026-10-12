@@ -520,6 +520,27 @@ def choice_spell_ids(nodes):
     }
 
 
+def talent_search_index(nodes, hero_variants):
+    """Names behind every searchable talent node, for the talent search in
+    spec-page.js (the tree itself only renders names for choice nodes).
+    Hero nodes are tagged with their tree so a hit in a hidden one can be named."""
+    hero_trees = {int(v["id"]): v["name"] for v in hero_variants}
+    index = {}
+    for nid, node in nodes.items():
+        group = node.get("g")
+        tree = node.get("subTreeId") if group == "hero" else None
+        if group == "sub" or (group == "hero" and tree not in hero_trees):
+            continue
+        names = [
+            [e["name"], e.get("icon") or "inv_misc_questionmark"]
+            for e in node.get("entries", [])
+            if e.get("spellId") and e.get("name")
+        ]
+        if names:
+            index[nid] = {"g": group, "tree": tree, "names": names}
+    return {"heroTrees": hero_trees, "nodes": index}
+
+
 def build_path_view(tree, nodes, payload):
     """Template view of one hero tree's build paths (talentBuilds output).
 
@@ -3893,6 +3914,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                 missive_lookup=missive_lookup,
                 level_stats=level_stats,
                 build_payload=build_payload,
+                talent_search=talent_search_index(talent_lookup["nodes"], hero_variants),
                 overall_stats=overall_stats,
                 socket_lookup=socket_lookup,
                 spec_lookup=spec_lookup,

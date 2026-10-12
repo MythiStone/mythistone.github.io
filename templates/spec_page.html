@@ -347,7 +347,7 @@
 {# --tt-node-left keeps the choice popup inside the tree's width (spec-page.css). #}
 <div class="tt-hero-full-choice" style="--tt-node-left: {{n.left}}%;">{{ render_tree_node(n) }}</div>
 {% else %}
-<div class="tt-node" data-ntype="{{n.type}}" style="position: absolute; left: {{n.left}}%; top: {{n.top}}%; transform: translate(-50%, -50%); z-index: 2;">
+<div class="tt-node" data-nodeid="{{n.id}}" data-ntype="{{n.type}}" style="position: absolute; left: {{n.left}}%; top: {{n.top}}%; transform: translate(-50%, -50%); z-index: 2;">
   <a href="https://www.wowhead.com/spell={{n.spellId}}" target="_blank" rel="noopener">
     <img src="/data/icons/{{n.icon}}.png" alt="Icon" width="32" height="32" style="border-radius: {% if n.type == 'passive' %}50%{% else %}10%{% endif %}; border: 1px solid #ffb000;" onerror="this.src='/data/icons/inv_misc_questionmark.png'">
   </a>
@@ -907,6 +907,20 @@
             <div class="tt-panel-view">
               <span class="tt-panel-view-title">Overview</span>
               <span class="tt-panel-view-sub">Pick rate of every talent</span>
+            </div>
+            {# One box for every variant; spec-page.js marks the hits on all of them. #}
+            <div class="tt-search" role="search">
+              <div class="tt-search-box">
+                <i class="material-symbols-rounded tt-search-icon" aria-hidden="true">search</i>
+                <input type="search" id="talent-search" class="tt-search-input" placeholder="Search talents"
+                  autocomplete="off" spellcheck="false" role="combobox" aria-label="Search talents by name"
+                  aria-autocomplete="list" aria-expanded="false" aria-controls="talent-search-list">
+                <button type="button" class="tt-search-clear" aria-label="Clear talent search" hidden>
+                  <i class="material-symbols-rounded" aria-hidden="true">close</i>
+                </button>
+              </div>
+              <div id="talent-search-list" class="tt-search-list" role="listbox" aria-label="Matching talents" hidden></div>
+              <div class="tt-search-status" aria-live="polite"></div>
             </div>
             {# One .tt-variant per (cohort, hero tree). The "top" cohort is the Top
                Players view, built from verified top-player loadouts (v.top_view);
@@ -2880,6 +2894,11 @@
             it.
           </p>
           <p>
+            To find one talent, type part of its name into <strong>Search talents</strong> by the tree. Matching
+            talents light up with a magnifier and the rest fade back. A match that is not drawn on the tree, because
+            it sits in the full hero tree or in the other hero tree, is named under the search box.
+          </p>
+          <p>
             A <span class="badge tt-top-badge tt-top-badge-inline">TOP</span> badge marks the picks favoured by the
             top&nbsp;50 Raider.io-ranked players, so you can quickly spot where the very best players differ from
             everyone else.
@@ -2965,7 +2984,7 @@
 
 
   <!-- Per-spec data for spec-page.js -->
-  <script type="application/json" id="spec-page-data">{"levelStats": {{ level_stats | tojson }}, "buildPaths": {{ build_payload | tojson }}}</script>
+  <script type="application/json" id="spec-page-data">{"levelStats": {{ level_stats | tojson }}, "buildPaths": {{ build_payload | tojson }}, "talentSearch": {{ talent_search | tojson }}}</script>
   <script src="/assets/js/spec-page.js?v={{ generated_at | int }}"></script>
 </body>
 

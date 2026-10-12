@@ -147,6 +147,8 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
     // Filled in by the talent builds block below: the export string of the build
     // painted on a hero tree, and a hook for when the visible tree or list changes.
     const talentBuilds = { codeFor: () => '', onViewChange: () => {} };
+    // Filled in by the talent search block below: its match note names the visible tree.
+    const talentSearch = { onViewChange: () => {} };
 
     // Export Talent String copies the build painted on the visible tree, else
     // that tree's most-used loadout.
@@ -193,6 +195,7 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
         document.body.classList.toggle('spec-cohort-top', isTop);
         if (cohortSwitch) cohortSwitch.checked = isTop;
         talentBuilds.onViewChange();
+        talentSearch.onViewChange();
       }
       show();
 
@@ -571,6 +574,220 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
           }
         });
       }
+    })();
+
+    // Talent search: marks the nodes whose talent name matches on every variant
+    // and in the hero tree modal at once, so a hero tree, Top 50 or build switch
+    // needs no rerun. The marks only show under .tt-searching (spec-page.css),
+    // which the per-dungeon clones of the tree never sit under.
+    (function () {
+      const root = document.getElementById('static-talent-tree');
+      const input = document.getElementById('talent-search');
+      const data = SPEC.talentSearch;
+      if (!root || !input || !data) return;
+      const scopes = [root, document.getElementById('heroTreeModal')].filter(Boolean);
+      const box = input.closest('.tt-search');
+      const list = box.querySelector('.tt-search-list');
+      const status = box.querySelector('.tt-search-status');
+      const clearBtn = box.querySelector('.tt-search-clear');
+      const variants = Array.from(root.querySelectorAll('.tt-variant'));
+
+      const els = {};  // node id -> its elements across the variants and the modal
+      scopes.forEach((scope) => {
+        scope.querySelectorAll('[data-nodeid]').forEach((el) => {
+          const id = el.getAttribute('data-nodeid');
+          (els[id] = els[id] || []).push(el);
+        });
+      });
+      const rows = scopes.flatMap((scope) => Array.from(scope.querySelectorAll('.tt-choice-row')));
+      const idsOn = new Map(variants.map((variant) => [
+        variant,
+        new Set(Array.from(variant.querySelectorAll('[data-nodeid]'), (el) => el.getAttribute('data-nodeid'))),
+      ]));
+
+      // The lookup also holds nodes the tree does not draw.
+      const index = Object.keys(data.nodes).filter((id) => els[id]).map((id) => {
+        const node = data.nodes[id];
+        return {
+          id: id,
+          tree: node.g === 'hero' ? String(node.tree) : null,
+          tag: node.g === 'hero' ? data.heroTrees[node.tree] : (node.g === 'class' ? 'Class' : 'Spec'),
+          names: node.names,
+        };
+      });
+      const byName = new Map();
+      index.forEach((node) => {
+        node.names.forEach(([name, icon]) => {
+          const key = name.toLowerCase();
+          if (!byName.has(key)) byName.set(key, { key: key, name: name, icon: icon, tag: node.tag });
+        });
+      });
+      const suggestions = Array.from(byName.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+      let query = '';     // lower case
+      let exact = false;  // a picked suggestion matches its whole name
+      let hits = [];      // index entries
+      let options = [];
+      let active = -1;
+
+      function matches(name) {
+        const key = name.toLowerCase();
+        return exact ? key === query : key.includes(query);
+      }
+
+      function plural(n) {
+        return n + (n === 1 ? ' match' : ' matches');
+      }
+
+      // Counts the visible tree's matches and points at those it does not draw.
+      function syncStatus() {
+        status.textContent = '';
+        if (!query) return;
+        const visible = variants.find((el) => el.style.display !== 'none');
+        const treeId = visible && visible.getAttribute('data-hero-tree-id');
+        const drawn = (visible && idsOn.get(visible)) || new Set();
+        const onTree = hits.filter((node) => drawn.has(node.id)).length;
+        const inFull = hits.filter((node) => node.tree === treeId && !drawn.has(node.id)).length;
+        const parts = [];
+        if (inFull) parts.push(inFull + (onTree ? ' more' : '') + ' in the full hero tree');
+        Object.keys(data.heroTrees).forEach((id) => {
+          const count = id === treeId ? 0 : hits.filter((node) => node.tree === id).length;
+          if (count) parts.push(count + ' in ' + data.heroTrees[id]);
+        });
+        if (onTree || !parts.length) parts.unshift(onTree ? plural(onTree) : 'No matches');
+        parts.forEach((text) => {
+          const line = document.createElement('div');
+          line.textContent = text;
+          status.appendChild(line);
+        });
+      }
+
+      function apply() {
+        hits = query ? index.filter((node) => node.names.some(([name]) => matches(name))) : [];
+        const hitIds = new Set(hits.map((node) => node.id));
+        scopes.forEach((scope) => scope.classList.toggle('tt-searching', !!query));
+        Object.keys(els).forEach((id) => {
+          els[id].forEach((el) => el.classList.toggle('is-search-hit', hitIds.has(id)));
+        });
+        rows.forEach((row) => {
+          const name = row.querySelector('.tt-choice-name');
+          row.classList.toggle('is-search-hit', !!query && !!name && matches(name.textContent.trim()));
+        });
+        // "View full tree" leads to the hero talents the page tree leaves out.
+        variants.forEach((variant) => {
+          const btn = variant.querySelector('.tt-hero-detail-btn');
+          if (!btn) return;
+          const treeId = variant.getAttribute('data-hero-tree-id');
+          btn.classList.toggle('is-search-hit',
+            hits.some((node) => node.tree === treeId && !idsOn.get(variant).has(node.id)));
+        });
+        clearBtn.hidden = !input.value;
+        syncStatus();
+      }
+
+      function setActive(i) {
+        active = i;
+        Array.from(list.children).forEach((row, n) => {
+          row.classList.toggle('is-active', n === i);
+          row.setAttribute('aria-selected', n === i ? 'true' : 'false');
+        });
+        if (i >= 0) input.setAttribute('aria-activedescendant', list.children[i].id);
+        else input.removeAttribute('aria-activedescendant');
+      }
+
+      function openList(open) {
+        list.hidden = !open;
+        input.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (!open) setActive(-1);
+      }
+
+      function renderList() {
+        options = query && !exact
+          ? suggestions.filter((opt) => opt.key.includes(query))
+            .sort((a, b) => b.key.startsWith(query) - a.key.startsWith(query))
+            .slice(0, 8)
+          : [];
+        list.textContent = '';
+        options.forEach((opt, i) => {
+          const row = document.createElement('div');
+          row.className = 'tt-search-option';
+          row.id = 'talent-search-option-' + i;
+          row.setAttribute('role', 'option');
+          const icon = document.createElement('img');
+          icon.width = 24;
+          icon.height = 24;
+          icon.alt = '';
+          icon.onerror = function () {
+            icon.onerror = null;
+            icon.src = '/data/icons/inv_misc_questionmark.png';
+          };
+          icon.src = '/data/icons/' + opt.icon + '.png';
+          const name = document.createElement('span');
+          name.className = 'tt-search-option-name';
+          name.textContent = opt.name;
+          const tag = document.createElement('span');
+          tag.className = 'tt-search-option-tag';
+          tag.textContent = opt.tag;
+          row.append(icon, name, tag);
+          list.appendChild(row);
+        });
+        openList(options.length > 0 && document.activeElement === input);
+      }
+
+      function search(text, isExact) {
+        query = text.trim().toLowerCase();
+        exact = !!isExact && !!query;
+        apply();
+        renderList();
+      }
+
+      function pick(opt) {
+        input.value = opt.name;
+        search(opt.name, true);
+      }
+
+      input.addEventListener('input', () => search(input.value, false));
+      input.addEventListener('focus', () => openList(options.length > 0));
+      input.addEventListener('blur', () => openList(false));
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          if (!options.length) return;
+          e.preventDefault();
+          const step = e.key === 'ArrowDown' ? 1 : -1;
+          const from = list.hidden || active < 0 ? (step > 0 ? -1 : 0) : active;
+          openList(true);
+          setActive((from + step + options.length) % options.length);
+        } else if (e.key === 'Enter' && active >= 0) {
+          e.preventDefault();
+          pick(options[active]);
+        } else if (e.key === 'Escape') {
+          // the first press closes the list, the next one clears the search
+          e.preventDefault();
+          if (!list.hidden) {
+            openList(false);
+          } else {
+            input.value = '';
+            search('', false);
+          }
+        }
+      });
+      // mousedown, not click: the input keeps focus, so the list is not closed first
+      list.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const row = e.target.closest('.tt-search-option');
+        if (row) pick(options[Array.prototype.indexOf.call(list.children, row)]);
+      });
+      list.addEventListener('mousemove', (e) => {
+        const row = e.target.closest('.tt-search-option');
+        if (row) setActive(Array.prototype.indexOf.call(list.children, row));
+      });
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        search('', false);
+        input.focus();
+      });
+
+      talentSearch.onViewChange = syncStatus;
     })();
 
     // Talent Differences modal: the per-dungeon tree views are clones of the
