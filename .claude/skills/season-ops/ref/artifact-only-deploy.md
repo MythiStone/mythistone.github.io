@@ -1,25 +1,19 @@
 ---
 name: artifact-only-deploy
 description: Built pages are never committed; the site deploys straight from the Pages artifact and generated paths are gitignored. Use when adding a generator, wiring output dirs, reasoning about deployment, or wondering why old commit hashes or committed HTML are missing.
+kind: coupling
 files:
   - .github/workflows/buildPages.yml
   - .gitignore
 ---
 
-# Artifact-only deploy, no committed build output
+# Nothing generated is committed
 
-The pipeline is artifact-only. `.github/workflows/buildPages.yml` assembles
-`_site/` in its `assemble` job and uploads it directly via `actions/upload-pages-artifact@v5`.
-Nothing generated is committed. 
+`.github/workflows/buildPages.yml` assembles `_site/` and deploys it as a Pages artifact. Two
+things follow for every generator:
 
-Generated output paths are gitignored. `.gitignore` ignores `/pages/`, `/classes/`, `/dungeons/`,
-`/items/`, `assets/img/previews/`, and the volatile JSON (`assets/json/search_index.json`,
-`items_index.json`, `compRoutes.json`, `comps_index.json`, `assets/json/item_icons/`). Never
-`git add` generated pages or these JSON files.
+- **A new generated path goes into `.gitignore`.** Generated JSON is listed there per file, not by
+  wildcard.
+- **A generator creates its own output directory.** A CI checkout has none of them.
 
-**Fresh checkouts do not contain output dirs.** A CI run starts clean, so every generator must
-`os.makedirs(..., exist_ok=True)` its own output directory before writing. Do not assume `pages/`,
-`dungeons/`, etc. already exist.
-
-A cold-storage per-season copy of the built site is handled separately (see
-[[season-snapshot-archive]]).
+Related: [[season-snapshot-archive]].

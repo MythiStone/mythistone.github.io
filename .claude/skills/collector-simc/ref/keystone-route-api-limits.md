@@ -1,19 +1,25 @@
 ---
 name: keystone-route-api-limits
 description: The keystone.guru route API gives only npc_id (creature type) + enemyForces per pull, so per-run pack/position/route-consensus analytics are permanently impossible. Use before proposing pack-popularity, route-consensus, or spatial dungeon-page features.
+kind: external
 files:
   - backend_scripts/collectLeaderboardData.py
   - backend_scripts/generateDungeonPages.py
 ---
 
-# keystone.guru Route API Is Type-Level Only
+# The keystone.guru route API is type-level only
 
-The keystone.guru public route API (`/route/{key}`, consumed inline in `backend_scripts/collectLeaderboardData.py`) exposes, per pull enemy, ONLY `npcId` + the pull's `enemyForces`. The per-instance id (`mdtIndex`/`mdt_id`) is deliberately commented out in their `KillZoneEnemyResource.php`, and there are no coordinates. `pull_spells` is FRIENDLY/player casts (notable markers like Bloodlust/Shroud), not enemy abilities.
+The public route API that `backend_scripts/collectLeaderboardData.py` reads gives, per pull, only
+the creature type (`npcId`) and the pull's enemy forces. The per-instance id is deliberately
+commented out on their side, and there are no coordinates. The spells of a pull are player casts
+such as Bloodlust, not enemy abilities.
 
-Consequence: our stored `pull_enemies` is `npc_id` (creature *type*, which recurs across many physical packs) + count, with no way to tie a run to a specific enemy instance or pack. So anything needing "how often does the community pull THIS pack / this location" (route-consensus maps, pack popularity, spatial death/pull correlation) is **permanently impossible from run data**, regardless of ingesting keystone.guru's static seeders. Their `enemies.json` has `enemy_pack_id`/`lat`/`lng`/`kill_priority`, but the run side has nothing to join on.
+So a stored pull cannot be tied to a specific pack or position. Anything that needs "how often is
+this pack pulled" (route consensus maps, pack popularity, spatial correlations) is permanently
+impossible from run data. keystone.guru's open-source seeders do hold pack ids and positions, but
+the run side has nothing to join on, and rebuilding their map duplicates their core product.
 
-Static enemy geometry IS in their open-source seeders (`database/seeders/dungeondata/<exp>/<dungeon>/<floor>/enemies.json`, `enemy_packs.json`), but rebuilding a spatial map duplicates keystone.guru's core product (TOS gray) and still cannot connect to run popularity.
+Feasible dungeon content is type-level and aggregate: skip rates, timing distributions, enemy
+forces, comp and gear meta, loot. Do not propose pack or route-consensus features again.
 
-Feasible dungeon-page content is therefore limited to type-level/aggregate: skip rates (via `aggregated_npc_skip_rates`), timing distributions, enemy-forces totals, comp/gear meta, and loot. Do not re-pitch pack/route-consensus ideas.
-
-Related: [[keystone-guru-mapping-data]], [[dungeon-best-loot-card]].
+Related: [[keystone-guru-mapping-data]].

@@ -1,92 +1,34 @@
 ---
 name: bot-architecture
-description: The standalone dockerized Discord slash-command bot in discord_bot/ that serves MythiStone stats, plus its application-owned custom-emoji layer. Use when editing anything under discord_bot/ (cogs, embeds.py, emojis.py, db.py, site_data.py, social_render.py, guards.py, charts.py), Dockerfile.bot, or buildBotImage.yml.
+description: The Discord bot is a third consumer of backend modules, static lookups and page logic that the collector and the page generators own, so a change made for them must keep the bot importing, querying and rendering. Use when changing a backend module that Dockerfile.bot copies (databaseConnector.py, commonUtils.py, image_generation/ and the others in its COPY list) for any caller, when the bot reads a new data/static lookup, or when changing the analyzer scoring or the house embed style.
+kind: coupling
 files:
   - discord_bot/*
   - Dockerfile.bot
-  - .github/workflows/buildBotImage.yml
+  - backend_scripts/databaseConnector.py
+  - backend_scripts/commonUtils.py
+  - backend_scripts/chartData.py
+  - backend_scripts/tierMath.py
+  - backend_scripts/season_gate.py
+  - backend_scripts/computeBuildPhase.py
+  - backend_scripts/image_generation/*
+  - assets/js/analyzer.js
 ---
 
-# Discord bot (discord_bot/)
+# What the bot shares with the collector and the pages
 
-Standalone Discord slash-command bot (discord.py 2.x, `app_commands`, slash-only, no
-message-content intent). Ships as its own image `ghcr.io/mythistone/mythistone-bot` via
-`Dockerfile.bot` + `entrypoint_bot.sh` + `.github/workflows/buildBotImage.yml`, a separate compose
-service auto-updated by watchtower. Needs only the populated MySQL DB plus `DISCORD_BOT_TOKEN`.
-The image bakes the `data/static` lookups the bot reads (`specs`, `classes`, `dungeons`,
-`seasonInfo`, `groupbuffs`, `periods`, `patches`, `npcs`, `consumables`, the `talents/` shards);
-`config.SEASON` comes from the baked `seasonInfo.json`. A new lookup the bot reads must be added to
-the `COPY` list in `Dockerfile.bot`, or the bot fails in the container while passing locally.
+- **Shared backend modules.** `Dockerfile.bot` copies backend modules and `image_generation/` into
+  the bot image, and the cogs call their fetchers and renderers directly. Changing one of them for
+  the collector or a page changes the bot too: a new third-party import needs the `pip install` in
+  `Dockerfile.bot`, a new first-party import needs its `COPY` list, and a renamed fetcher or a
+  changed return shape breaks the cogs that read it. The symbol lookup of a fetcher lists those
+  cogs. Run `discord_bot/db_smoke_test.py` after such a change.
+- **Static lookups.** A `data/static` file read by `discord_bot/lookups.py` or by a shared module
+  must be in the `COPY` list of `Dockerfile.bot`. Without it the bot passes locally, where the whole
+  repo is present, and fails in the container.
+- **Hand-kept mirrors.** `discord_bot/cogs/analyze.py` reimplements the scoring of
+  `assets/js/analyzer.js`, and `backend_scripts/broadcastDiscordNews.py` rebuilds the embed of
+  `embeds.base_embed` as a plain dict. A change to the pass rules or to the brand color, author or
+  footer belongs in both ends.
 
-**Hybrid data.** Aggregates come live from MySQL through `databaseConnector.py` via
-`discord_bot/db.py` (async bridge: checkout to `configure_read_session` to query to release on a
-ThreadPoolExecutor). CI-computed features come from published site JSON (`comps_index`,
-`compRoutes`, `items_index`, `gem_enchant_index`, `spec_meta/<id>`, `simdps_tierlist`) via
-`site_data.py` with a TTL cache. Reuses `commonUtils`, `chartData`, `tierMath`, `season_gate` and
-`computeBuildPhase` (flat-copied into `/app` like the collector) plus `image_generation/`.
-
-**Cogs** live in `discord_bot/cogs/`: `analyze.py`, `comps.py`, `consumables.py`, `dungeon.py`,
-`items.py`, `meta.py`, `news.py`, `routes.py`, `season.py`, `spec.py`, `stats.py`, `vods.py`. `/news`
-(daily-post channel subscriptions) is covered in [[bot-news-channel-subscriptions]]. Several top-level commands (`/lust`, `/routes`,
-`/analyze`) live on cogs as `@app_commands.command`, not group subcommands. `/meta specs|dungeons|
-popularity|simdps` render the site's exact og:images by reusing `image_generation` renderers via
-`social_render.py`, not text embeds. `/meta weekly` renders a matplotlib chart from `charts.py`
-(cached per key by `charts.cached_path` / `charts.render`). `/analyze` ("Am I meta?") ports `assets/js/analyzer.js`,
-scoring a pasted simc string against `spec_meta`.
-
-**Guards.** A tree-wide `bot.tree.interaction_check = guards.season_guard` short-circuits every
-command to a friendly "season hasn't started" embed during the pre-season gap. It first checks the
-launch window, then `season_gate.season_has_started` (the same gate the social auto-poster uses),
-cached for 300 s and fail-open on any DB error. Related: [[season-launch-day-presentation]],
-[[season-rollover-wipe]].
-
-**Usage tracking and ops output.** Every invocation is recorded in `bot_command_usage` and summarised
-in a self-updating webhook embed, see [[bot-command-usage-tracking]]. Which webhook carries that
-embed versus alerts and the `entrypoint_bot.sh` pings is in [[ops-discord-channels]].
-
-**Custom emojis** (`discord_bot/emojis.py`): spec/buff/role/meta/item icons are **application-owned**
-custom emojis (work in every server). Deterministic names ≤32 chars: `spec_<SpellIconFileId>`,
-`buff_<buff_id>`, `role_tank|healer|dps`, `meta`, `item_<item_id>`. `emojis.populate(bot,
-create_missing=True)` runs in `on_ready` and auto-uploads missing ones (spec/buff from
-`SITE_BASE/data/icons`, role/meta from vendored `discord_bot/emoji_assets/*.png`, which the
-user vendors manually per the `AGENTS.md` working preferences). Class icons are NOT hosted by the
-site pipeline, so `class_*` are
-excluded and inert. **GOTCHA:** custom emoji render only in embed **description** and **field
-values**, never in titles or field names. Registry is empty when unpopulated so render helpers
-return `""` and `build_*` fall back to text, keeping `db_smoke_test` valid.
-
-**Brand & support.** `embeds.base_embed` puts the brand in the **author slot** via
-`embeds.brand_author` (name "Mythistone", icon, `url=SITE_BASE`) so it is a clickable link, and sets
-a fixed **support footer** (`embeds.support_footer` / `SUPPORT_FOOTER_TEXT`) asking people to back
-Patreon — footers are plain text (no hyperlink) so the fixed string doubles as a consistent
-minimum embed width. The clickable Patreon link (`config.PATREON_URL`) lives on the standalone
-`embeds.patreon_embed`. Every cog sends its result through the shared `embeds.respond(interaction,
-embed, **kwargs)` helper (never `interaction.followup.send` directly), which appends
-`patreon_embed` as a **second embed on the same reply message** once every `config.PATREON_EMBED_EVERY`
-commands — same message so the nudge can't be dismissed independently of the result. The counter
-(`bot._support_counts`, read off `interaction.client`) keys **per-guild** in a server (any member
-advances it) and **per-user** otherwise (user-installed usage). Only successful commands reach a
-`respond` call (the season gate and errors reply through `errors._respond`), so the nudge never
-piggybacks on an error or the off-season notice. Errors/gate embeds intentionally skip the nudge.
-
-**Sync signature includes choice values.** `bot._sync_tree` hashes each command's parameter names
-**and their `Choice` (name, value) pairs**, not just names. This is required: a season rollover
-changes `lookups.DUNGEON_CHOICES` (new dungeon ids/names) without changing any command/parameter
-name, so a names-only hash would skip the global sync (the hash persists in the `bot_cache` volume)
-and leave Discord serving the previous season's dungeon list. Dungeon/class options are static
-`@app_commands.choices`; only `item`/`spec` use live autocomplete.
-
-**Pull signatures carry counts.** `fetch_dungeon_lust_timeline`'s `top_npcs` column is a
-`GROUP_CONCAT(CONCAT(npc_id, ':', count))` string (`"134388:3,134389:1"`), so any parse must take
-`tok.split(":")[0]` for the npc id, exactly like the dungeon page template — a raw `int(tok)` throws.
-
-**Verify.** `python -m discord_bot.db_smoke_test` drives the bot's real data paths: it runs every
-`db.run(databaseConnector.fetch_*)` / `commonUtils.fetch_stat_info` against the seeded local test DB
-(source A) and fetches the site JSON artifacts live over HTTP (source B, soft-skipped off-season),
-feeding the real results into every `build_*_embed` and rendering all six social images. Seed first
-and export the printed `DATABASE_*`: `python backend_scripts/localDev/seed_test_db.py` (see
-[[local-test-render]]). No `DISCORD_BOT_TOKEN` needed. `docker build -f Dockerfile.bot` keeps the
-in-image import guards only (the DB test can't reach MySQL during a build, so it runs as the
-`db-smoke-test` job in `buildBotImage.yml`, gating the image). Manual emoji resync:
-`python -m discord_bot.emoji_sync` (needs only `DISCORD_BOT_TOKEN`). Related:
-[[social-image-mock-harness]], [[pooled-connection-gotchas]].
+The season gate the bot shares with the social poster: [[season-launch-day-presentation]].

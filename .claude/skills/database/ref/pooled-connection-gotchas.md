@@ -1,6 +1,7 @@
 ---
 name: pooled-connection-gotchas
-description: Two mysql.connector pooled-connection traps in MythiStone. Use when writing DB code in backend_scripts (databaseConnector.py, collectors, simcBis.py), debugging silent write loss / rolled-back upserts, or a long-running loop that dies with "MySQL Connection not available".
+description: Two rules every user of the mysql.connector pool follows, a write commits only on a configured session or with an explicit commit, and no pooled connection is held across a slow step. Use when adding a DB write, a long-running collector or simc step, or when a writer logs success and the table stays empty.
+kind: coupling
 files:
   - backend_scripts/databaseConnector.py
   - backend_scripts/collectLeaderboardData.py
@@ -8,20 +9,15 @@ files:
   - discord_bot/db.py
 ---
 
-# Pooled connection gotchas
+# Pooled connection rules
 
-Two independent traps with `mysql.connector`'s `PooledMySQLConnection` in `backend_scripts/`.
-
-## 1. `.autocommit` attribute does not reach the server
-
-The pooled wrapper swallows the `.autocommit` setter: `conn.autocommit = True` sets a Python attribute but the server session stays `autocommit=0` (`SELECT @@autocommit` returns 0 after the attribute set). Consequence: any WRITE on such a session sits in an open transaction and is rolled back when the connection returns to the pool, with no error. A writer can log "upserted N rows" and leave the table empty. Reads are unaffected, which is why this hides.
-
-Apply: `databaseConnector.configure_read_session` runs `cursor.execute("SET SESSION autocommit = 1")` (SQL reaches the server, the attribute set does not) alongside READ UNCOMMITTED and the lock timeouts; that is also what makes its per-statement MDL release work on pooled connections. For any writer on a pooled connection, call `commit_with_retry(conn)` explicitly rather than trusting the attribute.
-
-## 2. Never hold a pooled connection across a long blocking op
-
-The pool only revalidates a connection when it is checked out (a returned stale slot transparently reconnects on next use). A connection held checked out across a long blocking operation does NOT auto-recover: when the server drops it (`wait_timeout`) the next query raises `OperationalError: MySQL Connection not available`. For example, holding one pooled connection across `optimize_spec` (an hours-long simc container) lets the idle-held connection die mid-run, so the closing `persist()` write fails and surfaces as paired Discord alerts.
-
-Apply: for any collector work spanning a slow step, use read -> release -> work -> reacquire. Read under a short-lived connection, close it, do the slow work holding NO connection, then check out a fresh one, preferring `databaseConnector.get_live_connection()` (it pings/reconnects on checkout), to write. `simcBis.run_simc_bis` does this.
+- **A write commits only on a session set up by `databaseConnector.configure_read_session`, or
+  after an explicit `commit_with_retry`.** On any other pooled connection the write is rolled back
+  without an error when the connection returns to the pool: the writer logs success and the table
+  stays empty, and reads never show the problem. The bot's inserts rely on the first form through
+  `discord_bot/db.py`, so the session setup in `configure_read_session` is load-bearing for them.
+- **No pooled connection is held across a slow step.** Read, release, do the slow work, then check
+  out a fresh connection with `get_live_connection` to write, as `simcBis.run_simc_bis` does. A
+  connection held idle past the server's `wait_timeout` fails on its next statement.
 
 Related: [[aggregation-pipeline]].

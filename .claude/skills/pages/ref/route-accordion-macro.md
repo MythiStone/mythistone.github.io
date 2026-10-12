@@ -1,6 +1,7 @@
 ---
 name: route-accordion-macro
 description: The keystone.guru route accordion item is one shared Jinja macro used by the spec, routes and dungeon pages, and assets/js/routes-finder.js must mirror its full markup. Use when editing templates/_route_macros.html, the route panels on spec_page.html / find_routes.html / dungeon_page.html, or routes-finder.js.
+kind: coupling
 files:
   - templates/_route_macros.html
   - templates/spec_page.html
@@ -9,39 +10,16 @@ files:
   - assets/js/routes-finder.js
 ---
 
-# Shared route accordion macro
+# Route and VOD rows: one macro, one JS mirror
 
-`templates/_route_macros.html` `route_accordion_item(...)` renders the WHOLE keystone.guru route
-accordion item (header button plus consent-gated embed body) and is the single source of that markup
-for three pages:
+`route_accordion_item` in `templates/_route_macros.html` is the only server-side source of the
+route accordion markup, for `templates/spec_page.html`, `templates/find_routes.html` and
+`templates/dungeon_page.html`.
 
-- `spec_page.html` Top-Route modal (`top_routes[ds]`; passes `upgrade_css`/`upgrade_text` from
-  `upgrade_info` so the modal keeps its chest "++N" badge instead of the plain green "+level").
-- `find_routes.html` server render (first run per dungeon from `comp_routes_by_dungeon`).
-- `dungeon_page.html` "Top Routes" card (`top_routes`; passes `iframe_height='60vh'` and
-  `item_class='border'`).
+- **`renderRouteItem` in `assets/js/routes-finder.js` rebuilds the same markup client-side.** A
+  change to the macro is repeated there. `templates/_vod_macros.html` and
+  `assets/js/vods-finder.js` are the same pair for VODs.
+- **Client-added rows miss the one-shot inits.** `assets/js/finder.js` wires consent and refills
+  the timestamps for each new row ([[klaro-consent-embeds]]).
 
-The body is a single left-aligned "View full run details on Raider.io" button (Raider.IO logo +
-`open_in_new`) over the iframe. All three pages keep the accordion parent id `#routeDungeonAccordion`
-and a `shown.bs.collapse` hook calling `MythiConsent.loadEmbed(iframe[data-src])`; the iframe carries
-`data-name="keystoneGuru"` + `data-src` and is never given `src` directly (see [[klaro-consent-embeds]]).
-Permalinks use `data-share-id="route-<slug>-<route_key>"` (the run id in the element id changes each
-refresh, so [[deep-links]] prefers the share id).
-
-## routes-finder.js mirrors the macro
-
-The route finder rebuilds results client-side on the shared MythiFinder engine (`assets/js/finder.js`
-+ `assets/js/finder-worker.js`). Klaro cannot gate client-added iframes, so `renderRouteItem()` in
-`assets/js/routes-finder.js` builds the SAME accordion-item markup as the macro (header + body), and
-`finder.js` wires consent per iframe itself. Any change to the macro's markup must be mirrored there;
-both sides carry a KEEP-IN-SYNC comment. A row without `upgrade_text` falls back to the plain green
-"+level" badge. `finder.js` also refills each new `.timestamp[data-timestamp]` span the same way the
-one-shot init in `javascript_imports.html` does, because that init has already run before rows are
-appended. The VOD finder follows the same pattern (`_vod_macros.html` mirrored by `vods-finder.js`).
-
-## Raider.IO run permalink season slug
-
-Run links key on the season slug. `find_routes.html` injects `window.current_season =
-season_info.slug` (consumed by routes-finder.js). `season_info` has no `current_season` key, so reading
-that instead silently yields empty and breaks the client-rendered `raider.io/mythic-plus-runs//<id>`
-links.
+Related: [[deep-links]].

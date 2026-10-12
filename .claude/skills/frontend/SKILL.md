@@ -5,18 +5,9 @@ description: "MythiStone client-side conventions: design tokens, library choices
 
 # Frontend domain
 
-Owner agent `pages`. Owns `assets/css/`, `assets/js/`, `assets/scss/` and the markup conventions in `templates/`.
-
-**Verify:** Test-render and inspect in the browser: the `local-test-render` skill.
-
-**Look things up, do not read whole files.** The `mythi-kb` MCP tools (or `python .claude/kb/kb.py <tool> <arg>`)
-return the slice you need: `kb_table`, `kb_symbol`, `kb_page`, `kb_bot_command`, `kb_file`, `kb_search`.
-Open a source file only at the range a tool pointed to.
-
 ## Gotchas
 
 Before changing a file listed below, read its gotcha: `ref/<id>.md` in this skill (or `kb_gotcha <id>`).
-`kb_file <path>` lists every gotcha for a path across all domains.
 
 | id | rule | files |
 |---|---|---|

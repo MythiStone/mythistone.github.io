@@ -1,6 +1,7 @@
 ---
 name: top-trends-bar
-description: "Covers the site-wide \"Top Trends\" bar: weekly trend_snapshot baseline, the Python snapshotTrends writer, per-page contextual feeds, and the marquee JS. Use when editing snapshotTrends.py, pageGeneration.build_trends/build_global_trends, templates/trends_bar.html, assets/js/trends-bar.js, or the trend_snapshot table."
+description: The Top Trends bar depends on a CI step order, on two stored weeks and on a stable archetype key. Use when the bar is missing, or when editing snapshotTrends.py, pageGeneration.build_trends / build_global_trends, the buildPages.yml step order, or the trend seeding in the local seeder.
+kind: coupling
 files:
   - backend_scripts/snapshotTrends.py
   - backend_scripts/pageGeneration.py
@@ -9,17 +10,17 @@ files:
   - assets/js/trends-bar.js
 ---
 
-# Site-Wide "Top Trends" Bar
+# Top Trends bar: what it depends on
 
-The bar shows entities that moved up/down since the previous reset week (Blizzard period), with a tier/rank arrow + popularity % delta. Contextual per page: index = spec+dungeon global; spec pages = that spec's talents/items-per-slot/embellishments/gems/crafted/combos; comps + dungeon pages = team-comp ARCHETYPE movement. Pages that pass no `trends` self-hide the partial.
+The design is in the header comment of `backend_scripts/snapshotTrends.py`. What sits outside it:
 
-## Data path
-- `trend_snapshot` table (`backend_scripts/database.sql`): weekly per-entity freeze, bounded top-N. Cleared in `sp_season_wipe`.
-- `backend_scripts/snapshotTrends.py`: a PYTHON CI step run BEFORE the generators, not a stored proc, because S–F tiers come from `tierMath.ckmeans` (Python-only). Each build it (a) writes current live records to a build-local JSON `TRENDS_LIVE_PATH` (default `assets/json/trends_live.json`), the fresh "now" side, NEVER in the DB; and (b) stores a write-once weekly baseline in the DB (guarded by `fetch_trend_week_exists`, frozen at the period's first build). `build_trends` reads "now" from the JSON and "prev" = previous period baseline (`fetch_prev_trend_week`). So the displayed % is fresh and the delta spans a full period. `--force` re-stores baseline; `--debug-fake-live` fakes ONLY the live JSON so the bar renders locally with no fake DB rows. Run snapshotTrends BEFORE the generators or the live JSON is absent and the bar hides.
-- Archetype feed: `snapshotTrends` runs `compArchetypes.collapse_comps` + `build_dungeon_archetypes` off one `fetch_all_comps` scan. IDENTITY GOTCHA: the displayed core `c` is the highest-KEY member and flips whenever a sister comp posts a fresh top key. `_family` also exposes `key_c` (most-PLAYED member); the snapshot uses `key_c` as the stable `entity_key` and displayed `c` as the `label`.
-- `pageGeneration.build_trends()` diffs the latest two snapshot weeks into movers, resolving icon/href from the same lookups pages already load. It opens its OWN tuple cursor because some generators (dungeon) pass a `dictionary=True` cursor.
-- `pageGeneration.build_global_trends()` (own conn + lookups, cached, returns [] with no DB pool) feeds dashboard / routes / analyzer / tierlist / items. index/spec/dungeon/comps use their contextual feeds.
-- `templates/trends_bar.html` is included by `top_chrome.html` (the sticky header every page includes), after `notifications.html`; `top-chrome.js` hides it on phones once the header condenses. CI has a "Snapshot weekly trends" step in `buildPages.yml` before the generators.
-- Bar is an icon-only marquee driven by `assets/js/trends-bar.js` (registered in `javascript_imports.html`): it clones the single `.trends-seq` to overfill the viewport and shifts by exactly one seq width for a seamless loop.
+- **`snapshotTrends.py` runs before the generators**, in `.github/workflows/buildPages.yml` and
+  locally. Without its live JSON the bar hides.
+- **The bar shows nothing until two weekly snapshots exist**, about a week into a season. Locally,
+  `backend_scripts/localDev/seed_test_db.py` seeds a previous week, so the bar renders after one
+  `snapshotTrends.py` run ([[local-test-render]]).
+- **The archetype feed keys on the most-played member, not on the displayed core.** The displayed
+  core of a family flips whenever a sister comp posts a higher key, so `compArchetypes._family`
+  also exposes a stable key for the snapshot.
 
-OPERATIONAL: the bar renders NOTHING until two weekly snapshots exist (~1 week into a season). Locally, `seed_test_db.py` seeds a previous trend week (unless `--skip-trends`), so after running `snapshotTrends.py` the bar renders against the seeded DB ([[local-test-render]]). Archetype identity ties into [[spec-team-comps]] and [[frontend-json-dungeon-keys]].
+Related: [[spec-team-comps]], [[frontend-json-dungeon-keys]].

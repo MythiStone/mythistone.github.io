@@ -1,41 +1,42 @@
 ---
 name: blizzard-preseason-period
-description: How season_periods completeness drives the dashboard week axes and throughput charts - the filtered phantom pre-season period, the week-1 per-day grain, the weekly keys/min headline, the aggregated-sourced region set, and the build-time self-heal for a region's missing current period (KR/TW Thursday reset vs the Wednesday-only fetch). Use when week numbers look off by one, a region is missing from the Keys per Week / Key Throughput charts, or when touching fetchSeasonAndPeriodInfo.py, periods.json, season_periods, or the dashboard throughput code.
+description: Two Blizzard period quirks shift the dashboard week axes or drop a region from the throughput charts, a phantom period that ends at season start and the KR/TW Thursday reset against the Wednesday-only static fetch. Use when week numbers look off by one, a region is missing from the Keys per Week / Key Throughput charts, or when touching fetchSeasonAndPeriodInfo.py, periods.json, season_periods, or the dashboard throughput code.
+kind: external
 files:
   - backend_scripts/fetchSeasonAndPeriodInfo.py
   - backend_scripts/generateDashboardPage.py
   - data/static/periods.json
+  - .github/workflows/buildPages.yml
 ---
 
-# Blizzard Pre-Season Period Quirk
+# Blizzard period quirks
 
-Blizzard's mythic-keystone season details API includes the period that *ends exactly at the season start* (for example season 17's period 1055 in all regions). It has zero runs. Left in place, tables and queries that derive week numbers from `season_periods` count a phantom "week 1" while ordinal-position-based views (`aggregated_key_throughput`, the "Key Throughput" chart) do not, so the week axes disagree by one (the dashboard's "Keys per Week" would start at Week 2 against Week 1 on keys/min).
+## The phantom pre-season period
 
-`backend_scripts/fetchSeasonAndPeriodInfo.py` skips periods where `end_timestamp <= season_start`, applied both to `periods.json` and to the `season_periods` insert via `databaseConnector.insert_season_periods`. Patch annotations index into the filtered `periods.json`, so all three week axes agree.
+Blizzard's season details API lists the period that ends exactly at the season start. It has no
+runs. `backend_scripts/fetchSeasonAndPeriodInfo.py` filters it out of `periods.json` and out of the
+`season_periods` insert.
 
-`insert_season_periods` is `INSERT IGNORE`, so the filter is only prophylactic: a phantom row inserted before the filter existed (or by an out-of-band writer) lingers in `season_periods` and re-running the fetch never removes it. When a live season's "Keys per Week" still starts at Week 2 even though `periods.json` is clean, the stale phantom row is the cause; delete it directly, e.g. `DELETE FROM season_periods WHERE season = <id> AND end_timestamp <= <season_start_ms>;`.
+The insert ignores existing rows, so a phantom row that is already in `season_periods` stays there
+and a re-fetch never removes it. When "Keys per Week" starts at week 2 although `periods.json` is
+clean, delete the row by hand:
+`DELETE FROM season_periods WHERE season = <id> AND end_timestamp <= <season start in ms>;`
 
-Two defenses live in `generateDashboardPage.createKeysPerWeek` so the chart survives a polluted table without any DB write:
-- It normalises week numbers so the earliest week present renders as "Week 1" (`offset = min(week) - 1`). A leaked phantom is always the zero-run first week, which the keys-per-week SQL already drops, so its only effect is a uniform +1 that the offset cancels. Real gaps between weeks are preserved (never compressed), unlike the ordinal `Key Throughput` axis. Labels are `f"Week {n}"` to match that chart's format exactly.
-- With only one week of data (season week 1) a single weekly point looks sparse, so it switches to a per-day breakdown. `fetch_runs_per_period_per_day` returns per-(region, period, day) rows from the nightly `aggregated_runs_per_period_per_day` rollup (live-scan fallback via `_fetch_runs_rollup_with_fallback`), `collapse_runs_per_week_day` folds them into per-(week, day) rows using `fetch_season_period_weeks` (each region's periods ranked by start, so regions with different period ids share a week; periods no longer in `season_periods` are dropped), and `createKeysPerWeek` renders `Day 1..Day N` when exactly one week is present, collapsing back to weekly totals once a second week exists. In day mode the card title, x-axis, and mobile heading follow the `period_grain` template flag, and patch annotations (week-index based) are suppressed.
+## The KR/TW Thursday reset
 
-The "Key Throughput" (keys/minute) chart follows the same week-1 grain. `aggregated_key_throughput` is per (season, region, period) with only `run_count + max_ts` and must NOT gain a per-day grain. In week 1 `_daily_throughput_series` redraws only the chart labels + series as per-region daily lines from the same per-(region, period, day) rows `fetch_runs_per_period_per_day` returned (`total_runs` passed on as `run_count`); `compute_key_throughput(..., daily_region_rows=...)` gets those rows only when the season is in its single-week grain. Each region's day rate = region_day_count / day-minutes with day boundaries anchored at THAT region's own period start (numerator and denominator share one region-relative clock); completed day = 1440 min, the region's last/ongoing day = elapsed (that region's `max_ts` - the day start); the Overall line sums the available per-region rates per day. Colours/order reuse `REGION_COLORS` / `_region_sort_key` / `OVERALL_COLOR`. Fails loudly if a region's static bounds are missing. 2+ weeks keeps the untouched per-region weekly view from `aggregated_key_throughput`, byte-for-byte. `period_grain` is decided once from `runs_per_period` and shared by both cards.
+`getStaticData.yml` fetches periods on Wednesday only, and KR and TW reset on Thursday. From
+Thursday to the next Wednesday their current period is unknown, their runs fail the period join,
+and both regions vanish from the throughput charts.
 
-Headline-stays-weekly rule: the KPI card literally reads "/min this week", so `current_total` / `season_total` / `delta_pct` are ALWAYS the weekly figures (`combined_rate` of the latest period + season overall-average from the `aggregated_key_throughput` rows), even in day grain. Only the chart grain changes. Do NOT recompute the headline from the daily series (e.g. `data[-1]`), or the number jumps to the last, partly-elapsed day's spike instead of the week-so-far combined rate.
+`heal_missing_periods` in `backend_scripts/generateDashboardPage.py` repairs this during the build.
+Decisions that are easy to undo by accident:
 
-Daily-region-set rule: the daily chart's region set MUST come from the aggregated `rows` (the canonical set the weekly chart uses), NOT from the per-day rows. `aggregated_key_throughput` is a persisted snapshot; the per-day rows can legitimately carry a smaller region set (runs retention, the live fallback, or `season_periods` bounds that changed after a rollup was built), so sourcing regions from the per-day rows silently drops regions (e.g. KR/TW) from ONLY the daily chart while the weekly chart still shows them. The per-day rows therefore carry `period_id` (not a week number), and `_daily_throughput_series` iterates regions from `rows`, pins each to the exact `period_id` it carries there, and pulls that region+period's day counts (a canonical region with no matching day rows draws an all-None empty line, keeping the legend in step). A region absent from BOTH `rows` and the per-day rows (season not launched in that region yet) is correctly omitted from both charts — that is expected, not a bug.
+- **It is fail-soft on purpose.** Without Blizzard credentials or network the region is simply
+  absent. There is deliberately no fail-loud guard and no extra Thursday cron. The dashboard step
+  of `.github/workflows/buildPages.yml` carries the Blizzard credentials for it.
+- **It never reruns an aggregation step from the generator.** That would swap an aggregate table
+  outside the nightly pipeline ([[aggregation-pipeline]]). Healed periods are injected in memory.
+- **`aggregated_key_throughput` stays at one row per region and period.** The week-one daily view
+  is drawn from the per-day rollup instead.
 
-## Missing-current-period self-heal (KR/TW Thursday reset)
-
-`getStaticData.yml` fetches season/period info only weekly (cron `0 8 * * WED`), but KR/TW reset on Thursday. So from Thursday until the next Wednesday, KR/TW's current period is absent from `season_periods` and `periods.json`, and ALL their runs that week fail the `runs<->season_periods` timestamp join (`sp_agg_key_throughput` uses the same join). The regions then vanish from `aggregated_key_throughput` and thus from BOTH throughput charts (the region set is sourced from the aggregated rows). This is NOT the phantom filter — the missing period ends far after season_start.
-
-`generateDashboardPage.py` self-heals this on demand, mirroring the dungeon-icon self-heal (gated + fail-soft):
-
-- **Detect (gated, zero-cost in steady state):** `_region_period_gaps` flags any region whose latest run is at/after the last period end it knows in `period_bounds`. `fetch_region_run_extent` probes each region only from that last known end (a `LIMIT 1` on `runs_timestamp_IDX`, not a season scan); a region seen in the completion heatmap rollup with no known period is probed from 0 and so reports a gap. In steady state the current period's end is in the future, so nothing is flagged and no network happens. A gap appears only when a region's current period is missing.
-- **Fetch, fail-soft:** `heal_missing_periods` fetches THIS season's period list from Blizzard for each gap region and inserts the missing non-preseason periods. It reuses `fetchSeasonAndPeriodInfo`'s `get_access_token` / `fetch_season_details` / `fetch_period_details` / `is_preseason_period` (extracted there for DRY; that module's pool init moved into its `main()` so importing it is side-effect-free). `blizzard=` is injectable for tests. The whole call is wrapped in try/except in `main()` — missing `BLIZ_CLIENT_ID`/`BLIZ_CLIENT_SECRET`, API, or network failure logs a warning and the render continues with the region simply absent (never raises, never fails the build). There is deliberately no fail-loud guard and no extra Thursday/Friday cron: the self-heal is the whole mechanism.
-- **Persist + apply:** inserts via `insert_season_periods` (the live-DB row is the durable persistence — the next build's aggregation picks the region up), updates the in-memory `period_bounds` (critical: `compute_key_throughput` reads bounds from `periods.json`, not the DB), and rewrites `data/static/periods.json` (fail-soft).
-- **Get the region into this render (in-memory injection, NOT a proc rerun):** a healed `(region, period)` only reaches the nightly rollups on the pipeline run after its `season_periods` row exists. Until then, for each healed period that `key_throughput_rows` or the per-day rows do not already carry, `fetch_period_runs_per_day` does a live read bounded to that one period window; its day rows are appended to the per-day rows and summed into a synthetic `key_throughput_rows` entry (`run_count`, `max_ts`). A period a rollup already carries is skipped, or it would be counted twice. Week numbers (`fetch_season_period_weeks`) are read after the heal so healed periods have one. It deliberately does NOT `CALL sp_run_agg_step('key_throughput')`, because that proc does a DROP/CREATE/RENAME swap of `aggregated_key_throughput`, exactly the RENAME contention `configure_read_session` is built to avoid, and it could race the nightly pipeline. Injection keeps the generator's writes to tiny autocommitted `season_periods` inserts.
-
-`buildPages.yml` carries `BLIZ_CLIENT_ID`/`BLIZ_CLIENT_SECRET` on the dashboard step for this. `data/static` is NOT in the deploy artifact `path:` list, and does not need to be: `periods.json` is a build-time input read server-side (not a served asset), and the durable fix is the `season_periods` DB insert, not the (CI-ephemeral) file rewrite.
-
-If week numbering ever looks off by one at a new season, check this quirk first.
+Related: [[runs-per-dungeon-rollup]].

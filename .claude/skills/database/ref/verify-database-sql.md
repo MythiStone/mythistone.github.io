@@ -1,6 +1,7 @@
 ---
 name: verify-database-sql
 description: How to syntax and runtime verify backend_scripts/database.sql stored procedures against an ephemeral MySQL 8 Docker container. Use when changing a stored proc (sp_agg_*, sp_run_agg_pipeline, sp_swap_public_table) or any routine in database.sql, since agents have no live DB but Docker Desktop is installed.
+kind: workflow
 files:
   - backend_scripts/database.sql
 ---

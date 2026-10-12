@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
-"""SessionStart hook: keep the generated map files fresh and surface stale knowledge.
-
-Rewrites .claude/kb/map/*.md (for tools without MCP) when a source file is newer than the map,
-and reports `kb lint` problems so a stale gotcha is fixed instead of followed. Silent when the map
-is current and lint is clean. Fails open on any error.
+"""SessionStart hook: report `kb lint` problems so a stale or duplicated gotcha is fixed instead of
+followed. Silent when lint is clean. Fails open on any error.
 """
 import json
 import os
@@ -18,15 +15,11 @@ def main() -> None:
     try:
         import kb
 
-        index = kb.KB()
-        marker = kb.MAP_DIR / "overview.md"
-        if not marker.exists() or marker.stat().st_mtime < index._stamp:
-            index.write_map()
-        report = index.lint()
+        report = kb.KB().lint()
         if report != "kb lint: clean":
             print(json.dumps({"hookSpecificOutput": {
                 "hookEventName": "SessionStart",
-                "additionalContext": "Stale knowledge detected. Fix these gotchas before relying on them:\n" + report,
+                "additionalContext": "Knowledgebase lint problems. Fix these before relying on the gotchas they name:\n" + report,
             }}))
     except Exception:
         return

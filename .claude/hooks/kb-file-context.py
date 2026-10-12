@@ -31,8 +31,6 @@ def main() -> None:
             rel = str(Path(file_path).resolve().relative_to(ROOT.resolve())).replace("\\", "/")
         except ValueError:
             return
-        if rel.startswith(".claude/kb/map/"):
-            return
 
         state_path = Path(tempfile.gettempdir()) / f"mythi-kb-hook-{payload.get('session_id', 'nosession')}.json"
         try:
@@ -58,7 +56,7 @@ def main() -> None:
         if dom and dom not in state["domains"]:
             state["domains"].append(dom)
             notes.append(
-                f"Domain {dom}: before finishing, verify with: {kb.DOMAINS[dom]['verify']}. "
+                f"Domain {dom}: before finishing, verify with: {kb.domain_info(dom)['verify']} "
                 "If the change alters behavior a gotcha describes, update that gotcha (ask the user first, "
                 "per the knowledgebase-authoring skill) and run `python .claude/kb/kb.py lint`."
             )

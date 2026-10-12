@@ -1,6 +1,7 @@
 ---
 name: table-storage-placement
 description: Where the large MySQL tables physically live (general tablespaces vs. per-table DATA DIRECTORY on specific host drives) and the only working way to move a table to another drive. Use when a drive fills up, when adding or relocating a large raw/aggregated table, when a wiped table does not give disk space back, or when editing TABLESPACE / DATA DIRECTORY clauses in backend_scripts/database.sql.
+kind: external
 files:
   - backend_scripts/database.sql
 ---

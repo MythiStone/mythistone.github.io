@@ -47,6 +47,5 @@ assets/json/simdps_tierlist.json
 assets/json/talent_tags_index.json
 assets/json/tierlist_gear.json
 
-# mythi-kb generated map (rebuilt by .claude/kb/kb.py --write)
-.claude/kb/map/
 .claude/kb/__pycache__/
+.claude/hooks/__pycache__
