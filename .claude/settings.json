@@ -16,7 +16,8 @@
       "Bash(git log:*)",
       "Bash(git diff:*)",
       "Bash(git show:*)",
-      "mcp__mythi-kb"
+      "mcp__mythi-kb",
+      "Bash(python .claude/kb/kb.py:*)"
     ],
     "deny": [
       "Bash(git commit:*)",

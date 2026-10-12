@@ -37,6 +37,8 @@ def _tool_list():
                 "properties": {p: {"type": "string"} for p in params},
                 "required": list(params),
             },
+            # Without readOnlyHint, clients treat the tool as mutating and prompt in plan mode.
+            "annotations": {"readOnlyHint": True},
         })
     return tools
 
