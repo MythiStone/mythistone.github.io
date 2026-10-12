@@ -34,8 +34,9 @@ passes every gate below, in order.
    run. `route_videos` has a foreign key to `route_data`, so a logged run without an eligible
    keystone.guru route keeps no videos. Those count as `vod_runs_without_route` in the collector
    stats and are re-checked once per collector restart.
-4. **Rendering is timed-only.** `fetch_comp_vods` and `fetch_streamer_candidates` keep runs with
-   `rd.duration <= dd.upgrade_1_duration`, so depleted runs never show.
+   for good. `_store_route_job` stores videos only for a newly inserted, eligible route
+   (`route_key`, `mappingVersion`, `enemyForces >= enemyForcesRequired`): `route_videos` has a
+   foreign key to `route_data`, so a logged run without a keystone.guru route keeps no videos.
 
 ## Diagnosing a missing VOD
 
