@@ -8,8 +8,8 @@ on:
     # (patches.json / season start). See backend_scripts/computeBuildPhase.py.
     - cron: '0 8 * * SUN,MON,TUE,THU,FRI,SAT'
   push:
-    # Every job builds main (or the code_ref input), so a push to another branch
-    # would only rebuild main with that branch's copy of this file.
+    # Every job checks out main, so a push to another branch would only rebuild
+    # main with that branch's copy of this file.
     branches: [main]
     paths:
       - 'templates/**'
@@ -55,13 +55,6 @@ on:
           Requires data/static/seasonInfo.prev.json to describe this season.
         required: false
         default: ''
-      code_ref:
-        description: >-
-          Test build: check out this branch instead of main. Start the run from
-          the same branch so its copy of this workflow is used. Only a run from
-          main with this left empty is deployed and archived.
-        required: false
-        default: ''
   workflow_run:
     workflows: ["Gather Static WoW data"]
     types:
@@ -98,23 +91,23 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: ${{ inputs.code_ref || 'main' }}
+          ref: main
 
       - name: Resolve target season
         id: resolve
         env:
           OVERRIDE: ${{ inputs.season_override }}
-          CODE_REF: ${{ inputs.code_ref }}
           RUN_REF: ${{ github.ref }}
         run: |
           set -euo pipefail
-          # Only a run of main's own workflow on main's code may reach the live
-          # site or the season archive. Anything else is a test build.
-          if [ "$RUN_REF" = "refs/heads/main" ] && [ -z "${CODE_REF:-}" ]; then
+          # Every job builds main. A run started by hand from another branch uses
+          # that branch's copy of this file, so it must not reach the live site or
+          # the season archive.
+          if [ "$RUN_REF" = "refs/heads/main" ]; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
           else
             echo "publish=false" >> "$GITHUB_OUTPUT"
-            echo "**Test build** (workflow from \`$RUN_REF\`, code from \`${CODE_REF:-main}\`): neither deployed nor archived." >> "$GITHUB_STEP_SUMMARY"
+            echo "Started from \`$RUN_REF\`: main is built with that branch's workflow file, neither deployed nor archived." >> "$GITHUB_STEP_SUMMARY"
           fi
           CURRENT=$(jq -r .blizzard_season_id data/static/seasonInfo.json)
           if [ -z "${OVERRIDE:-}" ] || [ "$OVERRIDE" = "$CURRENT" ]; then
@@ -167,7 +160,8 @@ jobs:
           DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORT }}
           DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
-        run: python backend_scripts/seasonHasData.py --season "${{ steps.resolve.outputs.season_id }}"
+          SEASON_ID: ${{ steps.resolve.outputs.season_id }}
+        run: python backend_scripts/seasonHasData.py --season "$SEASON_ID"
 
       # Gate: a failed aggregation step is only recorded in agg_pipeline_log, so
       # without this the build would publish yesterday's numbers unnoticed. Fails
@@ -216,7 +210,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: ${{ inputs.code_ref || 'main' }}
+          ref: main
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v6
@@ -274,7 +268,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: ${{ inputs.code_ref || 'main' }}
+          ref: main
 
       - name: Download sim profiles
         uses: actions/download-artifact@v4
@@ -324,6 +318,7 @@ jobs:
       - name: Update last-known-good
         env:
           GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ steps.cands.outputs.head }}
         run: |
           mkdir -p simc-cache simc-lastgood
           cp simc-bin/simc simc-lastgood/simc
@@ -337,8 +332,8 @@ jobs:
           echo "Sims run on simc \`$CHOSEN\` (authored $DATE)." >> "$GITHUB_STEP_SUMMARY"
           # A long upstream break means we keep falling back to an older binary and
           # silently sim on stale game data. Say so where a human will see it.
-          if [ "$CHOSEN" != "${{ steps.cands.outputs.head }}" ]; then
-            echo "::warning::simc HEAD (${{ steps.cands.outputs.head }}) did not validate; using $CHOSEN from $DATE"
+          if [ "$CHOSEN" != "$HEAD_SHA" ]; then
+            echo "::warning::simc HEAD ($HEAD_SHA) did not validate; using $CHOSEN from $DATE"
           fi
 
       - name: Upload simc binary
@@ -441,7 +436,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: ${{ inputs.code_ref || 'main' }}
+          ref: main
 
       - name: Checkout social images
         uses: actions/checkout@v7
@@ -703,7 +698,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: ${{ inputs.code_ref || 'main' }}
+          ref: main
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v6
@@ -767,7 +762,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: ${{ inputs.code_ref || 'main' }}
+          ref: main
 
       - name: Checkout social images
         uses: actions/checkout@v7
@@ -865,7 +860,7 @@ jobs:
 
       # Cold-storage snapshot of the exact deployed site for later archive view.
       - name: Archive snapshot to season branch (separate repo)
-        # a test build must not overwrite the season's snapshot
+        # a run started from another branch must not overwrite the season's snapshot
         if: ${{ needs.resolve-season.outputs.publish == 'true' }}
         env:
           ARCHIVE_DEPLOY_KEY: ${{ secrets.ARCHIVE_DEPLOY_KEY }}
