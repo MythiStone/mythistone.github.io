@@ -8,6 +8,9 @@ on:
     # (patches.json / season start). See backend_scripts/computeBuildPhase.py.
     - cron: '0 8 * * SUN,MON,TUE,THU,FRI,SAT'
   push:
+    # Every job builds main (or the code_ref input), so a push to another branch
+    # would only rebuild main with that branch's copy of this file.
+    branches: [main]
     paths:
       - 'templates/**'
       - 'backend_scripts/generateSpecPages.py'
@@ -24,6 +27,7 @@ on:
       - 'backend_scripts/generateBlogPage.py'
       - 'backend_scripts/generateLegalPages.py'
       - 'backend_scripts/generateDungeonPages.py'
+      - 'backend_scripts/renderDungeonPreviews.py'
       - 'backend_scripts/fetchHotfixes.py'
       - 'backend_scripts/generateSearchIndex.py'
       - 'backend_scripts/generateSitemap.py'
@@ -49,6 +53,13 @@ on:
           season after seasonInfo.json has already flipped — see
           seasonRolloverWipe.yml, which gates the DB wipe on that snapshot.
           Requires data/static/seasonInfo.prev.json to describe this season.
+        required: false
+        default: ''
+      code_ref:
+        description: >-
+          Test build: check out this branch instead of main. Start the run from
+          the same branch so its copy of this workflow is used. Only a run from
+          main with this left empty is deployed and archived.
         required: false
         default: ''
   workflow_run:
@@ -79,6 +90,7 @@ jobs:
       season_id: ${{ steps.resolve.outputs.season_id }}
       season_info: ${{ steps.resolve.outputs.season_info }}
       is_override: ${{ steps.resolve.outputs.is_override }}
+      publish: ${{ steps.resolve.outputs.publish }}
       has_data: ${{ steps.datacheck.outputs.has_data }}
       should_build: ${{ steps.cadence.outputs.should_build }}
     steps:
@@ -86,14 +98,24 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: main
+          ref: ${{ inputs.code_ref || 'main' }}
 
       - name: Resolve target season
         id: resolve
         env:
           OVERRIDE: ${{ inputs.season_override }}
+          CODE_REF: ${{ inputs.code_ref }}
+          RUN_REF: ${{ github.ref }}
         run: |
           set -euo pipefail
+          # Only a run of main's own workflow on main's code may reach the live
+          # site or the season archive. Anything else is a test build.
+          if [ "$RUN_REF" = "refs/heads/main" ] && [ -z "${CODE_REF:-}" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "**Test build** (workflow from \`$RUN_REF\`, code from \`${CODE_REF:-main}\`): neither deployed nor archived." >> "$GITHUB_STEP_SUMMARY"
+          fi
           CURRENT=$(jq -r .blizzard_season_id data/static/seasonInfo.json)
           if [ -z "${OVERRIDE:-}" ] || [ "$OVERRIDE" = "$CURRENT" ]; then
             echo "season_id=$CURRENT"           >> "$GITHUB_OUTPUT"
@@ -134,8 +156,9 @@ jobs:
 
       # Gate: does the resolved season have any runs? During the pre-season gap
       # (and just after a wipe) it does not, and the generators crash on empty
-      # aggregates. When false, prepare-sims (and the whole build via its needs)
-      # is skipped, so the workflow succeeds without deploying a broken site.
+      # aggregates. When false, prepare-sims and dungeon-previews are skipped (and
+      # the rest of the build via needs), so the workflow succeeds without
+      # deploying a broken site.
       - name: Check the target season has data
         id: datacheck
         env:
@@ -171,16 +194,18 @@ jobs:
         run: python backend_scripts/computeBuildPhase.py
 
   # ----------------------------------------------------------------------
-  # SimulationCraft tierlist sims (run on every trigger, in parallel with the
-  # page build — they finish well before the pages do).
+  # SimulationCraft tierlist sims (run on every trigger). prepare-sims reads the
+  # DB and finishes before the page build starts; the sim legs then run in
+  # parallel with it.
   # ----------------------------------------------------------------------
   prepare-sims:
     needs: [resolve-season]
     # Skip the entire build when the season has no runs yet (pre-season gap /
     # post-wipe) OR when the cadence gate skips this scheduled day (see
     # computeBuildPhase.py). build-simc, simulate, buildPages, assemble and deploy
-    # all need prepare-sims (directly or transitively), so they cascade-skip and
-    # the run ends green without touching the live site.
+    # all need prepare-sims (directly or transitively) and dungeon-previews carries
+    # the same gate, so they skip too and the run ends green without touching the
+    # live site.
     if: ${{ needs.resolve-season.outputs.has_data == 'true' && needs.resolve-season.outputs.should_build == 'true' }}
     env:
       MYTHISTONE_SEASON_INFO: ${{ needs.resolve-season.outputs.season_info }}
@@ -191,7 +216,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: main
+          ref: ${{ inputs.code_ref || 'main' }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v6
@@ -249,7 +274,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: main
+          ref: ${{ inputs.code_ref || 'main' }}
 
       - name: Download sim profiles
         uses: actions/download-artifact@v4
@@ -397,20 +422,26 @@ jobs:
   # Static pages (runs in parallel with the sims).
   # ----------------------------------------------------------------------
   buildPages:
+    # Waits for prepare-sims although it consumes nothing from it: both read the
+    # production DB heavily, and the DB is too slow to serve the two at once.
     needs: [resolve-season, prepare-sims]
+    timeout-minutes: 120
     env:
       MYTHISTONE_SEASON_INFO: ${{ needs.resolve-season.outputs.season_info }}
       # snapshotTrends and the comps / spec / dungeon generators all need the full
       # aggregated_dungeon_comps table. The first one stores it here and the rest
       # read the file (databaseConnector.fetch_all_comps).
       MYTHISTONE_COMPS_CACHE: /tmp/mythistone_comps_cache.json
+      # snapshotTrends and the dungeon generator cluster those comps identically;
+      # the second one reads the result (compArchetypes.cached_dungeon_archetypes).
+      MYTHISTONE_ARCHETYPES_CACHE: /tmp/mythistone_archetypes_cache.pkl
     runs-on: ubuntu-latest
     steps:
       - name: Clone project
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: main
+          ref: ${{ inputs.code_ref || 'main' }}
 
       - name: Checkout social images
         uses: actions/checkout@v7
@@ -563,15 +594,13 @@ jobs:
           DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORT }}
           DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
-          KEYSTONE_GURU_USER: ${{ secrets.KEYSTONE_GURU_USER }}
-          KEYSTONE_GURU_SECRET: ${{ secrets.KEYSTONE_GURU_SECRET }}
-          KEYSTONE_GURU_PW: ${{ secrets.KEYSTONE_GURU_PW }}
         run: |
           rm -rf dungeons
           mkdir -p dungeons
           python backend_scripts/generateDungeonPages.py \
             --template templates/dungeon_page.html \
-            --output_dir dungeons
+            --output_dir dungeons \
+            --skip-previews
 
       - name: Generate Item pages
         env:
@@ -629,12 +658,6 @@ jobs:
           python backend_scripts/generateSitemap.py
 
       - name: Generate llms.txt
-        env:
-          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
-          DATABASE_USER: ${{ secrets.DATABASE_USER }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORT }}
-          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
-          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
         run: |
           python backend_scripts/generateLlmTxt.py \
             --output_dir .
@@ -661,6 +684,73 @@ jobs:
           retention-days: 1
 
   # ----------------------------------------------------------------------
+  # Dungeon page preview images (runs in parallel with the page build). Each
+  # carries a keystone.guru route thumbnail whose render can queue for many
+  # minutes, so the wait happens here instead of inside the dungeon step.
+  # Thumbnails are cached by route key: only a dungeon whose top route changed
+  # asks keystone.guru again, and one that is not ready within the budget shows
+  # the dungeon's previous route until the next build.
+  # ----------------------------------------------------------------------
+  dungeon-previews:
+    needs: [resolve-season]
+    if: ${{ needs.resolve-season.outputs.has_data == 'true' && needs.resolve-season.outputs.should_build == 'true' }}
+    env:
+      MYTHISTONE_SEASON_INFO: ${{ needs.resolve-season.outputs.season_info }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Clone project
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          ref: ${{ inputs.code_ref || 'main' }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: constraints.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c constraints.txt mysql-connector-python requests Pillow
+
+      # Saved under a per-run key (caches are immutable) and restored from the
+      # newest earlier one, like simc-lastgood above.
+      - name: Restore route thumbnail cache
+        uses: actions/cache@v4
+        with:
+          path: route-thumbs
+          key: route-thumbs-${{ github.run_id }}
+          restore-keys: |
+            route-thumbs-
+
+      - name: Render dungeon previews
+        env:
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORT }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+          KEYSTONE_GURU_USER: ${{ secrets.KEYSTONE_GURU_USER }}
+          KEYSTONE_GURU_PW: ${{ secrets.KEYSTONE_GURU_PW }}
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python backend_scripts/renderDungeonPreviews.py \
+            --output_dir dungeon_previews \
+            --cache_dir route-thumbs \
+            --budget_seconds 900
+
+      - name: Upload dungeon previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: dungeon-previews
+          path: dungeon_previews
+          retention-days: 1
+
+  # ----------------------------------------------------------------------
   # Merge the built pages + sim results, render the tierlist, package _site.
   # ----------------------------------------------------------------------
   assemble:
@@ -668,7 +758,7 @@ jobs:
     # Default needs semantics: only runs if BOTH the pages and every sim leg
     # succeeded. If any sim fails, assemble + deploy are skipped and the whole
     # workflow is marked failed — no stale-data fallback, no partial deploy.
-    needs: [resolve-season, buildPages, simulate]
+    needs: [resolve-season, buildPages, simulate, dungeon-previews]
     env:
       MYTHISTONE_SEASON_INFO: ${{ needs.resolve-season.outputs.season_info }}
       TARGET_SEASON_ID: ${{ needs.resolve-season.outputs.season_id }}
@@ -677,7 +767,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
-          ref: main
+          ref: ${{ inputs.code_ref || 'main' }}
 
       - name: Checkout social images
         uses: actions/checkout@v7
@@ -703,6 +793,12 @@ jobs:
         with:
           name: generated-site
           path: .
+
+      - name: Download dungeon previews
+        uses: actions/download-artifact@v4
+        with:
+          name: dungeon-previews
+          path: assets/img/previews
 
       - name: Download sim results
         uses: actions/download-artifact@v4
@@ -762,13 +858,15 @@ jobs:
       # Skipped for a season_override run: that build renders the OUTGOING season
       # and must only reach the archive, never the live site.
       - name: Upload static files as artifact
-        if: ${{ needs.resolve-season.outputs.is_override != 'true' }}
+        if: ${{ needs.resolve-season.outputs.is_override != 'true' && needs.resolve-season.outputs.publish == 'true' }}
         uses: actions/upload-pages-artifact@v5
         with:
           path: '_site'
 
       # Cold-storage snapshot of the exact deployed site for later archive view.
       - name: Archive snapshot to season branch (separate repo)
+        # a test build must not overwrite the season's snapshot
+        if: ${{ needs.resolve-season.outputs.publish == 'true' }}
         env:
           ARCHIVE_DEPLOY_KEY: ${{ secrets.ARCHIVE_DEPLOY_KEY }}
           ARCHIVE_REPO: git@github.com:MythiStone/Mythistone_Archive.git
@@ -820,7 +918,7 @@ jobs:
     needs: [resolve-season, assemble]
     # A final-snapshot build renders the season that just ended. Publishing it
     # would roll the live site back a season, so those runs archive only.
-    if: ${{ needs.resolve-season.outputs.is_override != 'true' }}
+    if: ${{ needs.resolve-season.outputs.is_override != 'true' && needs.resolve-season.outputs.publish == 'true' }}
     steps:
 
       - name: Deploy to GitHub Pages

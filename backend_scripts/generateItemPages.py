@@ -638,6 +638,16 @@ def build_payloads(season, ctx, only_item=None):
         databaseConnector.configure_read_session(conn, cursor)
         for i, sp in enumerate(spec_ids, 1):
             print(f"[{datetime.now(timezone.utc).isoformat()}] sweeping spec {sp} ({i}/{len(spec_ids)})...")
+            # the spec's four reads below in one round trip
+            databaseConnector.prefetch(conn, cursor, [
+                (fetch, (season, sp))
+                for fetch in (
+                    databaseConnector.fetch_item_spec_usage,
+                    databaseConnector.fetch_item_socket_usage,
+                    databaseConnector.fetch_item_bonus_usage,
+                    databaseConnector.fetch_item_dungeon_usage,
+                )
+            ])
 
             for item_id, rc, mt, md in databaseConnector.fetch_item_spec_usage(conn, cursor, season, sp):
                 spec_runs[str(item_id)][sp] += int(rc)

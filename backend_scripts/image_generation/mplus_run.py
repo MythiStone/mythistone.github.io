@@ -147,6 +147,7 @@ def create_MplusImage(
 def get_run_data(run_type, spec, season):
     with closing(databaseConnector.get_connection()) as conn:
         cursor = conn.cursor()
+        databaseConnector.configure_read_session(conn, cursor)
         if spec:
             return databaseConnector.fetch_max_key_run_per_spec(
                 conn, cursor, spec, season

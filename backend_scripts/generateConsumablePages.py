@@ -158,6 +158,11 @@ def build_payloads(season, ctx):
         databaseConnector.configure_read_session(conn, cursor)
         for i, sp in enumerate(spec_ids, 1):
             print(f"[{datetime.now(timezone.utc).isoformat()}] sweeping spec {sp} ({i}/{len(spec_ids)})...")
+            # the spec's two reads below in one round trip
+            databaseConnector.prefetch(conn, cursor, [
+                (databaseConnector.fetch_consumable_count, (sp, season)),
+                (databaseConnector.fetch_weapon_temp_enchant_usage, (sp, season, effect_ids)),
+            ])
 
             # Aura consumables (flask/potion/food/augment): resolve each buff spell
             # id to its consumable item, exactly like build_consumable_sections.

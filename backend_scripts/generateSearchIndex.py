@@ -57,11 +57,16 @@ MAX_CONTENT_CHARS = 60_000
 # ---------------------------------------------------------------------------
 
 
-def textify_html(html):
-    soup = BeautifulSoup(html, "html.parser")
-    for s in soup(["script", "style", "noscript", "svg", "img"]):
+def textify_node(node):
+    """Visible text of an already parsed node. Strips its non-text tags in place,
+    so read everything else from the document first."""
+    for s in node(["script", "style", "noscript", "svg"]):
         s.decompose()
-    text = soup.get_text(separator=" ", strip=True)
+    # html.parser can nest the following siblings inside an <img>, so drop the
+    # tag but keep whatever it wraps
+    for s in node("img"):
+        s.unwrap()
+    text = node.get_text(separator=" ", strip=True)
     text = re.sub(r"\s+", " ", text)
     if len(text) > MAX_CONTENT_CHARS:
         return text[:MAX_CONTENT_CHARS]
@@ -171,12 +176,12 @@ def build_index_for_paths(collected):
             title = get_meta(soup, "og:title") or get_meta(soup, "title")
 
         description = get_meta(soup, "description") or get_meta(soup, "og:description")
+        keywords = get_meta(soup, "keywords") or get_meta(soup, "tags")
         main = soup.find("main") or soup.find("article") or soup.body or soup
-        content_text = textify_html(str(main))
+        content_text = textify_node(main)
         if not description:
             description = make_excerpt(content_text, 220)
 
-        keywords = get_meta(soup, "keywords") or get_meta(soup, "tags")
         if keywords:
             tags = [t.strip() for t in re.split(r"[,\|;]+", keywords) if t.strip()]
         else:

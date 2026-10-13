@@ -78,7 +78,7 @@ def parse_run_rows(rows):
             "members": members,
         }
 
-def main(template_path, output_dir, debug=False, target_dungeon=None):
+def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previews=False):
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
@@ -267,10 +267,10 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                 dungeon_runs_per_level_lookup[d_id].append(d)
 
             # Fetch every dungeon's top routes first and kick off its
-            # keystone.guru thumbnail job in a background thread (pure HTTP):
-            # the remote render job's queue/poll wait then overlaps all the
-            # per-dungeon DB work below instead of blocking each page for up
-            # to 2.5 minutes.
+            # keystone.guru thumbnail job in a background thread (pure HTTP),
+            # so the remote render's queue wait overlaps the per-dungeon DB
+            # work. CI passes --skip-previews and renders the previews in
+            # renderDungeonPreviews.py instead, where that wait blocks nothing.
             top_routes_by_dungeon = {}
             thumbnail_futures = {}
             # POV videos per route (all routes), to flag/link VODs on the top-routes card.
@@ -289,7 +289,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                     _r["upgrade_css"] = _up["css"]
                     _r["upgrade_text"] = _up["text"]
                 top_routes_by_dungeon[dungeon_id] = top_routes
-                if top_routes and top_routes[0].get('route_key'):
+                if not skip_previews and top_routes and top_routes[0].get('route_key'):
                     print(f"[{datetime.now(timezone.utc).isoformat()}] Requesting thumbnail for top route: {top_routes[0]['route_key']}")
                     thumbnail_futures[dungeon_id] = thumbnail_executor.submit(
                         fetch_route_thumbnail, dungeon_id, top_routes[0]['route_key']
@@ -299,11 +299,9 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
             # dungeon's popular comps are grouped with their flexible alternates. One scan
             # + one clustering pass, indexed by dungeon.
             print(f"[{datetime.now(timezone.utc).isoformat()}] Clustering team comps for dungeon pages...")
-            team_families_by_dungeon = compArchetypes.build_dungeon_archetypes(
-                compArchetypes.collapse_comps(
-                    databaseConnector.fetch_all_comps(conn, cursor, current_season),
-                    spec_lookup),
-                spec_lookup, class_lookup,
+            team_families_by_dungeon = compArchetypes.cached_dungeon_archetypes(
+                lambda: databaseConnector.fetch_all_comps(conn, cursor, current_season),
+                current_season, spec_lookup, class_lookup,
                 [str(k) for k in dungeon_lookup.keys()], top_n=6)
 
             # Global per-item usage across the meta, so each dungeon's loot can be
@@ -320,6 +318,11 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                     spec_id_int = int(spec_id)
                 except (TypeError, ValueError):
                     continue
+                # the spec's two reads below in one round trip
+                databaseConnector.prefetch(conn, cursor, [
+                    (databaseConnector.fetch_item_spec_usage, (current_season, spec_id_int)),
+                    (databaseConnector.fetch_item_bonus_usage, (current_season, spec_id_int)),
+                ])
                 rows = databaseConnector.fetch_item_spec_usage(conn, cursor, current_season, spec_id_int)
                 for row in rows or []:
                     # item_id is VARCHAR in global_aggregated_items, so normalise to
@@ -362,7 +365,8 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
 
                 # Overall run totals for this dungeon, consumed by the social overview
                 # image (createDungeonOverviewImg dungeon_totals=...).
-                local_total_res = databaseConnector.fetch_dungeon_totals(conn, cursor, dungeon_id, current_season)
+                if not skip_previews:
+                    local_total_res = databaseConnector.fetch_dungeon_totals(conn, cursor, dungeon_id, current_season)
 
                 # Best loot: the items that drop in this dungeon, ranked by how much
                 # the current meta actually equips them. Drop source comes from the
@@ -566,32 +570,33 @@ def main(template_path, output_dir, debug=False, target_dungeon=None):
                     outf.write(output_html)
                     
                 # Create Preview Image
-                preview_dir = os.path.join("assets", "img", "previews")
-                os.makedirs(preview_dir, exist_ok=True)
-                preview_path = os.path.join(preview_dir, f"{slug}.png")
-                try:
-                    # resolve the background thumbnail job started in the
-                    # pre-pass (None = no top route / job failed → no map)
-                    thumb_future = thumbnail_futures.get(dungeon_id)
-                    route_thumbnail = thumb_future.result() if thumb_future else None
-                    # pass the already-fetched data so the image step doesn't
-                    # re-run the same queries (incl. the season-wide per-level
-                    # rollup, previously re-scanned once per dungeon)
-                    createDungeonOverviewImg(
-                        tmpdir=os.path.join("tmp", "img"),
-                        out_path=preview_path,
-                        dungeon_id=dungeon_id,
-                        season=current_season,
-                        conn=conn,
-                        cursor=cursor,
-                        dungeon_totals=local_total_res,
-                        per_level=level_stats,
-                        top_routes_data=top_routes,
-                        route_thumbnail=route_thumbnail,
-                    )
-                except Exception as e:
-                    print(f"[{datetime.now(timezone.utc).isoformat()}]Failed to generate preview for {slug}: {e}")
-                
+                if not skip_previews:
+                    preview_dir = os.path.join("assets", "img", "previews")
+                    os.makedirs(preview_dir, exist_ok=True)
+                    preview_path = os.path.join(preview_dir, f"{slug}.png")
+                    try:
+                        # resolve the background thumbnail job started in the
+                        # pre-pass (None = no top route / job failed → no map)
+                        thumb_future = thumbnail_futures.get(dungeon_id)
+                        route_thumbnail = thumb_future.result() if thumb_future else None
+                        # pass the already-fetched data so the image step doesn't
+                        # re-run the same queries (incl. the season-wide per-level
+                        # rollup, previously re-scanned once per dungeon)
+                        createDungeonOverviewImg(
+                            tmpdir=os.path.join("tmp", "img"),
+                            out_path=preview_path,
+                            dungeon_id=dungeon_id,
+                            season=current_season,
+                            conn=conn,
+                            cursor=cursor,
+                            dungeon_totals=local_total_res,
+                            per_level=level_stats,
+                            top_routes_data=top_routes,
+                            route_thumbnail=route_thumbnail,
+                        )
+                    except Exception as e:
+                        print(f"[{datetime.now(timezone.utc).isoformat()}]Failed to generate preview for {slug}: {e}")
+
                 if debug:
                     break
     finally:
@@ -604,6 +609,8 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir", required=True, help="Directory to write generated HTML pages")
     parser.add_argument("--debug", required=False, action="store_true")
     parser.add_argument("--dungeon", required=False)
+    parser.add_argument("--skip-previews", action="store_true",
+                        help="Do not render the preview images (CI renders them in renderDungeonPreviews.py)")
 
     args = parser.parse_args()
 
@@ -615,4 +622,4 @@ if __name__ == "__main__":
         os.environ.get("DATABASE_PORT", "3306"),
         1,
     )
-    main(args.template, args.output_dir, args.debug, args.dungeon)
+    main(args.template, args.output_dir, args.debug, args.dungeon, args.skip_previews)

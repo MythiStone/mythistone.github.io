@@ -1,7 +1,9 @@
 import json
 import os
+from decimal import Decimal, ROUND_HALF_UP
 import mysql.connector
 import time
+import weakref
 from mysql.connector import errorcode
 from mysql.connector import pooling
 import random
@@ -87,11 +89,16 @@ def get_live_connection(ping_attempts=3, ping_delay=2):
     return conn
 
 
-def init_connection_pool(host, user, password, database, port, pool_size=30):
+def init_connection_pool(host, user, password, database, port, pool_size=30, reset_session=True):
+    """``reset_session=False`` skips the session reset a connection gets when it
+    returns to the pool (six round trips). Only for a process whose every
+    checkout calls configure_read_session and only reads: the settings then
+    simply carry over to the next checkout."""
     global CONNECTION_POOL
     CONNECTION_POOL = pooling.MySQLConnectionPool(
         pool_name="region_pool",
         pool_size=pool_size,
+        pool_reset_session=reset_session,
         host=host,
         user=user,
         password=password,
@@ -115,10 +122,13 @@ def configure_read_session(conn, cursor):
     # reach the server (the wrapper swallows the setter), so issue it as SQL too —
     # otherwise the session stays autocommit=0 and the MDL never releases between
     # statements (and any writes on this session would roll back on pool return).
-    cursor.execute("SET SESSION autocommit = 1")
-    cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED")
-    cursor.execute("SET SESSION lock_wait_timeout = 120")
-    cursor.execute("SET SESSION innodb_lock_wait_timeout = 30")
+    # One statement, so a checkout costs one round trip here instead of four.
+    cursor.execute(
+        "SET SESSION autocommit = 1,"
+        " SESSION transaction_isolation = 'READ-UNCOMMITTED',"
+        " SESSION lock_wait_timeout = 120,"
+        " SESSION innodb_lock_wait_timeout = 30"
+    )
 
 
 def commit_with_retry(connection):
@@ -159,16 +169,80 @@ def commit_with_retry(connection):
             raise
 
 
-def fetch_with_retry(connection, cursor, sql, params=None):
+# Read-ahead per cursor, {(sql, params): rows}: filled by prefetch(), answered
+# from by fetch_with_retry.
+_PREFETCHED = weakref.WeakKeyDictionary()
+# Cursors whose fetch_with_retry calls prefetch() is collecting instead of running.
+_COLLECTING = weakref.WeakKeyDictionary()
+
+
+def prefetch(connection, cursor, calls):
+    """Run the statements of several fetchers in one round trip.
+
+    ``calls`` is ``[(fetch_fn, args), ...]``: fetchers about to be called as
+    ``fetch_fn(connection, cursor, *args)``. Each is called dry to learn its
+    statement, all statements go out as one multi-statement query, and the later
+    real calls on this cursor are answered from those rows. A page build pays
+    the network latency per round trip, far more than these small queries cost
+    on the server.
+
+    The list only affects speed: a call that is not listed, or whose statement
+    depends on an earlier result, runs as usual. List plain row-mapping fetchers
+    only, because the dry call hands them an empty result. Replaces the cursor's
+    previous read-ahead.
     """
-    Fetch data with retry logic on lock-wait timeout.
+    statements = {}
+    _COLLECTING[cursor] = statements
+    try:
+        for fetch_fn, args in calls:
+            fetch_fn(connection, cursor, *args)
+    finally:
+        del _COLLECTING[cursor]
+    _PREFETCHED.pop(cursor, None)
+    if not statements:
+        return
+    keys = list(statements)
+    result_sets = fetch_with_retry(
+        connection, cursor,
+        ";\n".join(sql.strip().rstrip(";") for sql, _ in keys),
+        tuple(p for _, params in keys for p in params),
+        all_sets=True,
+    )
+    if len(result_sets) != len(keys):
+        raise RuntimeError(
+            f"prefetch sent {len(keys)} statements but got {len(result_sets)} result sets"
+        )
+    _PREFETCHED[cursor] = dict(zip(keys, result_sets))
+
+
+def fetch_with_retry(connection, cursor, sql, params=None, all_sets=False):
     """
+    Fetch data with retry logic on lock-wait timeout. ``all_sets`` returns one
+    row list per statement of a multi-statement query.
+    """
+    collecting = _COLLECTING.get(cursor)
+    if collecting is not None:
+        collecting[(sql, tuple(params or ()))] = None
+        return []
+    ahead = _PREFETCHED.get(cursor)
+    if ahead:
+        rows = ahead.get((sql, tuple(params or ())))
+        if rows is not None:
+            # a copy per caller, as a query would give
+            return [dict(r) if isinstance(r, dict) else r for r in rows]
+
     attempt = 0
     while True:
         try:
             cursor.execute(sql, params or ())
 
-            return cursor.fetchall()
+            rows = cursor.fetchall()
+            if not all_sets:
+                return rows
+            result_sets = [rows]
+            while cursor.nextset():
+                result_sets.append(cursor.fetchall())
+            return result_sets
         except mysql.connector.Error as err:
             # err.errno is the integer error code
             if (
@@ -638,7 +712,8 @@ def insert_run_batch(cursor, runs):
 
     # Dictionary rows first. Hitting an existing set makes this transaction hold
     # a shared lock on it until commit, so the nightly orphan sweep cannot delete
-    # a set this batch is about to reference.
+    # a set this batch is about to reference. Sorted into primary-key order, the
+    # order the sweep scans in: any other order can deadlock with it.
     talent_sets = {}
     bonus_sets = {}
     for m in fresh:
@@ -648,10 +723,10 @@ def insert_run_batch(cursor, runs):
             if eq["bonus_rows"]:
                 bonus_sets.setdefault(eq["bonus_rows"][0][0], eq["bonus_rows"])
     _insert_rows(
-        cursor, INSERT_TALENT_SET_SQL, [r for rows in talent_sets.values() for r in rows]
+        cursor, INSERT_TALENT_SET_SQL, sorted(r for rows in talent_sets.values() for r in rows)
     )
     _insert_rows(
-        cursor, INSERT_BONUS_SET_SQL, [r for rows in bonus_sets.values() for r in rows]
+        cursor, INSERT_BONUS_SET_SQL, sorted(r for rows in bonus_sets.values() for r in rows)
     )
 
     fresh_ids = _insert_rows_returning_ids(
@@ -2108,7 +2183,8 @@ def _fetch_runs_rollup_with_fallback(
     connection, cursor, preagg_sql, fallback_sql, params, fallback_params=None
 ):
     """Read a nightly runs rollup (aggregated_runs_per_dungeon_per_level,
-    aggregated_runs_per_period_per_day, aggregated_record_runs); fall back to
+    aggregated_runs_per_period_per_day, aggregated_record_runs,
+    aggregated_dungeon_record_runs); fall back to
     the live full-season runs scan when the rollup is missing (migration not
     applied yet) or holds nothing for the requested season (e.g. the season
     flipped before the nightly pipeline ran). ``fallback_params`` defaults to
@@ -3196,14 +3272,18 @@ def fetch_runs_per_dungeon_per_level(connection, cursor, season):
 
 
 FETCH_MAX_TIMED_LEVEL_PER_DUNGEON_SQL = """
-SELECT r.dungeon_id, MAX(r.keystone_level) AS max_timed_level
-FROM runs r
-JOIN dungeon_data dd ON dd.dungeon_id = r.dungeon_id
-WHERE r.season = %s
-  AND r.duration IS NOT NULL
-  AND dd.upgrade_1_duration IS NOT NULL
-  AND r.duration <= dd.upgrade_1_duration
-GROUP BY r.dungeon_id
+SELECT dd.dungeon_id,
+       (SELECT r.keystone_level
+        FROM runs r
+        WHERE r.season = %s
+          AND r.dungeon_id = dd.dungeon_id
+          AND r.duration <= dd.upgrade_1_duration
+        -- dungeon_id is constant here; naming it lets the optimizer walk the
+        -- index backward instead of sorting all of the dungeon's runs
+        ORDER BY r.dungeon_id DESC, r.keystone_level DESC
+        LIMIT 1) AS max_timed_level
+FROM dungeon_data dd
+WHERE dd.upgrade_1_duration IS NOT NULL
 """
 
 
@@ -3216,11 +3296,12 @@ def fetch_max_timed_level_per_dungeon(connection, cursor, season):
     slower cadence than the page build, so a freshly-timed higher key can be
     missing from it and leave the tierlist ceiling (and tier ordering) stale.
 
-    Rides the runs_unique index (dungeon_id, keystone_level, duration, ...,
-    season) - the same access path the per-dungeon highest-run query uses - so
-    it is an index scan grouped by dungeon_id, not a full table scan.
+    Walks each dungeon's runs from the top key level down and stops at the first
+    timed one, so it reads a handful of rows per dungeon. Grouping the whole
+    season instead examined every run of it.
 
-    Returns {str(dungeon_id): int(max_timed_level)}.
+    Returns {str(dungeon_id): int(max_timed_level)}; a dungeon without a timed
+    run is left out.
     """
     rows = fetch_with_retry(
         connection, cursor, FETCH_MAX_TIMED_LEVEL_PER_DUNGEON_SQL, (season,)
@@ -3429,6 +3510,49 @@ def build_simple_groupbuffs_query(groupbuffs):
     ), len(groupbuffs)
 
 
+# The window and level floor sp_agg_groupbuff_spec_sets builds its rollup for.
+GROUPBUFF_ROLLUP_DAYS = 14
+GROUPBUFF_ROLLUP_MIN_LEVEL = 10
+
+FETCH_GROUPBUFF_SPEC_SETS_SQL = """
+SELECT spec_set, SUM(run_count) AS run_count
+FROM aggregated_groupbuff_spec_sets
+WHERE season = %s AND keystone_level > %s
+GROUP BY spec_set
+"""
+
+
+def _groupbuffs_stats_from_rollup(connection, cursor, groupbuffs, season, keystone_threshold):
+    """fetch_groupbuffs_stats from the nightly spec-set rollup, or None when the
+    rollup is missing or holds nothing for the season (the caller then scans live)."""
+    try:
+        rows = fetch_with_retry(
+            connection, cursor, FETCH_GROUPBUFF_SPEC_SETS_SQL,
+            (int(season), int(keystone_threshold)),
+        )
+    except mysql.connector.DatabaseError as err:
+        if err.errno != errorcode.ER_NO_SUCH_TABLE:
+            raise
+        return None
+    if not rows:
+        return None
+
+    sets = []
+    for row in rows:
+        spec_set, runs = (row["spec_set"], row["run_count"]) if isinstance(row, dict) else row
+        sets.append(({int(s) for s in spec_set.split(",") if s}, int(runs)))
+    total_runs = sum(runs for _, runs in sets)
+    buffs_out = []
+    for buff in groupbuffs:
+        buff_specs = {int(x) for x in buff.get("specIDs", [])}
+        runs = sum(n for specs, n in sets if specs & buff_specs)
+        # same rounding as the live query's ROUND(..., 4)
+        pct = float((Decimal(100 * runs) / Decimal(total_runs)).quantize(
+            Decimal("0.0001"), rounding=ROUND_HALF_UP)) if total_runs else 0.0
+        buffs_out.append({"id": buff.get("id"), "runs": runs, "pct": pct})
+    return {"total_runs": total_runs, "buffs": buffs_out}
+
+
 def fetch_groupbuffs_stats(
     connection, cursor, groupbuffs, season, keystone_threshold=11, days_back=14
 ):
@@ -3437,6 +3561,14 @@ def fetch_groupbuffs_stats(
       {"total_runs": int, "buffs": [ { "name":..., "spec_ids":..., "runs":int, "pct":float }, ... ] }
     - Uses fetch_with_retry(connection, cursor, sql, params) if available; otherwise uses cursor.execute.
     """
+    rollup = None
+    if (int(days_back) == GROUPBUFF_ROLLUP_DAYS
+            and int(keystone_threshold) + 1 >= GROUPBUFF_ROLLUP_MIN_LEVEL):
+        rollup = _groupbuffs_stats_from_rollup(
+            connection, cursor, groupbuffs, season, keystone_threshold)
+    if rollup is not None:
+        return rollup
+
     sql, n = build_simple_groupbuffs_query(groupbuffs)
     params = (int(season), int(keystone_threshold), int(days_back))
 
@@ -4307,6 +4439,20 @@ def upsert_pov_character_profiles(connection, cursor, rows):
         executemany_with_retry(connection, cursor, UPSERT_POV_CHARACTER_PROFILE_SQL, rows)
 
 
+FETCH_FRESH_POV_CHARACTER_IDS_SQL = """
+SELECT pov_character_id FROM Mythistone.pov_character_profiles
+WHERE fetched_at >= NOW() - INTERVAL %s HOUR;
+"""
+
+
+def fetch_fresh_pov_character_ids(connection, cursor, max_age_hours):
+    """{pov_character_id} whose profile was fetched within `max_age_hours`."""
+    rows = fetch_with_retry(
+        connection, cursor, FETCH_FRESH_POV_CHARACTER_IDS_SQL, (int(max_age_hours),)
+    )
+    return {r[0] for r in rows}
+
+
 FETCH_POV_CHARACTER_PROFILES_SQL = """
 SELECT pov_character_id, region, realm_slug, name, class_name, active_spec_name, score,
        thumbnail_url, profile_url, details
@@ -4714,37 +4860,49 @@ def fetch_spec_top_comps_all(connection, cursor, season: int):
     return by_spec
 
 FETCH_DUNGEON_TOP_ROUTES_SQL = """
-WITH PullEnemies AS (
-    SELECT 
-        route_key, 
-        pull_id, 
-        GROUP_CONCAT(CONCAT(npc_id, ':', count) ORDER BY npc_id ASC SEPARATOR ',') AS enemies
-    FROM Mythistone.pull_enemies
-    GROUP BY route_key, pull_id
+WITH DungeonRoutes AS (
+    -- the dungeon's timed routes; every later CTE starts here so none of them
+    -- aggregates the pulls of the other dungeons
+    SELECT rd.route_key
+    FROM Mythistone.route_data rd
+    JOIN Mythistone.dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
+    WHERE rd.dungeon_id = %s
+      AND rd.duration <= dd.upgrade_1_duration
+),
+PullEnemies AS (
+    SELECT
+        pe.route_key,
+        pe.pull_id,
+        GROUP_CONCAT(CONCAT(pe.npc_id, ':', pe.count) ORDER BY pe.npc_id ASC SEPARATOR ',') AS enemies
+    FROM DungeonRoutes dr
+    JOIN Mythistone.pull_enemies pe ON pe.route_key = dr.route_key
+    GROUP BY pe.route_key, pe.pull_id
 ),
 PullSpells AS (
-    SELECT 
-        route_key, 
-        pull_id, 
-        GROUP_CONCAT(spell_id ORDER BY spell_id ASC SEPARATOR ',') AS spells
-    FROM Mythistone.pull_spells
-    GROUP BY route_key, pull_id
+    SELECT
+        ps.route_key,
+        ps.pull_id,
+        GROUP_CONCAT(ps.spell_id ORDER BY ps.spell_id ASC SEPARATOR ',') AS spells
+    FROM DungeonRoutes dr
+    JOIN Mythistone.pull_spells ps ON ps.route_key = dr.route_key
+    GROUP BY ps.route_key, ps.pull_id
 ),
 RouteSignatures AS (
-    SELECT 
+    SELECT
         rp.route_key,
         GROUP_CONCAT(
-            CONCAT('{E:', COALESCE(pe.enemies, ''), '}{S:', COALESCE(ps.spells, ''), '}') 
-            ORDER BY rp.pull_id ASC 
+            CONCAT('{E:', COALESCE(pe.enemies, ''), '}{S:', COALESCE(ps.spells, ''), '}')
+            ORDER BY rp.pull_id ASC
             SEPARATOR ' | '
         ) AS route_signature
-    FROM Mythistone.route_pulls rp
+    FROM DungeonRoutes dr
+    JOIN Mythistone.route_pulls rp ON rp.route_key = dr.route_key
     LEFT JOIN PullEnemies pe ON rp.route_key = pe.route_key AND rp.pull_id = pe.pull_id
     LEFT JOIN PullSpells ps ON rp.route_key = ps.route_key AND rp.pull_id = ps.pull_id
     GROUP BY rp.route_key
 ),
 RankedRoutes AS (
-    SELECT 
+    SELECT
         rs.route_signature,
         rs.route_key,
         rd.rio_run_id as run_id,
@@ -4757,9 +4915,6 @@ RankedRoutes AS (
         ROW_NUMBER() OVER (PARTITION BY rs.route_signature ORDER BY rd.keystone_level DESC, rd.duration ASC, rd.timestamp DESC) as rn
     FROM RouteSignatures rs
     JOIN Mythistone.route_data rd ON rs.route_key = rd.route_key
-    JOIN Mythistone.dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
-    WHERE rd.dungeon_id = %s
-      AND rd.duration <= dd.upgrade_1_duration
 )
 SELECT
     route_key,
@@ -4808,6 +4963,27 @@ def fetch_dungeon_top_routes(connection, cursor, dungeon_id: str):
 
     return top_routes
 
+# A dungeon's record run resolved through the nightly aggregated_dungeon_record_runs
+# pick (sp_agg_record_runs). Column order matches the FETCH_DUNGEON_*_RUN_SQL live
+# scans below, which each sort all of the dungeon's runs and stay as the fallback.
+FETCH_DUNGEON_RECORD_RUN_SQL = """
+SELECT r.dungeon_id, r.keystone_level, r.duration, r.timestamp, r.faction, r.run_id, r.region, r.season, rm.member, m.spec_id
+FROM aggregated_dungeon_record_runs ar
+JOIN runs r               ON r.run_id = ar.run_id
+LEFT JOIN run_members rm  ON rm.run_id = r.run_id
+LEFT JOIN members m       ON m.member = rm.member
+WHERE ar.season = %s AND ar.dungeon_id = %s AND ar.record = %s
+ORDER BY rm.member;
+"""
+
+
+def _fetch_dungeon_record_run_rows(connection, cursor, dungeon_id, season, record, live_sql):
+    return _fetch_runs_rollup_with_fallback(
+        connection, cursor, FETCH_DUNGEON_RECORD_RUN_SQL, live_sql,
+        (season, dungeon_id, record), fallback_params=(dungeon_id, season),
+    )
+
+
 FETCH_DUNGEON_SHORTEST_KEY_RUN_SQL = """
 SELECT r.dungeon_id, r.keystone_level, r.duration, r.timestamp, r.faction, r.run_id, r.region, r.season, rm.member, m.spec_id
 FROM runs r
@@ -4820,7 +4996,8 @@ ORDER BY rm.member;
 """
 
 def fetch_dungeon_shortest_run(connection, cursor, dungeon_id: str, season: int):
-    return fetch_with_retry(connection, cursor, FETCH_DUNGEON_SHORTEST_KEY_RUN_SQL, (dungeon_id, season))
+    return _fetch_dungeon_record_run_rows(
+        connection, cursor, dungeon_id, season, "shortest", FETCH_DUNGEON_SHORTEST_KEY_RUN_SQL)
 
 FETCH_DUNGEON_LONGEST_KEY_RUN_SQL = """
 SELECT r.dungeon_id, r.keystone_level, r.duration, r.timestamp, r.faction, r.run_id, r.region, r.season, rm.member, m.spec_id
@@ -4834,7 +5011,8 @@ ORDER BY rm.member;
 """
 
 def fetch_dungeon_longest_run(connection, cursor, dungeon_id: str, season: int):
-    return fetch_with_retry(connection, cursor, FETCH_DUNGEON_LONGEST_KEY_RUN_SQL, (dungeon_id, season))
+    return _fetch_dungeon_record_run_rows(
+        connection, cursor, dungeon_id, season, "longest", FETCH_DUNGEON_LONGEST_KEY_RUN_SQL)
 
 FETCH_DUNGEON_MAX_KEY_RUN_SQL = """
 SELECT r.dungeon_id, r.keystone_level, r.duration, r.timestamp, r.faction, r.run_id, r.region, r.season, rm.member, m.spec_id
@@ -4848,7 +5026,8 @@ ORDER BY rm.member;
 """
 
 def fetch_dungeon_max_key_run(connection, cursor, dungeon_id: str, season: int):
-    return fetch_with_retry(connection, cursor, FETCH_DUNGEON_MAX_KEY_RUN_SQL, (dungeon_id, season))
+    return _fetch_dungeon_record_run_rows(
+        connection, cursor, dungeon_id, season, "highest", FETCH_DUNGEON_MAX_KEY_RUN_SQL)
 
 FETCH_DUNGEON_CLOSEST_CALL_RUN_SQL = """
 SELECT r.dungeon_id, r.keystone_level, r.duration, r.timestamp, r.faction, r.run_id, r.region, r.season, rm.member, m.spec_id
@@ -4869,7 +5048,8 @@ ORDER BY rm.member;
 """
 
 def fetch_dungeon_closest_call_run(connection, cursor, dungeon_id: str, season: int):
-    return fetch_with_retry(connection, cursor, FETCH_DUNGEON_CLOSEST_CALL_RUN_SQL, (dungeon_id, season))
+    return _fetch_dungeon_record_run_rows(
+        connection, cursor, dungeon_id, season, "closest", FETCH_DUNGEON_CLOSEST_CALL_RUN_SQL)
 
 FETCH_DUNGEON_FASTEST_TOP_LEVELS_RUN_SQL = """
 SELECT r.dungeon_id, r.keystone_level, r.duration, r.timestamp, r.faction, r.run_id, r.region, r.season, rm.member, m.spec_id
@@ -6128,7 +6308,7 @@ def fetch_latest_agg_run(connection, cursor):
 # freeze used to show week-over-week movement in the "Top Trends" bar. The
 # snapshot writer (snapshotTrends.py) reads the current aggregates and upserts
 # one row per (week_id, feed, group_key, entity_key); the page generators read
-# the latest two weeks back via fetch_trend_snapshots + pageGeneration.build_trends.
+# the previous week back via fetch_trend_week + pageGeneration.build_trends.
 # ---------------------------------------------------------------------------
 
 FETCH_CURRENT_PERIOD_SQL = """
@@ -6208,35 +6388,31 @@ def fetch_prev_trend_week(connection, cursor, current_week_id):
     return int(rows[0][0])
 
 
-FETCH_TREND_SNAPSHOTS_SQL = """
-SELECT week_id, entity_key, label, tier, rank_pos, score, popularity, run_count
+FETCH_TREND_WEEK_SQL = """
+SELECT feed, group_key, entity_key, label, tier, rank_pos, score, popularity, run_count
 FROM Mythistone.trend_snapshot
-WHERE feed = %s AND group_key = %s AND week_id IN ({placeholders})
+WHERE week_id = %s
 """
 
 
-def fetch_trend_snapshots(connection, cursor, feed, group_key, week_ids):
-    """Rows for one feed/group across the given weeks. Returns a list of dicts;
-    empty when the feed/group has no snapshots yet."""
-    if not week_ids:
-        return []
-    placeholders = ",".join(["%s"] * len(week_ids))
-    sql = FETCH_TREND_SNAPSHOTS_SQL.format(placeholders=placeholders)
-    params = [feed, str(group_key)] + [int(w) for w in week_ids]
-    rows = fetch_with_retry(connection, cursor, sql, params)
-    return [
-        {
-            "week_id": int(r[0]),
-            "entity_key": r[1],
-            "label": r[2],
-            "tier": None if r[3] is None else int(r[3]),
-            "rank_pos": None if r[4] is None else int(r[4]),
-            "score": None if r[5] is None else float(r[5]),
-            "popularity": float(r[6]),
-            "run_count": int(r[7]),
+def fetch_trend_week(connection, cursor, week_id):
+    """Every snapshot row of one week as {(feed, group_key): {entity_key: row}}.
+    One round trip for a whole build instead of one per feed and page
+    (pageGeneration.build_trends)."""
+    rows = fetch_with_retry(connection, cursor, FETCH_TREND_WEEK_SQL, (int(week_id),))
+    week = {}
+    for r in rows:
+        week.setdefault((r[0], r[1]), {})[r[2]] = {
+            "week_id": int(week_id),
+            "entity_key": r[2],
+            "label": r[3],
+            "tier": None if r[4] is None else int(r[4]),
+            "rank_pos": None if r[5] is None else int(r[5]),
+            "score": None if r[6] is None else float(r[6]),
+            "popularity": float(r[7]),
+            "run_count": int(r[8]),
         }
-        for r in rows
-    ]
+    return week
 
 
 UPSERT_TREND_ROW_SQL = """

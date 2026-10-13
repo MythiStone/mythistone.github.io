@@ -113,6 +113,7 @@ def createSpecOverviewImg(
     upgrade_counts = {tier: 0 for tier in tiers}
     with closing(databaseConnector.get_connection()) as conn:
         cursor = conn.cursor()
+        databaseConnector.configure_read_session(conn, cursor)
         if spec_upgrade_counts is None:
             spec_upgrade_counts = databaseConnector.fetch_spec_upgrade(
                 conn, cursor, spec_id

@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 import traceback
+import mysql.connector
 import databaseConnector
 import compArchetypes
 import aggregateData
@@ -2032,16 +2033,64 @@ def filter_weapon_gear_entries(weapon_lists, slot_totals):
             for lst in weapon_lists]
 
 
-def fetch_slot_info(conn, cursor, spec_id, current_season_id, slot, slot_totals, hero_talent_id=None):
+def fetch_slot_rows(conn, cursor, spec_id, current_season_id, slot, hero_talent_id=None):
     if MULTI_SLOT_GROUPS.get(slot):
-        data = databaseConnector.fetch_top_items_for_slot_group_with_bonus(
+        return databaseConnector.fetch_top_items_for_slot_group_with_bonus(
             conn, cursor, spec_id, current_season_id, MULTI_SLOT_GROUPS[slot], hero_talent_id
         )
-    else:
-        data = databaseConnector.fetch_top_items_for_slot_with_bonus(
-            conn, cursor, spec_id, current_season_id, slot, hero_talent_id
-        )
+    return databaseConnector.fetch_top_items_for_slot_with_bonus(
+        conn, cursor, spec_id, current_season_id, slot, hero_talent_id
+    )
+
+
+def fetch_slot_info(conn, cursor, spec_id, current_season_id, slot, slot_totals, hero_talent_id=None):
+    data = fetch_slot_rows(conn, cursor, spec_id, current_season_id, slot, hero_talent_id)
     return select_slot_entries(slot, data, slot_totals)
+
+
+def prefetch_gear_sections(conn, cursor, spec_id, current_season_id, temp_enchant_effect_ids,
+                           hero_talent_id=None):
+    """One round trip for what the gear, enchant, crafting, comps, stats and
+    consumable sections read for a spec or one of its hero trees, instead of one
+    per slot and slot group (databaseConnector.prefetch). Mirrors the fetches of
+    the combined pass and of _build_tree_sections; one missing here still works,
+    it just costs its own round trip."""
+    base = (spec_id, current_season_id)
+    calls = [(databaseConnector.fetch_slot_totals, (*base, hero_talent_id))]
+    calls += [
+        (fetch_slot_rows, (*base, slot, hero_talent_id))
+        for slot in LEFT_ORDER + RIGHT_ORDER + WEAPON_SLOTS + TRINKET_SLOTS
+    ]
+    calls += [
+        (aggregateData.get_enchants_for_slot, (*base, slot_group, hero_talent_id))
+        for slot_group in SLOT_GROUPS
+    ]
+    calls += [
+        (fetch, (*base, hero_talent_id))
+        for fetch in (
+            aggregateData.get_sockets,
+            databaseConnector.fetch_missive_count,
+            databaseConnector.fetch_embellishment_count,
+            databaseConnector.fetch_crafted_items_count,
+            databaseConnector.fetch_embellishment_comps,
+            databaseConnector.fetch_crafted_comps,
+            databaseConnector.fetch_tier_set_comps,
+            databaseConnector.fetch_gem_comps,
+            databaseConnector.fetch_enchant_comps,
+            databaseConnector.fetch_stats,
+            databaseConnector.fetch_consumable_count,
+        )
+    ]
+    calls.append((
+        databaseConnector.fetch_weapon_temp_enchant_usage,
+        (*base, temp_enchant_effect_ids, hero_talent_id),
+    ))
+    try:
+        databaseConnector.prefetch(conn, cursor, calls)
+    except mysql.connector.Error as e:
+        # the comps fetches below are fail-soft one by one, so one bad statement
+        # must not take the whole section down with the batch
+        print(f"Warning: gear section prefetch failed, fetching one by one: {e}")
 
 
 def select_slot_entries(slot, data, slot_totals):
@@ -2684,6 +2733,9 @@ def main(template_path, output_dir, debug=False, spec=None):
                 )
 
                 print(f"[{datetime.now(timezone.utc).isoformat()}] fetching slots...")
+                prefetch_gear_sections(
+                    conn, cursor, spec_id, current_season_id, temp_enchant_effect_ids
+                )
                 # Per-slot run totals: denominators for the gear-list noise filter.
                 slot_totals = databaseConnector.fetch_slot_totals(
                     conn, cursor, spec_id, current_season_id
@@ -3468,25 +3520,26 @@ def main(template_path, output_dir, debug=False, spec=None):
                         "icon": e.get("icon"),
                         "spellId": e.get("spellId"),
                     }
-            # We're past the per-spec read block above, which already released its
-            # pooled connection (the read -> release -> heavy-work pattern), so the
-            # `conn` here is dead. Grab a fresh live connection just for the trends
-            # lookup (the pool slot is free at this point).
-            with closing(databaseConnector.get_connection()) as trends_conn:
-                trends_cursor = trends_conn.cursor()
-                databaseConnector.configure_read_session(trends_conn, trends_cursor)
-                trends = build_trends(
-                    trends_conn,
-                    trends_cursor,
-                    trend_feeds_for_spec(spec_id),
-                    {
-                        "specs": spec_lookup,
-                        "items": trend_item_icons,
-                        "talents": talent_name_map,
-                        "tier_item_to_set": tier_item_to_set,
-                        "tier_set_meta": tier_set_meta,
-                    },
-                )
+            # The per-spec read block above released its pooled connection before
+            # the heavy talent work (read -> release -> heavy work). Check a live,
+            # configured one out again for the trends lookup and for the per-hero-tree
+            # sections, which read through conn / cursor; it is released once those
+            # are built.
+            conn = databaseConnector.get_connection()
+            cursor = conn.cursor()
+            databaseConnector.configure_read_session(conn, cursor)
+            trends = build_trends(
+                conn,
+                cursor,
+                trend_feeds_for_spec(spec_id),
+                {
+                    "specs": spec_lookup,
+                    "items": trend_item_icons,
+                    "talents": talent_name_map,
+                    "tier_item_to_set": tier_item_to_set,
+                    "tier_set_meta": tier_set_meta,
+                },
+            )
 
             # --- Per-hero-tree section payloads -----------------------------
             # The gear / stats / enchant / gem / missive / embellishment /
@@ -3530,6 +3583,9 @@ def main(template_path, output_dir, debug=False, spec=None):
                 }
 
             def _build_tree_sections(hero_id, tree_sample):
+                prefetch_gear_sections(
+                    conn, cursor, spec_id, current_season_id, temp_enchant_effect_ids, hero_id
+                )
                 # Gear: fetch per-slot for this hero tree, then run the same
                 # convert/normalize/weapon-adjust pipeline as the combined path.
                 st = databaseConnector.fetch_slot_totals(
@@ -3777,6 +3833,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                         sections_by_tree[_tid] = dict(_combined_payload)
                 else:
                     sections_by_tree[_tid] = dict(_combined_payload)
+            databaseConnector.close_quietly(conn)
 
             # SimC choice picks (simc_bis_choices) on the rendered overall-cohort
             # payloads. The rows are spec-wide, so every hero tree view shows them.
@@ -4055,6 +4112,8 @@ if __name__ == "__main__":
         os.environ.get("DATABASE_NAME"),
         os.environ.get("DATABASE_PORT"),
         2,
+        # three checkouts per spec, all read-only on a configured session
+        reset_session=False,
     )
     main(
         args.template,

@@ -20,6 +20,7 @@ Harness gotchas (not proc bugs):
 - `docker exec` needs `-i` to pass stdin (heredoc). Without it mysql gets no input and silently no-ops.
 - Creating a proc via `mysql <<SQL` without DELIMITER truncates it at the first inner `;`, so the proc is never created and a later `CALL` under `2>/dev/null` fails invisibly and returns instantly. Always DELIMITER-wrap proc creation.
 - When writing the temp .sql from Python, use a real Windows path (`C:\...`), not a `/c/...` MSYS path, or `docker cp` cannot find it.
+- Events never fire in the `seed_test_db.py` container, and that cannot be switched at runtime. To exercise an event body, `CALL` a throwaway procedure whose body is the event's `DO` block unchanged.
 - To hold an idle in-transaction metadata lock for a lock-contention test, run in a bg client: `START TRANSACTION; SELECT ...; \! sleep 40`. The `\!` shell-escape makes the client sleep so the server connection sits idle with the txn (and MDL) open. `SELECT SLEEP()` would show as Running instead.
 
 Note: the localDev seeder ([[local-test-render]]) does the same schema load end-to-end, and its `schema_loader.py` handles the DELIMITER-wrapping and tablespace stripping for you. Use this manual recipe for isolated proc changes; use the seeder for full-pipeline verification. Related: [[aggregation-pipeline]].

@@ -276,47 +276,7 @@ def generate_llm_txt(output_dir="."):
         output_dir: Directory where llm.txt should be written
     """
     print("Generating llm.txt...")
-    
-    # Get current season info from database if available
-    season_name = "Current Season"
-    try:
-        import sys
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
-        from databaseConnector import (
-            init_connection_pool,
-            get_connection,
-            configure_read_session,
-        )
-        import os as os_module
-        
-        # Get DB config from environment
-        db_host = os_module.environ.get("DATABASE_HOST")
-        db_user = os_module.environ.get("DATABASE_USER")
-        db_password = os_module.environ.get("DATABASE_PASSWORD")
-        db_name = os_module.environ.get("DATABASE_NAME")
-        db_port = os_module.environ.get("DATABASE_PORT")
-        
-        if all([db_host, db_user, db_password, db_name, db_port]):
-            init_connection_pool(
-                host=db_host,
-                user=db_user,
-                password=db_password,
-                database=db_name,
-                port=int(db_port)
-            )
-            
-            conn = get_connection()
-            cursor = conn.cursor(dictionary=True)
-            configure_read_session(conn, cursor)
-            cursor.execute("SELECT name FROM seasons WHERE current = 1 LIMIT 1")
-            result = cursor.fetchone()
-            if result:
-                season_name = result["name"]
-            cursor.close()
-            conn.close()
-    except Exception as e:
-        print(f"Could not fetch season info from database: {e}")
-    
+
     # Scan all pages for descriptions
     all_pages = scan_pages_for_descriptions(SEARCH_DIRECTORIES)
     
