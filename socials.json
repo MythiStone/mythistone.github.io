@@ -2040,5 +2040,16 @@
         "persona": "snarky_analyst",
         "judge_score": 34.0,
         "timestamp": 1791755531821
+    },
+    "data/social/dungeon_overview_249_2026-10.png": {
+        "title": "Kings' Rest Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/kings-rest",
+        "social": "Even the Loa of Kings' Rest would nod approvingly as 91% of groups seal the deal, outpacing the usual 88% across Azeroth. #WoW #MythicPlus https://mythistone.com/dungeons/kings-rest",
+        "blog": "Kings' Rest has 1.8 M Mythic+ runs tracked this season.\n\nThe most common group through it is Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. The most-used route right now is keystone.guru/AJ7wkfR.",
+        "post": "Even the Loa of Kings' Rest would nod approvingly as 91% of groups seal the deal, outpacing the usual 88% across Azeroth. #WoW #MythicPlus https://mythistone.com/dungeons/kings-rest",
+        "persona": "lore_nerd",
+        "judge_score": 33.0,
+        "timestamp": 1791851778954
     }
 }
