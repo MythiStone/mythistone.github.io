@@ -722,6 +722,25 @@ def _live_index(live):
     return index
 
 
+_PREV_TREND_WEEK_CACHE = {}
+
+
+def _prev_trend_week(conn, live_week_id):
+    """(prev_week, {(feed, group_key): {entity_key: row}}) for the stored baseline
+    older than ``live_week_id``, fetched once per process: the item build alone
+    calls build_trends hundreds of times, and nothing writes an older week during
+    a build."""
+    if live_week_id not in _PREV_TREND_WEEK_CACHE:
+        # Own plain (tuple) cursor: the fetchers index rows positionally, but callers
+        # may hand us a dictionary=True cursor (e.g. the dungeon generator).
+        cursor = conn.cursor()
+        prev_week = databaseConnector.fetch_prev_trend_week(conn, cursor, live_week_id)
+        rows = {} if prev_week is None else databaseConnector.fetch_trend_week(conn, cursor, prev_week)
+        cursor.close()
+        _PREV_TREND_WEEK_CACHE[live_week_id] = (prev_week, rows)
+    return _PREV_TREND_WEEK_CACHE[live_week_id]
+
+
 def build_trends(conn, cursor, feeds, lookups, limit=TREND_LIMIT, live_records=None):
     """Diff the CURRENT live values against last week's stored snapshot and return
     up to ``limit`` render-ready movers, biggest movement first.
@@ -740,10 +759,7 @@ def build_trends(conn, cursor, feeds, lookups, limit=TREND_LIMIT, live_records=N
     live = live_records if live_records is not None else _load_live_trends()
     if not live:
         return []
-    # Own plain (tuple) cursor: the fetchers index rows positionally, but callers
-    # may hand us a dictionary=True cursor (e.g. the dungeon generator).
-    cursor = conn.cursor()
-    prev_week = databaseConnector.fetch_prev_trend_week(conn, cursor, live["week_id"])
+    prev_week, prev_by_group = _prev_trend_week(conn, live["week_id"])
     if prev_week is None:
         return []
 
@@ -756,10 +772,7 @@ def build_trends(conn, cursor, feeds, lookups, limit=TREND_LIMIT, live_records=N
     for feed, group_key in feeds:
         gk = str(group_key)
         now = live_by_group.get((feed, gk), {})
-        prev = {
-            r["entity_key"]: r
-            for r in databaseConnector.fetch_trend_snapshots(conn, cursor, feed, gk, [prev_week])
-        }
+        prev = prev_by_group.get((feed, gk), {})
 
         tiered = feed in TIERED_FEEDS
         tier_mode = feed in TIER_MODE_FEEDS

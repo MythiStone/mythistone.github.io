@@ -20,6 +20,7 @@ files:
    `backend_scripts/localDev/seeders.py`, called from `seed_test_db.py`. Id-bearing columns come
    from the same static lookup the template subscripts ("Templates crash on unknown ids" in
    `AGENTS.md`).
-4. **Create it on the production server by hand.** Nothing applies `database.sql` there. Grant
-   every MySQL user that touches it ([[bot-db-grants]]).
+4. **Write the migration script that creates it on the production server**
+   ([[database-migration-script]]). Nothing applies `database.sql` there. Grant every MySQL user
+   that touches it ([[bot-db-grants]]).
 5. Verify with [[local-test-render]], and [[verify-database-sql]] for the DDL itself.

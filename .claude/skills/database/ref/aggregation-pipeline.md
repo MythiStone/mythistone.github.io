@@ -13,6 +13,7 @@ files:
    `sp_swap_public_table`.
 2. Add one `CALL sp_run_agg_step('<step>')` line to `sp_run_agg_pipeline`.
 3. Verify with [[verify-database-sql]].
+4. Ship the change to the production server as a migration script ([[database-migration-script]]).
 
 Rules the procs cannot enforce:
 

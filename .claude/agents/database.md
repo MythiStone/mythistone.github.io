@@ -14,6 +14,7 @@ The paths this domain owns, the shared working rules and the handoff format are 
 ## Verification (required before handing back)
 
 - Stored procs and DDL: run them against an ephemeral MySQL 8 container (`verify-database-sql`).
+- Any change to `database.sql`: write and test its migration script (`database-migration-script`).
 - New or changed tables: register them so the seeder's `classify_all` passes (`add-database-table`),
   then seed with `python backend_scripts/localDev/seed_test_db.py`.
 - New or changed queries: call the wrapper against the seeded DB and check the rows.

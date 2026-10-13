@@ -69,12 +69,14 @@ def _get_keystone_dungeon_list(auth):
         return _keystone_dungeons_cache
 
 
-def fetch_route_thumbnail(dungeon_id, top_route_key):
+def fetch_route_thumbnail(dungeon_id, top_route_key, deadline=None):
     """Request, poll, and download the keystone.guru thumbnail for a route.
 
     Pure HTTP (no DB), so it can run in a background thread while the caller
     does per-dungeon DB work; most of its wall time is waiting on the remote
-    render job. Returns an RGBA PIL image, or None on any failure.
+    render job. Returns an RGBA PIL image, or None on any failure. `deadline`
+    is a time.monotonic() value several jobs can share; by default each job
+    gets THUMBNAIL_POLL_TIMEOUT of its own.
     """
     dungeon_meta = find_dungeon_meta(dungeon_id) or {}
     name_text = dungeon_meta.get("name", {}).get("en_US", "")
@@ -124,9 +126,9 @@ def fetch_route_thumbnail(dungeon_id, top_route_key):
             # All of the build's jobs are submitted up front and share
             # keystone.guru's render queue, so the last one can sit "queued"
             # for the whole queue drain (~N dungeons x render time) — the
-            # deadline must cover that, not a single render. The wait runs in
-            # a background thread overlapping the page builds' DB work.
-            deadline = time.monotonic() + THUMBNAIL_POLL_TIMEOUT
+            # deadline must cover that, not a single render.
+            if deadline is None:
+                deadline = time.monotonic() + THUMBNAIL_POLL_TIMEOUT
             while time.monotonic() < deadline:
                 time.sleep(THUMBNAIL_POLL_INTERVAL)
                 poll_r = requests.get(status_url, auth=auth, timeout=20)

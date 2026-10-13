@@ -26,6 +26,8 @@ Runs on the already-collapsed comps, so it is a few-thousand-row, sub-second pas
 extra DB work. build_dungeon_archetypes() is the page entry point.
 """
 
+import os
+import pickle
 from collections import Counter, defaultdict
 from itertools import combinations
 
@@ -557,6 +559,38 @@ def build_archetypes(comps_json, spec_lookup, class_lookup,
             for m in groups.values()]
     fams.sort(key=lambda f: f["weight"], reverse=True)
     return fams[:top_n] if top_n else fams
+
+
+def cached_dungeon_archetypes(load_comp_rows, season, spec_lookup, class_lookup,
+                              dungeon_ids, top_n=6):
+    """build_dungeon_archetypes over collapse_comps(load_comp_rows()), computed
+    once per build. snapshotTrends and the dungeon generator need the identical
+    clustering, and it takes close to a minute on a full season.
+
+    When MYTHISTONE_ARCHETYPES_CACHE names a file, the first caller writes the
+    result there and the next one reads it back (buildPages.yml sets it for the
+    job; unset always computes). ``load_comp_rows`` is a callable so a hit skips
+    loading the rows as well. Pickled rather than JSON: the families carry int
+    spec ids as dict keys.
+    """
+    cache_path = os.environ.get("MYTHISTONE_ARCHETYPES_CACHE")
+    cache_key = (int(season), [str(d) for d in dungeon_ids], top_n)
+    if cache_path and os.path.exists(cache_path):
+        with open(cache_path, "rb") as f:
+            cached = pickle.load(f)
+        if cached["key"] == cache_key:
+            return cached["archetypes"]
+
+    archetypes = build_dungeon_archetypes(
+        collapse_comps(load_comp_rows(), spec_lookup),
+        spec_lookup, class_lookup, dungeon_ids, top_n=top_n)
+    if cache_path:
+        os.makedirs(os.path.dirname(os.path.abspath(cache_path)), exist_ok=True)
+        tmp_path = f"{cache_path}.tmp"
+        with open(tmp_path, "wb") as f:
+            pickle.dump({"key": cache_key, "archetypes": archetypes}, f)
+        os.replace(tmp_path, cache_path)
+    return archetypes
 
 
 def build_dungeon_archetypes(comps_json, spec_lookup, class_lookup, dungeon_ids,

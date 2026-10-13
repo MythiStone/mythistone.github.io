@@ -10,7 +10,7 @@ files:
 
 # Production grants for bot tables
 
-Create the table on the server by hand ([[add-database-table]]), then grant:
+Create the table on the server with its migration script ([[database-migration-script]]), then grant:
 
 | Table | Bot `DATABASE_USER` | CI `DATABASE_USER` |
 |---|---|---|

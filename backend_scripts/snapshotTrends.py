@@ -2,8 +2,8 @@
 
 Runs as a CI step *before* page generation. Reads the current nightly aggregates
 and writes one row per (week_id, feed, group_key, entity) into `trend_snapshot`
-(see database.sql). The page generators later read the latest two weeks back via
-``databaseConnector.fetch_trend_snapshots`` + ``pageGeneration.build_trends`` to
+(see database.sql). The page generators later read the previous week back via
+``databaseConnector.fetch_trend_week`` + ``pageGeneration.build_trends`` to
 render week-over-week movement.
 
 Design notes:
@@ -40,7 +40,7 @@ from contextlib import closing
 
 import databaseConnector
 from commonUtils import current_season_id
-from compArchetypes import build_dungeon_archetypes, collapse_comps
+from compArchetypes import cached_dungeon_archetypes
 from tierMath import build_buff_tiers, build_ckmeans_tiers, build_spec_tiers
 from generateSpecPages import LOOKUP_DIR, load_json
 from pageGeneration import TRENDS_LIVE_PATH
@@ -208,11 +208,38 @@ def _rank_rows(week_id, feed, group_key, ranked, denom, key_fn, label_fn=None):
     return out
 
 
+# (feed, fetcher) of the per-spec top-N feeds and of the gear-combo feeds, which
+# reuse the spec-comp fetchers (already top-10/15).
+MISC_FEEDS = (
+    ("embellishment", databaseConnector.fetch_embellishment_usage),
+    ("gem", databaseConnector.fetch_gem_usage),
+    ("crafted", databaseConnector.fetch_crafted_usage),
+    ("missive", databaseConnector.fetch_missive_usage),
+)
+COMBO_FEEDS = (
+    ("set_combo", databaseConnector.fetch_tier_set_comps),
+    ("embellishment_combo", databaseConnector.fetch_embellishment_comps),
+    ("crafted_combo", databaseConnector.fetch_crafted_comps),
+    ("gem_combo", databaseConnector.fetch_gem_comps),
+)
+
+
 def build_spec_rows(conn, cursor, week_id, season, spec_id, spec_runs):
     """All per-spec feeds for one spec: talents (all), items per slot, and the
     embellishment / gem / crafted / combo feeds (bounded top-N)."""
     rows = []
     gk = str(spec_id)
+
+    # one round trip for the ten reads below instead of one each
+    databaseConnector.prefetch(conn, cursor, [
+        (fetch, (spec_id, season))
+        for fetch in (
+            databaseConnector.fetch_talent_usage,
+            databaseConnector.fetch_equipment_usage,
+            *(f for _, f in MISC_FEEDS),
+            *(f for _, f in COMBO_FEEDS),
+        )
+    ])
 
     # talents (rolled up per talent across all three trees; store all)
     talents = databaseConnector.fetch_talent_usage(conn, cursor, spec_id, season)
@@ -238,12 +265,7 @@ def build_spec_rows(conn, cursor, week_id, season, spec_id, spec_runs):
             ))
 
     # embellishments / gems / crafted / missives: top-N, share within the feed
-    for feed, fetch in (
-        ("embellishment", databaseConnector.fetch_embellishment_usage),
-        ("gem", databaseConnector.fetch_gem_usage),
-        ("crafted", databaseConnector.fetch_crafted_usage),
-        ("missive", databaseConnector.fetch_missive_usage),
-    ):
+    for feed, fetch in MISC_FEEDS:
         usage = fetch(conn, cursor, spec_id, season)
         usage.sort(key=lambda u: u["run_count"], reverse=True)
         denom = sum(u["run_count"] for u in usage)
@@ -252,14 +274,8 @@ def build_spec_rows(conn, cursor, week_id, season, spec_id, spec_runs):
             key_fn=lambda u: u["item_id"],
         )
 
-    # gear combos — reuse the existing spec-comp fetchers (already top-10/15).
-    # Rows are (comp, total_runs, max_timed_key, max_depleted_key).
-    for feed, fetch in (
-        ("set_combo", databaseConnector.fetch_tier_set_comps),
-        ("embellishment_combo", databaseConnector.fetch_embellishment_comps),
-        ("crafted_combo", databaseConnector.fetch_crafted_comps),
-        ("gem_combo", databaseConnector.fetch_gem_comps),
-    ):
+    # gear combos. Rows are (comp, total_runs, max_timed_key, max_depleted_key).
+    for feed, fetch in COMBO_FEEDS:
         combos = fetch(conn, cursor, spec_id, season)
         # A "combo" is only meaningful with >= 2 members; drop 1- or 0-member combos
         # (they render as a single lone icon that reads as a plain item, not a combo).
@@ -315,10 +331,9 @@ def build_archetype_rows(conn, cursor, week_id, season, spec_lookup, class_looku
     signal. entity_key is the family's most-PLAYED member (`key_c`), a handle that
     survives the displayed core flipping to a fresh top-key comp; label is the
     displayed core (`c`) so the bar renders the recognisable archetype icons."""
-    raw = databaseConnector.fetch_all_comps(conn, cursor, season)
-    collapsed = collapse_comps(raw, spec_lookup)
-    arch = build_dungeon_archetypes(
-        collapsed, spec_lookup, class_lookup, dungeon_ids, top_n=TOP_N_ARCHETYPES
+    arch = cached_dungeon_archetypes(
+        lambda: databaseConnector.fetch_all_comps(conn, cursor, season),
+        season, spec_lookup, class_lookup, dungeon_ids, top_n=TOP_N_ARCHETYPES,
     )
     rows = []
     for ctx, flavours in arch.items():

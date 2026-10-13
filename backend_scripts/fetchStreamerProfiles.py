@@ -7,7 +7,9 @@ YOUTUBE_API_KEY. A video or character the platform no longer knows is data (stor
 as 'gone' / skipped), any other API failure raises.
 """
 import os
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from urllib.parse import urlparse
 
@@ -38,6 +40,12 @@ GEAR_SLOTS = {
     "mainhand": "MAIN_HAND", "offhand": "OFF_HAND",
 }
 CHANNEL_MAX_AGE_DAYS = 7
+# Scores move daily, so the daily build refetches every profile. A second build on
+# the same day (a push) reuses them.
+PROFILE_MAX_AGE_HOURS = 20
+# A profile takes about 3 s to answer, so MIN_INTERVAL only paces the requests
+# when enough of them are in flight.
+RAIDERIO_WORKERS = 8
 REQUEST_TIMEOUT = 30
 MAX_ATTEMPTS = 6
 RETRY_STATUSES = {429, 500, 502, 503, 504}
@@ -45,7 +53,8 @@ RETRY_STATUSES = {429, 500, 502, 503, 504}
 # character, so it is paced well below its per-minute limit. Twitch and YouTube are
 # batched 50-100 ids per call and barely need it.
 MIN_INTERVAL = {"raider.io": 0.35, "api.twitch.tv": 0.1, "www.googleapis.com": 0.1}
-_last_call = {}
+_next_call = {}
+_throttle_lock = threading.Lock()
 
 
 def require_env(name):
@@ -62,11 +71,15 @@ def chunks(seq, size):
 
 
 def _throttle(url):
+    """Reserve this host's next request slot under the lock and wait for it outside,
+    so MIN_INTERVAL holds across the raider.io worker threads."""
     host = urlparse(url).hostname
-    wait = MIN_INTERVAL.get(host, 0.1) - (time.monotonic() - _last_call.get(host, 0))
+    with _throttle_lock:
+        slot = max(time.monotonic(), _next_call.get(host, 0))
+        _next_call[host] = slot + MIN_INTERVAL.get(host, 0.1)
+    wait = slot - time.monotonic()
     if wait > 0:
         time.sleep(wait)
-    _last_call[host] = time.monotonic()
 
 
 def _backoff(attempt, resp=None):
@@ -323,23 +336,37 @@ def main():
         conn.commit()
         print(f"Refreshed {len(channel_rows)} channel profile(s)")
 
-        # 3. raider.io profile of every candidate character (scores move daily).
-        profile_rows, missing = [], 0
-        for cand in candidates.values():
-            for char_id, char in cand["characters"].items():
-                if not (char["region"] and char["realm_slug"] and char["name"]):
-                    continue
-                row = raiderio_profile(char_id, char, rio_key)
-                if row is None:
-                    missing += 1
-                else:
-                    profile_rows.append(row)
-        databaseConnector.upsert_pov_character_profiles(conn, cursor, profile_rows)
-        conn.commit()
-        print(f"Stored {len(profile_rows)} raider.io profile(s), {missing} not found")
+        fresh_chars = databaseConnector.fetch_fresh_pov_character_ids(
+            conn, cursor, PROFILE_MAX_AGE_HOURS)
     finally:
         cursor.close()
         databaseConnector.close_quietly(conn)
+
+    # 3. raider.io profile of every candidate character without a fresh one. The
+    # connection is released first: the fetch takes minutes and holds no DB work.
+    characters = {
+        char_id: char
+        for cand in candidates.values()
+        for char_id, char in cand["characters"].items()
+        if char["region"] and char["realm_slug"] and char["name"]
+    }
+    stale = {cid: char for cid, char in characters.items() if cid not in fresh_chars}
+    with ThreadPoolExecutor(max_workers=RAIDERIO_WORKERS) as pool:
+        results = list(pool.map(
+            lambda item: raiderio_profile(item[0], item[1], rio_key), stale.items()))
+    profile_rows = [row for row in results if row is not None]
+
+    conn = databaseConnector.get_live_connection()
+    cursor = conn.cursor()
+    try:
+        databaseConnector.upsert_pov_character_profiles(conn, cursor, profile_rows)
+        conn.commit()
+    finally:
+        cursor.close()
+        databaseConnector.close_quietly(conn)
+    print(f"Stored {len(profile_rows)} raider.io profile(s), "
+          f"{len(results) - len(profile_rows)} not found, "
+          f"{len(characters) - len(stale)} still fresh")
 
 
 if __name__ == "__main__":

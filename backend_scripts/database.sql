@@ -364,6 +364,28 @@ CREATE TABLE `aggregated_record_runs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.aggregated_dungeon_record_runs definition
+
+CREATE TABLE `aggregated_dungeon_record_runs` (
+  `season` int NOT NULL,
+  `dungeon_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `record` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `run_id` int unsigned NOT NULL,
+  PRIMARY KEY (`season`,`dungeon_id`,`record`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.aggregated_groupbuff_spec_sets definition
+
+CREATE TABLE `aggregated_groupbuff_spec_sets` (
+  `season` int NOT NULL,
+  `keystone_level` int unsigned NOT NULL,
+  `spec_set` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `run_count` bigint unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`season`,`keystone_level`,`spec_set`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.aggregated_runs_per_dungeon_per_level definition
 
 CREATE TABLE `aggregated_runs_per_dungeon_per_level` (
@@ -2696,6 +2718,13 @@ BEGIN
   -- resolve them by run_id instead of sorting the whole season. runs has no index
   -- on either ordering, so each batch is a primary-key range and the batch winner
   -- is compared against the running best. Ties keep the smallest run_id.
+  --
+  -- The same pass picks each dungeon's record runs for
+  -- aggregated_dungeon_record_runs. Every batch adds its winner per dungeon and
+  -- record to tmp_dungeon_record_runs with the sort keys normalised so that
+  -- smaller is better, and the final pick sorts those few hundred candidates.
+  -- The orderings mirror the FETCH_DUNGEON_*_RUN_SQL live scans in
+  -- databaseConnector.py, which stay as the readers' fallback.
   DECLARE v_max_season  INT          DEFAULT 0;
   DECLARE v_min_run     INT UNSIGNED DEFAULT 0;
   DECLARE v_max_run     INT UNSIGNED DEFAULT 0;
@@ -2724,7 +2753,69 @@ BEGIN
 
   SET v_cur = v_min_run;
 
+  DROP TEMPORARY TABLE IF EXISTS tmp_dungeon_record_runs;
+  CREATE TEMPORARY TABLE tmp_dungeon_record_runs (
+    dungeon_id VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+    record     VARCHAR(20)  NOT NULL,
+    run_id     INT UNSIGNED NOT NULL,
+    sort_1     BIGINT       NOT NULL,
+    sort_2     BIGINT       NOT NULL
+  ) ENGINE=InnoDB;
+
   WHILE v_cur <= v_max_run DO
+
+    INSERT INTO tmp_dungeon_record_runs (dungeon_id, record, run_id, sort_1, sort_2)
+    SELECT dungeon_id, 'shortest', run_id, duration, 0
+    FROM (
+      SELECT R.dungeon_id, R.run_id, R.duration,
+             ROW_NUMBER() OVER (PARTITION BY R.dungeon_id ORDER BY R.duration ASC, R.run_id ASC) AS rn
+      FROM Mythistone.runs R
+      WHERE R.season = v_max_season
+        AND R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+        AND R.duration > 0
+    ) w
+    WHERE rn = 1;
+
+    INSERT INTO tmp_dungeon_record_runs (dungeon_id, record, run_id, sort_1, sort_2)
+    SELECT dungeon_id, 'longest', run_id, -CAST(duration AS SIGNED), 0
+    FROM (
+      SELECT R.dungeon_id, R.run_id, R.duration,
+             ROW_NUMBER() OVER (PARTITION BY R.dungeon_id ORDER BY R.duration DESC, R.run_id ASC) AS rn
+      FROM Mythistone.runs R
+      WHERE R.season = v_max_season
+        AND R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+    ) w
+    WHERE rn = 1;
+
+    INSERT INTO tmp_dungeon_record_runs (dungeon_id, record, run_id, sort_1, sort_2)
+    SELECT dungeon_id, 'highest', run_id, -CAST(keystone_level AS SIGNED), duration
+    FROM (
+      SELECT R.dungeon_id, R.run_id, R.keystone_level, R.duration,
+             ROW_NUMBER() OVER (PARTITION BY R.dungeon_id
+                                ORDER BY R.keystone_level DESC, R.duration ASC, R.run_id ASC) AS rn
+      FROM Mythistone.runs R
+      WHERE R.season = v_max_season
+        AND R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+    ) w
+    WHERE rn = 1;
+
+    -- closest call: the timed run with the least time left on the timer
+    INSERT INTO tmp_dungeon_record_runs (dungeon_id, record, run_id, sort_1, sort_2)
+    SELECT dungeon_id, 'closest', run_id, time_left, 0
+    FROM (
+      SELECT R.dungeon_id, R.run_id,
+             CAST(DD.upgrade_1_duration AS SIGNED) - CAST(R.duration AS SIGNED) AS time_left,
+             ROW_NUMBER() OVER (PARTITION BY R.dungeon_id
+                                ORDER BY (CAST(DD.upgrade_1_duration AS SIGNED) - CAST(R.duration AS SIGNED)) ASC,
+                                         R.run_id ASC) AS rn
+      FROM Mythistone.runs R
+      JOIN Mythistone.dungeon_data DD ON DD.dungeon_id = R.dungeon_id
+      WHERE R.season = v_max_season
+        AND R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+        AND R.duration > 0
+        AND R.duration <= DD.upgrade_1_duration
+    ) w
+    WHERE rn = 1;
 
     -- an empty batch leaves the INTO targets untouched, hence the reset
     SET v_run = NULL;
@@ -2777,6 +2868,87 @@ BEGIN
   END IF;
 
   CALL sp_swap_public_table('aggregated_record_runs');
+
+  DROP TABLE IF EXISTS Mythistone.aggregated_dungeon_record_runs_new, Mythistone.aggregated_dungeon_record_runs_old;
+  CREATE TABLE Mythistone.aggregated_dungeon_record_runs_new LIKE Mythistone.aggregated_dungeon_record_runs;
+
+  INSERT INTO Mythistone.aggregated_dungeon_record_runs_new (season, dungeon_id, record, run_id)
+  SELECT v_max_season, dungeon_id, record, run_id
+  FROM (
+    SELECT dungeon_id, record, run_id,
+           ROW_NUMBER() OVER (PARTITION BY dungeon_id, record
+                              ORDER BY sort_1 ASC, sort_2 ASC, run_id ASC) AS rn
+    FROM tmp_dungeon_record_runs
+  ) w
+  WHERE rn = 1;
+
+  DROP TEMPORARY TABLE IF EXISTS tmp_dungeon_record_runs;
+
+  CALL sp_swap_public_table('aggregated_dungeon_record_runs');
+END;
+
+CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_groupbuff_spec_sets`()
+BEGIN
+  -- Runs of the last 14 days at key level 10 and up, counted per key level and
+  -- per set of specs in the group. databaseConnector.fetch_groupbuffs_stats
+  -- derives every group buff's coverage from these rows instead of joining
+  -- runs to their members at build time. The window and the level floor are
+  -- mirrored there (GROUPBUFF_ROLLUP_DAYS / GROUPBUFF_ROLLUP_MIN_LEVEL).
+  -- Unlike sp_agg_dungeon_comps this keeps runs with fewer than five collected
+  -- members, because the live query it stands in for counts them too.
+  DECLARE v_max_season  INT             DEFAULT 0;
+  DECLARE v_cutoff      BIGINT UNSIGNED DEFAULT 0;
+  DECLARE v_min_run     INT UNSIGNED    DEFAULT 0;
+  DECLARE v_max_run     INT UNSIGNED    DEFAULT 0;
+  DECLARE v_cur         INT UNSIGNED    DEFAULT 0;
+  DECLARE v_batch_size  INT UNSIGNED    DEFAULT 200000; -- run_ids per pass
+  DECLARE v_min_level   INT UNSIGNED    DEFAULT 10;
+
+  CALL sp_agg_session_setup();
+
+  SELECT MAX(season) INTO v_max_season FROM Mythistone.runs;
+  SET v_cutoff = CAST(UNIX_TIMESTAMP(NOW() - INTERVAL 14 DAY) * 1000 AS UNSIGNED);
+
+  SELECT COALESCE(MIN(run_id), 1),
+         COALESCE(MAX(run_id), 0)
+    INTO v_min_run, v_max_run
+  FROM Mythistone.runs
+  WHERE timestamp >= v_cutoff
+    AND season = v_max_season;
+
+  DROP TABLE IF EXISTS Mythistone.aggregated_groupbuff_spec_sets_new, Mythistone.aggregated_groupbuff_spec_sets_old;
+  CREATE TABLE Mythistone.aggregated_groupbuff_spec_sets_new LIKE Mythistone.aggregated_groupbuff_spec_sets;
+
+  SET v_cur = v_min_run;
+
+  WHILE v_cur <= v_max_run DO
+
+    INSERT LOW_PRIORITY INTO Mythistone.aggregated_groupbuff_spec_sets_new
+      (season, keystone_level, spec_set, run_count)
+    SELECT v_max_season, c.keystone_level, c.spec_set, COUNT(*)
+    FROM (
+      SELECT
+        R.run_id,
+        R.keystone_level,
+        COALESCE(GROUP_CONCAT(DISTINCT M.spec_id ORDER BY M.spec_id SEPARATOR ','), '') AS spec_set
+      FROM Mythistone.runs R
+        LEFT JOIN Mythistone.run_members RM ON RM.run_id = R.run_id
+        LEFT JOIN Mythistone.members M      ON M.member  = RM.member
+      WHERE R.season = v_max_season
+        AND R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
+        AND R.timestamp >= v_cutoff
+        AND R.keystone_level >= v_min_level
+      GROUP BY R.run_id, R.keystone_level
+    ) c
+    GROUP BY c.keystone_level, c.spec_set
+    ON DUPLICATE KEY UPDATE
+      run_count = run_count + VALUES(run_count);
+
+    SET v_cur = v_cur + v_batch_size;
+
+  END WHILE;
+
+  CALL sp_swap_public_table('aggregated_groupbuff_spec_sets');
 END;
 
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_runs_per_dungeon_per_level`()
@@ -3217,6 +3389,7 @@ BEGIN
   CALL sp_run_agg_step('key_throughput');
   CALL sp_run_agg_step('runs_per_period_per_day');
   CALL sp_run_agg_step('record_runs');
+  CALL sp_run_agg_step('groupbuff_spec_sets');
   CALL sp_run_agg_step('completion_heatmap');
   CALL sp_run_agg_step('runs_per_dungeon_per_level');
   -- reads runs_per_dungeon_per_level for the season dungeon list, so must run after it
@@ -3257,8 +3430,8 @@ BEGIN
 
     IF v_err IS NULL THEN
       SET v_done = 1;                                   -- success
-    ELSEIF v_errno = 1205 AND v_attempt < v_max_attempts THEN
-      DO SLEEP(30);                                     -- lock wait: back off, retry
+    ELSEIF v_errno IN (1205, 1213) AND v_attempt < v_max_attempts THEN
+      DO SLEEP(30);                                     -- lock wait or deadlock: back off, retry
     ELSE
       SET v_done = 1;                                   -- non-retryable, or out of attempts
     END IF;
@@ -3626,6 +3799,9 @@ DO purge_block: BEGIN
 
   SET SESSION innodb_lock_wait_timeout = 15;  -- yield to collectors
   SET SESSION lock_wait_timeout = 60;
+  -- At REPEATABLE READ the INSERT ... SELECTs below S-lock every runs row they
+  -- read (the whole season) and deadlock with collector inserts.
+  SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
   -- 1. Compute cutoff (14 days ago in ms)
   SET v_cutoff_ts = (UNIX_TIMESTAMP() * 1000) - 14 * 24 * 3600 * 1000;

@@ -40,6 +40,7 @@ DOMAIN_GLOBS = [
     ("backend_scripts/database.sql", "database"),
     ("backend_scripts/databaseConnector.py", "database"),
     ("backend_scripts/localDev/*", "database"),
+    ("backend_scripts/migrations/*", "database"),
     ("backend_scripts/aggPipelineHealth.py", "database"),
     ("discord_bot/*", "discord-bot"),
     ("Dockerfile.bot", "discord-bot"),
