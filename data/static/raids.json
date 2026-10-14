@@ -229,5 +229,22 @@
         "icon": "boss_2895.png"
       }
     }
+  },
+  "1324": {
+    "name": {
+      "en_US": "The Unbinding of Kith'ix"
+    },
+    "slug": "the-unbinding-of-kith-ix",
+    "icon": "the-unbinding-of-kithix-small.jpg",
+    "order": 7,
+    "bosses": {
+      "2896": {
+        "name": {
+          "en_US": "Kith'ix"
+        },
+        "slug": "kith-ix",
+        "icon": "boss_2896.png"
+      }
+    }
   }
 }

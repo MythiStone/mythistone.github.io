@@ -793,14 +793,14 @@
       "spellId": 1215241
     },
     "82612": {
-      "name": "Holy Celerity",
-      "icon": "spell_priest_pathofdevout",
-      "spellId": 1215275
+      "name": "Ultimate Serenity",
+      "icon": "ability_priest_holywordlife",
+      "spellId": 1246517
     },
     "108750": {
-      "name": "Holy Celerity",
-      "icon": "spell_priest_pathofdevout",
-      "spellId": 1215275
+      "name": "Ultimate Serenity",
+      "icon": "ability_priest_holywordlife",
+      "spellId": 1246517
     },
     "82615": {
       "name": "Say Your Prayers",
@@ -883,14 +883,14 @@
       "spellId": 390992
     },
     "103900": {
-      "name": "Ultimate Serenity",
-      "icon": "ability_priest_holywordlife",
-      "spellId": 1246517
+      "name": "Holy Celerity",
+      "icon": "spell_priest_pathofdevout",
+      "spellId": 1215275
     },
     "108738": {
-      "name": "Ultimate Serenity",
-      "icon": "ability_priest_holywordlife",
-      "spellId": 1246517
+      "name": "Holy Celerity",
+      "icon": "spell_priest_pathofdevout",
+      "spellId": 1215275
     },
     "82554": {
       "name": "Divine Image",
@@ -3276,7 +3276,7 @@
       ]
     },
     "82612": {
-      "name": "Holy Celerity",
+      "name": "Ultimate Serenity",
       "g": "spec",
       "type": "single",
       "maxRanks": 1,
@@ -3290,9 +3290,9 @@
       ],
       "entries": [
         {
-          "name": "Holy Celerity",
-          "icon": "spell_priest_pathofdevout",
-          "spellId": 1215275,
+          "name": "Ultimate Serenity",
+          "icon": "ability_priest_holywordlife",
+          "spellId": 1246517,
           "type": "passive",
           "subTreeId": null
         }
@@ -3478,7 +3478,7 @@
       ]
     },
     "103900": {
-      "name": "Ultimate Serenity",
+      "name": "Holy Celerity",
       "g": "spec",
       "type": "single",
       "maxRanks": 1,
@@ -3489,9 +3489,9 @@
       "next": [],
       "entries": [
         {
-          "name": "Ultimate Serenity",
-          "icon": "ability_priest_holywordlife",
-          "spellId": 1246517,
+          "name": "Holy Celerity",
+          "icon": "spell_priest_pathofdevout",
+          "spellId": 1215275,
           "type": "passive",
           "subTreeId": null
         }

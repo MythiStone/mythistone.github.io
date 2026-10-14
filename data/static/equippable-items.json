@@ -1566499,7 +1566499,7 @@
   },
   {
     "id": 118088,
-    "name": "\"Super Sterlized\" Blastguard Legwraps",
+    "name": "\"Super Sterilized\" Blastguard Legwraps",
     "icon": "inv_cloth_draenorquest95_b_01pant",
     "quality": 3,
     "itemClass": 4,
@@ -2442521,24 +2442521,6 @@
     "expansion": 8
   },
   {
-    "id": 187914,
-    "name": "Captain Noteo's Unused Eye Patch",
-    "icon": "inv_helmet_46",
-    "quality": 3,
-    "itemClass": 4,
-    "itemSubClass": 5,
-    "inventoryType": 1,
-    "itemLevel": 1,
-    "cosmetic": true,
-    "stats": [
-      {
-        "id": 71,
-        "alloc": 1
-      }
-    ],
-    "expansion": 0
-  },
-  {
     "id": 188006,
     "name": "Choral Vestments",
     "icon": "inv_cloth_broker_c_01_chest",
@@ -2497664,7 +2497646,7 @@
   },
   {
     "id": 193645,
-    "name": "Crystalized Bulwark",
+    "name": "Crystallized Bulwark",
     "icon": "inv_shield_1h_dragondungeon_c_02",
     "quality": 3,
     "itemClass": 4,
@@ -2535163,7 +2535145,7 @@
   },
   {
     "id": 200446,
-    "name": "Crystalized Sigil",
+    "name": "Crystallized Sigil",
     "icon": "inv_10_dungeonjewelry_explorer_necklace_1compassrose_color5",
     "quality": 3,
     "itemClass": 4,
@@ -2972744,7 +2972726,7 @@
   },
   {
     "id": 248736,
-    "name": "Glowing Dirk of the Ice Queen",
+    "name": "Ominous Dirk of the Ice Queen",
     "icon": "inv_knife_1h_jaina_d_01",
     "quality": 3,
     "itemClass": 2,
@@ -2972936,7 +2972918,7 @@
   },
   {
     "id": 248818,
-    "name": "Glowing Wand of the Ice Queen",
+    "name": "Ominous Wand of the Ice Queen",
     "icon": "inv_wand_1h_frost_d_01",
     "quality": 3,
     "itemClass": 2,
@@ -2972984,7 +2972966,7 @@
   },
   {
     "id": 248830,
-    "name": "Glowing Great Axe of the Frostwolf",
+    "name": "Ominous Edge of the Frostwolf",
     "icon": "inv_axe_2h_frostwolf_d_01",
     "quality": 3,
     "itemClass": 2,
@@ -2973092,7 +2973074,7 @@
   },
   {
     "id": 248915,
-    "name": "Glowing Warglaives of the North",
+    "name": "Ominous Iceglaives of the North",
     "icon": "inv_glaive_1h_frost_d_01",
     "quality": 3,
     "itemClass": 2,
@@ -3103870,7 +3103852,7 @@
   },
   {
     "id": 272248,
-    "name": "Galerider's Chausses",
+    "name": "Galerider's Footguards",
     "icon": "inv_boot_mail_outdooramaniloa_c_01",
     "quality": 4,
     "itemClass": 4,
@@ -3120187,6 +3120169,587 @@
     "squishEra": 2
   },
   {
+    "id": 277876,
+    "name": "Sacrosanct Thirstspire",
+    "icon": "inv_polearm_2h_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 2,
+    "itemSubClass": 6,
+    "inventoryType": 17,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 4,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3850
+      },
+      {
+        "id": 49,
+        "alloc": 3150
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277879,
+    "name": "Whisperthorn Ritual Knife",
+    "icon": "inv_knife_1h_zuljin_d_01",
+    "quality": 4,
+    "itemClass": 2,
+    "itemSubClass": 15,
+    "inventoryType": 13,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3900
+      },
+      {
+        "id": 32,
+        "alloc": 3100
+      },
+      {
+        "id": 5,
+        "alloc": 25370
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277880,
+    "name": "Runic Moonbrand",
+    "icon": "inv_axe_1h_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 2,
+    "itemSubClass": 0,
+    "inventoryType": 13,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3700
+      },
+      {
+        "id": 36,
+        "alloc": 3300
+      },
+      {
+        "id": 5,
+        "alloc": 25370
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277881,
+    "name": "Fetid Reliquary Greaves",
+    "icon": "inv_boot_plate_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 4,
+    "inventoryType": 8,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 74,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 3650
+      },
+      {
+        "id": 40,
+        "alloc": 3350
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277882,
+    "name": "Feral Gloombranch",
+    "icon": "inv_staff_2h_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 2,
+    "itemSubClass": 10,
+    "inventoryType": 17,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 3,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 4050
+      },
+      {
+        "id": 32,
+        "alloc": 2950
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277883,
+    "name": "Duskmantle Spiteglass",
+    "icon": "inv_offhand_1h_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 0,
+    "inventoryType": 23,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3950
+      },
+      {
+        "id": 49,
+        "alloc": 3050
+      },
+      {
+        "id": 5,
+        "alloc": 16132
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277885,
+    "name": "Veilweaver Trousers",
+    "icon": "inv_pant_cloth_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 1,
+    "inventoryType": 7,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3850
+      },
+      {
+        "id": 36,
+        "alloc": 3150
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277886,
+    "name": "Pendant of Venomous Vigil",
+    "icon": "inv_jewelry_necklace_19",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 0,
+    "inventoryType": 2,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 9950
+      },
+      {
+        "id": 40,
+        "alloc": 7550
+      }
+    ],
+    "bonusLists": [
+      13668
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277888,
+    "name": "Veil of the Feral Rite",
+    "icon": "inv_helm_leather_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 2,
+    "inventoryType": 1,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 73,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 4000
+      },
+      {
+        "id": 40,
+        "alloc": 3000
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277889,
+    "name": "Fanged Riftrazor",
+    "icon": "inv_glaive_1h_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 2,
+    "itemSubClass": 9,
+    "inventoryType": 13,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 73,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 36,
+        "alloc": 3900
+      },
+      {
+        "id": 32,
+        "alloc": 3100
+      },
+      {
+        "id": 5,
+        "alloc": 25370
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277890,
+    "name": "Wildwarden's Guise",
+    "icon": "inv_shoulder_leather_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 2,
+    "inventoryType": 3,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 73,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 4100
+      },
+      {
+        "id": 40,
+        "alloc": 2900
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277891,
+    "name": "Leviathan Bracerbands",
+    "icon": "inv_bracer_mail_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 3,
+    "inventoryType": 9,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 73,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3800
+      },
+      {
+        "id": 49,
+        "alloc": 3200
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277893,
+    "name": "Emberveil Ritual Knife",
+    "icon": "inv_knife_1h_zuljin_d_01",
+    "quality": 4,
+    "itemClass": 2,
+    "itemSubClass": 15,
+    "inventoryType": 13,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 3,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 4050
+      },
+      {
+        "id": 36,
+        "alloc": 2950
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277894,
+    "name": "Veilshroud Wraps",
+    "icon": "inv_glove_cloth_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 1,
+    "inventoryType": 10,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3800
+      },
+      {
+        "id": 36,
+        "alloc": 3200
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277895,
+    "name": "Veilweaver's Shadowgown",
+    "icon": "inv_robe_cloth_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 1,
+    "inventoryType": 20,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3650
+      },
+      {
+        "id": 36,
+        "alloc": 3350
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277896,
+    "name": "Bloodtide Hauberk",
+    "icon": "inv_chest_mail_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 3,
+    "inventoryType": 5,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 73,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3750
+      },
+      {
+        "id": 49,
+        "alloc": 3250
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277897,
+    "name": "Bloodmark Signet",
+    "icon": "inv_12_jewelry_silvermoonelf_ring_green",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 0,
+    "inventoryType": 11,
+    "itemLevel": 219,
+    "uniqueEquipped": true,
+    "stats": [
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 11150
+      },
+      {
+        "id": 40,
+        "alloc": 6350
+      }
+    ],
+    "bonusLists": [
+      13668
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277898,
+    "name": "Duskhallow Vanguard Greaves",
+    "icon": "inv_pant_plate_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 4,
+    "inventoryType": 7,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 74,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3750
+      },
+      {
+        "id": 49,
+        "alloc": 3250
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 277899,
+    "name": "Fangwarden's Shardspine Bow",
+    "icon": "inv_bow_1h_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 2,
+    "itemSubClass": 2,
+    "inventoryType": 15,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 3,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 32,
+        "alloc": 4000
+      },
+      {
+        "id": 40,
+        "alloc": 3000
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
     "id": 277951,
     "name": "Venomous Aspirant's Slicer",
     "icon": "inv_axe_1h_outdooramaniloa_c_01",
@@ -3124496,6 +3125059,186 @@
     "squishEra": 2
   },
   {
+    "id": 280033,
+    "name": "Veilshroud Grips",
+    "icon": "inv_glove_leather_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 2,
+    "inventoryType": 10,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 73,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3800
+      },
+      {
+        "id": 36,
+        "alloc": 3200
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 280035,
+    "name": "Veilshroud Vambraces",
+    "icon": "inv_glove_mail_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 3,
+    "inventoryType": 10,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 73,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3800
+      },
+      {
+        "id": 36,
+        "alloc": 3200
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 280036,
+    "name": "Veilshroud Gauntlets",
+    "icon": "inv_glove_plate_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 4,
+    "inventoryType": 10,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 74,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 40,
+        "alloc": 3800
+      },
+      {
+        "id": 36,
+        "alloc": 3200
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 280038,
+    "name": "Fetid Reliquary Sabatons",
+    "icon": "inv_boot_mail_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 3,
+    "inventoryType": 8,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 73,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 3650
+      },
+      {
+        "id": 40,
+        "alloc": 3350
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 280039,
+    "name": "Fetid Reliquary Treads",
+    "icon": "inv_boot_leather_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 2,
+    "inventoryType": 8,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 73,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 3650
+      },
+      {
+        "id": 40,
+        "alloc": 3350
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 280040,
+    "name": "Fetid Reliquary Slippers",
+    "icon": "inv_boot_cloth_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 1,
+    "inventoryType": 8,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 3650
+      },
+      {
+        "id": 40,
+        "alloc": 3350
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
     "id": 280047,
     "name": "Feathered Bell",
     "icon": "ability_mount_goatmount",
@@ -3124767,6 +3125510,40 @@
       {
         "id": 71,
         "alloc": 6666
+      }
+    ],
+    "onUseTrinket": true,
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 280617,
+    "name": "Lightbearer's Shield Fragment",
+    "icon": "inv_1215_trinket_shield_fragment",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 0,
+    "inventoryType": 12,
+    "itemLevel": 219,
+    "uniqueEquipped": true,
+    "specs": [
+      66,
+      73,
+      104,
+      250,
+      268,
+      581
+    ],
+    "stats": [
+      {
+        "id": 72,
+        "alloc": 6666
+      }
+    ],
+    "sources": [
+      {
+        "instanceId": 1324,
+        "encounterId": 2896
       }
     ],
     "onUseTrinket": true,
@@ -3125500,6 +3126277,69 @@
     "squishEra": 2
   },
   {
+    "id": 280799,
+    "name": "Lu'selama, Light's Justice",
+    "icon": "inv_sword_2h_raidmidnight_d_01",
+    "quality": 4,
+    "itemClass": 2,
+    "itemSubClass": 8,
+    "inventoryType": 17,
+    "itemLevel": 219,
+    "uniqueEquipped": true,
+    "stats": [
+      {
+        "id": 4,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      }
+    ],
+    "sources": [
+      {
+        "instanceId": 1324,
+        "encounterId": 2896
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 280835,
+    "name": "Sigil of the Impending Eclipse",
+    "icon": "inv_1215_trinket_eclipse_sigil",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 0,
+    "inventoryType": 12,
+    "itemLevel": 219,
+    "uniqueEquipped": true,
+    "specs": [
+      65,
+      105,
+      256,
+      257,
+      264,
+      270,
+      1468
+    ],
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 6666
+      }
+    ],
+    "sources": [
+      {
+        "instanceId": 1324,
+        "encounterId": 2896
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
     "id": 280842,
     "name": "Shadowhunters' Hexblade",
     "icon": "inv_glaive_1h_generic_b_01",
@@ -3125510,6 +3126350,604 @@
     "itemLevel": 1,
     "cosmetic": true,
     "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281029,
+    "name": "Band of the Swarmcaller",
+    "icon": "acidbroodscourge_8268560",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 0,
+    "inventoryType": 11,
+    "itemLevel": 219,
+    "uniqueEquipped": true,
+    "stats": [
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 12750
+      },
+      {
+        "id": 36,
+        "alloc": 4750
+      }
+    ],
+    "bonusLists": [
+      13668
+    ],
+    "sources": [
+      {
+        "instanceId": 1324,
+        "encounterId": 2896
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 281056,
+    "name": "Sanctified Knight's Phoenixblade",
+    "icon": "inv_sword_1h_raidmidnight_d_01",
+    "quality": 4,
+    "itemClass": 2,
+    "itemSubClass": 7,
+    "inventoryType": 13,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 3800
+      },
+      {
+        "id": 32,
+        "alloc": 3200
+      },
+      {
+        "id": 5,
+        "alloc": 25370
+      }
+    ],
+    "sources": [
+      {
+        "instanceId": 1324,
+        "encounterId": 2896
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 281169,
+    "name": "Executive Chef's Jacket",
+    "icon": "inv_chest_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 5,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281170,
+    "name": "Executive Chef's Hat",
+    "icon": "inv_helm_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281171,
+    "name": "Executive Chef's Gloves",
+    "icon": "inv_glove_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 10,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281172,
+    "name": "Executive Chef's Belt",
+    "icon": "inv_belt_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 6,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281173,
+    "name": "Executive Chef's Pants",
+    "icon": "inv_pant_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 7,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281174,
+    "name": "Executive Chef's Boots",
+    "icon": "inv_boot_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 8,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281175,
+    "name": "Head Chef's Jacket",
+    "icon": "inv_chest_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 5,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281176,
+    "name": "Sous Chef's Jacket",
+    "icon": "inv_chest_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 5,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281177,
+    "name": "Pastry Chef's Jacket",
+    "icon": "inv_chest_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 5,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281178,
+    "name": "Sauce Chef's Jacket",
+    "icon": "inv_chest_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 5,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281179,
+    "name": "Grill Chef's Jacket",
+    "icon": "inv_chest_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 5,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281180,
+    "name": "Head Chef's Hat",
+    "icon": "inv_helm_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281181,
+    "name": "Head Chef's Gloves",
+    "icon": "inv_glove_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 10,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281182,
+    "name": "Head Chef's Belt",
+    "icon": "inv_belt_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 6,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281183,
+    "name": "Head Chef's Pants",
+    "icon": "inv_pant_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 7,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281184,
+    "name": "Head Chef's Boots",
+    "icon": "inv_boot_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 8,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281185,
+    "name": "Sauce Chef's Hat",
+    "icon": "inv_helm_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281186,
+    "name": "Sauce Chef's Gloves",
+    "icon": "inv_glove_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 10,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281187,
+    "name": "Sauce Chef's Belt",
+    "icon": "inv_belt_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 6,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281188,
+    "name": "Sauce Chef's Pants",
+    "icon": "inv_pant_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 7,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281189,
+    "name": "Sauce Chef's Boots",
+    "icon": "inv_boot_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 8,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281192,
+    "name": "Pastry Chef's Hat",
+    "icon": "inv_helm_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281193,
+    "name": "Pastry Chef's Gloves",
+    "icon": "inv_glove_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 10,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281194,
+    "name": "Pastry Chef's Belt",
+    "icon": "inv_belt_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 6,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281195,
+    "name": "Pastry Chef's Pants",
+    "icon": "inv_pant_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 7,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281196,
+    "name": "Pastry Chef's Boots",
+    "icon": "inv_boot_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 8,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281197,
+    "name": "Grill Chef's Hat",
+    "icon": "inv_helm_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281198,
+    "name": "Grill Chef's Gloves",
+    "icon": "inv_glove_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 10,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281199,
+    "name": "Grill Chef's Belt",
+    "icon": "inv_belt_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 6,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281200,
+    "name": "Grill Chef's Pants",
+    "icon": "inv_pant_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 7,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281201,
+    "name": "Grill Chef's Boots",
+    "icon": "inv_boot_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 8,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281202,
+    "name": "Sous Chef's Hat",
+    "icon": "inv_helm_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281203,
+    "name": "Sous Chef's Gloves",
+    "icon": "inv_glove_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 10,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281204,
+    "name": "Sous Chef's Belt",
+    "icon": "inv_belt_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 6,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281205,
+    "name": "Sous Chef's Pants",
+    "icon": "inv_pant_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 7,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281206,
+    "name": "Sous Chef's Boots",
+    "icon": "inv_boot_armor_baker_b_01",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 8,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 281215,
+    "name": "Twisted Horror's Tendril",
+    "icon": "twistedhorrorstendril_8268563",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 0,
+    "inventoryType": 12,
+    "itemLevel": 219,
+    "uniqueEquipped": true,
+    "specs": [
+      62,
+      63,
+      64,
+      70,
+      71,
+      72,
+      102,
+      103,
+      251,
+      252,
+      253,
+      254,
+      255,
+      258,
+      259,
+      260,
+      261,
+      262,
+      263,
+      265,
+      266,
+      267,
+      269,
+      577,
+      1467,
+      1473,
+      1480
+    ],
+    "stats": [
+      {
+        "id": 71,
+        "alloc": 6666
+      }
+    ],
+    "sources": [
+      {
+        "instanceId": 1324,
+        "encounterId": 2896
+      }
+    ],
+    "expansion": 11,
     "squishEra": 2
   },
   {
@@ -3125526,6 +3126964,162 @@
       {
         "instanceId": 1320,
         "encounterId": 2888
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 281235,
+    "name": "Voidweaver's Leggings",
+    "icon": "inv_pant_cloth_raidmageulatek_d_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 1,
+    "inventoryType": 7,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 4877
+      },
+      {
+        "id": 32,
+        "alloc": 2123
+      }
+    ],
+    "bonusLists": [
+      14049
+    ],
+    "sources": [
+      {
+        "instanceId": 1324,
+        "encounterId": 2896
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 281236,
+    "name": "Chestwrap of Palpable Terror",
+    "icon": "inv_chest_leather_raidrogueulatek_d_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 2,
+    "inventoryType": 5,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 73,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 36,
+        "alloc": 4974
+      },
+      {
+        "id": 32,
+        "alloc": 2026
+      }
+    ],
+    "bonusLists": [
+      14049
+    ],
+    "sources": [
+      {
+        "instanceId": 1324,
+        "encounterId": 2896
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 281238,
+    "name": "Aberrant Commander's Gauntlets",
+    "icon": "inv_glove_mail_raidhunterulatek_d_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 3,
+    "inventoryType": 10,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 73,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 32,
+        "alloc": 4888
+      },
+      {
+        "id": 49,
+        "alloc": 2112
+      }
+    ],
+    "bonusLists": [
+      14049
+    ],
+    "sources": [
+      {
+        "instanceId": 1324,
+        "encounterId": 2896
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 281239,
+    "name": "Corroded Hulk's Skullcap",
+    "icon": "inv_helm_plate_raidwarriorulatek_d_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 4,
+    "inventoryType": 1,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 74,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 4900
+      },
+      {
+        "id": 36,
+        "alloc": 2100
+      }
+    ],
+    "bonusLists": [
+      14049
+    ],
+    "sources": [
+      {
+        "instanceId": 1324,
+        "encounterId": 2896
       }
     ],
     "expansion": 11,
@@ -3125706,6 +3127300,82 @@
     "squishEra": 2
   },
   {
+    "id": 282273,
+    "name": "Ice Walker's Frost Fetish",
+    "icon": "unknown_8246091",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 0,
+    "inventoryType": 23,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282275,
+    "name": "Embered Frost Fetish",
+    "icon": "unknown_8246091",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 0,
+    "inventoryType": 23,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282276,
+    "name": "Frost Revenant's Frost Fetish",
+    "icon": "unknown_8246091",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 0,
+    "inventoryType": 23,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282277,
+    "name": "Wood Haunter's Frost Fetish",
+    "icon": "unknown_8246091",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 0,
+    "inventoryType": 23,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 5,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
     "id": 282425,
     "name": "Band of the Beast Reaper",
     "icon": "inv_ring_revendreth_01_gold",
@@ -3125765,6 +3127435,1033 @@
     "squishEra": 2
   },
   {
+    "id": 282563,
+    "name": "Ice Walker's Bell-Scythe",
+    "icon": "unknown_8261021",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 6,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282564,
+    "name": "Embered Bell-Scythe",
+    "icon": "unknown_8261021",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 6,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282565,
+    "name": "Frost Revenant's Bell-Scythe",
+    "icon": "unknown_8261021",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 6,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282566,
+    "name": "Wood Haunter's Bell-Scythe",
+    "icon": "unknown_8261021",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 6,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282567,
+    "name": "Wood Haunter's Frost Scepter",
+    "icon": "unknown_8246091",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 4,
+    "inventoryType": 13,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282569,
+    "name": "Frost Revenant's Frost Scepter",
+    "icon": "unknown_8246091",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 4,
+    "inventoryType": 13,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282570,
+    "name": "Embered Frost Scepter",
+    "icon": "unknown_8246091",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 4,
+    "inventoryType": 13,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282571,
+    "name": "Ice Walker's Frost Scepter",
+    "icon": "unknown_8246091",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 4,
+    "inventoryType": 13,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282641,
+    "name": "Ice Walker's Hide Piercer",
+    "icon": "unknown_8246169",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 2,
+    "inventoryType": 15,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 3,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282643,
+    "name": "Embered Hide Piercer",
+    "icon": "unknown_8246169",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 2,
+    "inventoryType": 15,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 3,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282644,
+    "name": "Frost Revenant's Hide Piercer",
+    "icon": "unknown_8246169",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 2,
+    "inventoryType": 15,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 3,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282645,
+    "name": "Wood Haunter's Hide Piercer",
+    "icon": "unknown_8246169",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 2,
+    "inventoryType": 15,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 3,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282659,
+    "name": "Ghost Goggles",
+    "icon": "inv_helm_armor_ghostgoggles_c_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 282660,
+    "name": "Vacpack 84-X",
+    "icon": "inv_cape_special_hallowsend_d_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283472,
+    "name": "Steel-Plated Cushion Boots",
+    "icon": "inv_collections_armor_boot_a_01_plated",
+    "quality": 1,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 8,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283481,
+    "name": "Baker's Frosty Cookbook",
+    "icon": "inv_staff_2h_baker_c_01",
+    "quality": 3,
+    "itemClass": 2,
+    "itemSubClass": 10,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 71,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283483,
+    "name": "Baker's Mysterious Cookbook",
+    "icon": "inv_staff_2h_baker_c_01",
+    "quality": 3,
+    "itemClass": 2,
+    "itemSubClass": 10,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 71,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283484,
+    "name": "Baker's Fiery Cookbook",
+    "icon": "inv_staff_2h_baker_c_01",
+    "quality": 3,
+    "itemClass": 2,
+    "itemSubClass": 10,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 71,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283485,
+    "name": "Baker's Enchanted Cookbook",
+    "icon": "inv_staff_2h_baker_c_01",
+    "quality": 3,
+    "itemClass": 2,
+    "itemSubClass": 10,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "stats": [
+      {
+        "id": 71,
+        "alloc": 1
+      }
+    ],
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283988,
+    "name": "Blue Raspberry Lollibop",
+    "icon": "inv_mace_2h_candy_c_01",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 5,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283989,
+    "name": "Sour Apple Lollibop",
+    "icon": "inv_mace_2h_candy_c_01",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 5,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283990,
+    "name": "Orange Lollibop",
+    "icon": "inv_mace_2h_candy_c_01",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 5,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283991,
+    "name": "Cotton Candy Lollibop",
+    "icon": "inv_mace_2h_candy_c_01",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 5,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283992,
+    "name": "Grape Lollibop",
+    "icon": "inv_mace_2h_candy_c_01",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 5,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283993,
+    "name": "Cherry Lollibop",
+    "icon": "inv_mace_2h_candy_c_01",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 5,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283994,
+    "name": "Spearmint Lollibop",
+    "icon": "inv_mace_2h_candy_c_01",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 5,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283995,
+    "name": "Lemon Lollibop",
+    "icon": "inv_mace_2h_candy_c_01",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 5,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 283999,
+    "name": "Wood Haunter's Belt",
+    "icon": "unknown_8263317",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 6,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284000,
+    "name": "Wood Haunter's Helm",
+    "icon": "ensemblefrostrevenantsguiseofthewight_8263314",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284001,
+    "name": "Wood Haunter's Pauldrons",
+    "icon": "unknown_8263316",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284002,
+    "name": "Wood Haunter's Hauberk",
+    "icon": "unknown_8263312",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 5,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284003,
+    "name": "Wood Haunter's Leggings",
+    "icon": "unknown_8263315",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 7,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284004,
+    "name": "Wood Haunter's Boots",
+    "icon": "unknown_8263309",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 8,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284005,
+    "name": "Wood Haunter's Gloves",
+    "icon": "unknown_8263313",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 10,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284006,
+    "name": "Wood Haunter's Cloak",
+    "icon": "unknown_8263311",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284008,
+    "name": "Ice-Walker's Belt",
+    "icon": "unknown_8263317",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 6,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284009,
+    "name": "Ice-Walker's Helm",
+    "icon": "ensemblefrostrevenantsguiseofthewight_8263314",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284010,
+    "name": "Ice-Walker's Pauldrons",
+    "icon": "unknown_8263316",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284011,
+    "name": "Ice-Walker's Hauberk",
+    "icon": "unknown_8263312",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 5,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284012,
+    "name": "Ice-Walker's Leggings",
+    "icon": "unknown_8263315",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 7,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284013,
+    "name": "Ice-Walker's Boots",
+    "icon": "unknown_8263309",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 8,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284014,
+    "name": "Ice-Walker's Gloves",
+    "icon": "unknown_8263313",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 10,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284015,
+    "name": "Ice-Walker's Cloak",
+    "icon": "unknown_8263311",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284017,
+    "name": "Embered Belt",
+    "icon": "unknown_8263317",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 6,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284018,
+    "name": "Embered Helm",
+    "icon": "ensemblefrostrevenantsguiseofthewight_8263314",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284019,
+    "name": "Embered Pauldrons",
+    "icon": "unknown_8263316",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284020,
+    "name": "Embered Hauberk",
+    "icon": "unknown_8263312",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 5,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284021,
+    "name": "Embered Leggings",
+    "icon": "unknown_8263315",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 7,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284022,
+    "name": "Embered Boots",
+    "icon": "unknown_8263309",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 8,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284023,
+    "name": "Embered Gloves",
+    "icon": "unknown_8263313",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 10,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284024,
+    "name": "Embered Cloak",
+    "icon": "unknown_8263311",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284026,
+    "name": "Frost Revenant's Belt",
+    "icon": "unknown_8263317",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 6,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284027,
+    "name": "Frost Revenant's Helm",
+    "icon": "ensemblefrostrevenantsguiseofthewight_8263314",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284028,
+    "name": "Frost Revenant's Pauldrons",
+    "icon": "unknown_8263316",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284029,
+    "name": "Frost Revenant's Hauberk",
+    "icon": "unknown_8263312",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 5,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284030,
+    "name": "Frost Revenant's Leggings",
+    "icon": "unknown_8263315",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 7,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284031,
+    "name": "Frost Revenant's Boots",
+    "icon": "unknown_8263309",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 8,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284032,
+    "name": "Frost Revenant's Gloves",
+    "icon": "unknown_8263313",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 10,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284033,
+    "name": "Frost Revenant's Cloak",
+    "icon": "unknown_8263311",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284051,
+    "name": "Hexbearer's Pauldrons",
+    "icon": "inv_shoulder_armor_hextroll_d_02",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 284052,
+    "name": "Amani Effigy",
+    "icon": "inv_cape_special_amanitusk_d_01_amani",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 284054,
+    "name": "Hexdrinker's Shoulders",
+    "icon": "inv_shoulder_armor_hextroll_d_02_dark",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 284055,
+    "name": "Hexbinder's Spaulders",
+    "icon": "inv_shoulder_armor_hextroll_d_02_light",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 284056,
+    "name": "Spirit Effigy",
+    "icon": "inv_cape_special_amanitusk_d_01_forest",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 284057,
+    "name": "Effigy of Corrosion",
+    "icon": "inv_cape_special_amanitusk_d_01_ulatek",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 284180,
+    "name": "Loa-Touched Deltoid",
+    "icon": "inv_shoulder_armor_labyrinthloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 284181,
+    "name": "Loa-Touched Spine",
+    "icon": "inv_cape_armor_labyrinthloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 284182,
+    "name": "Loa-Touched Visage",
+    "icon": "inv_helm_armor_labyrinthloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 1,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 284219,
+    "name": "Granite Ritual Cuirass",
+    "icon": "inv_chest_plate_outdooramaniloa_c_01",
+    "quality": 4,
+    "itemClass": 4,
+    "itemSubClass": 4,
+    "inventoryType": 5,
+    "itemLevel": 219,
+    "stats": [
+      {
+        "id": 74,
+        "alloc": 5259
+      },
+      {
+        "id": 7,
+        "alloc": 7889
+      },
+      {
+        "id": 49,
+        "alloc": 3650
+      },
+      {
+        "id": 40,
+        "alloc": 3350
+      }
+    ],
+    "expansion": 11,
+    "squishEra": 2
+  },
+  {
+    "id": 284233,
+    "name": "Baker's Sapphire Tray",
+    "icon": "inv_cape_special_baker_c_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284234,
+    "name": "Baker's Emerald Tray",
+    "icon": "inv_cape_special_baker_c_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284235,
+    "name": "Baker's Morganite Tray",
+    "icon": "inv_cape_special_baker_c_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284236,
+    "name": "Baker's Amethyst Tray",
+    "icon": "inv_cape_special_baker_c_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 284237,
+    "name": "Baker's Citrine Tray",
+    "icon": "inv_cape_special_baker_c_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 16,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
     "id": 284846,
     "name": "Venomous Gladiator's Smasher",
     "icon": "inv_mace_2h_ulatek_d_01",
@@ -3125812,6 +3128509,175 @@
     "itemClass": 4,
     "itemSubClass": 5,
     "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285221,
+    "name": "Baker's Sapphire Bulwark",
+    "icon": "inv_shield_1h_baker_c_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 6,
+    "inventoryType": 14,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285222,
+    "name": "Baker's Emerald Bulwark",
+    "icon": "inv_shield_1h_baker_c_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 6,
+    "inventoryType": 14,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285223,
+    "name": "Baker's Morganite Bulwark",
+    "icon": "inv_shield_1h_baker_c_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 6,
+    "inventoryType": 14,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285224,
+    "name": "Baker's Amethyst Bulwark",
+    "icon": "inv_shield_1h_baker_c_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 6,
+    "inventoryType": 14,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285225,
+    "name": "Baker's Citrine Bulwark",
+    "icon": "inv_shield_1h_baker_c_01",
+    "quality": 2,
+    "itemClass": 4,
+    "itemSubClass": 6,
+    "inventoryType": 14,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285333,
+    "name": "Frost Revenant's Reversed Pauldrons",
+    "icon": "unknown_8263316",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285334,
+    "name": "Embered Reversed Pauldrons",
+    "icon": "unknown_8263316",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285335,
+    "name": "Ice-Walker's Reversed Pauldrons",
+    "icon": "unknown_8263316",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285336,
+    "name": "Wood Haunter's Reversed Pauldrons",
+    "icon": "unknown_8263316",
+    "quality": 3,
+    "itemClass": 4,
+    "itemSubClass": 5,
+    "inventoryType": 3,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285956,
+    "name": "Ice Walker's Bell-Crook",
+    "icon": "unknown_8261021",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 10,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285957,
+    "name": "Wood Haunter's Bell-Crook",
+    "icon": "unknown_8261021",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 10,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285958,
+    "name": "Frost Revenant's Bell-Crook",
+    "icon": "unknown_8261021",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 10,
+    "inventoryType": 17,
+    "itemLevel": 1,
+    "cosmetic": true,
+    "expansion": -3,
+    "squishEra": 2
+  },
+  {
+    "id": 285959,
+    "name": "Embered Bell-Crook",
+    "icon": "unknown_8261021",
+    "quality": 2,
+    "itemClass": 2,
+    "itemSubClass": 10,
+    "inventoryType": 17,
     "itemLevel": 1,
     "cosmetic": true,
     "expansion": -3,

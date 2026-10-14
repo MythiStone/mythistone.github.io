@@ -537,6 +537,16 @@
       "icon": "ability_demonhunter_reversemagic",
       "spellId": 1272847
     },
+    "109503": {
+      "name": "The Hunt",
+      "icon": "inv_12_voiddh_ability_thehunt",
+      "spellId": 1246167
+    },
+    "140491": {
+      "name": "The Hunt",
+      "icon": "inv_12_voiddh_ability_thehunt",
+      "spellId": 1246167
+    },
     "108122": {
       "name": "Entropy",
       "icon": "inv_112_raidtrinkets_voidprism",
@@ -547,15 +557,25 @@
       "icon": "inv_112_raidtrinkets_voidprism",
       "spellId": 1261684
     },
-    "107999": {
-      "name": "Waste Not",
-      "icon": "inv_12_dh_void_ability_wastenot",
-      "spellId": 1223918
+    "110172": {
+      "name": "Star Fragments",
+      "icon": "inv_12_dh_void_ability_starfragments",
+      "spellId": 1240204
     },
-    "138156": {
-      "name": "Waste Not",
-      "icon": "inv_12_dh_void_ability_wastenot",
-      "spellId": 1223918
+    "141469": {
+      "name": "Star Fragments",
+      "icon": "inv_12_dh_void_ability_starfragments",
+      "spellId": 1240204
+    },
+    "107345": {
+      "name": "Eradicate",
+      "icon": "inv_12_dh_void_ability_eradicate",
+      "spellId": 1226033
+    },
+    "137088": {
+      "name": "Eradicate",
+      "icon": "inv_12_dh_void_ability_eradicate",
+      "spellId": 1226033
     },
     "107342": {
       "name": "Soulshaper",
@@ -627,15 +647,15 @@
       "icon": "spell_misc_zandalari_council_soulswap",
       "spellId": 1242768
     },
-    "110174": {
-      "name": "Voidpurge",
-      "icon": "inv_12_dh_void_ability_voidray",
-      "spellId": 1244220
+    "107999": {
+      "name": "Waste Not",
+      "icon": "inv_12_dh_void_ability_wastenot",
+      "spellId": 1223918
     },
-    "141471": {
-      "name": "Voidpurge",
-      "icon": "inv_12_dh_void_ability_voidray",
-      "spellId": 1244220
+    "138156": {
+      "name": "Waste Not",
+      "icon": "inv_12_dh_void_ability_wastenot",
+      "spellId": 1223918
     },
     "108136": {
       "name": "Hungering Slash",
@@ -667,16 +687,6 @@
       "icon": "inv_cosmicvoid_beam",
       "spellId": 1240203
     },
-    "110171": {
-      "name": "Soulforged Blades",
-      "icon": "inv12_ability_deathknight_frostscythe",
-      "spellId": 1272432
-    },
-    "141468": {
-      "name": "Soulforged Blades",
-      "icon": "inv12_ability_deathknight_frostscythe",
-      "spellId": 1272432
-    },
     "110170": {
       "name": "Singular Strikes",
       "icon": "inv_12_dh_void_ability_scythethrow",
@@ -707,16 +717,6 @@
       "icon": "inv_12_dh_void_ability_empoweredreap",
       "spellId": 1244222
     },
-    "110169": {
-      "name": "Voidglare Boon",
-      "icon": "inv_nulllotus_cosmicvoid",
-      "spellId": 1240202
-    },
-    "141466": {
-      "name": "Voidglare Boon",
-      "icon": "inv_nulllotus_cosmicvoid",
-      "spellId": 1240202
-    },
     "110168": {
       "name": "Rolling Torment",
       "icon": "inv_cosmicvoid_debuff",
@@ -737,15 +737,15 @@
       "icon": "inv_12_dh_void_ability_voidstep",
       "spellId": 1272422
     },
-    "110167": {
-      "name": "Devourer's Bite",
-      "icon": "inv_12_dh_void_ability_devourerbite",
-      "spellId": 1240201
+    "110171": {
+      "name": "Soulforged Blades",
+      "icon": "inv12_ability_deathknight_frostscythe",
+      "spellId": 1272432
     },
-    "141464": {
-      "name": "Devourer's Bite",
-      "icon": "inv_12_dh_void_ability_devourerbite",
-      "spellId": 1240201
+    "141468": {
+      "name": "Soulforged Blades",
+      "icon": "inv12_ability_deathknight_frostscythe",
+      "spellId": 1272432
     },
     "107341": {
       "name": "Impending Apocalypse",
@@ -767,25 +767,25 @@
       "icon": "ability_argus_soulbombdebuffsmall",
       "spellId": 1242495
     },
-    "110172": {
-      "name": "Star Fragments",
-      "icon": "inv_12_dh_void_ability_starfragments",
-      "spellId": 1240204
+    "110169": {
+      "name": "Voidglare Boon",
+      "icon": "inv_nulllotus_cosmicvoid",
+      "spellId": 1240202
     },
-    "141469": {
-      "name": "Star Fragments",
-      "icon": "inv_12_dh_void_ability_starfragments",
-      "spellId": 1240204
+    "141466": {
+      "name": "Voidglare Boon",
+      "icon": "inv_nulllotus_cosmicvoid",
+      "spellId": 1240202
     },
-    "109503": {
-      "name": "The Hunt",
-      "icon": "inv_12_voiddh_ability_thehunt",
-      "spellId": 1246167
+    "110167": {
+      "name": "Devourer's Bite",
+      "icon": "inv_12_dh_void_ability_devourerbite",
+      "spellId": 1240201
     },
-    "140491": {
-      "name": "The Hunt",
-      "icon": "inv_12_voiddh_ability_thehunt",
-      "spellId": 1246167
+    "141464": {
+      "name": "Devourer's Bite",
+      "icon": "inv_12_dh_void_ability_devourerbite",
+      "spellId": 1240201
     },
     "108123": {
       "name": "Emptiness",
@@ -802,15 +802,15 @@
       "icon": "ability_bossgorefiend_gorefiendscorruption",
       "spellId": 1247534
     },
-    "107345": {
-      "name": "Eradicate",
-      "icon": "inv_12_dh_void_ability_eradicate",
-      "spellId": 1226033
+    "110174": {
+      "name": "Voidpurge",
+      "icon": "inv_12_dh_void_ability_voidray",
+      "spellId": 1244220
     },
-    "137088": {
-      "name": "Eradicate",
-      "icon": "inv_12_dh_void_ability_eradicate",
-      "spellId": 1226033
+    "141471": {
+      "name": "Voidpurge",
+      "icon": "inv_12_dh_void_ability_voidray",
+      "spellId": 1244220
     },
     "110416": {
       "name": "Midnight",
@@ -2490,6 +2490,7 @@
       "y": 3300,
       "next": [
         107775,
+        109503,
         108122
       ],
       "entries": [
@@ -2520,7 +2521,7 @@
       "y": 3300,
       "next": [
         108122,
-        107999
+        110172
       ],
       "entries": [
         {
@@ -2542,7 +2543,8 @@
       "x": 13500,
       "y": 3300,
       "next": [
-        107999,
+        110172,
+        107345,
         107342
       ],
       "entries": [
@@ -2578,6 +2580,28 @@
         }
       ]
     },
+    "109503": {
+      "name": "The Hunt",
+      "g": "spec",
+      "type": "single",
+      "maxRanks": 1,
+      "subTreeId": null,
+      "free": false,
+      "x": 11100,
+      "y": 3900,
+      "next": [
+        107338
+      ],
+      "entries": [
+        {
+          "name": "The Hunt",
+          "icon": "inv_12_voiddh_ability_thehunt",
+          "spellId": 1246167,
+          "type": "active",
+          "subTreeId": null
+        }
+      ]
+    },
     "108122": {
       "name": "Entropy",
       "g": "spec",
@@ -2602,8 +2626,8 @@
         }
       ]
     },
-    "107999": {
-      "name": "Waste Not",
+    "110172": {
+      "name": "Star Fragments",
       "g": "spec",
       "type": "single",
       "maxRanks": 1,
@@ -2618,9 +2642,31 @@
       ],
       "entries": [
         {
-          "name": "Waste Not",
-          "icon": "inv_12_dh_void_ability_wastenot",
-          "spellId": 1223918,
+          "name": "Star Fragments",
+          "icon": "inv_12_dh_void_ability_starfragments",
+          "spellId": 1240204,
+          "type": "passive",
+          "subTreeId": null
+        }
+      ]
+    },
+    "107345": {
+      "name": "Eradicate",
+      "g": "spec",
+      "type": "single",
+      "maxRanks": 1,
+      "subTreeId": null,
+      "free": false,
+      "x": 13500,
+      "y": 3900,
+      "next": [
+        108628
+      ],
+      "entries": [
+        {
+          "name": "Eradicate",
+          "icon": "inv_12_dh_void_ability_eradicate",
+          "spellId": 1226033,
           "type": "passive",
           "subTreeId": null
         }
@@ -2637,7 +2683,7 @@
       "y": 3900,
       "next": [
         108628,
-        110174
+        107999
       ],
       "entries": [
         {
@@ -2783,8 +2829,8 @@
         }
       ]
     },
-    "110174": {
-      "name": "Voidpurge",
+    "107999": {
+      "name": "Waste Not",
       "g": "spec",
       "type": "single",
       "maxRanks": 1,
@@ -2797,9 +2843,9 @@
       ],
       "entries": [
         {
-          "name": "Voidpurge",
-          "icon": "inv_12_dh_void_ability_voidray",
-          "spellId": 1244220,
+          "name": "Waste Not",
+          "icon": "inv_12_dh_void_ability_wastenot",
+          "spellId": 1223918,
           "type": "passive",
           "subTreeId": null
         }
@@ -2815,7 +2861,6 @@
       "x": 11100,
       "y": 5100,
       "next": [
-        110171,
         110170,
         110165
       ],
@@ -2863,7 +2908,6 @@
       "y": 5100,
       "next": [
         108143,
-        110169,
         110168
       ],
       "entries": [
@@ -2876,28 +2920,6 @@
         }
       ]
     },
-    "110171": {
-      "name": "Soulforged Blades",
-      "g": "spec",
-      "type": "single",
-      "maxRanks": 1,
-      "subTreeId": null,
-      "free": false,
-      "x": 10500,
-      "y": 5700,
-      "next": [
-        110173
-      ],
-      "entries": [
-        {
-          "name": "Soulforged Blades",
-          "icon": "inv12_ability_deathknight_frostscythe",
-          "spellId": 1272432,
-          "type": "passive",
-          "subTreeId": null
-        }
-      ]
-    },
     "110170": {
       "name": "Singular Strikes",
       "g": "spec",
@@ -2905,7 +2927,7 @@
       "maxRanks": 1,
       "subTreeId": null,
       "free": false,
-      "x": 11100,
+      "x": 10500,
       "y": 5700,
       "next": [
         110173
@@ -2930,7 +2952,8 @@
       "x": 11700,
       "y": 5700,
       "next": [
-        110167,
+        110173,
+        110171,
         107341
       ],
       "entries": [
@@ -2954,35 +2977,14 @@
       "y": 5700,
       "next": [
         107341,
-        110166
+        110166,
+        110169
       ],
       "entries": [
         {
           "name": "Devourer's Edge",
           "icon": "inv_12_dh_void_ability_empoweredreap",
           "spellId": 1244222,
-          "type": "passive",
-          "subTreeId": null
-        }
-      ]
-    },
-    "110169": {
-      "name": "Voidglare Boon",
-      "g": "spec",
-      "type": "single",
-      "maxRanks": 1,
-      "subTreeId": null,
-      "free": false,
-      "x": 13500,
-      "y": 5700,
-      "next": [
-        110172
-      ],
-      "entries": [
-        {
-          "name": "Voidglare Boon",
-          "icon": "inv_nulllotus_cosmicvoid",
-          "spellId": 1240202,
           "type": "passive",
           "subTreeId": null
         }
@@ -2998,7 +3000,7 @@
       "x": 14100,
       "y": 5700,
       "next": [
-        110172
+        110169
       ],
       "entries": [
         {
@@ -3020,7 +3022,7 @@
       "x": 11100,
       "y": 6300,
       "next": [
-        109503
+        110167
       ],
       "entries": [
         {
@@ -3032,8 +3034,8 @@
         }
       ]
     },
-    "110167": {
-      "name": "Devourer's Bite",
+    "110171": {
+      "name": "Soulforged Blades",
       "g": "spec",
       "type": "single",
       "maxRanks": 1,
@@ -3044,9 +3046,9 @@
       "next": [],
       "entries": [
         {
-          "name": "Devourer's Bite",
-          "icon": "inv_12_dh_void_ability_devourerbite",
-          "spellId": 1240201,
+          "name": "Soulforged Blades",
+          "icon": "inv12_ability_deathknight_frostscythe",
+          "spellId": 1272432,
           "type": "passive",
           "subTreeId": null
         }
@@ -3094,8 +3096,8 @@
         }
       ]
     },
-    "110172": {
-      "name": "Star Fragments",
+    "110169": {
+      "name": "Voidglare Boon",
       "g": "spec",
       "type": "single",
       "maxRanks": 1,
@@ -3104,20 +3106,20 @@
       "x": 13500,
       "y": 6300,
       "next": [
-        107345
+        110174
       ],
       "entries": [
         {
-          "name": "Star Fragments",
-          "icon": "inv_12_dh_void_ability_starfragments",
-          "spellId": 1240204,
+          "name": "Voidglare Boon",
+          "icon": "inv_nulllotus_cosmicvoid",
+          "spellId": 1240202,
           "type": "passive",
           "subTreeId": null
         }
       ]
     },
-    "109503": {
-      "name": "The Hunt",
+    "110167": {
+      "name": "Devourer's Bite",
       "g": "spec",
       "type": "single",
       "maxRanks": 1,
@@ -3128,10 +3130,10 @@
       "next": [],
       "entries": [
         {
-          "name": "The Hunt",
-          "icon": "inv_12_voiddh_ability_thehunt",
-          "spellId": 1246167,
-          "type": "active",
+          "name": "Devourer's Bite",
+          "icon": "inv_12_dh_void_ability_devourerbite",
+          "spellId": 1240201,
+          "type": "passive",
           "subTreeId": null
         }
       ]
@@ -3163,8 +3165,8 @@
         }
       ]
     },
-    "107345": {
-      "name": "Eradicate",
+    "110174": {
+      "name": "Voidpurge",
       "g": "spec",
       "type": "single",
       "maxRanks": 1,
@@ -3175,9 +3177,9 @@
       "next": [],
       "entries": [
         {
-          "name": "Eradicate",
-          "icon": "inv_12_dh_void_ability_eradicate",
-          "spellId": 1226033,
+          "name": "Voidpurge",
+          "icon": "inv_12_dh_void_ability_voidray",
+          "spellId": 1244220,
           "type": "passive",
           "subTreeId": null
         }

@@ -425,12 +425,12 @@
     "62085": {
       "name": "Ice Cold",
       "icon": "spell_fire_bluefire",
-      "spellId": 414659
+      "spellId": 414658
     },
     "85144": {
       "name": "Ice Cold",
       "icon": "spell_fire_bluefire",
-      "spellId": 414659
+      "spellId": 414658
     },
     "62094": {
       "name": "Spatial Manipulation",
@@ -2357,7 +2357,7 @@
         {
           "name": "Ice Cold",
           "icon": "spell_fire_bluefire",
-          "spellId": 414659,
+          "spellId": 414658,
           "type": "passive",
           "subTreeId": null
         }
