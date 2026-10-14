@@ -2062,5 +2062,16 @@
         "persona": "hype_caster",
         "judge_score": 33.0,
         "timestamp": 1791931075247
+    },
+    "data/social/dungeon_overview_250_2026-10.png": {
+        "title": "Temple of Sethraliss Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/temple-of-sethraliss",
+        "social": "Temple of Sethraliss clocks a 90% time rate while the dungeon average sits at 88%. The snakes are apparently more cooperative than your average pug healer. #WoW #MythicPlus https://mythistone.com/dungeons/temple-of-sethraliss",
+        "blog": "This overview of Temple of Sethraliss draws on 1.8 M tracked Mythic+ runs.\n\nGroups most often bring Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. Most players follow the keystone.guru/ds19fLJ route.",
+        "post": "Temple of Sethraliss clocks a 90% time rate while the dungeon average sits at 88%. The snakes are apparently more cooperative than your average pug healer. #WoW #MythicPlus https://mythistone.com/dungeons/temple-of-sethraliss",
+        "persona": "snarky_analyst",
+        "judge_score": 34.0,
+        "timestamp": 1792013821287
     }
 }
