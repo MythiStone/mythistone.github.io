@@ -10,6 +10,7 @@ chains (generateSocialsPost <-> generateSpecPages/generateDashboardPage).
 import hashlib
 import json
 import os
+import random
 import re
 import weakref
 from collections import Counter
@@ -1334,8 +1335,13 @@ def sort_spec_ids_by_role(spec_ids, spec_lookup):
 def format_comp_names(comp_str):
     """Turn a comma-separated spec-id comp string into 'Spec Class, ...' ordered
     by role (tank, healer, dps). Unknown ids are skipped."""
+    return ", ".join(comp_spec_names(comp_str))
+
+
+def comp_spec_names(comp_str):
+    """format_comp_names as a list of 'Spec Class' strings."""
     if not comp_str:
-        return ""
+        return []
     spec_lookup = get_spec_lookup()
     class_lookup = get_class_lookup()
     ids = [s for s in str(comp_str).split(",") if s]
@@ -1352,7 +1358,32 @@ def format_comp_names(comp_str):
             sm = spec_lookup[sid]
             cm = class_lookup.get(str(sm.get("classID", "")), {})
             names.append(f"{sm.get('name', '')} {cm.get('name', '')}".strip())
-    return ", ".join(names)
+    return names
+
+
+def intro_rng(key):
+    """Deterministic RNG for generated intro prose (same idea as
+    social_posts.static_copy): phrasing varies across pages but never churns on rebuilds."""
+    seed = int(hashlib.md5(str(key).encode("utf-8")).hexdigest()[:12], 16)
+    return random.Random(seed)
+
+
+def spec_display_name(specs_map, spec_id):
+    """'Spec Class' from a page's specs_map (str spec id keys), or None when unknown."""
+    s = specs_map.get(str(spec_id))
+    return f"{s['name']} {s['className']}".strip() if s else None
+
+
+def join_names(names, cap=3, other_noun="other"):
+    """'A, B and C', or 'A, B, C and 4 others' past the cap (other_noun picks the
+    plural word, e.g. 'other spec'). None for an empty list."""
+    names = [n for n in names if n]
+    shown, rest = names[:cap], len(names) - cap
+    if rest > 0:
+        return f"{', '.join(shown)} and {rest} {other_noun}{'' if rest == 1 else 's'}"
+    if len(shown) > 1:
+        return f"{', '.join(shown[:-1])} and {shown[-1]}"
+    return shown[0] if shown else None
 
 
 # formatters

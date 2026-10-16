@@ -145,6 +145,8 @@
         <div class="col-sm-12 px-3 px-md-4">
           <h1 class="h3 mb-0 font-weight-bolder">WoW Mythic+ Dashboard for {{ season_info.name }}</h1>
           <p class="mb-0 text-md">Spec popularity, dungeon trends and key activity for {{ season_info.name }}</p>
+          {% from "_intro_macros.html" import intro %}
+          {{ intro(intro_paragraphs, "dashboard-intro") }}
         </div>
       </div>
       <div class="row">

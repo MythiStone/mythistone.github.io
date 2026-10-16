@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from contextlib import closing
 import argparse
 import databaseConnector
+import commonUtils
 from collections import defaultdict, Counter
 from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, build_global_trends, load_notifications
 from generateSpecPages import (
@@ -901,6 +902,53 @@ def write_dashboard_data(
     print(f"[{datetime.now(timezone.utc).isoformat()}] Wrote {out_path}")
 
 
+
+ROLE_PLURAL = {0: "tanks", 1: "healers", 2: "damage dealers"}
+
+
+def build_dashboard_intro(dungeon_chart, spec_run_counts, highest_run, top1pct_score,
+                          top1pct_region, spec_lookup, dungeon_lookup):
+    """Intro paragraphs from the numbers the dashboard cards and charts show.
+    Clauses without data are dropped."""
+    parts = []
+    counts = dungeon_chart.get("totalCounts") or []
+    if counts:
+        i = max(range(len(counts)), key=counts.__getitem__)
+        parts.append(f"{dungeon_chart['fullNames'][i]} is the most played dungeon, "
+                     f"with {counts[i]:,} tracked runs.")
+
+    top_by_role = {}
+    for s in sorted(spec_run_counts or [], key=lambda s: s["count"], reverse=True):
+        info = spec_lookup.get(str(s["id"]))
+        if info and s["count"]:
+            top_by_role.setdefault(int(info.get("role", 2)), s["id"])
+    role_names = []
+    for r in (0, 1, 2):
+        names = commonUtils.comp_spec_names(str(top_by_role.get(r, "")))
+        if names:
+            role_names.append(f"{names[0]} among {ROLE_PLURAL[r]}")
+    if role_names:
+        parts.append(f"The most played specs are {commonUtils.join_names(role_names)}.")
+
+    if highest_run and highest_run.get("keystone_level"):
+        d = dungeon_lookup.get(str(highest_run.get("dungeon_id"))) or {}
+        name = (d.get("name") or {}).get("en_US")
+        if name:
+            dur = highest_run.get("duration")
+            timed = dur is not None and any(
+                dur <= u["qualifying_duration"] for u in (d.get("keystone_upgrades") or {}).values())
+            region = (highest_run.get("region") or "").upper()
+            by = f", run in {region}" if region else ""
+            verb = "timed" if timed else "logged"
+            parts.append(f"The highest key {verb} so far is a +{highest_run['keystone_level']} "
+                         f"{name}{by}.")
+
+    if top1pct_score:
+        where = f" in {top1pct_region}, the region with the lowest cutoff" if top1pct_region else ""
+        parts.append(f"A score of about {top1pct_score:,.0f} currently reaches the top 1%{where}.")
+    return [" ".join(parts)] if parts else []
+
+
 def main(template_path, output_dir):
 
     from image_generation.dungeon_popularity_ease import create_dungeon_popularity_vs_ease_img
@@ -1175,6 +1223,9 @@ def main(template_path, output_dir):
         elite_char_top_scatter=elite_char_top_scatter,
         top1pct_score=top1pct_score,
         top1pct_region=top1pct_region,
+        intro_paragraphs=build_dashboard_intro(
+            dungeon_chart, spec_run_counts, highest_run, top1pct_score, top1pct_region,
+            spec_lookup, dungeon_lookup),
         dungeon_ease_levels=ease_data["keyLevels"],
         dungeon_ease_datasets=ease_data["datasets"],
         breadcrumbs=[

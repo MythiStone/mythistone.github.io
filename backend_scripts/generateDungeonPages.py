@@ -78,6 +78,76 @@ def parse_run_rows(rows):
             "members": members,
         }
 
+
+def pull_boss_ids(top_npcs_str, dungeon_bosses):
+    """Boss npc ids (str) in a lust pull signature ('npc_id:count,...'), in pull order."""
+    ids = []
+    for n in str(top_npcs_str or '').split(','):
+        if n.strip() and int(n.split(':')[0].strip()) in dungeon_bosses:
+            ids.append(n.split(':')[0].strip())
+    return ids
+
+
+DUNGEON_INTRO_CLOSING = ("It is a snapshot of what is working right now, not a fixed guide, "
+                         "so use it as a starting point for your own runs.")
+
+
+def build_dungeon_intro(dungeon_id, dungeon_name, season_name, overall_stats, level_stats,
+                        lust_timeline, dungeon_bosses, npc_names, team_comp_families):
+    """Intro paragraphs from the numbers the dungeon page's cards already show.
+    Clauses without data are dropped; the closing line always stays."""
+    rng = commonUtils.intro_rng(dungeon_id)
+    p1, p2 = [], []
+
+    total = (overall_stats or {}).get('total_runs') or 0
+    if total:
+        timed = sum((overall_stats.get(f'upgrade_{i}') or 0) for i in (1, 2, 3))
+        timed_pct = round(timed / total * 100, 1)
+        p1.append(rng.choice([
+            f"MythiStone has logged {total:,} {dungeon_name} runs in {season_name} so far, "
+            f"and {timed_pct}% of them were timed.",
+            f"{dungeon_name} has been run {total:,} times in tracked {season_name} Mythic+ so far, "
+            f"with {timed_pct}% of those keys timed.",
+        ]))
+
+    timed_levels = [l['keystone_level'] for l in level_stats or []
+                    if (l.get('upgrade_1') or 0) + (l.get('upgrade_2') or 0) + (l.get('upgrade_3') or 0) > 0]
+    if timed_levels:
+        top = max(timed_levels)
+        p1.append(rng.choice([
+            f"The highest key timed here is a +{top}.",
+            f"Groups have timed it up to +{top}.",
+        ]))
+
+    for pull in lust_timeline or []:
+        names = [npc_names.get(b) for b in pull_boss_ids(pull.get('top_npcs'), dungeon_bosses)]
+        boss = commonUtils.join_names(names)
+        if not boss or not pull.get('lust_count'):
+            continue
+        # Same numbers as the lust card row: lust_count / total_pulls_at_index.
+        share = (f"{float(pull['lust_percentage']):.1f}% of the logged timed routes that pull "
+                 f"it this way ({int(pull['lust_count']):,} of {int(pull['total_pulls_at_index']):,})")
+        p2.append(rng.choice([
+            f"The boss pull that gets Bloodlust most often is {boss}, lusted in {share}.",
+            f"When groups save Bloodlust for a boss, it is most often {boss}, lusted in {share}.",
+        ]))
+        break
+
+    fam = (team_comp_families or [None])[0]
+    if fam and fam.get('runs'):
+        comp = commonUtils.join_names(
+            commonUtils.comp_spec_names(",".join(map(str, fam.get('c', [])))), cap=5)
+        if comp:
+            p2.append(rng.choice([
+                f"The most played team comp is {comp}, with {fam['runs']:,} logged runs, "
+                f"{fam['success']}% of them timed and a highest key of +{fam['mk']}.",
+                f"{comp} is the most played team comp here at {fam['runs']:,} runs, "
+                f"timing {fam['success']}% of them with a highest key of +{fam['mk']}.",
+            ]))
+
+    p2.append(DUNGEON_INTRO_CLOSING)
+    return [" ".join(p) for p in (p1, p2) if p]
+
 def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previews=False):
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
@@ -446,17 +516,9 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
 
                 # Validate lust_timeline contains at least one boss pull
                 dungeon_bosses = bosses_lookup.get(str(dungeon_id), [])
-                has_boss_lust = False
-                for pull in lust_timeline:
-                    top_npcs_str = pull.get('top_npcs', '')
-                    if top_npcs_str:
-                        for n in str(top_npcs_str).split(','):
-                            if n.strip() and int(n.split(':')[0].strip()) in dungeon_bosses:
-                                has_boss_lust = True
-                                break
-                    if has_boss_lust:
-                        break
-                
+                has_boss_lust = any(pull_boss_ids(pull.get('top_npcs'), dungeon_bosses)
+                                    for pull in lust_timeline)
+
                 # Only throw a validation error if there is actually lust data available
                 if lust_timeline and len(lust_timeline) > 0 and not has_boss_lust:
                     raise RuntimeError(f"Dungeon {dungeon_data['name']['en_US']} ({dungeon_id}) has no lust pull marked as a boss. This indicates missing boss NPC data in data/boss_npcs.json.")
@@ -532,7 +594,13 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                     {"specs": spec_lookup, "npcs": npc_names, "items": item_lookup},
                 )
 
+                intro_paragraphs = build_dungeon_intro(
+                    dungeon_id, dungeon_data['name']['en_US'], season_info.get('name', ''),
+                    overall_stats, level_stats, lust_timeline, dungeon_bosses, npc_names,
+                    team_comp_families)
+
                 output_html = template.render(dungeon=dungeon_data,
+                    intro_paragraphs=intro_paragraphs,
                     toggle_runs=toggle_runs,
                     trends=trends,
                     single_runs=single_runs,

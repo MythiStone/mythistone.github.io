@@ -2,8 +2,6 @@ import os
 import re
 import sys
 import json
-import random
-import hashlib
 import argparse
 from contextlib import closing
 from collections import defaultdict
@@ -1055,27 +1053,10 @@ SLOT_NOUN = {
 QUALITY_ADJ = {2: "uncommon", 3: "rare", 4: "epic", 5: "legendary"}
 
 
-def _intro_rng(item_id):
-    """Deterministic RNG per item (same idea as social_posts.static_copy):
-    phrasing varies across items but never churns on rebuilds."""
-    seed = int(hashlib.md5(str(item_id).encode("utf-8")).hexdigest()[:12], 16)
-    return random.Random(seed)
-
-
-def _spec_display(specs_map, spec_id):
-    s = specs_map.get(str(spec_id))
-    return f"{s['name']} {s['className']}".strip() if s else None
-
-
 def _spec_listing(specs_map, entries, cap=3):
-    """'A, B and C', or 'A, B, C and 4 other specs' past the cap."""
-    names = [n for n in (_spec_display(specs_map, e["spec_id"]) for e in entries) if n]
-    shown, rest = names[:cap], len(names) - cap
-    if rest > 0:
-        return f"{', '.join(shown)} and {rest} other spec{'' if rest == 1 else 's'}"
-    if len(shown) > 1:
-        return f"{', '.join(shown[:-1])} and {shown[-1]}"
-    return shown[0] if shown else None
+    return commonUtils.join_names(
+        [commonUtils.spec_display_name(specs_map, e["spec_id"]) for e in entries],
+        cap=cap, other_noun="other spec")
 
 
 def build_item_intro(payload, specs_map, dungeons_map, season_name):
@@ -1085,7 +1066,7 @@ def build_item_intro(payload, specs_map, dungeons_map, season_name):
     clauses whose data is missing are simply dropped. Returns a list of
     paragraph strings (possibly length 1 for very sparse items)."""
     g = payload["global"]
-    rng = _intro_rng(payload["id"])
+    rng = commonUtils.intro_rng(payload["id"])
     name = payload["name"]
 
     noun = payload.get("weaponType") or SLOT_NOUN.get(
@@ -1119,7 +1100,7 @@ def build_item_intro(payload, specs_map, dungeons_map, season_name):
     specs = [s for s in g.get("specs", []) if s.get("adoption") is not None]
     if specs:
         top = specs[0]
-        spec_name = _spec_display(specs_map, top["spec_id"])
+        spec_name = commonUtils.spec_display_name(specs_map, top["spec_id"])
         if spec_name:
             p1.append(rng.choice([
                 f"Its biggest audience is {spec_name} players, who use it in {top['adoption']}% of their runs.",
@@ -1167,6 +1148,24 @@ def build_item_intro(payload, specs_map, dungeons_map, season_name):
     if p2:
         paragraphs.append(" ".join(p2))
     return paragraphs
+
+
+def build_items_browse_intro(manifest, by_slot):
+    """Intro paragraphs for the items browse page (the count line sits above it).
+    Clauses without data are dropped."""
+    top = next((m for m in manifest if m.get("runs")), None)
+    if not top:
+        return []
+    parts = [f"The most equipped item overall is {top['name']} ({top['slot'].lower()}), "
+             f"worn in {top['runs']:,} tracked runs."]
+    leads = []
+    for key, noun in (("TRINKET", "trinket"), ("WEAPON", "weapon")):
+        lead = next((m for m in by_slot.get(key, []) if m.get("runs")), None)
+        if lead and lead["id"] != top["id"]:
+            leads.append(f"{lead['name']} is the most used {noun} with {lead['runs']:,} runs")
+    if leads:
+        parts.append(f"{commonUtils.join_names(leads)}.")
+    return [" ".join(parts)]
 
 
 def build_item_meta_description(paragraphs):
@@ -1416,6 +1415,7 @@ def main(template_path, output_dir, items_dir="items", debug=False, target_item=
         ],
         overview_url=overview_url,
         item_count=len(manifest),
+        intro_paragraphs=build_items_browse_intro(manifest, by_slot),
         initial_items=manifest[:BROWSE_SSR_PAGE_SIZE],
         spec_nav=spec_nav,
         dungeon_nav=dungeon_nav,

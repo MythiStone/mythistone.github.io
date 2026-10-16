@@ -25,8 +25,6 @@ the seeder prints); every static lookup is DB-free.
 import os
 import sys
 import json
-import random
-import hashlib
 import argparse
 from contextlib import closing
 from collections import defaultdict
@@ -261,22 +259,10 @@ def build_payloads(season, ctx):
     return payloads, manifest
 
 
-def _intro_rng(item_id):
-    """Deterministic per-consumable RNG so phrasing varies across consumables but
-    never churns on rebuilds (same idea as generateItemPages._intro_rng)."""
-    seed = int(hashlib.md5(str(item_id).encode("utf-8")).hexdigest()[:12], 16)
-    return random.Random(seed)
-
-
-def _spec_display(specs_map, spec_id):
-    s = specs_map.get(str(spec_id))
-    return f"{s['name']} {s['className']}".strip() if s else None
-
-
 def build_consumable_intro(payload, specs_map, season_name):
     """A short paragraph summarizing the consumable's tracked usage. Every number is
     lifted from the payload the page already renders; clauses with no data drop."""
-    rng = _intro_rng(payload["id"])
+    rng = commonUtils.intro_rng(payload["id"])
     name = payload["name"]
     noun = CATEGORY_NOUN.get(payload["category"], "consumable")
     article = "an" if noun[:1].lower() in "aeiou" else "a"
@@ -300,7 +286,7 @@ def build_consumable_intro(payload, specs_map, season_name):
     specs = [s for s in payload.get("specs", []) if s.get("share") is not None]
     if specs:
         top = specs[0]
-        spec_name = _spec_display(specs_map, top["spec_id"])
+        spec_name = commonUtils.spec_display_name(specs_map, top["spec_id"])
         if spec_name:
             parts.append(rng.choice([
                 f"Its biggest audience is {spec_name} players, {top['share']}% of whose "
@@ -309,6 +295,21 @@ def build_consumable_intro(payload, specs_map, season_name):
                 f"their {payload['category_label'].lower()} picks.",
             ]))
     return " ".join(parts)
+
+
+def build_consumables_browse_intro(by_category):
+    """Intro paragraphs for the consumables browse page: the most used entry per
+    category, in category order. Clauses without data are dropped."""
+    parts = []
+    for cat in sorted(by_category, key=lambda c: CATEGORY_ORDER.get(c, len(CATEGORY_ORDER))):
+        top = next((m for m in by_category[cat] if m.get("runs")), None)
+        if not top:
+            continue
+        noun = CATEGORY_NOUN.get(cat, "consumable")
+        share = (f", {top['category_share']}% of tracked {top['category_label'].lower()} usage"
+                 if top.get("category_share") is not None else "")
+        parts.append(f"The most used {noun} is {top['name']}, in {top['runs']:,} run{'' if top['runs'] == 1 else 's'}{share}.")
+    return [" ".join(parts)] if parts else []
 
 
 def build_meta_description(intro):
@@ -480,6 +481,7 @@ def main(template_path, output_dir, consumables_dir="consumables", debug=False,
         ],
         overview_url=overview_url,
         consumable_count=len(manifest),
+        intro_paragraphs=build_consumables_browse_intro(by_category),
         initial_consumables=manifest[:BROWSE_SSR_PAGE_SIZE],
         spec_nav=spec_nav,
         dungeon_nav=dungeon_nav,

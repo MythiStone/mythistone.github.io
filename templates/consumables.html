@@ -74,9 +74,11 @@
         <div class="card mb-3">
           <div class="card-body">
             <h1 class="h4 mb-1">Mythic+ Consumables</h1>
-            <p class="text-sm opacity-8 mb-3">
+            <p class="text-sm opacity-8 {{ 'mb-0' if intro_paragraphs else 'mb-3' }}">
               {{ consumable_count }} consumables seen in {{ season_info.name }} Mythic+ runs. Click one for full usage details.
             </p>
+            {% from "_intro_macros.html" import intro %}
+            {{ intro(intro_paragraphs, "consumables-intro", "mb-3") }}
             <div class="row g-2 align-items-end consumables-filter-row">
               <div class="col-12 col-md-5 filter-search">
                 <label class="form-label text-xs opacity-7 mb-1">Search</label>

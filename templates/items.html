@@ -73,9 +73,11 @@
         <div class="card mb-3">
           <div class="card-body">
             <h1 class="h4 mb-1">Mythic+ Items</h1>
-            <p class="text-sm opacity-8 mb-3">
+            <p class="text-sm opacity-8 {{ 'mb-0' if intro_paragraphs else 'mb-3' }}">
               {{ item_count }} items seen in {{ season_info.name }} Mythic+ runs. Click an item for full usage details.
             </p>
+            {% from "_intro_macros.html" import intro %}
+            {{ intro(intro_paragraphs, "items-intro", "mb-3") }}
             <!-- Grid wraps to 2 rows on md and stacks on mobile; the items-filter-row
                  rule (items.css) switches to a single nowrap flex row on xl+, where
                  all seven controls fit with per-control min-widths (no clipping). -->

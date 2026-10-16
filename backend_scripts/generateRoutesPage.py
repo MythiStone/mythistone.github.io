@@ -32,6 +32,26 @@ def fail(msg):
     sys.exit(2)
 
 
+def build_routes_intro(comp_routes_by_dungeon, dungeon_lookup, season_name):
+    """Intro paragraphs from the routes the page ships. Clauses without data are dropped."""
+    routes = [r for rs in comp_routes_by_dungeon.values() for r in rs]
+    if not routes:
+        return []
+    covered = {d: rs for d, rs in comp_routes_by_dungeon.items()
+               if rs and str(d) in dungeon_lookup}
+    parts = [f"Search {len(routes):,} logged keystone.guru routes from {season_name} Mythic+ "
+             f"runs across {len(covered)} dungeon{'' if len(covered) == 1 else 's'}."]
+    if covered:
+        top_d, top_rs = max(covered.items(), key=lambda kv: len(kv[1]))
+        name = (dungeon_lookup[str(top_d)].get("name") or {}).get("en_US")
+        if name:
+            parts.append(f"{name} has the most, with {len(top_rs):,} routes.")
+    levels = [r["level"] for r in routes if r.get("level")]
+    if levels:
+        parts.append(f"The highest key in the set is a +{max(levels)}.")
+    return [" ".join(parts)]
+
+
 def main(template_path, output_dir, limit):
     # ensure env vars exist
 
@@ -171,6 +191,8 @@ def main(template_path, output_dir, limit):
         npc_lookup=npc_lookup,
         npc_map=npc_map,
         season_info=season_info,
+        intro_paragraphs=build_routes_intro(
+            comp_routes_by_dungeon, dungeon_lookup, season_info.get("name", "")),
         active_page="routes",
         notifications=notifications,
         breadcrumbs=[

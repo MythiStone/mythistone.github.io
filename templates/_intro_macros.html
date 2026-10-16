@@ -1,0 +1,12 @@
+{#- Generated intro prose: the generator's build_*_intro returns a list of
+    paragraph strings with data-less clauses already dropped. Renders nothing
+    for an empty list. -#}
+{% macro intro(paragraphs, id, class="") %}
+{% if paragraphs %}
+<div id="{{ id }}"{% if class %} class="{{ class }}"{% endif %}>
+  {% for p in paragraphs %}
+  <p class="text-sm opacity-9 mb-1 mt-2">{{ p }}</p>
+  {% endfor %}
+</div>
+{% endif %}
+{% endmacro %}

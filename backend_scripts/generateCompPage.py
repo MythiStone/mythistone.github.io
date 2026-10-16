@@ -6,6 +6,7 @@ import math
 from datetime import datetime, timezone
 from contextlib import closing
 import databaseConnector
+import commonUtils
 from compArchetypes import build_dungeon_archetypes
 from pageGeneration import generateSpecNav, make_jinja_env, generateDungeonNav, build_trends, trend_feeds_for_comps, load_notifications
 from generateSpecPages import LOOKUP_DIR, load_json, load_season_info
@@ -486,6 +487,46 @@ def compute_meta_comp(frontend_json, min_runs=20):
     }
 
 
+def _comp_names(spec_ids, cap=5):
+    return commonUtils.join_names(
+        commonUtils.comp_spec_names(",".join(map(str, spec_ids))), cap=cap)
+
+
+def build_comps_intro(archetypes_all, frontend_json, best_spec_pairs, season_name):
+    """Intro paragraphs from the 'all' context the cards render on first paint.
+    Clauses without data are dropped."""
+    parts = []
+    runs = sum(c.get('runs', 0) for c in frontend_json or [])
+    if frontend_json and runs:
+        parts.append(f"This page compares {len(frontend_json):,} team comps from {runs:,} "
+                     f"tracked {season_name} Mythic+ runs.")
+
+    pop = (archetypes_all.get('popular') or [None])[0]
+    hk = (archetypes_all.get('highkey') or [None])[0]
+    pop_names = _comp_names(pop['c']) if pop else None
+    hk_names = _comp_names(hk['c']) if hk else None
+    hk_label = archetypes_all.get('hk_label') or "the top key levels"
+    if pop_names and hk_names and pop['c'] == hk['c']:
+        parts.append(f"The most played team comp is {pop_names}, with {pop['runs']:,} runs "
+                     f"and {pop['success']}% of them timed. It is also the strongest at {hk_label}, "
+                     f"timing {hk['hk_success']}% of its runs there with a best of +{hk['hk_max']}.")
+    else:
+        if pop_names:
+            parts.append(f"The most played team comp is {pop_names}, with {pop['runs']:,} runs "
+                         f"and {pop['success']}% of them timed.")
+        if hk_names:
+            parts.append(f"At {hk_label}, the strongest is {hk_names}, timing {hk['hk_success']}% "
+                         f"of its {hk['hk_runs']:,} runs there with a best of +{hk['hk_max']}.")
+
+    pair = (best_spec_pairs or [None])[0]
+    if pair:
+        names = commonUtils.comp_spec_names(f"{pair['spec_a']},{pair['spec_b']}")
+        if len(names) == 2:
+            parts.append(f"The top ranked spec pairing is {names[0]} and {names[1]}, with a "
+                         f"success rate of {pair['hk_success']}% in the highest keys.")
+    return [" ".join(parts)] if parts else []
+
+
 def main(template_path, output_dir):
     season_info = load_season_info(LOOKUP_DIR)
     season = season_info.get('blizzard_season_id')
@@ -608,6 +649,8 @@ def main(template_path, output_dir):
             # server-side precomputed archetypes for the 'all' context (first paint);
             # the client swaps per-dungeon lists from comp_archetypes.json
             archetypes_all=archetypes_all,
+            intro_paragraphs=build_comps_intro(
+                archetypes_all, frontend_json, best_spec_pairs, season_info.get('name', '')),
             meta_comp_key=meta_comp_key,
             dungeon_lookup_js=dungeon_lookup_js,
             specs_ui_map=specs_ui_map,

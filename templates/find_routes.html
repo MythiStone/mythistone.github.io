@@ -114,6 +114,8 @@
       <div class="">
         <div class="ms-3">
           <h1 class="mb-0 h4 font-weight-bolder">Find a Route for your Team-Comp in {{ season_info.name }}</h1>
+          {% from "_intro_macros.html" import intro %}
+          {{ intro(intro_paragraphs, "routes-intro") }}
         </div>
       </div>
       {% import "_finder_macros.html" as fm %}

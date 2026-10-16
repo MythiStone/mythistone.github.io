@@ -7,8 +7,6 @@
   {{ search_meta('Team Comps', 'Page', 'Popular group compositions and how they perform', symbol='group',
        keywords=['comps', 'composition', 'group', 'team', 'synergy']) }}
   <meta name="description"
-    content="Find the perfect group fit, analyze synergy, and discover hidden gem comps for Mythic+.">
-  <meta name="description"
     content="Find the perfect group fit, analyze synergy, and discover hidden gem comps for {{ season_info.name }}.">
   <link rel="canonical" href="https://mythistone.com/pages/comps">
   <meta name="keywords" content="MythiStone, Mythic+, comps, guide, routes, stats, WoW meta, {{ season_info.name }}">
@@ -62,6 +60,8 @@
           <p class="mb-0">
             Find the perfect group fit, analyze synergy, and discover hidden gem comps for Mythic+.
           </p>
+          {% from "_intro_macros.html" import intro %}
+          {{ intro(intro_paragraphs, "comps-intro") }}
         </div>
       </div>
       <div class="row">

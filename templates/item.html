@@ -282,13 +282,8 @@
             {% endif %}
           </div>
 
-          {% if intro_paragraphs %}
-          <div class="col-12 px-3 px-md-4" id="item-intro">
-            {% for p in intro_paragraphs %}
-            <p class="text-sm opacity-9 mb-1 mt-2">{{ p }}</p>
-            {% endfor %}
-          </div>
-          {% endif %}
+          {% from "_intro_macros.html" import intro %}
+          {{ intro(intro_paragraphs, "item-intro", "col-12 px-3 px-md-4") }}
         </div>
 
         <!-- Latest Hotfixes (hidden entirely when no recent hotfix mentions this item) -->
