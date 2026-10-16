@@ -17,6 +17,9 @@
 
 <head>
   <title>WoW Mythic+ Dashboard - Stats, Spec Popularity & Dungeon Trends for {{ season_info.name }} | MythiStone</title>
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta('Dashboard', 'Page', 'Spec popularity, dungeon trends and keys per week', symbol='dashboard',
+       keywords=['stats', 'statistics', 'popularity', 'trends', 'keys per week']) }}
   {% include "header_imports.html" %}
   <link rel="stylesheet" href="/assets/css/dashboard.css" />
 

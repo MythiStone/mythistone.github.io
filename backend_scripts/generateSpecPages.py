@@ -2487,6 +2487,7 @@ def main(template_path, output_dir, debug=False, spec=None):
     )  # this is temporarily just using eu prices
     bonus_lookup = load_json(os.path.join(LOOKUP_DIR, "bonuses.json"))
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
+    search_aliases = load_json(os.path.join(LOOKUP_DIR, "search_aliases.json"))
     dungeon_lookup_slug = {}
     for id, value in dungeon_lookup.items():
         value["id"] = id
@@ -4056,6 +4057,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                 tertiary_priority=tertiary_priority,
                 health_priority=health_priority,
                 spec_runs=spec_runs,
+                search_aliases=search_aliases[str(spec_id)],
                 breadcrumbs=[
                     {"title": "Classes"},
                     {

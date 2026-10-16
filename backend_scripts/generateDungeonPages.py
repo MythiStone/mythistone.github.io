@@ -228,6 +228,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
     dungeon_nav = generateDungeonNav(dungeon_lookup)
 
     env = make_jinja_env(os.path.dirname(template_path))
+    env.filters["humanize"] = commonUtils.humanize_number
     env.filters["duration"] = format_duration
     env.filters["format_ts"] = format_utc_timestamp
     env.filters["iso_ts"] = format_iso_timestamp

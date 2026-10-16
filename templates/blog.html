@@ -19,6 +19,9 @@
   <title>
     Mythic+ Blog &amp; Data Highlights | MythiStone
   </title>
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta('Blog', 'Page', 'Daily Mythic+ data highlights', symbol='article',
+       keywords=['news', 'posts', 'highlights']) }}
   <meta name="description"
     content="Daily World of Warcraft Mythic+ data highlights: spec overviews, dungeon breakdowns, tier lists and record runs from millions of tracked M+ runs.">
   {% include "header_imports.html" %}

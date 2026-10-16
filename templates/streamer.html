@@ -235,6 +235,14 @@
     content="Watch {{ s.vod_count }} timed Mythic+ POV VODs from {{ s.name }} in {{ season_info.name }}, up to +{{ s.highest_key }}, with the team comp and raider.io run for each key.">
   <meta name="keywords"
     content="MythiStone, Mythic+, {{ s.name }}, VOD, POV, {% if platform_label %}{{ platform_label }}, {% endif %}{{ season_info.name }}">
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta(
+       s.name, 'Streamer',
+       [platform_label,
+        s.vod_count ~ (' VOD' if s.vod_count == 1 else ' VODs'),
+        ('up to +' ~ s.highest_key) if s.highest_key else ''],
+       icon=s.avatar, symbol=None if s.avatar else 'person',
+       keywords=[platform_label, 'VOD', 'POV', 'streamer']) }}
   <meta name="author" content="MythiStone">
   <link rel="canonical" href="{{ page_url }}">
   <meta name="robots" content="index, follow, max-snippet:180, max-image-preview:large">

@@ -26,6 +26,9 @@
   <link rel="stylesheet" href="/assets/css/consumables.css" />
 
   <title>Mythic+ Consumable Usage in {{ season_info.name }} | MythiStone</title>
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta('Consumables', 'Page', 'Flasks, potions, food, weapon oils and runes', symbol='emoji_food_beverage',
+       keywords=['flask', 'potion', 'food', 'oil', 'augment rune']) }}
   <meta name="description"
     content="Browse every flask, potion, food, weapon enchant and augment rune used in Mythic+ in {{ season_info.name }}. Filter by category and spec to see who runs each one.">
   <meta name="keywords" content="MythiStone, Mythic+, consumables, flask, potion, food, augment rune, WoW meta, {{ season_info.name }}">

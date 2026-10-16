@@ -25,6 +25,9 @@
   <link rel="stylesheet" href="/assets/css/items.css" />
 
   <title>Mythic+ Item Usage in {{ season_info.name }} | MythiStone</title>
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta('Items', 'Page', 'Every item used in Mythic+ and who equips it', symbol='swords',
+       keywords=['gear', 'BiS', 'loot', 'trinkets', 'weapons']) }}
   <meta name="description"
     content="Browse every item used in Mythic+ in {{ season_info.name }}. Filter by slot and quality to see which specs equip it, dungeon usage, popular gems and item-level variants.">
   <meta name="keywords" content="MythiStone, Mythic+, items, gear, BIS, WoW meta, {{ season_info.name }}">

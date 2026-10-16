@@ -5,6 +5,9 @@
   {% include "header_imports.html" %}
 
   <title>Mythic+ Sim DPS Tierlist for {{ season_info.name }} | MythiStone</title>
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta('Sim Tier List', 'Page', 'SimulationCraft DPS by target count', symbol='science',
+       keywords=['sim', 'simc', 'SimulationCraft', 'DPS ranking', 'damage']) }}
   <meta name="description"
     content="SimulationCraft DPS tierlist for {{ season_info.name }}: every DPS spec and tank simmed at 1, 3, 5 and 8 targets in its most-popular and simc BiS gear sets, tiered relative to each other.">
   <meta name="keywords"

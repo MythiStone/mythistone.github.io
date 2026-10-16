@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="/assets/css/streamer.css?v={{ generated_at | int }}" />
   <!-- Primary SEO -->
   <title>VOD Finder - Find Mythic+ POV Videos in {{ season_info.name }} | MythiStone</title>
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta('VOD Finder', 'Page', 'POV videos filtered by dungeon, comp and spec', symbol='smart_display',
+       keywords=['VODs', 'videos', 'POV', 'Twitch', 'YouTube', 'streamers']) }}
   <meta name="description"
     content="Find Mythic+ VODs for {{ season_info.name }}. Filter by dungeon, team comp, POV spec, spells or NPCs and watch how top players run the key.">
   <meta name="keywords"

@@ -1,0 +1,18 @@
+{#- Site search entry for the page that calls it, read by generateSearchIndex.py,
+    which raises on any walked page without these metas. Separate from the SEO
+    title/description on purpose: search rows show a short name and one data line.
+    subtitle may be a list of parts; empty parts are dropped. -#}
+{% macro search_meta(name, type, subtitle, icon=None, symbol=None, keywords=[]) %}
+<meta name="search:name" content="{{ name }}">
+<meta name="search:type" content="{{ type }}">
+<meta name="search:subtitle" content="{{ subtitle if subtitle is string else subtitle | select | join(' · ') }}">
+{% if icon %}
+<meta name="search:icon" content="{{ icon }}">
+{% endif %}
+{% if symbol %}
+<meta name="search:symbol" content="{{ symbol }}">
+{% endif %}
+{% if keywords %}
+<meta name="search:keywords" content="{{ keywords | select | join(', ') }}">
+{% endif %}
+{% endmacro %}

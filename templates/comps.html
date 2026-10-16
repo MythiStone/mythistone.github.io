@@ -3,6 +3,9 @@
 
 <head>
   <title>WoW Mythic+ Comps in {{ season_info.name }} | MythiStone</title>
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta('Team Comps', 'Page', 'Popular group compositions and how they perform', symbol='group',
+       keywords=['comps', 'composition', 'group', 'team', 'synergy']) }}
   <meta name="description"
     content="Find the perfect group fit, analyze synergy, and discover hidden gem comps for Mythic+.">
   <meta name="description"

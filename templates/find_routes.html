@@ -6,6 +6,9 @@
   <link rel="stylesheet" href="/assets/css/routes.css" />
   <!-- Primary SEO -->
   <title>Route Finder - Find Routes for Your Team-Comp in {{ season_info.name }} | MythiStone</title>
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta('Route Finder', 'Page', 'Keystone.guru routes for your dungeon and team comp', symbol='route',
+       keywords=['routes', 'keystone guru', 'MDT', 'pulls', 'route finder']) }}
   <meta name="description"
     content="Find optimal Mythic+ routes for your team composition in {{ season_info.name }}. Pick dungeons & specs and search curated RaiderIO / Keystone.Guru routes used by high-level players.">
   <meta name="keywords"

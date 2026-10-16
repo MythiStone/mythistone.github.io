@@ -3,6 +3,9 @@
 
 <head>
   <title>Am I Meta? Compare Your Gear to the Mythic+ Meta {{ season_info.name }} | MythiStone</title>
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta('Am I Meta?', 'Page', 'Compare your SimC export to the meta build', symbol='checklist',
+       keywords=['analyzer', 'gear check', 'SimC', 'import', 'BiS check']) }}
   <meta name="description"
     content="Paste your SimulationCraft addon export and instantly see how your gear, gems and enchants compare to the current Mythic+ meta build for your spec. Runs entirely in your browser.">
   <link rel="canonical" href="https://mythistone.com/pages/analyzer">

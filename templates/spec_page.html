@@ -531,6 +531,15 @@
   <link rel="canonical" href="https://mythistone.com/classes/{{ role | urlencode }}/{{ (spec.name ~ '_' ~ class_info.name) | urlencode }}">
   <meta name="keywords"
     content="MythiStone, Mythic+, build, gear, guide, enchantments, gems, talents, embellishment, missive, stats, WoW meta, {{ season_info.name }}">
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta(
+       spec.name ~ ' ' ~ class_info.name, 'Spec',
+       ['DPS' if role == 'Dps' else role,
+        (top_hero_tree_name ~ ' ' ~ top_hero_tree_pct | round | int ~ '%') if top_hero_tree_name else '',
+        (spec_runs | humanize) ~ ' runs'],
+       icon='/data/icons/' ~ spec.SpellIconFileId ~ '.jpg',
+       keywords=[class_info.name, spec.name, 'DPS' if role == 'Dps' else role]
+                + (hero_variants | map(attribute='name') | list) + search_aliases) }}
 
   <!-- Robots -->
   <meta name="robots" content="index, follow">

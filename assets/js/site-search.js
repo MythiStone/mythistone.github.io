@@ -1,6 +1,112 @@
 (function () {
   "use strict";
 
+  // Shared site search client: one index fetch and one Fuse instance, used by the
+  // navbar dropdown below and by search-page.js. Defined before the navbar checks
+  // so the search page works even if the navbar markup is missing.
+  const INDEX_URL = "/assets/json/search_index.json";
+  const MIN_QUERY_LENGTH = 2;
+  const FALLBACK_ICON = "/assets/img/favicon/favicon-96x96.png";
+  // Larger is worse: hundreds of items must not crowd out the spec or dungeon.
+  const TYPE_FACTOR = { Streamer: 1.15, Item: 1.3, Consumable: 1.3 };
+
+  let fuse = null;
+  let readyPromise = null;
+
+  function ready() {
+    if (!readyPromise) {
+      // The index only changes on a site rebuild, so the normal HTTP cache with
+      // revalidation is enough (a 304 when unchanged).
+      readyPromise = fetch(INDEX_URL, { cache: "default" })
+        .then((res) => {
+          if (!res.ok) throw new Error("search index status " + res.status);
+          return res.json();
+        })
+        .then((data) => {
+          fuse = new Fuse(data, {
+            includeScore: true,
+            ignoreLocation: true,
+            threshold: 0.35,
+            keys: [
+              { name: "name", weight: 0.7 },
+              { name: "keywords", weight: 0.3 },
+            ],
+          });
+          return fuse;
+        });
+      readyPromise.catch((err) => {
+        console.warn("[site-search] index load failed", err);
+        readyPromise = null;
+      });
+    }
+    return readyPromise;
+  }
+
+  function search(q, limit) {
+    q = (q || "").trim();
+    if (!fuse || q.length < MIN_QUERY_LENGTH) return [];
+    const ql = q.toLowerCase();
+    const wordStart = (s) => s.toLowerCase().split(/[\s'-]+/).some((w) => w.startsWith(ql));
+    const ranked = fuse.search(q).map((r, i) => {
+      const e = r.item;
+      // A small floor keeps near-exact hits comparable, so the type factor and the
+      // boosts order them. The word-start boost lets an alias or boss name keyword
+      // ("BM", "Rav'i") beat a mid-word hit in an item name ("Grave").
+      let rank = ((r.score || 0) + 0.01) * (TYPE_FACTOR[e.type] || 1);
+      if (e.name.toLowerCase().startsWith(ql)) rank *= 0.5;
+      else if (wordStart(e.name) || (e.keywords || []).some(wordStart)) rank *= 0.6;
+      return { entry: e, rank: rank, i: i };
+    });
+    ranked.sort((a, b) => a.rank - b.rank || a.i - b.i);
+    const out = ranked.map((r) => r.entry);
+    return limit ? out.slice(0, limit) : out;
+  }
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  function renderRow(entry) {
+    const a = el("a", "list-group-item list-group-item-action search-row");
+    a.href = entry.url;
+
+    const iconWrap = el("span", "search-row-icon");
+    if (entry.icon) {
+      const img = el("img");
+      img.src = entry.icon;
+      img.alt = "";
+      img.loading = "lazy";
+      // Streamer avatars (yt3.ggpht.com) refuse hotlinks with a foreign referrer.
+      img.referrerPolicy = "no-referrer";
+      img.addEventListener("error", () => { img.src = FALLBACK_ICON; }, { once: true });
+      iconWrap.appendChild(img);
+    } else {
+      iconWrap.appendChild(el("i", "material-symbols-rounded", entry.symbol || "description"));
+    }
+
+    const body = el("span", "search-row-body");
+    const head = el("span", "search-row-head");
+    head.appendChild(el("span", "search-row-name", entry.name));
+    head.appendChild(el("span", "badge search-row-type", entry.type));
+    body.appendChild(head);
+    if (entry.subtitle) body.appendChild(el("span", "search-row-subtitle", entry.subtitle));
+
+    a.appendChild(iconWrap);
+    a.appendChild(body);
+    return a;
+  }
+
+  window.MythiSearch = {
+    MIN_QUERY_LENGTH: MIN_QUERY_LENGTH,
+    ready: ready,
+    isReady: () => !!fuse,
+    search: search,
+    renderRow: renderRow,
+  };
+
   const input = document.getElementById("site-search-input");
   const resultsMenu = document.getElementById("site-search-results");
   const resultsInner = document.getElementById("site-search-results-inner");
@@ -18,54 +124,22 @@
   resultsMenu.style.display = "none";
 
   const PAGE_ROOT =
-    document.querySelector("main .container-fluid") ||
+    // Direct child only: the sticky header's navbar has its own .container-fluid.
+    document.querySelector("main > .container-fluid, main > .container") ||
     document.querySelector("main") ||
     document.querySelector("article") ||
     document.querySelector(".ms-404-content") ||
     document.body;
 
-  let fuse = null;
-  let indexLoaded = false;
-  let indexData = [];
-
   const DEBOUNCE_MS = 180;
   let debounceTimer = null;
   let focusedIndex = -1;
   const MAX_RESULTS = 8;
-  const MIN_QUERY_LENGTH = 3;
+  // In-page highlight only; the index search uses MythiSearch.MIN_QUERY_LENGTH.
+  const HIGHLIGHT_MIN_LENGTH = 3;
 
-  async function loadIndex() {
-    try {
-      // The index only changes on a site rebuild (Mon/Fri), so use the normal
-      // HTTP cache with revalidation instead of forcing a full re-download on
-      // every page load. The browser sends a conditional request and gets a
-      // 304 (no payload) when the static file is unchanged.
-      const res = await fetch("/assets/json/search_index.json", {
-        cache: "default",
-      });
-      if (!res.ok) {
-        console.warn("[site-search] index fetch status", res.status);
-        return;
-      }
-      indexData = await res.json();
-      const options = {
-        includeMatches: true,
-        threshold: 0.35,
-        keys: [
-          { name: "title", weight: 0.6 },
-          { name: "tags", weight: 0.3 },
-          { name: "content", weight: 0.1 },
-        ],
-      };
-      fuse = new Fuse(indexData, options);
-      indexLoaded = true;
-      console.debug("[site-search] index loaded items=", indexData.length);
-    } catch (err) {
-      console.warn("[site-search] index load failed", err);
-      indexLoaded = false;
-    }
-  }
-  loadIndex();
+  // Fetch the index on first interaction instead of on every page load.
+  input.addEventListener("focus", () => { ready(); }, { once: true });
 
   function showResultsMenu() {
     resultsMenu.setAttribute("data-open", "true");
@@ -87,6 +161,7 @@
       document.body.appendChild(resultsMenu);
 
     const DROPDOWN_MAX_W = 520;
+    const DROPDOWN_MIN_W = 320;
     const PAGE_MARGIN = 12;
 
     function positionResultsMenuAnchorRight() {
@@ -94,7 +169,8 @@
 
       const rightSidebar = document.getElementById("sidenav-right");
       let rightLimit = window.innerWidth - PAGE_MARGIN;
-      if (rightSidebar) {
+      // A hidden sidebar (display:none on small screens) reports a zero rect.
+      if (rightSidebar && rightSidebar.getBoundingClientRect().width > 0) {
         const rs = rightSidebar.getBoundingClientRect();
         rightLimit = Math.min(
           rightLimit,
@@ -102,13 +178,13 @@
         );
       }
 
-      const maxAvailable = rect.right - PAGE_MARGIN;
-      const availBeforeSidebar = Math.min(
-        maxAvailable,
-        rightLimit - PAGE_MARGIN
+      // Grows left from the input's right edge, but never narrower than
+      // DROPDOWN_MIN_W (spilling right on a phone, where the input sits on the left).
+      const width = Math.min(
+        DROPDOWN_MAX_W,
+        rightLimit - PAGE_MARGIN,
+        Math.max(DROPDOWN_MIN_W, rect.right - PAGE_MARGIN)
       );
-
-      const width = Math.min(DROPDOWN_MAX_W, Math.max(160, availBeforeSidebar));
 
       let left = rect.right - width;
       if (left < PAGE_MARGIN) left = PAGE_MARGIN;
@@ -143,21 +219,6 @@
     positionResultsMenuAnchorRight();
   })();
 
-  function escapeHtml(s) {
-    if (!s) return "";
-    return s.replace(
-      /[&<>"']/g,
-      (m) =>
-        ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;",
-        }[m])
-    );
-  }
-
   function clearInPageHighlights() {
     try {
       const spans = PAGE_ROOT.querySelectorAll("span.search-highlight");
@@ -172,7 +233,7 @@
   }
 
   function findFirstMatchRange(root, query) {
-    if (!query || query.length < MIN_QUERY_LENGTH) return null;
+    if (!query || query.length < HIGHLIGHT_MIN_LENGTH) return null;
     const q = query.toLowerCase();
 
     const walker = document.createTreeWalker(
@@ -297,46 +358,13 @@
   function renderResults(results) {
     resultsInner.innerHTML = "";
     focusedIndex = -1;
-
-    if (!results || results.length === 0) {
-      noResults.classList.remove("d-none");
-      hideResultsMenu();
-      return;
-    }
-    noResults.classList.add("d-none");
-
-    for (let i = 0; i < results.length; i++) {
-      const r = results[i];
-      const idx = document.createElement("a");
-      idx.className =
-        "list-group-item list-group-item-action d-flex align-items-start gap-2";
-      idx.href = r.url;
-      idx.role = "option";
-      idx.setAttribute("data-index", i);
-
-      idx.innerHTML = `
-        <div class="me-2" style="width:42px;">
-          <img src="${
-            r.icon || "/assets/img/favicon/favicon-96x96.png"
-          }" width="36" height="36" class="rounded" alt="">
-        </div>
-        <div class="flex-grow-1">
-          <div class="d-flex justify-content-between align-items-start">
-            <div class="fw-bold text-sm text-body-emphasis">${escapeHtml(
-              r.title
-            )}</div>
-            <small class="text-muted">${
-              r.last_modified ? r.last_modified : ""
-            }</small>
-          </div>
-          <div class="text-muted small mt-1 d-none d-lg-block">${escapeHtml(
-            r.excerpt || (r.content || "").slice(0, 120)
-          )}</div>
-        </div>
-      `;
-      resultsInner.appendChild(idx);
-    }
-
+    noResults.classList.toggle("d-none", results.length > 0);
+    results.forEach((entry, i) => {
+      const row = renderRow(entry);
+      row.setAttribute("role", "option");
+      row.setAttribute("data-index", i);
+      resultsInner.appendChild(row);
+    });
     showResultsMenu();
   }
 
@@ -359,45 +387,18 @@
       highlightRange(pageRange);
     }
 
-    if (indexLoaded && fuse) {
-      const fuseRes = fuse.search(q, { limit: MAX_RESULTS });
-      const mapped = fuseRes.map((r) => {
-        const item = r.item;
-        let excerpt = item.excerpt || "";
-        if (!excerpt && r.matches && r.matches.length) {
-          const m = r.matches.find((x) => x.key === "content") || r.matches[0];
-          if (m && m.indices && m.indices.length) {
-            const start = Math.max(0, m.indices[0][0] - 40);
-            excerpt = item.content
-              ? item.content.substr(start, 120).replace(/\s+/g, " ").trim()
-              : "";
-          }
-        }
-        return {
-          title: item.title,
-          url: item.url,
-          excerpt:
-            excerpt || item.excerpt || (item.content || "").slice(0, 120),
-          icon: item.icon,
-          last_modified: item.last_modified,
-        };
-      });
-
-      const combined = mapped.slice(0, MAX_RESULTS);
-      renderResults(combined);
-    } else {
-      if (pageRange) {
-        renderResults([
-          {
-            title: document.title || window.location.pathname,
-            url: window.location.pathname,
-            excerpt: document.title || "",
-          },
-        ]);
-      } else {
-        renderResults([]);
-      }
+    if (q.length < MIN_QUERY_LENGTH) {
+      hideResultsMenu();
+      return;
     }
+    if (!fuse) {
+      // Typed before the index arrived: search once it has, if still current.
+      ready().then(() => {
+        if (input.value.trim() === q) renderResults(search(q, MAX_RESULTS));
+      }, () => renderResults([]));
+      return;
+    }
+    renderResults(search(q, MAX_RESULTS));
   }
 
   input.addEventListener("input", (e) => {
@@ -415,6 +416,11 @@
   });
 
   input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      hideResultsMenu();
+      input.blur();
+      return;
+    }
     const items = resultsInner.querySelectorAll("[data-index]");
     if (items.length === 0) return;
     if (e.key === "ArrowDown") {
@@ -431,9 +437,6 @@
       } else if (items.length > 0) {
         window.location = items[0].href;
       }
-    } else if (e.key === "Escape") {
-      hideResultsMenu();
-      input.blur();
     }
   });
 

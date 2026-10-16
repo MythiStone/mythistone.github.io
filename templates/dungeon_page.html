@@ -26,6 +26,22 @@
     <link rel="canonical" href="https://mythistone.com/dungeons/{{ dungeon.slug }}">
     <meta name="keywords"
         content="MythiStone, Mythic+, dungeon, guide, routes, stats, WoW meta, {{dungeon.name.en_US}}, {{ season_info.name }}">
+    {% from "_search_macros.html" import search_meta %}
+    {% set search_timer = dungeon.keystone_upgrades['1'].qualifying_duration if dungeon.keystone_upgrades else None %}
+    {% set search_timed = (overall_stats.upgrade_1 + overall_stats.upgrade_2 + overall_stats.upgrade_3)
+        / overall_stats.total_runs * 100 if overall_stats and overall_stats.total_runs else None %}
+    {# boss_npc_ids also lists unnamed adds, so ids missing from npcs.json are skipped #}
+    {% set search_bosses = [] %}
+    {% for b in dungeon.boss_npc_ids or [] %}
+    {% if npcs.en_US[b | string] is defined %}{% set _ = search_bosses.append(npcs.en_US[b | string]) %}{% endif %}
+    {% endfor %}
+    {{ search_meta(
+         dungeon.name.en_US, 'Dungeon',
+         [('%d:%02d timer' | format(search_timer // 60000, search_timer % 60000 // 1000)) if search_timer else '',
+          ((search_timed | round | int) ~ '% timed') if search_timed is not none else '',
+          ((overall_stats.total_runs | humanize) ~ ' runs') if overall_stats and overall_stats.total_runs else ''],
+         icon='/data/icons/' ~ dungeon.icon,
+         keywords=[dungeon.raiderio_short_name] + search_bosses) }}
 
     <!-- Robots -->
     <meta name="robots" content="index, follow">

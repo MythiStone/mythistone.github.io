@@ -14,11 +14,14 @@ files:
 Copy the shape of `templates/comps.html`. The include list and the "never include the navbar,
 notifications or trends bar directly" rule are in `AGENTS.md` ("Templating"). The order matters:
 
-1. **`<head>`:** title and SEO meta, then `header_imports.html`, then the page stylesheets, so they
-   can override the theme. Add `stat-colors.css` and `datatables.min.css` when the page needs them.
+1. **`<head>`:** title and SEO meta, then the `search_meta` call ([[search-index-entries]]), then
+   `header_imports.html`, then the page stylesheets, so they can override the theme. Add
+   `stat-colors.css` and `datatables.min.css` when the page needs them.
 2. **`<body>`:** `sidenav.html`, then `<main>` starting with `top_chrome.html`. A page that needs
    extra navbar controls sets `navbar_extra` before that include. Content goes in the
-   `container-fluid` div, with `footer.html` as its last child. `right_aside.html` and
+   `container-fluid` div, a direct child of `<main>` (the in-page search highlight in
+   `site-search.js` looks for exactly that, because the navbar has its own `container-fluid`), with
+   `footer.html` as its last child. `right_aside.html` and
    `fixed_plugin.html` follow `</main>`.
 3. **Scripts:** `javascript_imports.html`, then per-page plugin scripts, then `<page>.js` with a
    cache-busting query string. Data reaches the script as in [[page-data-and-scripts]].

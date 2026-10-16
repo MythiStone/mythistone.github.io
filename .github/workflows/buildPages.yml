@@ -644,10 +644,6 @@ jobs:
             --output_dir pages \
             --streamers_dir streamers
 
-      - name: Generate Search index
-        run: |
-          python backend_scripts/generateSearchIndex.py
-
       - name: Generate Sitemap
         run: |
           python backend_scripts/generateSitemap.py
@@ -781,7 +777,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -c constraints.txt jinja2 pillow mysql-connector-python rcssmin rjsmin
+          pip install -c constraints.txt jinja2 pillow mysql-connector-python rcssmin rjsmin bs4
 
       - name: Download generated site
         uses: actions/download-artifact@v4
@@ -829,6 +825,11 @@ jobs:
             --sim_results_dir sim_results \
             --template templates/simc_tierlist.html \
             --output_dir pages
+
+      # Here rather than in buildPages so the tierlist page above is indexed too.
+      - name: Generate Search index
+        run: |
+          python backend_scripts/generateSearchIndex.py
 
       - name: Assemble site for deployment
         run: |

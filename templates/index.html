@@ -19,6 +19,9 @@
 
   <!-- Primary SEO -->
   <title>World of Warcraft Meta, Tier Lists and Statistics for {{ season_info.name }} | MythiStone</title>
+  {% from "_search_macros.html" import search_meta %}
+  {{ search_meta('Tier Lists', 'Page', 'Spec and dungeon tiers for the current season', symbol='leaderboard',
+       keywords=['home', 'tierlist', 'tier list', 'meta', 'rankings', 'best spec', 'best dungeon']) }}
   <meta name="description"
     content="Dominate Mythic+ {{ season_info.name }}: data-powered tierlists, per-spec guides, route-finder tools and more. Plan smarter, push higher, time your keys to perfection.">
   <meta name="keywords"
