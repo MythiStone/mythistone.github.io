@@ -2084,5 +2084,16 @@
         "persona": "hype_caster",
         "judge_score": 33.0,
         "timestamp": 1792101847015
+    },
+    "data/social/dungeon_overview_586_2026-10.png": {
+        "title": "Den of Nalorakk Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/den-of-nalorakk",
+        "social": "Den of Nalorakk is the 6th most-run dungeon out of 8 this season. Even the Loa of Kings' Rest would be impressed by how often this crypt gets looted. #WoW #MythicPlus https://mythistone.com/dungeons/den-of-nalorakk",
+        "blog": "Den of Nalorakk has 1.8 M Mythic+ runs tracked this season.\n\nThe most common group through it is Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. The most-used route right now is keystone.guru/ewGot48.",
+        "post": "Den of Nalorakk is the 6th most-run dungeon out of 8 this season. Even the Loa of Kings' Rest would be impressed by how often this crypt gets looted. #WoW #MythicPlus https://mythistone.com/dungeons/den-of-nalorakk",
+        "persona": "lore_nerd",
+        "judge_score": null,
+        "timestamp": 1792185111204
     }
 }
