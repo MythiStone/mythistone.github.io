@@ -21,6 +21,7 @@ from commonUtils import (
     load_season_info,
     occupies_both_hands,
     filter_talent_tree_nodes,
+    load_season_gear_rules,
 )
 
 TEMPLATE_PATH = "templates"
@@ -81,7 +82,7 @@ def build_spec_index(spec_lookup, class_lookup):
     return index, display
 
 
-def write_item_icon_shards():
+def write_item_icon_shards(items):
     """Bake the id -> [icon, quality(, 1)] fallback lookup analyzer.js draws the
     player's own gear with, sharded by ``id // ICON_SHARD_SIZE``. The optional
     third element marks a weapon that occupies both hands, which is how the
@@ -101,7 +102,6 @@ def write_item_icon_shards():
     page so the client never has to guess whether a 404 means "empty id range"
     or "broken deploy".
     """
-    items = load_json(os.path.join(LOOKUP_DIR, "equippable-items.json"))
     buckets = {}
     for item in items:
         icon = item.get("icon")
@@ -236,7 +236,10 @@ def main(template_path, output_dir):
     season_info = load_season_info(LOOKUP_DIR)
 
     spec_index, spec_display = build_spec_index(spec_lookup, class_lookup)
-    item_icon_buckets = write_item_icon_shards()
+    items = load_json(os.path.join(LOOKUP_DIR, "equippable-items.json"))
+    item_icon_buckets = write_item_icon_shards(items)
+    # analyzer.js never counts a last-season craft as a meta match
+    season_gear_rules = load_season_gear_rules({int(i["id"]): i for i in items})
     write_bonus_quality_map()
     write_talent_trees()
 
@@ -259,6 +262,7 @@ def main(template_path, output_dir):
         spec_index=spec_index,
         spec_display=spec_display,
         item_icon_buckets=item_icon_buckets,
+        outdated_spark_bonus_ids=sorted(season_gear_rules["outdated_spark_bonus_ids"]),
     )
 
     out_path = os.path.join(output_dir, "analyzer.html")

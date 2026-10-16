@@ -28,7 +28,7 @@ import os
 import random
 
 import databaseConnector as db
-from commonUtils import bonus_set_hash, load_json, talent_set_hash
+from commonUtils import bonus_set_hash, load_json, load_season_gear_rules, talent_set_hash
 
 from loadout_codec import encode_loadout
 
@@ -103,6 +103,9 @@ class StaticData:
         self.spells = load_json(os.path.join(lookup_dir, "spells.json"))
         # boss_npcs.json lives in data/ (parent of data/static), keyed by challenge_mode_id.
         self.boss_npcs = load_json(os.path.join(os.path.dirname(lookup_dir), "boss_npcs.json"))
+
+        # outdated sparks + pinned current tier, the same rules processBonusIds writes
+        self.gear_rules = load_season_gear_rules({int(i["id"]): i for i in self.items}, lookup_dir)
 
         self.season = int(self.season_info["blizzard_season_id"])
         self.dungeons = self.season_info["dungeons"]  # each: challenge_mode_id, keystone_timer_seconds, ...
@@ -430,6 +433,10 @@ def seed_reference(conn, cursor, static, rng):
     _insert_many(conn, cursor,
         "INSERT IGNORE INTO tier_set_items (item_id, item_set_id) VALUES (%s,%s)", tier)
 
+    db.replace_outdated_spark_bonus_ids(conn, cursor, static.gear_rules["outdated_spark_bonus_ids"])
+    db.replace_priority_item_ids(conn, cursor, static.gear_rules["priority_item_ids"])
+    db.commit_with_retry(conn)
+
     return {"lust_ids": lust_ids, "utility_ids": utility_ids}
 
 
@@ -455,15 +462,16 @@ def seed_runs(conn, cursor, static, rng, cfg, pools):
     mis_bonus = pools["missive_bonus"]
     variants = pools["variants"]  # spec_id -> [variant,...]
 
-    # Tier-set coverage: real players wear their class tier set. Now that tier_set_items
-    # is scoped to the 42 curated current sets (item-sets.json, see the tier_set_items
-    # seeding above), random gear almost never lands 2+ pieces of one set, so without this
-    # aggregated_tier_set_comps / the spec-page tier-set card would stay empty locally.
-    # Map each spec-specific tier set to its (slot, item_id) armour pieces and equip a
-    # coherent subset for some members below.
+    # Tier-set coverage: real players wear their class tier set, and random gear almost
+    # never lands 2+ pieces of one set, so without this aggregated_tier_set_comps / the
+    # spec-page tier-set card would stay empty locally. Map each spec's tier sets to their
+    # (slot, item_id) armour pieces and equip a coherent subset for some members below:
+    # last season's set often, the current set rarely, so its pinning is observable.
     _INVTYPE_TO_SLOT = {1: "HEAD", 3: "SHOULDER", 5: "CHEST", 20: "CHEST", 7: "LEGS", 10: "HANDS"}
     _item_invtype = {int(it["id"]): it.get("inventoryType") for it in static.items}
-    tier_by_spec = {}
+    current_sets = static.gear_rules["current_tier_set_ids"]
+    tier_by_spec = {}          # spec -> pieces of an older-season set
+    current_tier_by_spec = {}  # spec -> pieces of the current-season set
     for s in static.item_sets:
         specids = {sp.get("specId") for sp in (s.get("spells") or []) if sp.get("specId")}
         if not specids:
@@ -474,8 +482,35 @@ def seed_runs(conn, cursor, static, rng, cfg, pools):
             if _item_invtype.get(int(iid)) in _INVTYPE_TO_SLOT
         ]
         if len(pieces) >= 2:
+            target = current_tier_by_spec if int(s["id"]) in current_sets else tier_by_spec
             for spec in specids:
-                tier_by_spec.setdefault(int(spec), pieces)
+                target.setdefault(int(spec), pieces)
+
+    # Old-spark filter coverage: a crafted ring with the current or last season's spark
+    # (same item id) and a crafted cloak with last season's only. Own RNG, so the main
+    # stream and the rest of the seeded data stay unchanged.
+    season_rng = random.Random("season-gear")
+    outdated_sparks = static.gear_rules["outdated_spark_bonus_ids"]
+    spark_bonuses = {
+        int(bid): b for bid, b in static.bonuses.items()
+        if (b.get("tag") or "").endswith(" Crafted") and (b.get("itemLevel") or {}).get("priority") == 70
+    }
+    current_spark = next(bid for bid in spark_bonuses if bid not in outdated_sparks)
+    last_spark = max(
+        outdated_sparks,
+        key=lambda bid: (int(spark_bonuses[bid]["itemLevel"].get("squishEra") or 0),
+                         int(spark_bonuses[bid]["itemLevel"]["amount"])),
+    )
+
+    def _first_crafted(invtype):
+        return min(int(it["id"]) for it in static.items
+                   if "profession" in it and it.get("expansion") == static.expansion
+                   and it.get("inventoryType") == invtype)
+
+    crafted_mixed = ("FINGER_1", _first_crafted(11))
+    crafted_old_only = ("BACK", _first_crafted(16))
+    print(f"    crafted coverage: {crafted_mixed[1]} sparks {current_spark}/{last_spark}, "
+          f"{crafted_old_only[1]} spark {last_spark} only")
 
     runs, run_members, members = [], [], []
     equipment, sockets, enchantments = [], [], []
@@ -536,6 +571,15 @@ def seed_runs(conn, cursor, static, rng, cfg, pools):
         forced_tier = {}
         if tier_pieces and rng.random() < 0.5:
             forced_tier = dict(rng.sample(tier_pieces, rng.randint(2, len(tier_pieces))))
+        elif current_tier_by_spec.get(spec_id) and season_rng.random() < 0.12:
+            cur = current_tier_by_spec[spec_id]
+            forced_tier = dict(season_rng.sample(cur, season_rng.randint(2, len(cur))))
+        crafted = {}  # slot -> (item_id, spark bonus id)
+        if season_rng.random() < 0.35:
+            spark = current_spark if season_rng.random() < 0.6 else last_spark
+            crafted[crafted_mixed[0]] = (crafted_mixed[1], spark)
+        if season_rng.random() < 0.2:
+            crafted[crafted_old_only[0]] = (crafted_old_only[1], last_spark)
         for slot in EQUIPMENT_SLOTS:
             pool = item_pools.get(slot) or []
             if not pool:
@@ -550,6 +594,10 @@ def seed_runs(conn, cursor, static, rng, cfg, pools):
             # bonus ids
             for b in rng.sample(bonus_pool, rng.randint(1, 2)):
                 eid_bonuses[eid].add(int(b))
+            if slot in crafted:
+                item_id, spark = crafted[slot]
+                eid_meta[eid] = (slot, item_id, ilvl)
+                eid_bonuses[eid].add(spark)
             # enchant on enchantable slots
             if slot in ENCHANTABLE_SLOTS:
                 grp = SLOT_GROUP_MAP[slot]
@@ -1348,6 +1396,8 @@ def build_pools(static, rng):
     item_pools = _item_pools_by_slot(static, rng)
     bonus_pool = rng.sample([int(k) for k in static.bonuses.keys()],
                             k=min(12, len(static.bonuses)))
+    bonus_pool = [b for b in bonus_pool
+                  if not (static.bonuses[str(b)].get("tag") or "").endswith(" Crafted")]
     # Real embellishment / missive bonus ids (keys of the {bonus_id: item_id} maps). Seeding
     # a few of these onto gear is the only way sp_agg_embellishments / sp_agg_missives produce
     # rows (they join equipment -> bonus_sets -> the embellishments / missives tables on bonus_id).

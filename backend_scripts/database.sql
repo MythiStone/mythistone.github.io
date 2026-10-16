@@ -720,6 +720,25 @@ CREATE TABLE `missives` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.outdated_spark_bonus_ids definition
+-- Spark bonus ids of older seasons; the gear aggregates drop equipment carrying one.
+
+CREATE TABLE `outdated_spark_bonus_ids` (
+  `bonus_id` int unsigned NOT NULL,
+  PRIMARY KEY (`bonus_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.priority_item_ids definition
+-- Current tier and legendary items, pinned first in the spec page gear lists and tier combos.
+
+CREATE TABLE `priority_item_ids` (
+  `item_id` int NOT NULL,
+  `reason` enum('tier','legendary') NOT NULL,
+  PRIMARY KEY (`item_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.route_data definition
 
 CREATE TABLE `route_data` (
@@ -1305,7 +1324,8 @@ BEGIN
   -- ids, so the batches below only count rows per set id. The readable list is
   -- built here once per distinct set. Building it per equipped item instead
   -- (GROUP_CONCAT over every bonus row of a whole day of runs) needed temp
-  -- space no nightly run could rely on.
+  -- space no nightly run could rely on. Sets carrying an old-season spark are
+  -- left out, so the join below drops last-season crafts.
   DROP TEMPORARY TABLE IF EXISTS tmp_bonus_list;
   CREATE TEMPORARY TABLE tmp_bonus_list (
     set_id     BINARY(16) NOT NULL PRIMARY KEY,
@@ -1313,9 +1333,11 @@ BEGIN
   ) ENGINE=InnoDB;
 
   INSERT INTO tmp_bonus_list (set_id, bonus_list)
-  SELECT set_id, GROUP_CONCAT(bonus_id ORDER BY bonus_id ASC SEPARATOR ',')
-  FROM Mythistone.bonus_sets
-  GROUP BY set_id;
+  SELECT BS.set_id, GROUP_CONCAT(BS.bonus_id ORDER BY BS.bonus_id ASC SEPARATOR ',')
+  FROM Mythistone.bonus_sets BS
+    LEFT JOIN Mythistone.outdated_spark_bonus_ids OS ON OS.bonus_id = BS.bonus_id
+  GROUP BY BS.set_id
+  HAVING COUNT(OS.bonus_id) = 0;
 
   SET v_cur = v_min_run;
 
@@ -1627,6 +1649,7 @@ BEGIN
       JOIN Mythistone.crafted_item_ids CII ON E.item_id = CII.item_id
     WHERE R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
       AND R.`timestamp` > v_cutoff_ms
+      AND NOT EXISTS (SELECT 1 FROM Mythistone.bonus_sets BS JOIN Mythistone.outdated_spark_bonus_ids OS ON OS.bonus_id = BS.bonus_id WHERE BS.set_id = E.bonus_set_id)
     GROUP BY
       M.spec_id, R.season, R.dungeon_id, R.keystone_level, upgrade_tier,
       COALESCE(M.hero_talent_id, 0), E.item_id
@@ -1894,6 +1917,7 @@ BEGIN
         JOIN Mythistone.embellishments EM ON EM.bonus_id = B.bonus_id
       WHERE R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
         AND R.`timestamp` > v_cutoff_ms
+        AND NOT EXISTS (SELECT 1 FROM Mythistone.bonus_sets BS JOIN Mythistone.outdated_spark_bonus_ids OS ON OS.bonus_id = BS.bonus_id WHERE BS.set_id = EQ.bonus_set_id)
       GROUP BY R.run_id, EQ.equipment_id, EM.item_id
     ) t
     GROUP BY
@@ -2026,6 +2050,8 @@ BEGIN
     WHERE R.dungeon_id = current_dungeon
       AND R.`timestamp` > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 14 DAY)) * 1000
       AND EQ.item_id IS NOT NULL
+      -- old-season crafts share the item id, only the spark bonus tells them apart
+      AND NOT EXISTS (SELECT 1 FROM Mythistone.bonus_sets BS JOIN Mythistone.outdated_spark_bonus_ids OS ON OS.bonus_id = BS.bonus_id WHERE BS.set_id = EQ.bonus_set_id)
     GROUP BY
       M.spec_id, R.season, R.dungeon_id, R.keystone_level, upgrade_tier,
       COALESCE(M.hero_talent_id,0), EQ.item_id, EQ.slot;
@@ -2122,6 +2148,7 @@ BEGIN
           JOIN Mythistone.embellishments EM ON EM.bonus_id = B.bonus_id
         WHERE R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
           AND R.`timestamp` > v_cutoff_ms
+          AND NOT EXISTS (SELECT 1 FROM Mythistone.bonus_sets BS JOIN Mythistone.outdated_spark_bonus_ids OS ON OS.bonus_id = BS.bonus_id WHERE BS.set_id = EQ.bonus_set_id)
       ) p
       GROUP BY p.run_id, p.member, p.spec_id, p.season, p.hero_talent_id,
                p.keystone_level, p.timed
@@ -2170,6 +2197,7 @@ BEGIN
           JOIN Mythistone.crafted_item_ids CII ON EQ.item_id = CII.item_id
         WHERE R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
           AND R.`timestamp` > v_cutoff_ms
+          AND NOT EXISTS (SELECT 1 FROM Mythistone.bonus_sets BS JOIN Mythistone.outdated_spark_bonus_ids OS ON OS.bonus_id = BS.bonus_id WHERE BS.set_id = EQ.bonus_set_id)
       ) p
       GROUP BY p.run_id, p.member, p.spec_id, p.season, p.hero_talent_id,
                p.keystone_level, p.timed
@@ -2694,6 +2722,7 @@ BEGIN
         JOIN Mythistone.missives MS       ON MS.bonus_id = B.bonus_id
       WHERE R.run_id BETWEEN v_cur AND (v_cur + v_batch_size - 1)
         AND R.`timestamp` > v_cutoff_ms
+        AND NOT EXISTS (SELECT 1 FROM Mythistone.bonus_sets BS JOIN Mythistone.outdated_spark_bonus_ids OS ON OS.bonus_id = BS.bonus_id WHERE BS.set_id = EQ.bonus_set_id)
       GROUP BY R.run_id, EQ.equipment_id, MS.item_id
     ) t
     GROUP BY
@@ -3330,8 +3359,9 @@ BEGIN
       JOIN Mythistone.equipment EQ      ON M.member = EQ.member
       JOIN Mythistone.bonus_sets B      ON B.set_id = EQ.bonus_set_id
       JOIN Mythistone.embellishments EM ON EM.bonus_id = B.bonus_id
-      WHERE (R.timestamp BETWEEN start_sec AND end_sec)
-         OR (R.timestamp BETWEEN start_sec * 1000 AND end_sec * 1000)
+      WHERE ((R.timestamp BETWEEN start_sec AND end_sec)
+          OR (R.timestamp BETWEEN start_sec * 1000 AND end_sec * 1000))
+        AND NOT EXISTS (SELECT 1 FROM Mythistone.bonus_sets BS JOIN Mythistone.outdated_spark_bonus_ids OS ON OS.bonus_id = BS.bonus_id WHERE BS.set_id = EQ.bonus_set_id)
       GROUP BY R.run_id, EQ.equipment_id, EM.item_id
     ) t
     GROUP BY

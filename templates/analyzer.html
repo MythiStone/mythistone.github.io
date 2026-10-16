@@ -113,6 +113,8 @@
     // can tell an empty item-id range (no shard, unknown item) apart from a
     // shard that should be there but failed to load (a real error).
     window.ITEM_ICON_BUCKETS = {{ item_icon_buckets | tojson | safe }};
+    // Spark bonus ids of older seasons: a craft carrying one is not a meta match.
+    window.OUTDATED_SPARK_BONUS_IDS = {{ outdated_spark_bonus_ids | tojson | safe }};
   </script>
   <script src="/assets/js/analyzer.js?v={{ generated_at | int }}"></script>
 </body>

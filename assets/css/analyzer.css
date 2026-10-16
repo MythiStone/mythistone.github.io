@@ -347,6 +347,8 @@
 }
 .bis-badge { background: #ffd100; color: #000; }
 .simc-badge { background: #2a6fb0; color: #fff; }
+/* Pinned current-season `common` target (pick.priority). */
+.an-new-badge { background: var(--mythi-text-info); color: #fff; border-radius: 6px; }
 
 .item-icon-top-badge,
 .item-icon-sim-badge {
@@ -365,6 +367,7 @@
   left: -5px;
   box-shadow: 0 0 6px rgba(255, 209, 0, 0.55);
 }
+.an-new-badge.item-icon-top-badge { box-shadow: none; }
 .item-icon-sim-badge {
   bottom: -6px;
   left: -5px;
@@ -424,6 +427,8 @@
   color: var(--mythi-text-info);
 }
 .an-inbags .material-symbols-rounded { font-size: 0.8rem; color: var(--mythi-text-info); }
+.an-recraft { color: var(--mythi-text-warning); border-color: var(--mythi-text-warning); cursor: help; }
+.an-recraft .material-symbols-rounded { color: var(--mythi-text-warning); }
 
 /* MODIFIER ZONE — enchant then gems, packed hard against the row's right edge.
    Nothing is reserved per icon: whatever a slot has is glued to the same hard

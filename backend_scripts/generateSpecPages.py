@@ -800,6 +800,7 @@ def normalize_slot_collections(list_of_lists, slot_names):
                 "simc_at": e.get("simc_at"),
                 "quality_override": e.get("quality_override"),
                 "crafted_stats": e.get("crafted_stats"),
+                "priority": bool(e.get("priority")),
                 "slot_slug": slot_slug,
             }
             total_count += e.get("count", 0)
@@ -840,6 +841,9 @@ def build_comps(
     carries ``group_sets`` (one entry per group, the set name or ``None`` for a
     setless run) so the tier-set card can label each cluster with its actual set.
 
+    Rows flagged ``has_priority`` (tier-set comps holding current-season tier,
+    ordered first by the query) skip the rarity threshold.
+
     ``slot_sorted`` off keeps the canonical ascending-id order and yields a
     single group: embellishment comps go through here too, and an embellishment
     is a reagent with no gear slot of its own (its ids resolve via
@@ -866,7 +870,9 @@ def build_comps(
     comps = []
     for row in raw_rows:
         count = int(row[1] or 0)
-        if threshold > 0 and count < threshold:
+        # tier-set rows carry has_priority (current-season tier) as a 5th column
+        has_priority = bool(row[4]) if len(row) > 4 else False
+        if threshold > 0 and count < threshold and not has_priority:
             continue
         try:
             ids = [int(i) for i in str(row[0]).split(",") if i]
@@ -933,6 +939,7 @@ def build_comps(
                 "count": count,
                 "max_timed": row[2],
                 "max_depleted": row[3],
+                "has_priority": has_priority,
             }
         )
         if len(comps) >= limit:
@@ -1107,7 +1114,7 @@ def build_spec_meta_json(
     bis_summary, socket_lookup,
     talent_lookup=None, loadouts=None,
     hero_variants=None, top_hero=None, top_hero_pct=0.0, hero_tree_top_counts=None,
-    sections_by_tree=None,
+    sections_by_tree=None, outdated_spark_bonus_ids=(),
 ):
     """Compact, machine-readable meta snapshot for one spec, consumed by the
     client-side "Am I meta?" analyzer (assets/js/analyzer.js). Built entirely
@@ -1118,9 +1125,10 @@ def build_spec_meta_json(
     badge, up to two for the FINGER/TRINKET groups) and ``sim`` (the
     SimulationCraft rank-1 pick — the ``is_simc_bis``/SIM badge). The analyzer
     scores a slot as a match only when the equipped item is one of these. The
-    single most-equipped item is kept as ``common`` for neutral display on slots
-    that have neither target (sparse Raider.io/SimC data) — it never counts
-    toward the score. When ``sections_by_tree`` is supplied it also carries
+    slot's first listed item (a pinned current-season tier piece or legendary,
+    flagged ``priority``, else the most equipped) is kept as ``common`` for
+    neutral display on slots that have neither target (sparse Raider.io/SimC
+    data) — it never counts toward the score. When ``sections_by_tree`` is supplied it also carries
     ``slots_by_hero`` (the same per-slot targets computed once per hero tree, so
     the analyzer's gear grid swaps with the hero-tree toggle; gems/enchants stay
     spec-wide). Also carries the single most-popular top-50 gem combo and
@@ -1169,6 +1177,8 @@ def build_spec_meta_json(
         # case for a Titan's Grip spec, hence the spec_id.
         if occupies_both_hands(item_lookup.get(item_id), spec_id):
             pick["two_handed"] = True
+        if entry.get("priority"):
+            pick["priority"] = True
         pick.update(extra)
         return pick
 
@@ -1345,6 +1355,8 @@ def build_spec_meta_json(
         "gem_combo": gem_combo,
         "enchant_combo": enchant_combo,
         "enchant_group_expected": enchant_group_expected,
+        # The Discord bot's /analyze has no static files to derive these from.
+        "outdated_spark_bonus_ids": sorted(outdated_spark_bonus_ids),
     }
     talents = build_talent_meta(
         talent_lookup or {}, loadouts or {},
@@ -1996,16 +2008,18 @@ def handleSocketsForItem(
 def filter_gear_entries(entries, slot_total):
     """Drop the noise tail of a top-10 gear list.
 
-    ``entries`` are sorted by count desc; anything past the first
-    GEAR_LIST_MIN_KEEP entries must hold at least GEAR_LIST_MIN_SLOT_SHARE% of
-    the slot's total runs. Mirrored in SQL by
-    databaseConnector.FETCH_SPEC_PAGE_LINKED_ITEMS_SQL — keep the two in sync.
+    ``entries`` are sorted priority first, then by count desc; anything past
+    the first GEAR_LIST_MIN_KEEP entries must hold at least
+    GEAR_LIST_MIN_SLOT_SHARE% of the slot's total runs, except priority
+    (current-season tier / legendary) entries, which are always kept. Mirrored
+    in SQL by databaseConnector.FETCH_SPEC_PAGE_LINKED_ITEMS_SQL — keep the two
+    in sync.
     """
     if not slot_total:
         return entries
     min_count = slot_total * GEAR_LIST_MIN_SLOT_SHARE / 100.0
     return [e for i, e in enumerate(entries)
-            if i < GEAR_LIST_MIN_KEEP or e["count"] >= min_count]
+            if i < GEAR_LIST_MIN_KEEP or e["count"] >= min_count or e.get("priority")]
 
 
 def filter_weapon_gear_entries(weapon_lists, slot_totals):
@@ -2016,20 +2030,21 @@ def filter_weapon_gear_entries(weapon_lists, slot_totals):
     two-handers, the handful of loadouts that equip an off-hand anyway are a
     fraction of the *weapon* runs, so no off-hand list is rendered — a per-slot
     floor would instead promote that junk to a top-3. ``weapon_lists`` is the
-    fetched entry lists in WEAPON_SLOTS order. Mirrored in SQL by the
-    weapon_ranked CTE of FETCH_SPEC_PAGE_LINKED_ITEMS_SQL — keep in sync.
+    fetched entry lists in WEAPON_SLOTS order. Priority entries rank first
+    and are always kept. Mirrored in SQL by the weapon_ranked CTE of
+    FETCH_SPEC_PAGE_LINKED_ITEMS_SQL — keep in sync.
     """
     weapon_total = sum(slot_totals.get(s, 0) for s in WEAPON_SLOTS)
     if not weapon_total:
         return weapon_lists
-    # Combined ranking with the SQL mirror's exact tiebreak (count desc, then
-    # item id as string, then slot) — a dual-wield one-hander can appear in
-    # both lists, so entries are tracked by identity, not item id.
+    # Combined ranking with the SQL mirror's exact tiebreak (priority first,
+    # count desc, then item id as string, then slot) — a dual-wield one-hander
+    # can appear in both lists, so entries are tracked by identity, not item id.
     tagged = [(e, s) for lst, s in zip(weapon_lists, WEAPON_SLOTS) for e in lst]
-    tagged.sort(key=lambda t: (-t[0]["count"], str(t[0]["item"]), t[1]))
+    tagged.sort(key=lambda t: (not t[0].get("priority"), -t[0]["count"], str(t[0]["item"]), t[1]))
     floor = {id(t[0]) for t in tagged[:GEAR_LIST_MIN_KEEP]}
     min_count = weapon_total * GEAR_LIST_MIN_SLOT_SHARE / 100.0
-    return [[e for e in lst if id(e) in floor or e["count"] >= min_count]
+    return [[e for e in lst if id(e) in floor or e["count"] >= min_count or e.get("priority")]
             for lst in weapon_lists]
 
 
@@ -2576,6 +2591,7 @@ def main(template_path, output_dir, debug=False, spec=None):
     # tier-set comp card labels each cluster with its set name, and the Top Trends
     # set_combo tooltip buckets worn pieces by set name.
     tier_item_to_set, tier_set_meta = load_tier_sets(LOOKUP_DIR)
+    season_gear_rules = commonUtils.load_season_gear_rules(item_lookup)
 
     set_members = defaultdict(list)
     for iid, itm in item_lookup.items():
@@ -2958,6 +2974,11 @@ def main(template_path, output_dir, debug=False, spec=None):
                 except Exception as e:
                     print(f"Warning: fetch_top50_loadouts failed: {e}")
                     top50_raw = []
+                # the gear aggregates already drop last-season crafts; BiS, top
+                # player gear and the Top Players view read these raw loadouts
+                top50_raw = commonUtils.drop_outdated_spark_items(
+                    top50_raw, season_gear_rules["outdated_spark_bonus_ids"]
+                )
 
                 # Defense in depth against off-rotation rows that predate the
                 # collector filter: keep only loadouts whose dungeon is in the
@@ -3936,6 +3957,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                 top_hero_pct=top_hero_tree_pct,
                 hero_tree_top_counts=hero_tree_top_counts,
                 sections_by_tree=sections_by_tree,
+                outdated_spark_bonus_ids=season_gear_rules["outdated_spark_bonus_ids"],
             )
             spec_meta_dir = os.path.join("assets", "json", "spec_meta")
             os.makedirs(spec_meta_dir, exist_ok=True)

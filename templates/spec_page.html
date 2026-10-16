@@ -32,6 +32,10 @@
 {% macro overall_data_note() -%}
 <p class="cohort-overall-note text-xs mb-2"><i class="material-symbols-rounded">info</i><span>No top player data for this section. Showing overall data.</span></p>
 {%- endmacro %}
+{# Pinned current-season tier piece or legendary (entry.priority / comp.has_priority). #}
+{% macro new_badge(title, cls='') -%}
+<span class="badge item-source-badge item-source-badge-new {{ cls }}" data-bs-toggle="tooltip" data-bs-container="body" title="{{ title }}">New</span>
+{%- endmacro %}
 {% macro render_slot(entry, slot_count=0, is_button=false, slug="") -%}
 {# choose tag and base classes #}
 {% if is_button %}
@@ -83,8 +87,9 @@
 
     {% set src = item_sources.get(entry.id) if item_sources else none %}
     <div class="my-1 item-stats-container">
-      {% if display_stats or src %}
+      {% if display_stats or src or entry.priority %}
       <div class="d-flex flex-wrap gap-1">
+        {% if entry.priority %}{{ new_badge("New this season. Listed first because it is part of the current season's gear.") }}{% endif %}
         {# Loot-source badges lead the row: where this item drops. #}
         {% if src %}
           {% for d in src.source_dungeons %}
@@ -1138,7 +1143,8 @@
                 <span class="class-{{ class_slug }}-text">{{ spec.name }} {{ class_info.name }}</span>
                 players equip most often in those high keys, broken down slot by slot. For each slot the most popular item
                 is shown first with its alternatives underneath, and the percentage next to each item tells you how common
-                that choice is. It is a snapshot of what is being played, not a guaranteed upgrade for your character, so
+                that choice is. New tier pieces and legendaries of the current season are listed first and marked New, even
+                while few players run them yet. It is a snapshot of what is being played, not a guaranteed upgrade for your character, so
                 always simulate your own character before committing to gear changes. You can do that with
                 <a href="https://www.raidbots.com/simbot/topgear" target="_blank" rel="noopener">Raidbots Top Gear</a>.
               </p>
@@ -2021,6 +2027,7 @@
                                   <span class="badge tt-top-badge tt-top-badge-inline mb-1" data-bs-toggle="tooltip" data-bs-container="body"
                                     title="Used by {{ '%.0f' % comp.bis_pct }}% of the top 50 {{ spec.name }} {{ class_info.name }} players according to Raider.io verified Loadouts.">TOP</span>
                                   {% endif %}
+                                  {% if comp.has_priority %}{{ new_badge('Includes the new tier set of this season.', 'mb-1') }}{% endif %}
                                   {{ simc_badge(comp.simc_pick, 'set combo', cls='simc-badge-inline mb-1') }}
                                   {% if comp.simc_pick and comp.simc_pick.only %}{{ simc_share() }}{% else %}
                                   <p data-bs-toggle="tooltip" data-bs-placement="top"

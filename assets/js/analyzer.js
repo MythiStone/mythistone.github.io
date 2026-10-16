@@ -309,20 +309,31 @@
     return { sim: sim, top: top, common: common };
   }
 
+  // Spark bonus ids of older seasons (baked by generateAnalyzerPage.py). A craft
+  // keeps its item id across seasons, so only the spark tells last season's apart.
+  var OUTDATED_SPARKS = new Set(window.OUTDATED_SPARK_BONUS_IDS.map(String));
+
+  function hasOutdatedSpark(user) {
+    return (user.bonus || []).some(function (b) { return OUTDATED_SPARKS.has(String(b)); });
+  }
+
   // Score one slot's equipped item against its (group-wide) meta targets.
   // Returns null when the slot has no meta data at all. Used by both the render
   // loop and planGroupTargets(), so the two can never disagree about which slot
-  // of an interchangeable pair still needs a suggestion.
+  // of an interchangeable pair still needs a suggestion. A last-season craft
+  // (`outdated`) never matches, even when its item id is a pick.
   function scoreSlot(metaSlots, slotName, user) {
     var acc = acceptableIds(metaSlots, slotName);
     var hasIdeal = acc.sim.size > 0 || acc.top.size > 0;
     if (!hasIdeal && acc.common.size === 0) return null; // truly no meta data
-    var status = acc.sim.has(user.id) ? "sim"
+    var outdated = hasOutdatedSpark(user);
+    var status = outdated ? "off"
+      : acc.sim.has(user.id) ? "sim"
       : acc.top.has(user.id) ? "top"
       : hasIdeal ? "off"                    // has TOP/SIM, user misses
       : acc.common.has(user.id) ? "meta"    // fallback: popular pick
       : "off";                              // misses the popular fallback
-    return { status: status, matched: status !== "off" };
+    return { status: status, matched: status !== "off", outdated: outdated };
   }
 
   // The meta picks to display for a slot: the group-union of SIM + TOP, or the
@@ -375,7 +386,14 @@
       // that IS wearing a pick scores as matched and shows no target of its own,
       // so excluding its item costs the off-meta sibling nothing.
       var worn = {};
-      slotsG.forEach(function (s) { worn[parsed.slots[s].id] = true; });
+      // A last-season craft is replaced by recrafting the same item, so its id
+      // stays suggestable and goes back to the slot wearing it.
+      var recraft = {};
+      slotsG.forEach(function (s) {
+        var u = parsed.slots[s];
+        if (hasOutdatedSpark(u)) recraft[s] = u.id;
+        else worn[u.id] = true;
+      });
 
       var off = slotsG.filter(function (s) {
         var sc = scoreSlot(metaSlots, s, parsed.slots[s]);
@@ -396,7 +414,11 @@
 
       off.forEach(function (s) { plan[s] = []; });
       var used = {};
-      pool.forEach(function (t, i) {
+      off.forEach(function (s) {
+        var own = pool.filter(function (t) { return t.pick.id === recraft[s]; })[0];
+        if (own) { plan[s].push(own); used[own.pick.id] = true; }
+      });
+      pool.filter(function (t) { return !used[t.pick.id]; }).forEach(function (t, i) {
         plan[off[i % off.length]].push(t);
         used[t.pick.id] = true;
       });
@@ -408,6 +430,7 @@
         var ex = {};
         Object.keys(worn).forEach(function (id) { ex[id] = true; });
         Object.keys(used).forEach(function (id) { ex[id] = true; });
+        Object.keys(recraft).forEach(function (s2) { if (s2 !== s) ex[recraft[s2]] = true; });
         plan[s] = displayTargets(metaSlots, s, ex);
         plan[s].forEach(function (t) { used[t.pick.id] = true; });
       });
@@ -499,6 +522,11 @@
         " players according to Raider.io verified Loadouts.";
       return '<span class="badge bis-badge item-icon-top-badge" data-bs-toggle="tooltip"' +
         ' data-bs-container="body" title="' + esc(topTip) + '">TOP</span>';
+    }
+    if (pick && pick.priority) {
+      return '<span class="badge an-new-badge item-icon-top-badge" data-bs-toggle="tooltip"' +
+        ' data-bs-container="body" title="New this season. Suggested because it is part of the' +
+        ' current season&#39;s gear.">NEW</span>';
     }
     return "";
   }
@@ -1402,6 +1430,11 @@
 
       // Owned-upgrade: is an acceptable meta item sitting in the player's bags?
       var inBagsHtml = "";
+      if (sc.outdated) {
+        inBagsHtml += '<span class="an-inbags an-recraft" data-bs-toggle="tooltip" data-bs-container="body"' +
+          ' title="Crafted with last season&#39;s spark. Recraft it with the current spark.">' +
+          '<i class="material-symbols-rounded">handyman</i> Old spark</span>';
+      }
       if (!matched) {
         // A two-hander suggested for the OFF_HAND tile is a main-hand item, so
         // it sits under the export's main_hand bag group.
@@ -1415,7 +1448,7 @@
         if (ownedId != null) {
           // Trails the swap it belongs to ("change to this — you already own
           // it"), inside the item zone, so it never reaches the modifier columns.
-          inBagsHtml = '<span class="an-inbags">' +
+          inBagsHtml += '<span class="an-inbags">' +
             '<i class="material-symbols-rounded">backpack</i> In your bags</span>';
         }
       }

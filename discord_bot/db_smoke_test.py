@@ -211,6 +211,17 @@ def test_analyze_parse():
     check(parsed["class_id"] == str(meta["classID"]), "parse_simc class")
     check(parsed["slots"].get("HEAD", {}).get("id") == 250060, "parse_simc slot id")
     check(analyze.resolve_spec(parsed) == int(A_SPEC), "resolve_spec roundtrip")
+    # A craft with last season's spark (12066) is off even though its id is the SIM
+    # pick, the current spark (13751) still matches.
+    spec_meta = {"slots": {"HEAD": {"sim": {"id": 250060, "name": "Crafted Helm"}}},
+                 "outdated_spark_bonus_ids": [12066]}
+    for spark, want in ((12066, "outdated"), (13751, "match")):
+        crafted = analyze.parse_simc(f"{export}head=,id=250060,bonus_id=1/{spark}/3\n")
+        got = analyze._score_slot(spec_meta["slots"], "HEAD", crafted["slots"]["HEAD"], {12066})
+        check(got == want, f"old-spark scoring for bonus {spark}: {got}")
+    old = analyze.build_analyze_embed(A_SPEC, spec_meta, analyze.parse_simc(f"{export}head=,id=250060,bonus_id=12066\n"))
+    assert_embed(old, "analyze (old spark)")
+    check("recraft it" in "".join(f.value for f in old.fields), "old-spark recraft hint missing")
     # buff coverage sanity: an Arcane Mage (62) provides Arcane Intellect (1459)
     covered, _ = comps.buff_coverage([62])
     check(any(b["id"] == 1459 for b in covered), "buff_coverage missed Arcane Intellect")

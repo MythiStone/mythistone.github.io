@@ -866,14 +866,16 @@ FETCH_TOP_ITEMS_BY_SLOT_WITH_BONUS_SQL = """
 -- SQL: top items with top bonus per item (MySQL 8+)
 WITH top_items AS (
   SELECT
-    item_id,
-    SUM(run_count) AS equip_count
-  FROM Mythistone.global_aggregated_equipment
-  WHERE spec_id = %s
-    AND season  = %s
-    AND slot    = %s
-  GROUP BY item_id
-  ORDER BY equip_count DESC, item_id
+    ae.item_id,
+    SUM(ae.run_count) AS equip_count,
+    MAX(P.item_id IS NOT NULL) AS is_priority
+  FROM Mythistone.global_aggregated_equipment ae
+  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
+  WHERE ae.spec_id = %s
+    AND ae.season  = %s
+    AND ae.slot    = %s
+  GROUP BY ae.item_id
+  ORDER BY is_priority DESC, equip_count DESC, ae.item_id
   LIMIT 10
 ),
 bonus_sums AS (
@@ -901,7 +903,8 @@ SELECT
   r.bonus_list,
   r.list_count,
   gai.max_timed_key,
-  gai.max_depleted_key
+  gai.max_depleted_key,
+  ti.is_priority
 FROM top_items ti
 LEFT JOIN (
   SELECT item_id, MAX(max_timed_key) AS max_timed_key, MAX(max_depleted_key) AS max_depleted_key
@@ -910,7 +913,7 @@ LEFT JOIN (
   GROUP BY item_id
 ) gai ON gai.item_id = ti.item_id
 LEFT JOIN ranked r ON ti.item_id = r.item_id AND r.rn = 1
-ORDER BY ti.equip_count DESC;
+ORDER BY ti.is_priority DESC, ti.equip_count DESC, ti.item_id;
 """
 
 
@@ -918,11 +921,12 @@ ORDER BY ti.equip_count DESC;
 # tree (see the hero-grained global_aggregated_* tables).
 FETCH_TOP_ITEMS_BY_SLOT_WITH_BONUS_BY_HERO_SQL = """
 WITH top_items AS (
-  SELECT item_id, SUM(run_count) AS equip_count
-  FROM Mythistone.global_aggregated_equipment
-  WHERE spec_id = %s AND season = %s AND slot = %s AND hero_talent_id = %s
-  GROUP BY item_id
-  ORDER BY equip_count DESC, item_id
+  SELECT ae.item_id, SUM(ae.run_count) AS equip_count, MAX(P.item_id IS NOT NULL) AS is_priority
+  FROM Mythistone.global_aggregated_equipment ae
+  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
+  WHERE ae.spec_id = %s AND ae.season = %s AND ae.slot = %s AND ae.hero_talent_id = %s
+  GROUP BY ae.item_id
+  ORDER BY is_priority DESC, equip_count DESC, ae.item_id
   LIMIT 10
 ),
 bonus_sums AS (
@@ -938,12 +942,12 @@ ranked AS (
   FROM bonus_sums
 )
 SELECT ti.item_id, ti.equip_count, r.bonus_list, r.list_count,
-       gai.max_timed_key, gai.max_depleted_key
+       gai.max_timed_key, gai.max_depleted_key, ti.is_priority
 FROM top_items ti
 LEFT JOIN Mythistone.global_aggregated_items gai
   ON gai.item_id = ti.item_id AND gai.spec_id = %s AND gai.season = %s AND gai.hero_talent_id = %s
 LEFT JOIN ranked r ON ti.item_id = r.item_id AND r.rn = 1
-ORDER BY ti.equip_count DESC;
+ORDER BY ti.is_priority DESC, ti.equip_count DESC, ti.item_id;
 """
 
 
@@ -969,7 +973,7 @@ def fetch_top_items_for_slot_with_bonus(
 
     data = []
     for row in rows:
-        # row = (item_id, equip_count, bonus_list, list_count, max_timed_key, max_depleted_key)
+        # row = (item_id, equip_count, bonus_list, list_count, max_timed_key, max_depleted_key, is_priority)
         item_id = row[0]
         equip_count = row[1]
         bonus_list = row[2]  # may be None
@@ -985,6 +989,7 @@ def fetch_top_items_for_slot_with_bonus(
                 "bonus": {"ids": bonus_list, "count": int(list_count)}
                 if bonus_list is not None
                 else None,
+                "priority": bool(row[6]),
             }
         )
     return data
@@ -995,14 +1000,16 @@ FETCH_TOP_ITEMS_BY_SLOT_GROUP_WITH_BONUS_SQL = """
 WITH top_items AS (
   SELECT
     ae.item_id,
-    SUM(ae.run_count) AS equip_count
+    SUM(ae.run_count) AS equip_count,
+    MAX(P.item_id IS NOT NULL) AS is_priority
   FROM Mythistone.global_aggregated_equipment ae
   JOIN Mythistone.slot_group_map sgm ON sgm.slot = ae.slot
+  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
   WHERE ae.spec_id = %s
     AND ae.season  = %s
     AND sgm.slot_group = %s
   GROUP BY ae.item_id
-  ORDER BY equip_count DESC, ae.item_id
+  ORDER BY is_priority DESC, equip_count DESC, ae.item_id
   LIMIT 10
 ),
 bonus_sums AS (
@@ -1030,7 +1037,8 @@ SELECT
   r.bonus_list,
   r.list_count,
   gai.max_timed_key,
-  gai.max_depleted_key
+  gai.max_depleted_key,
+  ti.is_priority
 FROM top_items ti
 LEFT JOIN (
   SELECT item_id, MAX(max_timed_key) AS max_timed_key, MAX(max_depleted_key) AS max_depleted_key
@@ -1039,18 +1047,19 @@ LEFT JOIN (
   GROUP BY item_id
 ) gai ON gai.item_id = ti.item_id
 LEFT JOIN ranked r ON ti.item_id = r.item_id AND r.rn = 1
-ORDER BY ti.equip_count DESC;
+ORDER BY ti.is_priority DESC, ti.equip_count DESC, ti.item_id;
 """
 
 
 FETCH_TOP_ITEMS_BY_SLOT_GROUP_WITH_BONUS_BY_HERO_SQL = """
 WITH top_items AS (
-  SELECT ae.item_id, SUM(ae.run_count) AS equip_count
+  SELECT ae.item_id, SUM(ae.run_count) AS equip_count, MAX(P.item_id IS NOT NULL) AS is_priority
   FROM Mythistone.global_aggregated_equipment ae
   JOIN Mythistone.slot_group_map sgm ON sgm.slot = ae.slot
+  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
   WHERE ae.spec_id = %s AND ae.season = %s AND sgm.slot_group = %s AND ae.hero_talent_id = %s
   GROUP BY ae.item_id
-  ORDER BY equip_count DESC, ae.item_id
+  ORDER BY is_priority DESC, equip_count DESC, ae.item_id
   LIMIT 10
 ),
 bonus_sums AS (
@@ -1066,12 +1075,12 @@ ranked AS (
   FROM bonus_sums
 )
 SELECT ti.item_id, ti.equip_count, r.bonus_list, r.list_count,
-       gai.max_timed_key, gai.max_depleted_key
+       gai.max_timed_key, gai.max_depleted_key, ti.is_priority
 FROM top_items ti
 LEFT JOIN Mythistone.global_aggregated_items gai
   ON gai.item_id = ti.item_id AND gai.spec_id = %s AND gai.season = %s AND gai.hero_talent_id = %s
 LEFT JOIN ranked r ON ti.item_id = r.item_id AND r.rn = 1
-ORDER BY ti.equip_count DESC;
+ORDER BY ti.is_priority DESC, ti.equip_count DESC, ti.item_id;
 """
 
 
@@ -1094,7 +1103,7 @@ def fetch_top_items_for_slot_group_with_bonus(
 
     data = []
     for row in rows:
-        # row = (item_id, equip_count, bonus_list, list_count, max_timed_key, max_depleted_key)
+        # row = (item_id, equip_count, bonus_list, list_count, max_timed_key, max_depleted_key, is_priority)
         item_id = row[0]
         equip_count = row[1]
         bonus_list = row[2]  # may be None
@@ -1110,6 +1119,7 @@ def fetch_top_items_for_slot_group_with_bonus(
                 "bonus": {"ids": bonus_list, "count": int(list_count)}
                 if bonus_list is not None
                 else None,
+                "priority": bool(row[6]),
             }
         )
     return data
@@ -1173,8 +1183,9 @@ def simc_season_has_gear_data(connection, cursor, season):
 # Every item id that appears in some spec page's top-10 gear list, computed in
 # one sweep. Must stay in lockstep with the top_items CTEs of
 # FETCH_TOP_ITEMS_BY_SLOT[_GROUP]_WITH_BONUS_SQL above: same table, same
-# grouping (per slot and per slot_group), same top-10 cutoff and the same
-# deterministic item_id tiebreak — generateItemPages uses this to guarantee a
+# grouping (per slot and per slot_group), same top-10 cutoff, the same
+# priority-first order with its deterministic item_id tiebreak, and pinned
+# priority items always kept — generateItemPages uses this to guarantee a
 # page exists for every item the spec pages link. Crucially it is restricted
 # to the spec ids and slots/slot groups the spec pages actually render:
 # without that, sparse partitions the pages never show (SHIRT/TABARD rows,
@@ -1182,25 +1193,30 @@ def simc_season_has_gear_data(connection, cursor, season):
 # each "protect" up to 10 junk items apiece.
 FETCH_SPEC_PAGE_LINKED_ITEMS_SQL = """
 WITH slot_sums AS (
-  SELECT spec_id, slot, item_id, SUM(run_count) AS equip_count
-    FROM Mythistone.global_aggregated_equipment
-   WHERE season = %s
-     AND spec_id IN ({spec_ph})
-     AND slot IN ({slot_ph})
-   GROUP BY spec_id, slot, item_id
+  SELECT ae.spec_id, ae.slot, ae.item_id, SUM(ae.run_count) AS equip_count,
+         MAX(P.item_id IS NOT NULL) AS is_priority
+    FROM Mythistone.global_aggregated_equipment ae
+    LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
+   WHERE ae.season = %s
+     AND ae.spec_id IN ({spec_ph})
+     AND ae.slot IN ({slot_ph})
+   GROUP BY ae.spec_id, ae.slot, ae.item_id
 ),
 slot_ranked AS (
   SELECT item_id,
          equip_count,
+         is_priority,
          ROW_NUMBER() OVER (PARTITION BY spec_id, slot
-                            ORDER BY equip_count DESC, item_id) AS rn,
+                            ORDER BY is_priority DESC, equip_count DESC, item_id) AS rn,
          SUM(equip_count) OVER (PARTITION BY spec_id, slot) AS slot_total
     FROM slot_sums
 ),
 group_sums AS (
-  SELECT ae.spec_id, sgm.slot_group, ae.item_id, SUM(ae.run_count) AS equip_count
+  SELECT ae.spec_id, sgm.slot_group, ae.item_id, SUM(ae.run_count) AS equip_count,
+         MAX(P.item_id IS NOT NULL) AS is_priority
     FROM Mythistone.global_aggregated_equipment ae
     JOIN Mythistone.slot_group_map sgm ON sgm.slot = ae.slot
+    LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
    WHERE ae.season = %s
      AND ae.spec_id IN ({spec_ph})
      AND sgm.slot_group IN ({group_ph})
@@ -1209,37 +1225,41 @@ group_sums AS (
 group_ranked AS (
   SELECT item_id,
          equip_count,
+         is_priority,
          ROW_NUMBER() OVER (PARTITION BY spec_id, slot_group
-                            ORDER BY equip_count DESC, item_id) AS rn,
+                            ORDER BY is_priority DESC, equip_count DESC, item_id) AS rn,
          SUM(equip_count) OVER (PARTITION BY spec_id, slot_group) AS slot_total
     FROM group_sums
 ),
 weapon_sums AS (
-  SELECT spec_id, slot, item_id, SUM(run_count) AS equip_count
-    FROM Mythistone.global_aggregated_equipment
-   WHERE season = %s
-     AND spec_id IN ({spec_ph})
-     AND slot IN ({weapon_ph})
-   GROUP BY spec_id, slot, item_id
+  SELECT ae.spec_id, ae.slot, ae.item_id, SUM(ae.run_count) AS equip_count,
+         MAX(P.item_id IS NOT NULL) AS is_priority
+    FROM Mythistone.global_aggregated_equipment ae
+    LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
+   WHERE ae.season = %s
+     AND ae.spec_id IN ({spec_ph})
+     AND ae.slot IN ({weapon_ph})
+   GROUP BY ae.spec_id, ae.slot, ae.item_id
 ),
 weapon_ranked AS (
   SELECT item_id,
          equip_count,
+         is_priority,
          ROW_NUMBER() OVER (PARTITION BY spec_id, slot
-                            ORDER BY equip_count DESC, item_id) AS rn,
+                            ORDER BY is_priority DESC, equip_count DESC, item_id) AS rn,
          ROW_NUMBER() OVER (PARTITION BY spec_id
-                            ORDER BY equip_count DESC, item_id, slot) AS rn_comb,
+                            ORDER BY is_priority DESC, equip_count DESC, item_id, slot) AS rn_comb,
          SUM(equip_count) OVER (PARTITION BY spec_id) AS weapon_total
     FROM weapon_sums
 )
 SELECT item_id FROM slot_ranked
- WHERE rn <= 10 AND (rn <= %s OR equip_count >= slot_total * %s)
+ WHERE rn <= 10 AND (rn <= %s OR equip_count >= slot_total * %s OR is_priority)
 UNION
 SELECT item_id FROM group_ranked
- WHERE rn <= 10 AND (rn <= %s OR equip_count >= slot_total * %s)
+ WHERE rn <= 10 AND (rn <= %s OR equip_count >= slot_total * %s OR is_priority)
 UNION
 SELECT item_id FROM weapon_ranked
- WHERE rn <= 10 AND (rn_comb <= %s OR equip_count >= weapon_total * %s);
+ WHERE rn <= 10 AND (rn_comb <= %s OR equip_count >= weapon_total * %s OR is_priority);
 """
 
 
@@ -1256,7 +1276,8 @@ def fetch_spec_page_linked_items(connection, cursor, season, spec_ids, slots,
     two-hander spec's stray off-hand loadouts never surface. ``min_keep`` /
     ``min_share_pct`` are generateSpecPages.GEAR_LIST_MIN_KEEP /
     GEAR_LIST_MIN_SLOT_SHARE: past the floor a list entry must hold
-    ``min_share_pct``% of its denominator. Returns a set of str item ids."""
+    ``min_share_pct``% of its denominator. Priority items (priority_item_ids)
+    rank first and always pass the filter. Returns a set of str item ids."""
     if not (spec_ids and slots and slot_groups and weapon_slots):
         raise ValueError("spec_ids, slots, slot_groups and weapon_slots must all be non-empty")
     sql = FETCH_SPEC_PAGE_LINKED_ITEMS_SQL.format(
@@ -1906,6 +1927,33 @@ def insert_tier_set_item(connection, cursor, item_id, item_set_id):
     return execute_with_retry(connection, cursor, INSERT_TIER_SET_ITEM_SQL, params)
 
 
+DELETE_OUTDATED_SPARK_BONUS_IDS_SQL = "DELETE FROM Mythistone.outdated_spark_bonus_ids"
+INSERT_OUTDATED_SPARK_BONUS_ID_SQL = """
+  INSERT INTO Mythistone.outdated_spark_bonus_ids (`bonus_id`) VALUES (%s)
+"""
+
+def replace_outdated_spark_bonus_ids(connection, cursor, bonus_ids):
+    """Replace the old-season spark bonus ids (the set flips every season). The caller commits."""
+    execute_with_retry(connection, cursor, DELETE_OUTDATED_SPARK_BONUS_IDS_SQL)
+    rows = [(int(b),) for b in sorted(bonus_ids)]
+    if rows:
+        executemany_with_retry(connection, cursor, INSERT_OUTDATED_SPARK_BONUS_ID_SQL, rows)
+
+
+DELETE_PRIORITY_ITEM_IDS_SQL = "DELETE FROM Mythistone.priority_item_ids"
+INSERT_PRIORITY_ITEM_ID_SQL = """
+  INSERT INTO Mythistone.priority_item_ids (`item_id`, `reason`) VALUES (%s, %s)
+"""
+
+def replace_priority_item_ids(connection, cursor, priority_map):
+    """Replace the pinned items, ``{item_id: "tier" | "legendary"}`` (the set flips every
+    season). The caller commits."""
+    execute_with_retry(connection, cursor, DELETE_PRIORITY_ITEM_IDS_SQL)
+    rows = [(int(i), reason) for i, reason in sorted(priority_map.items())]
+    if rows:
+        executemany_with_retry(connection, cursor, INSERT_PRIORITY_ITEM_ID_SQL, rows)
+
+
 INSERT_MISSIVE_SQL = """
 INSERT IGNORE INTO missives (`bonus_id`, `item_id`) VALUES (%s, %s)
 """
@@ -2134,25 +2182,30 @@ def fetch_enchant_comps(connection, cursor, spec_id, season, hero_talent_id=None
     )
 
 
+# has_priority (5th column) puts combos holding a current tier piece first.
 FETCH_TIER_SET_COMPS_SQL = """
-SELECT comp, SUM(run_count) AS total_runs, MAX(max_timed_key), MAX(max_depleted_key)
-FROM Mythistone.aggregated_tier_set_comps
-WHERE spec_id = %s
-  AND season = %s
-GROUP BY comp
-ORDER BY total_runs DESC
+SELECT T.comp, SUM(T.run_count) AS total_runs, MAX(T.max_timed_key), MAX(T.max_depleted_key),
+       EXISTS (SELECT 1 FROM Mythistone.priority_item_ids P
+                WHERE FIND_IN_SET(P.item_id, T.comp)) AS has_priority
+FROM Mythistone.aggregated_tier_set_comps T
+WHERE T.spec_id = %s
+  AND T.season = %s
+GROUP BY T.comp
+ORDER BY has_priority DESC, total_runs DESC
 LIMIT 10
 """
 
 
 FETCH_TIER_SET_COMPS_BY_HERO_SQL = """
-SELECT comp, SUM(run_count) AS total_runs, MAX(max_timed_key), MAX(max_depleted_key)
-FROM Mythistone.aggregated_tier_set_comps
-WHERE spec_id = %s
-  AND season = %s
-  AND hero_talent_id = %s
-GROUP BY comp
-ORDER BY total_runs DESC
+SELECT T.comp, SUM(T.run_count) AS total_runs, MAX(T.max_timed_key), MAX(T.max_depleted_key),
+       EXISTS (SELECT 1 FROM Mythistone.priority_item_ids P
+                WHERE FIND_IN_SET(P.item_id, T.comp)) AS has_priority
+FROM Mythistone.aggregated_tier_set_comps T
+WHERE T.spec_id = %s
+  AND T.season = %s
+  AND T.hero_talent_id = %s
+GROUP BY T.comp
+ORDER BY has_priority DESC, total_runs DESC
 LIMIT 10
 """
 

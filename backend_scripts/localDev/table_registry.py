@@ -39,6 +39,8 @@ REFERENCE_TABLES = {
     "missives",
     "crafted_item_ids",
     "tier_set_items",
+    "outdated_spark_bonus_ids",
+    "priority_item_ids",
 }
 
 RAW_TABLES = {

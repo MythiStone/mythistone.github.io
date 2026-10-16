@@ -588,10 +588,86 @@ def load_tier_sets(static_dir=LOOKUP_DIR):
             continue
         sid = int(sid)
         items = [int(i) for i in (s.get("items") or [])]
-        set_meta[sid] = {"name": s.get("name"), "items": items}
+        spec_ids = sorted({int(sp["specId"]) for sp in (s.get("spells") or []) if sp.get("specId")})
+        set_meta[sid] = {"name": s.get("name"), "items": items, "spec_ids": spec_ids}
         for iid in items:
             item_to_set[iid] = sid
     return item_to_set, set_meta
+
+
+def load_season_gear_rules(item_lookup, static_dir=LOOKUP_DIR):
+    """Which gear belongs to the current season, derived from the Raidbots static files.
+
+    Crafted items keep their item id across seasons and only the spark bonus id
+    changes, so an old-season craft is told apart by its spark. Tier sets of every
+    season share item-sets.json, so the current class sets are the highest-ilvl
+    ones. ``item_lookup`` is ``{int item_id -> equippable-items row}``.
+
+    Returns a dict:
+      * ``outdated_spark_bonus_ids``: set of int spark bonus ids of older seasons
+      * ``current_tier_set_ids`` / ``current_tier_item_ids``: sets of ints
+      * ``legendary_item_ids``: quality-5 items of the current expansion
+      * ``priority_item_ids``: ``{item_id -> "tier" | "legendary"}``, pinned first
+        in the spec page gear lists
+    """
+    sparks = []
+    for bid, b in load_json(os.path.join(static_dir, "bonuses.json")).items():
+        ilvl = b.get("itemLevel") or {}
+        if (b.get("tag") or "").endswith(" Crafted") and ilvl.get("amount") and ilvl.get("priority") == 70:
+            sparks.append(((int(ilvl.get("squishEra") or 0), int(ilvl["amount"])), int(bid)))
+    if not sparks:
+        raise ValueError("no '* Crafted' spark bonus in bonuses.json, cannot tell the current spark")
+    current_spark = max(sparks)[1]
+    outdated_sparks = {bid for _, bid in sparks if bid != current_spark}
+
+    _item_to_set, set_meta = load_tier_sets(static_dir)
+    class_set_ilvl = {}
+    for sid, meta in set_meta.items():
+        if not meta["spec_ids"]:
+            continue
+        levels = [int((item_lookup.get(i) or {}).get("itemLevel") or 0) for i in meta["items"]]
+        class_set_ilvl[sid] = max(levels, default=0)
+    top_ilvl = max(class_set_ilvl.values(), default=0)
+    current_sets = {sid for sid, lvl in class_set_ilvl.items() if top_ilvl and lvl == top_ilvl}
+    current_tier_items = {i for sid in current_sets for i in set_meta[sid]["items"]}
+
+    expansion = current_expansion_id(static_dir)
+    legendaries = {
+        int(iid) for iid, it in item_lookup.items()
+        if it.get("quality") == 5 and it.get("expansion") == expansion
+    }
+
+    priority = {i: "legendary" for i in legendaries}
+    priority.update({i: "tier" for i in current_tier_items})
+    return {
+        "outdated_spark_bonus_ids": outdated_sparks,
+        "current_tier_set_ids": current_sets,
+        "current_tier_item_ids": current_tier_items,
+        "legendary_item_ids": legendaries,
+        "priority_item_ids": priority,
+    }
+
+
+def has_outdated_spark(bonus_ids, outdated_spark_bonus_ids):
+    """True when an item's bonus ids (comma/colon/slash string or iterable)
+    carry an older season's spark, i.e. it is a last-season craft."""
+    if not bonus_ids or not outdated_spark_bonus_ids:
+        return False
+    if isinstance(bonus_ids, str):
+        bonus_ids = re.split(r"[,:/\s]+", bonus_ids)
+    return any(str(b).strip().isdigit() and int(b) in outdated_spark_bonus_ids for b in bonus_ids)
+
+
+def drop_outdated_spark_items(loadouts, outdated_spark_bonus_ids):
+    """Top-50 loadouts (``fetch_top50_loadouts`` shape) without last-season crafts, the
+    Python-side twin of the old-spark filter the gear aggregation procs apply."""
+    if not outdated_spark_bonus_ids:
+        return loadouts
+    return [
+        {**lo, "items": [it for it in (lo.get("items") or [])
+                         if not has_outdated_spark(it.get("bonus_ids"), outdated_spark_bonus_ids)]}
+        for lo in loadouts or []
+    ]
 
 
 # Consumable categories in data/static/consumables.json. Foods are the generic

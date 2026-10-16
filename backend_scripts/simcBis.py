@@ -741,7 +741,11 @@ def gather_candidates(conn, cursor, spec_id, season, item_lookup, top50_gear=Non
     caught up to it yet, so it BYPASSES the SIMC_MIN_CANDIDATE_FRACTION floor —
     the whole point is to keep the clean current gear that the stale pool would
     otherwise drop early in a season. When a slot has no popularity rows at all
-    the Top-50 pick still seeds the bag so the reseeded baseline can use it."""
+    the Top-50 pick still seeds the bag so the reseeded baseline can use it.
+
+    Rows flagged ``priority`` (current-season tier, current-expansion
+    legendaries) come first from the DB, also bypass the floor, and keep a
+    ``priority`` flag so trim_bag never drops them."""
     embellish_limits = load_embellishment_limits()
     socket_bonus_counts = load_bonus_socket_counts()
     out = {}
@@ -754,14 +758,18 @@ def gather_candidates(conn, cursor, spec_id, season, item_lookup, top50_gear=Non
             floor = top_count * SIMC_MIN_CANDIDATE_FRACTION
             for r in rows[:SIMC_CANDIDATES_PER_SLOT]:
                 count = int(r.get("count", 0))
-                if count < floor:
+                priority = bool(r.get("priority"))
+                if count < floor and not priority:
                     continue
                 item_id = int(r["item"])
                 bonus_list = (r.get("bonus") or {}).get("ids") if r.get("bonus") else None
-                cands.append(_make_candidate(
+                cand = _make_candidate(
                     item_id, bonus_list, count, item_lookup,
                     embellish_limits, socket_bonus_counts,
-                ))
+                )
+                if priority:
+                    cand["priority"] = True
+                cands.append(cand)
         # Union the Top-50 current pick for this slot (bypasses the popularity
         # floor). Appended after the popularity picks so trim_bag drops it last
         # among equally-unpopular tails; deterministic (one pick per slot).
@@ -1198,20 +1206,29 @@ def trim_bag(opts, cap):
     would then produce no valid combination at all. Protected slots keep
     [limited head, best limit-free alternative] so the sim decides which limited
     items are worth wearing. The cap still wins: protection is dropped once
-    nothing else can be trimmed."""
+    nothing else can be trimmed.
+
+    A ``priority`` candidate (current tier, current legendary) is never trimmed,
+    even past the cap: the trim drops the last non-priority candidate instead."""
+    def _drop_idx(v):
+        if len(v) < 2:
+            return None
+        return next((i for i in range(len(v) - 1, -1, -1) if not v[i].get("priority")), None)
+
     def _protected(slot):
         v = opts[slot]
         return len(v) == 2 and _consumes_limit(v[0]) and not _consumes_limit(v[1])
 
     while _combo_count(opts) > cap:
-        slot = max((s for s, v in opts.items() if len(v) > 1 and not _protected(s)),
+        trimmable = [s for s, v in opts.items() if _drop_idx(v) is not None]
+        slot = max((s for s in trimmable if not _protected(s)),
                    key=lambda s: len(opts[s]), default=None)
         if slot is None:   # everything left is protected — the cap takes priority
-            slot = max((s for s, v in opts.items() if len(v) > 1),
-                       key=lambda s: len(opts[s]), default=None)
+            slot = max(trimmable, key=lambda s: len(opts[s]), default=None)
         if slot is None:
             break
-        opts[slot] = opts[slot][:-1]
+        i = _drop_idx(opts[slot])
+        opts[slot] = opts[slot][:i] + opts[slot][i + 1:]
     return opts
 
 
@@ -1220,6 +1237,17 @@ def _same_cand(a, b):
     if a is None or b is None:
         return a is None and b is None
     return a.get("item_id") == b.get("item_id") and a.get("bonus_list") == b.get("bonus_list")
+
+
+def _most_equipped(cands):
+    """The pool's most-equipped candidate. Not simply cands[0]: bags lead with
+    the pinned priority items, then the rest by popularity, then the Top-50
+    union pick (whose count is not a pool count, see gather_candidates)."""
+    if not cands:
+        return None
+    heads = [c for c in cands if c.get("priority")]
+    heads += [next((c for c in cands if not c.get("priority")), cands[0])]
+    return max(heads, key=lambda c: c.get("count") or 0)
 
 
 def enumerate_valid_combos(fixed_gear, vary, cap):
@@ -1241,12 +1269,14 @@ def enumerate_valid_combos(fixed_gear, vary, cap):
     return combos
 
 
-def detect_tier(candidates):
+def detect_tier(candidates, current_tier_set_ids=()):
     """Detect the current tier set from the candidate pool.
 
     Returns (tier_set_id, tier_slots) where tier_slots is the set of Blizzard
     slot names whose candidates contain a member of the dominant item set that
-    spans >= 4 of the tier-eligible armour slots. Returns (None, set()) if none.
+    spans >= 4 of the tier-eligible armour slots. A current-season set
+    (`current_tier_set_ids`) spanning >= 4 slots wins over a more popular old
+    set. Returns (None, set()) if none.
     """
     # itemSetId -> set of tier slots it appears in (among candidates), with weight
     coverage = {}
@@ -1260,11 +1290,18 @@ def detect_tier(candidates):
             # earlier (more popular) candidates weigh more
             weight[sid] = weight.get(sid, 0) + (SIMC_CANDIDATES_PER_SLOT - rank)
 
-    best = None
-    for sid, slots in coverage.items():
-        if len(slots) >= 4:
-            if best is None or (len(slots), weight[sid]) > (len(coverage[best]), weight[best]):
-                best = sid
+    def _best(sids):
+        best = None
+        for sid in sids:
+            if len(coverage[sid]) >= 4:
+                if best is None or (len(coverage[sid]), weight[sid]) > (len(coverage[best]), weight[best]):
+                    best = sid
+        return best
+
+    current = set(current_tier_set_ids or ())
+    best = _best(s for s in coverage if s in current)
+    if best is None:
+        best = _best(coverage)
     if best is None:
         return None, set()
     return best, set(coverage[best])
@@ -1308,7 +1345,7 @@ def _set_dedup_key(gear):
 
 
 def build_injected_sets(loadouts, candidates, item_lookup, spec_id,
-                        enchant_map, gem_ranking):
+                        enchant_map, gem_ranking, baseline=None):
     """Each distinct Top-50 player's whole verified gearset, as a candidate set.
 
     Coherent known-good sets are evaluated as-is rather than only reachable
@@ -1322,7 +1359,9 @@ def build_injected_sets(loadouts, candidates, item_lookup, spec_id,
     unfairly simmed bare against the enchanted enumerated combos. Identical full
     sets are deduped; the result is ordered by rank. Sets are NOT run through the
     main-hand handedness filter (they were coherent in game); only the
-    two-hand off-hand rule is applied defensively."""
+    two-hand off-hand rule is applied defensively. A slot the loadout lacks
+    (e.g. an old-spark craft dropped by drop_outdated_spark_items) takes the
+    `baseline` piece, so the set is never simmed with that slot bare."""
     embellish_limits = load_embellishment_limits()
     socket_bonus_counts = load_bonus_socket_counts()
 
@@ -1364,6 +1403,8 @@ def build_injected_sets(loadouts, candidates, item_lookup, spec_id,
             )
         if not gear:
             continue
+        for slot, cand in (baseline or {}).items():
+            gear.setdefault(slot, dict(cand))
         _drop_two_hand_offhand(gear, spec_id, item_lookup)
         gear = _ordered_gear(gear)
         # Constant enchants/gems over the equipped set (own per-category budget).
@@ -1406,15 +1447,19 @@ def build_tier_comps(rows, candidates, baseline, item_lookup, tier_item_to_set,
     applies exactly that comp's set bonuses and no more. Non-tier slots inherit the
     seed. Items absent from item_lookup are skipped; if that drops the comp below
     2pc of every resolvable set the whole comp is skipped. Enchants/gems are filled
-    like the baseline. Ordered by (total_runs desc, comp); identical sets deduped.
+    like the baseline. Ordered by (has_priority desc, total_runs desc, comp), so
+    comps with current-season tier come first; identical sets deduped.
 
-    Returns a list of {comp, total_runs, label, gear, locked_slots} where
-    locked_slots are the comp pieces (kept pinned through legalize_set)."""
+    Returns a list of {comp, total_runs, has_priority, label, gear, locked_slots}
+    where locked_slots are the comp pieces (kept pinned through legalize_set)."""
     embellish_limits = load_embellishment_limits()
     socket_bonus_counts = load_bonus_socket_counts()
     tier_armour_slots = set(TIER_INVTYPE_TO_SLOT.values())
 
-    ordered = sorted(rows or [], key=lambda r: (-int(r[1] or 0), str(r[0])))
+    def _has_priority(r):
+        return int((r[4] if len(r) > 4 else 0) or 0)
+
+    ordered = sorted(rows or [], key=lambda r: (-_has_priority(r), -int(r[1] or 0), str(r[0])))
     out = []
     seen = set()
     for row in ordered:
@@ -1474,9 +1519,11 @@ def build_tier_comps(rows, candidates, baseline, item_lookup, tier_item_to_set,
         for s in tier_armour_slots:
             if s in worn:
                 continue
-            off = next(
-                (c for c in (candidates.get(s) or [])
-                 if c.get("item_set_id") not in comp_set_ids),
+            pool = candidates.get(s) or []
+            # Prefer a set-free piece: the pinned current-tier pieces head every
+            # bag and would otherwise add another set's bonus to an old comp.
+            off = next((c for c in pool if c.get("item_set_id") is None), None) or next(
+                (c for c in pool if c.get("item_set_id") not in comp_set_ids),
                 None,
             )
             if off is not None:
@@ -1496,6 +1543,7 @@ def build_tier_comps(rows, candidates, baseline, item_lookup, tier_item_to_set,
         out.append({
             "comp": comp,
             "total_runs": total_runs,
+            "has_priority": bool(_has_priority(row)),
             "label": f"tier:{comp}",
             "gear": gear,
             "locked_slots": sorted(worn),
@@ -1786,7 +1834,8 @@ def build_combinations(candidates, baseline, active_slots, tier_set_id, tier_slo
     A set that cannot be legalized is dropped with a log rather than simmed
     illegal. Combos are deduped by a canonical per-slot key. The reserved
     guaranteed block (1-3) is hard-capped at cap//2 so the enumerated search is
-    never fully starved, and the seed always survives that clamp.
+    never fully starved, and the seed always survives that clamp. Tier comps
+    with current-season pieces (`has_priority`) are exempt from that clamp.
 
     When `tier_comps` is empty the per-slot search falls back to the legacy
     detect_tier scenario sweep (step 4 becomes the "all"/"drop:" enumeration);
@@ -1851,8 +1900,9 @@ def build_combinations(candidates, baseline, active_slots, tier_set_id, tier_slo
                  f"({_violation_reason(full, unresolved)})")
             continue
         add_combo(_ordered_gear(full), inj["label"])
-    for tc in tier_comps:                         # caller pre-sorts by total_runs desc
-        if len(all_combos) >= reserved_cap:
+    for tc in tier_comps:          # caller pre-sorts current-tier comps first, then total_runs desc
+        # current-tier comps are always simmed, even past the reserved cap
+        if len(all_combos) >= reserved_cap and not tc.get("has_priority"):
             break
         full = {s: c for s, c in tc["gear"].items()}
         full, unresolved = legalize_set(full, candidates, locked=set(tc.get("locked_slots") or ()))
@@ -2254,6 +2304,10 @@ def _prepare_spec(spec_id, spec_info, class_info, season, conn, cursor, item_loo
     except Exception as e:
         _log(f"could not fetch top-50 loadouts for spec {spec_id}: {e}")
         loadouts = []
+    season_rules = commonUtils.load_season_gear_rules(item_lookup, str(STATIC_DIR))
+    loadouts = commonUtils.drop_outdated_spark_items(
+        loadouts, season_rules["outdated_spark_bonus_ids"]
+    )
     top50_gear = top50_per_slot_gear(loadouts, item_lookup)
     # Below MIN_TOP50_SLOTS the verified data is too thin to reseed from (early
     # season): fall back to the most-popular set, union nothing, inject nothing.
@@ -2300,7 +2354,7 @@ def _prepare_spec(spec_id, spec_info, class_info, season, conn, cursor, item_loo
     # talents and consumables are added per phase (see _stage_header)
     header = build_header(class_name, spec_name, spec_info.get("primary_stat"), None)
 
-    tier_set_id, tier_slots = detect_tier(candidates)
+    tier_set_id, tier_slots = detect_tier(candidates, season_rules["current_tier_set_ids"])
     _stat_log(stats, f"simc: spec {spec_id} ({class_name}/{spec_name}) "
                      f"tier_set={tier_set_id} slots={sorted(tier_slots)} "
                      f"top50_seed={use_top50}")
@@ -2343,7 +2397,7 @@ def _prepare_spec(spec_id, spec_info, class_info, season, conn, cursor, item_loo
     if use_top50:
         injected_sets = build_injected_sets(
             loadouts, candidates, item_lookup, spec_id,
-            enchant_map, gem_ranking,
+            enchant_map, gem_ranking, baseline,
         )
 
     # ---- resolved tier-set combos (the exact combos the spec page lists) ----
@@ -2490,7 +2544,7 @@ def _build_run(prep, item_lookup):
     tier_slots = sorted(prep["tier_slots"])
     active_slots = prep["active_slots"]
     # Both come from _prepare_spec as already-ordered lists (injected by rank, tier
-    # by total_runs desc) and are round-tripped verbatim through the JSON prep
+    # current-season first, then by total_runs desc) and are round-tripped verbatim through the JSON prep
     # snapshot, so a resume rebuilds the identical combos and the same signature.
     injected_sets = prep.get("injected_sets") or []
     tier_comps = prep.get("tier_comps") or []
@@ -2533,8 +2587,11 @@ def _build_run(prep, item_lookup):
     talent_profilesets = [(f"b{i}", [f"talents={c['code']}"])
                           for i, c in enumerate(talents) if i > 0]
     comp_keys = {name: tier_comp_key(full) for name, (full, _) in index.items()}
+    # By runs, not the priority-first comp order: the head is the tier_comp reference.
     tier_comp_keys = list(dict.fromkeys(
-        k for k in (tier_comp_key(tc["gear"]) for tc in tier_comps) if k
+        k for k in (tier_comp_key(tc["gear"])
+                    for tc in sorted(tier_comps, key=lambda tc: -int(tc.get("total_runs") or 0)))
+        if k
     ))
 
     # profile_signature identifies the full run (talent text, stage-1 text and
@@ -2688,7 +2745,7 @@ def _rank_with_refs(build, means, top_n):
         cands = build["candidates"].get(slot)
         if not cands:
             continue
-        popular = cands[0]["item_id"]
+        popular = _most_equipped(cands)["item_id"]
         ref = next((n for _, n in ranked
                     if (index[n][0].get(slot) or {}).get("item_id") == popular), None)
         if ref is not None:
@@ -3032,8 +3089,8 @@ def _assemble_result(spec_id, season, build, done, baseline_dps, simc_version, i
         if not ranked:
             continue
         per_slot_ranked[slot] = ranked
-        cs = candidates.get(slot)
-        me = next((cd for cd in ranked if cd[0]["item_id"] == cs[0]["item_id"]), None) if cs else None
+        top = _most_equipped(candidates.get(slot))
+        me = next((cd for cd in ranked if cd[0]["item_id"] == top["item_id"]), None) if top else None
         slot_baseline_dps[slot] = me[1] if me else best_dps
 
     if not per_slot_ranked:
@@ -3818,13 +3875,13 @@ async def _dry_run_single(spec_id, season):
     # flags matter: a slot whose every candidate is embellished/limited can force
     # an illegal set (see legalize_set / trim_bag's protection rule).
     print("\n=== candidates per slot (after popularity filter) ===")
-    print("     flags: E=embellished (E-free spends no budget)  U=unique-equipped"
-          "  <cat>x<qty>=itemLimit consumed")
+    print("     flags: P=pinned priority  E=embellished (E-free spends no budget)"
+          "  U=unique-equipped  <cat>x<qty>=itemLimit consumed")
     for slot in active_slots:
         cs = candidates.get(slot, [])
         parts = []
         for c in cs:
-            flags = []
+            flags = ["P"] if c.get("priority") else []
             if c.get("has_embellishment"):
                 flags.append("E" if c.get("embellish_limits") else "E-free")
             if c.get("unique_equipped"):
@@ -3853,7 +3910,7 @@ async def _dry_run_single(spec_id, season):
         cs = candidates.get(slot) or []
         if not cs:
             continue
-        popular = cs[0]
+        popular = _most_equipped(cs)
         seed = baseline.get(slot)
         if seed and not _same_cand(seed, popular):
             diffs += 1
@@ -3874,11 +3931,12 @@ async def _dry_run_single(spec_id, season):
         print("  (none — thin Top-50 data or no verified loadouts)")
 
     print("\n=== resolved tier-set combos (each real 2pc/3pc/4pc config, "
-          "ordered by popularity) ===")
+          "current-season first, then by popularity) ===")
     if tier_comps:
         for tc in tier_comps:
             worn = tc.get("locked_slots") or []
             print(f"  {tc['label']}  runs={tc.get('total_runs')}  "
+                  f"priority={int(bool(tc.get('has_priority')))}  "
                   f"pieces={[tc['gear'][s]['item_id'] for s in worn if s in tc['gear']]}")
     else:
         print("  (none — no aggregated tier-set comps; falls back to detect_tier scenarios)")

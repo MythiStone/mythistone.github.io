@@ -180,6 +180,19 @@ def main():
         databaseConnector.commit_changes(conn)
         print(f"Inserted {tier_count} tier set items into tier_set_items table.")
 
+        # Replaced, not appended: which spark and tier set count as current flips each season.
+        from commonUtils import load_season_gear_rules
+        rules = load_season_gear_rules({int(i["id"]): i for i in equippable_items}, OUT_DIR)
+        databaseConnector.replace_outdated_spark_bonus_ids(conn, cursor, rules["outdated_spark_bonus_ids"])
+        databaseConnector.replace_priority_item_ids(conn, cursor, rules["priority_item_ids"])
+        databaseConnector.commit_changes(conn)
+        print(
+            f"Season gear rules: outdated sparks {sorted(rules['outdated_spark_bonus_ids'])}, "
+            f"current tier sets {sorted(rules['current_tier_set_ids'])}, "
+            f"{len(rules['legendary_item_ids'])} legendaries, "
+            f"{len(rules['priority_item_ids'])} priority items."
+        )
+
 
 if __name__ == "__main__":
     main()

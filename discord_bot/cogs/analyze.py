@@ -67,10 +67,12 @@ def _parse_gear(rest):
         return None
     ench = re.search(r"(?:^|,)enchant_id=(\d+)", rest)
     gem = re.search(r"(?:^|,)gem_id=([\d/]+)", rest)
+    bonus = re.search(r"(?:^|,)bonus_id=([\d/:]+)", rest)
     return {
         "id": int(m.group(1)),
         "enchant": int(ench.group(1)) if ench else None,
         "gems": [int(g) for g in gem.group(1).split("/") if g] if gem else [],
+        "bonus": [int(b) for b in re.split(r"[/:]", bonus.group(1)) if b] if bonus else [],
     }
 
 
@@ -120,32 +122,35 @@ def _acceptable(meta_slots, slot):
     return sim, top, common
 
 
-def _score_slot(meta_slots, slot, user_id):
+def _score_slot(meta_slots, slot, user, outdated_sparks):
+    """A last-season craft (old spark bonus id) never matches, even when its item
+    id is a pick (analyzer.js hasOutdatedSpark)."""
     sim, top, common = _acceptable(meta_slots, slot)
     has_ideal = bool(sim or top)
     if not has_ideal and not common:
         return None  # no meta data for this slot
-    if user_id in sim or user_id in top:
+    if outdated_sparks.intersection(user.get("bonus") or ()):
+        return "outdated"
+    if user["id"] in sim or user["id"] in top:
         return "match"
     if has_ideal:
         return "off"  # has a SIM/TOP target the user misses
-    return "match" if user_id in common else "off"
+    return "match" if user["id"] in common else "off"
 
 
-def _suggestion(meta_slots, slot, spec_id):
-    for n in _GROUPS.get(slot, (slot,)):
-        s = (meta_slots.get(n) or {}).get("sim")
-        if isinstance(s, dict):
-            return _item_link(s, spec_id)
-    for n in _GROUPS.get(slot, (slot,)):
-        top = (meta_slots.get(n) or {}).get("top") or []
-        if top:
-            return _item_link(top[0], spec_id)
-    for n in _GROUPS.get(slot, (slot,)):
-        c = (meta_slots.get(n) or {}).get("common")
-        if isinstance(c, dict):
-            return _item_link(c, spec_id)
-    return None
+def _suggestion(meta_slots, slot, spec_id, recraft_id=None):
+    """Best meta pick for an off slot. An old-spark craft that is itself a pick is
+    suggested again, since recrafting it is the fix (analyzer.js planGroupTargets)."""
+    names = _GROUPS.get(slot, (slot,))
+    picks = [p for n in names for p in [(meta_slots.get(n) or {}).get("sim")] if isinstance(p, dict)]
+    picks += [p for n in names for p in (meta_slots.get(n) or {}).get("top") or []]
+    if not picks:
+        picks = [p for n in names for p in [(meta_slots.get(n) or {}).get("common")] if isinstance(p, dict)]
+    if not picks:
+        return None
+    pick = next((p for p in picks if p.get("id") == recraft_id), picks[0])
+    link = _item_link(pick, spec_id)
+    return f"{link} (new this season)" if pick.get("priority") else link
 
 
 def _item_link(pick, spec_id):
@@ -181,18 +186,22 @@ def build_analyze_embed(spec_id, spec_meta, parsed) -> discord.Embed:
     embed = embeds.spec_embed_header(spec_id)
     embed.title = f"{lookups.spec_full_name(spec_id)} — Meta Check"
     meta_slots = (spec_meta or {}).get("slots", {})
+    # Absent from spec_meta artifacts published before the season spark rules.
+    outdated_sparks = set((spec_meta or {}).get("outdated_spark_bonus_ids") or ())
 
-    off, scored = [], 0
+    off, recraft, scored = [], {}, 0
     for slot in _SLOT_ORDER:
         user = parsed["slots"].get(slot)
         if not user:
             continue
-        status = _score_slot(meta_slots, slot, user["id"])
+        status = _score_slot(meta_slots, slot, user, outdated_sparks)
         if status is None:
             continue
         scored += 1
-        if status == "off":
+        if status != "match":
             off.append(slot)
+        if status == "outdated":
+            recraft[slot] = user["id"]
     if scored == 0:
         embed.description = "No meta data available for this spec yet (or no gear read from the export)."
         return embed
@@ -214,7 +223,8 @@ def build_analyze_embed(spec_id, spec_meta, parsed) -> discord.Embed:
         fields.append((
             "Off-meta gear",
             "\n".join(
-                f"**{_SLOT_LABEL[s]}** → {_suggestion(meta_slots, s, spec_id) or 'off-meta'}"
+                f"**{_SLOT_LABEL[s]}** → {_suggestion(meta_slots, s, spec_id, recraft.get(s)) or 'off-meta'}"
+                + (" · Old spark, recraft it with the current spark" if s in recraft else "")
                 for s in off
             ),
             False,
