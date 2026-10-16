@@ -220,3 +220,22 @@
 .streamer-runs tbody tr {
   height: 2.8rem;
 }
+
+/* Phones: the dungeon name gets the room the fixed Key and When columns can spare. */
+@media (max-width: 575.98px) {
+  .streamer-recent-table th:nth-child(2) {
+    width: 3.25rem;
+  }
+  .streamer-recent-table th:nth-child(3) {
+    width: 6.25rem;
+  }
+  .streamer-recent-table td:nth-child(3) {
+    font-size: 0.75rem !important;
+  }
+}
+
+@media (max-width: 359.98px) {
+  .vod-view-btn {
+    padding: 0.45rem 0.75rem;
+  }
+}

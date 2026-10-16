@@ -138,7 +138,7 @@
 .item-page .dt-scroll {
   max-height: 15rem;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 .item-page table.item-dt { color: inherit; }
 .item-page table.item-dt thead th {
@@ -377,7 +377,6 @@
   .item-page table.item-dt { table-layout: fixed; }
   .item-page table.item-dt th:nth-child(n+2),
   .item-page table.item-dt td:nth-child(n+2) { width: 26%; }
-  .item-page .dt-scroll { overflow-x: auto; }
   .item-page .usage-row .usage-label {
     white-space: normal;
     font-size: 0.7rem;

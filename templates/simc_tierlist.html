@@ -224,7 +224,7 @@
       </div>
       {% endmacro %}
 
-      <ul class="nav nav-tabs mb-3 ms-3" id="target-tabs" role="tablist">
+      <ul class="nav nav-tabs nav-scroll mb-3 ms-3" id="target-tabs" role="tablist">
         {% for tab in tabs %}
         <li class="nav-item" role="presentation">
           <button class="nav-link {% if loop.first %}active{% endif %}" id="tab-btn-{{ tab.targets }}"
@@ -251,7 +251,7 @@
       {# One shared modal, populated on click by assets/js/tierlist-modal.js with
          the exact gear + talents SimulationCraft used for the clicked bar. #}
       <div class="modal fade" id="gearModal" tabindex="-1" aria-labelledby="gearModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title d-flex align-items-center gap-2 h6 mb-0" id="gearModalLabel">

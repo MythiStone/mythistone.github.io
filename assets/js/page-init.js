@@ -66,5 +66,24 @@ document.addEventListener('hide.bs.modal', function (e) {
     }
 });
 
+// Offcanvas sidenav (below 1200px): close it from the backdrop, a nav link or Escape.
+// toggleSidenav (material-dashboard.js) also swaps the aside's background classes.
+(function () {
+    var nav = document.getElementById('sidenav-main');
+    if (!nav || typeof toggleSidenav !== 'function') return;
+    function isOpen() {
+        return document.body.classList.contains('g-sidenav-pinned') && window.innerWidth < 1200;
+    }
+    document.addEventListener('click', function (e) {
+        if (!isOpen() || e.target.closest('#iconNavbarSidenav, #iconSidenav')) return;
+        if (!nav.contains(e.target) || e.target.closest('a[href]:not([data-bs-toggle])')) {
+            toggleSidenav();
+        }
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isOpen()) toggleSidenav();
+    });
+})();
+
 // Material Dashboard sidenav colour configurator default.
 sidebarColor(document.querySelector('#defaultColor'));

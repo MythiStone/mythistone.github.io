@@ -121,6 +121,24 @@ half-populated schema.
     The season id these pages render against comes from `data/static/seasonInfo.json`
     (`commonUtils.current_season_id()`), not the Blizzard API.
 
+## Viewport audit
+
+`viewport_audit.py` checks the rendered site at phone, tablet, laptop and wide sizes (320 to
+3440px) in Chromium, Firefox and WebKit. WebKit stands in for iOS Safari, but it is not a real
+device. Render the pages, serve the repo root on 8099, then:
+
+```bash
+pip install -c constraints.txt playwright
+python -m playwright install chromium firefox webkit
+python backend_scripts/localDev/viewport_audit.py
+```
+
+It writes `tmp/viewport_audit/report.md`, `results.json` and full-page screenshots under
+`shots/<engine>/<viewport>/`, and exits 1 when any page has horizontal overflow, silently clipped
+content or text lines over about 80 characters on wide screens. Small touch targets are reported
+as warnings. Use `--engines`, `--widths` and `--pages` to narrow a run, and `--no-screenshots` for
+a quick pass.
+
 ## Teardown
 
 ```bash

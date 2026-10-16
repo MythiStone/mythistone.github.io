@@ -203,6 +203,25 @@
   height: 100%;
   border-radius: 3px;
 }
+/* Narrow phones: a single long spec name ("Marksmanship") sets the 5-column tables'
+   minimum width, so tighten them, and let them scroll inside the card when even that
+   is too wide. */
+:has(> .dash-rank-table) {
+  overflow-x: auto;
+}
+@media (max-width: 399.98px) {
+  .dash-rank-table td,
+  .dash-rank-table th {
+    padding: 0.4rem 0.15rem;
+  }
+  .dash-rank-icon {
+    width: 24px;
+    height: 24px;
+  }
+  .dash-rank-name {
+    font-size: 0.8rem;
+  }
+}
 
 /* ---------- DataTables Responsive: child rows ---------- */
 /* The expand/collapse control is a border-drawn caret. The bundled CSS picks its
@@ -215,6 +234,11 @@ table.dataTable > tbody > tr > td.dtr-control:before {
 table.dataTable > tbody > tr.dtr-expanded > td.dtr-control:before {
   border-top-color: var(--bs-body-color) !important;
   border-left-color: transparent !important;
+}
+/* DataTables wraps its table in Bootstrap rows, whose negative gutters stick out 12px
+   past an in-card scroll box. */
+div.dt-container > div.row {
+  --bs-gutter-x: 0;
 }
 ul.dtr-details {
   width: 100%;
@@ -236,6 +260,17 @@ ul.dtr-details > li {
 }
 .bootstrap-select > .dropdown-toggle.bs-placeholder .filter-option-inner-inner {
   color: var(--mythi-text-muted);
+}
+
+/* Material Dashboard keeps closed menus in the layout (faded out, not display:none), so a
+   menu sized to its longest option widens the page on phones. Long options wrap instead. */
+@media (max-width: 575.98px) {
+  .bootstrap-select > .dropdown-menu {
+    max-width: 100%;
+  }
+  .bootstrap-select .dropdown-menu li a {
+    white-space: normal;
+  }
 }
 
 /* bootstrap-select keeps the original <select> in the layout (clipped, not
@@ -288,3 +323,149 @@ select.selectpicker option {
       max-width: 340px;
     }
   }
+
+/* ---------- Text sizing on rotation (iOS Safari inflates fonts in landscape) ---------- */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ---------- Wide screens: cap the content column ---------- */
+/* Every page wraps its content in `main > .container-fluid.mx-3`, so the cap lives here
+   (margins need !important to beat .mx-3). The header gets matching padding, so its
+   own mx-3 rows line up with the capped content. */
+main.main-content > .container-fluid {
+  max-width: 120rem;
+  margin-left: max(1rem, (100% - 120rem) / 2) !important;
+  margin-right: max(1rem, (100% - 120rem) / 2) !important;
+}
+.page-top-chrome {
+  padding-left: max(0px, (100% - 122rem) / 2);
+  padding-right: max(0px, (100% - 122rem) / 2);
+}
+
+/* Paragraphs keep a readable line length however wide the column gets. */
+main p,
+.prose-page li {
+  max-width: 75ch;
+}
+main p.text-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+/* Legal pages carry long unbroken URLs. */
+.prose-page {
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Phone header: crumb + icons on row 1, full-width search on row 2 ---------- */
+@media (max-width: 767.98px) {
+  .navbar-main > .container-fluid {
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+  }
+  /* Lifts the search and icon groups out of the collapse wrapper into the row above. */
+  .navbar-main #navbar {
+    display: contents !important;
+  }
+  .navbar-main .navbar-crumbs {
+    order: 1;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .navbar-main .breadcrumb {
+    flex-wrap: nowrap;
+    margin-right: 0.5rem !important;
+  }
+  .navbar-main .breadcrumb-item:not(.active) {
+    display: none;
+  }
+  .navbar-main .breadcrumb-item.active {
+    padding-left: 0;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .navbar-main .breadcrumb-item.active::before {
+    display: none;
+  }
+  .navbar-main .navbar-extra {
+    order: 2;
+    margin-right: 0.25rem;
+  }
+  .navbar-main .navbar-icons {
+    order: 3;
+    flex: 0 0 auto;
+    flex-direction: row;
+    width: auto;
+  }
+  .navbar-main .navbar-icons > .nav-item {
+    padding: 0 !important;
+  }
+  .navbar-main .navbar-icons .nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+  .navbar-main .navbar-search {
+    order: 4;
+    flex: 0 0 100%;
+    padding-right: 0 !important;
+  }
+  .navbar-main .navbar-search > div {
+    flex: 1 1 auto;
+    padding-right: 0 !important;
+  }
+}
+
+/* ---------- Offcanvas sidenav (below 1200px): backdrop and scroll lock ---------- */
+@media (max-width: 1199.98px) {
+  body.g-sidenav-pinned {
+    overflow: hidden;
+  }
+  /* Sits under the sidenav (z-index 9999); page-init.js closes the nav on a tap here. */
+  body.g-sidenav-pinned::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: rgba(var(--bs-black-rgb), 0.5);
+  }
+}
+
+/* The vendor UI configurator is a fixed 360px panel, wider than the smallest phones. */
+.fixed-plugin .card {
+  max-width: 100vw;
+}
+
+/* ---------- Tab strips that scroll sideways instead of wrapping ---------- */
+/* Only for .nav-tabs: material-dashboard.js rebuilds .nav-pills as a moving-tab widget. */
+.nav-tabs.nav-scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.nav-tabs.nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+.nav-tabs.nav-scroll .nav-link {
+  white-space: nowrap;
+}
+
+/* ---------- Embeds ---------- */
+/* Videos keep 16:9 and never outgrow the screen height. */
+.vod-embed {
+  display: block;
+  width: 100%;
+  border: 0;
+  aspect-ratio: 16 / 9;
+  max-height: calc(80vh - 3rem);
+}
+/* keystone.guru maps are sized by a vh height; keep them usable on a landscape phone. */
+.route-embed[data-name="keystoneGuru"] {
+  min-height: 18rem;
+}

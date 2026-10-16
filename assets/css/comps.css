@@ -224,11 +224,13 @@
   opacity: 0.4;
   cursor: default;
 }
+/* Wraps the buttons under the pair whenever the card is too narrow for one row: on
+   phones and in the half-width card between the two rails at laptop sizes. */
+#best-pairs-list .list-group-item {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+}
 @media (max-width: 575.98px) {
-  #best-pairs-list .list-group-item {
-    flex-wrap: wrap;
-    row-gap: 0.5rem;
-  }
   .spec-count-row {
     flex-direction: column;
   }

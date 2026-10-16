@@ -16,7 +16,6 @@
                      video_ref, start_seconds, pov_character_name, pov_spec_id
       spec_lookup  = spec id -> spec dict (SpellIconFileId, name, role)
       season_slug  = season_info.slug (for the raider.io permalink)
-      iframe_height= CSS height for the embed
       item_class   = extra class(es) on .accordion-item
       link_streamer= show the "Streamer page" button when vod.streamer_slug is set
                      (off on the streamer page itself). It lives in the body, not on
@@ -31,7 +30,7 @@
     KEEP IN SYNC: assets/js/vods-finder.js renderVodItem() builds this SAME markup
     client-side and mirrors build_vod_embed_src in JS (Klaro never sees client-added
     iframes, so consent is handled per-iframe via MythiConsent.loadEmbed). -#}
-{% macro vod_accordion_item(dungeon, vod, spec_lookup, season_slug, iframe_height='calc(80vh - 3rem)', item_class='', link_streamer=true) %}
+{% macro vod_accordion_item(dungeon, vod, spec_lookup, season_slug, item_class='', link_streamer=true) %}
 {% set vodKey = dungeon.slug ~ '-' ~ vod.video_ref %}
 {% set run_url = 'https://raider.io/mythic-plus-runs/' ~ season_slug ~ '/' ~ vod.run_id %}
 {% set pov = spec_lookup[vod.pov_spec_id|string] %}
@@ -102,7 +101,7 @@
           </div>
           <iframe loading="lazy" allowfullscreen data-name="{{ vod.video_type }}"
             data-src="{{ vod.video_ref | vod_embed(vod.video_type, vod.start_seconds) }}"
-            class="w-100 route-embed" style="border:none;width:100%;height:{{ iframe_height }};display:block;"></iframe>
+            class="w-100 route-embed vod-embed"></iframe>
         </div>
       </div>
     </div>

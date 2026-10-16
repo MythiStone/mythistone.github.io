@@ -5,8 +5,8 @@
  *   and other sticky elements offset by it).
  * - Condenses the header once the page is scrolled past its full height and expands
  *   it again only back near the top, so the two states cannot flicker.
- * - While condensed, notifications fold into the navbar bell, which opens them as a
- *   panel below the header.
+ * - While condensed, and always on phones and short screens, notifications fold into the
+ *   navbar bell, which opens them as a panel below the header.
  *
  * The header sits in normal flow, so every change of its height moves the page.
  * Each state change below the top is therefore compensated by scrolling the same
@@ -26,6 +26,8 @@
   var bellCount = bell ? bell.querySelector(".top-chrome-bell-count") : null;
   var content = chrome.nextElementSibling;
   var EXPAND_AT = 8; // px from the top where the header expands again
+  // Same breakpoints as the static-header rule in top-chrome.css.
+  var smallScreen = window.matchMedia("(max-width: 767.98px), (max-height: 599.98px)");
 
   function publishHeight() {
     root.style.setProperty("--top-chrome-h", chrome.offsetHeight + "px");
@@ -54,12 +56,16 @@
       // which would otherwise bounce between the two states at the bottom.
       var room = root.scrollHeight - window.innerHeight;
       if (y > expandedHeight && room > expandedHeight * 2) {
-        keepInPlace(function () { chrome.classList.add("is-condensed"); });
+        keepInPlace(function () {
+          chrome.classList.add("is-condensed");
+          syncFolded();
+        });
       }
     } else if (y < EXPAND_AT) {
       // Not compensated: at the top the visitor wants the page's real start,
       // which the full header now pushes down into place.
       chrome.classList.remove("is-condensed", "notes-open");
+      syncFolded();
       publishHeight();
       window.scrollTo({ top: 0, behavior: "instant" });
       setBellExpanded(false);
@@ -79,6 +85,15 @@
   }
 
   // ---- notifications bell ----
+  function syncFolded() {
+    var folded = smallScreen.matches || chrome.classList.contains("is-condensed");
+    chrome.classList.toggle("notes-folded", folded);
+    if (!folded) {
+      chrome.classList.remove("notes-open");
+      setBellExpanded(false);
+    }
+  }
+
   function setBellExpanded(open) {
     if (bell) {
       bell.setAttribute("aria-expanded", open ? "true" : "false");
@@ -130,6 +145,8 @@
   if (window.ResizeObserver) {
     new ResizeObserver(publishHeight).observe(chrome);
   }
+  syncFolded();
+  smallScreen.addEventListener("change", function () { keepInPlace(syncFolded); });
   publishHeight();
 
   window.addEventListener("scroll", onScroll, { passive: true });

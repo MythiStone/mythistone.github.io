@@ -30,9 +30,11 @@ html {
 }
 
 /* ---- notifications fold into the navbar bell ---- */
+/* notes-folded: set by top-chrome.js while condensed, and always on phones and short screens. */
 .top-chrome-bell-item { display: none; }
-.page-top-chrome.is-condensed.has-notes .top-chrome-bell-item { display: flex; }
-#top-chrome-bell { line-height: 1; }
+.page-top-chrome.notes-folded.has-notes .top-chrome-bell-item { display: flex; }
+/* .btn clips overflow, which would cut off the count badge. */
+#top-chrome-bell { line-height: 1; overflow: visible; }
 .top-chrome-bell-count {
   position: absolute;
   top: -0.35rem;
@@ -48,8 +50,8 @@ html {
   line-height: 1rem;
   text-align: center;
 }
-.page-top-chrome.is-condensed .top-chrome-notes {
-  /* Out of flow while condensed, so opening the panel never shifts the page. */
+.page-top-chrome.notes-folded .top-chrome-notes {
+  /* Out of flow while folded, so opening the panel never shifts the page. */
   display: none;
   position: absolute;
   top: 100%;
@@ -60,10 +62,14 @@ html {
   background: var(--bs-body-bg);
   box-shadow: 0 8px 16px -8px rgba(0, 0, 0, 0.5);
 }
-.page-top-chrome.is-condensed.notes-open .top-chrome-notes { display: block; }
+.page-top-chrome.notes-folded.notes-open .top-chrome-notes { display: block; }
 
 @media (max-width: 767.98px), (max-height: 599.98px) {
   .page-top-chrome:not(.is-condensed) { position: static; }
+  /* Still the anchor for the folded notes panel. */
+  .page-top-chrome.notes-folded:not(.is-condensed) { position: relative; }
+  /* Folded from first paint, before top-chrome.js sets notes-folded. */
+  .top-chrome-notes { display: none; }
 }
 
 /* ---- phones: only the navbar stays once condensed ---- */

@@ -1,6 +1,6 @@
 <nav class="navbar navbar-main navbar-expand-lg px-0 mx-3 shadow-none border-radius-xl">
   <div class="container-fluid py-1 px-3">
-    <nav aria-label="breadcrumb">
+    <nav class="navbar-crumbs" aria-label="breadcrumb">
       <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
         {% for crumb in breadcrumbs %}
         {% if not loop.last %}
@@ -21,7 +21,7 @@
       {% if navbar_extra %}
       <div class="navbar-extra d-flex align-items-center ms-md-auto">{{ navbar_extra }}</div>
       {% endif %}
-      <div class="{% if not navbar_extra %}ms-md-auto {% endif %}pe-md-3 d-flex align-items-center">
+      <div class="navbar-search {% if not navbar_extra %}ms-md-auto {% endif %}pe-md-3 d-flex align-items-center">
         <!-- paste into navbar (replaces the current input-group) -->
         <div class="ms-md-auto pe-md-3 d-flex align-items-center">
           <div class="position-relative w-100">
@@ -50,7 +50,7 @@
         </div>
 
       </div>
-      <ul class="navbar-nav d-flex align-items-center  justify-content-end">
+      <ul class="navbar-icons navbar-nav d-flex align-items-center justify-content-end">
         <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
           <a href="javascript:;" class="nav-link text-body p-0" id="iconNavbarSidenav">
             <div class="sidenav-toggler-inner">
