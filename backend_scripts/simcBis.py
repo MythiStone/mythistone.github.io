@@ -2306,7 +2306,8 @@ def _prepare_spec(spec_id, spec_info, class_info, season, conn, cursor, item_loo
         loadouts = []
     season_rules = commonUtils.load_season_gear_rules(item_lookup, str(STATIC_DIR))
     loadouts = commonUtils.drop_outdated_spark_items(
-        loadouts, season_rules["outdated_spark_bonus_ids"]
+        commonUtils.drop_wrong_spec_loadouts(loadouts, spec_id),
+        season_rules["outdated_spark_bonus_ids"],
     )
     top50_gear = top50_per_slot_gear(loadouts, item_lookup)
     # Below MIN_TOP50_SLOTS the verified data is too thin to reseed from (early

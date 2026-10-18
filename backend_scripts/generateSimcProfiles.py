@@ -362,7 +362,9 @@ def build_profiles(season, target_error, only_specs=None):
             # so the actor sims and the modal decode the exact string the game
             # accepts (see _top50_talents).
             try:
-                top50_loadouts = databaseConnector.fetch_top50_loadouts(conn, cursor, spec_id, season)
+                top50_loadouts = commonUtils.drop_wrong_spec_loadouts(
+                    databaseConnector.fetch_top50_loadouts(conn, cursor, spec_id, season), spec_id
+                )
                 top_gear = None
                 top_talents = None
                 if top50_loadouts:

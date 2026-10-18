@@ -1498,6 +1498,23 @@ def _normalize_bonus_ids(raw):
     return ",".join(str(i) for i in ids)
 
 
+def _foreign_spec_loadout(payload, spec_id, loadout_text=None):
+    """True when a raider.io loadout (list entry or detail) is evidently another
+    spec's. A character's /loadouts lists every spec it played, so a top Unholy
+    player's Frost run of the same dungeon would otherwise be stored as Unholy."""
+    def _get(obj, key):
+        return obj.get(key) if isinstance(obj, dict) else None
+
+    details = _get(payload, "characterDetails")
+    seen = [
+        _get(_get(payload, "spec"), "id"),
+        _get(_get(_get(details, "loadoutSourceDetails"), "spec"), "id"),
+        _get(_get(_get(details, "character"), "talentLoadout"), "specId"),
+        commonUtils.loadout_spec_id(loadout_text),
+    ]
+    return any(str(s).isdigit() and int(s) != int(spec_id) for s in seen if s is not None)
+
+
 def parse_loadout_for_db(spec_id, season, rank, loadout_detail):
     items_rows = []
     gems_rows = []
@@ -1800,7 +1817,7 @@ async def run_raiderio_top_loadouts(session):
                                     ld_zone_id = int(z.get("id")) if isinstance(z, dict) and z.get("id") is not None else None
                                 except Exception:
                                     ld_zone_id = None
-                                if ld_zone_id != zid:
+                                if ld_zone_id != zid or _foreign_spec_loadout(ld, spec_id):
                                     continue
                                 # get mythic level for the loadout (logged-mplus)
                                 lvl = ld.get("mythic_level") or ld.get("mythicLevel") or 0
@@ -1818,22 +1835,27 @@ async def run_raiderio_top_loadouts(session):
                                     matches.append((lvl_i, date_dt, ld))
                             if not matches:
                                 continue
-                            # choose best match
+                            # choose the best match whose detail is really this spec
                             matches.sort(key=lambda x: (-x[0], -int(x[1].timestamp())))
-                            chosen = matches[0][2]
-                            # prepare detail (may need fetching)
-                            loadout_id = chosen.get("optionKey") or chosen.get("id")
-                            detail = None
-                            try:
-                                if loadout_id:
-                                    detail = await fetch_loadout_detail(session, loadout_id, char_realm, char_name, char_region_slug)
-                                    await asyncio.sleep(TOP_PLAYER_LOADOUTS_PAGE_SLEEP)
-                            except Exception:
+                            selected = None
+                            for _lvl, _date, chosen in matches:
+                                loadout_id = chosen.get("optionKey") or chosen.get("id")
                                 detail = None
-                            if not detail:
-                                detail = chosen
-
-                            items_rows, gems_rows, talents_rows, enchants_rows, loadout_text = parse_loadout_for_db(spec_id, season, collected_rank, detail)
+                                try:
+                                    if loadout_id:
+                                        detail = await fetch_loadout_detail(session, loadout_id, char_realm, char_name, char_region_slug)
+                                        await asyncio.sleep(TOP_PLAYER_LOADOUTS_PAGE_SLEEP)
+                                except Exception:
+                                    detail = None
+                                if not detail:
+                                    detail = chosen
+                                parsed = parse_loadout_for_db(spec_id, season, collected_rank, detail)
+                                if not _foreign_spec_loadout(detail, spec_id, parsed[4]):
+                                    selected = (chosen, loadout_id, parsed)
+                                    break
+                            if selected is None:
+                                continue
+                            chosen, loadout_id, (items_rows, gems_rows, talents_rows, enchants_rows, loadout_text) = selected
 
                             per_dungeon_selected.append(
                                 {

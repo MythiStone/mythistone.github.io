@@ -55,6 +55,7 @@ BACKEND_DIR = os.path.dirname(SCRIPT_DIR)
 sys.path.insert(0, BACKEND_DIR)
 
 import databaseConnector as db  # noqa: E402
+import commonUtils  # noqa: E402
 
 # The collector reaches its async main loop only after env validation, DB pool
 # init and talent loading all succeed, so this one line is a reliable
@@ -227,6 +228,26 @@ def offrotation_loadout_ids(current_ids):
         conn.close()
 
 
+def wrong_spec_loadout_keys():
+    """(spec_id, rank, map_challenge_mode_id, loadout_key) of top_player_loadouts
+    rows whose export string decodes to another spec, on a FRESH pooled
+    connection (same reasoning as offrotation_loadout_ids). The collector must
+    only store the ranked spec's loadouts, so a key absent at baseline means its
+    spec filter regressed."""
+    conn = db.get_connection()
+    try:
+        cur = conn.cursor()
+        rows = db.fetch_with_retry(
+            conn, cur,
+            "SELECT spec_id, `rank`, map_challenge_mode_id, loadout_key, loadout_text "
+            "FROM top_player_loadouts WHERE loadout_text IS NOT NULL")
+        cur.close()
+        return {(int(r[0]), int(r[1]), r[2], r[3]) for r in rows
+                if commonUtils.loadout_spec_id(r[4]) not in (None, int(r[0]))}
+    finally:
+        conn.close()
+
+
 def container_state(name):
     """Return (running, exit_code). running is None if the container is gone."""
     proc = _run(["docker", "inspect", "-f", "{{.State.Running}}|{{.State.ExitCode}}", name])
@@ -336,6 +357,7 @@ def main():
 
     cur_dungeon_ids = current_dungeon_ids()
     base_offrotation = offrotation_loadout_ids(cur_dungeon_ids)
+    base_wrong_spec = wrong_spec_loadout_keys()
     base_counts = {t: count_rows(t) for t in (PRIMARY_TABLE, *CORROBORATING_TABLES)}
     base_mc_scored, base_mc_null = member_character_score_counts()
     base_simc = simc_success_snapshot()
@@ -346,6 +368,7 @@ def main():
     print(f"Baseline simc_bis_meta rows (baseline_dps>0): {len(base_simc)}")
     print(f"Baseline off-rotation top_player_loadouts dungeon ids: "
           f"{sorted(base_offrotation) or 'none'}")
+    print(f"Baseline wrong-spec top_player_loadouts rows: {len(base_wrong_spec)}")
     print(f"require_rows={require_rows} (runs-growth is "
           f"{'REQUIRED' if require_rows else 'informational only'})")
     print(f"require_simc={require_simc} (a real simc success is "
@@ -448,6 +471,7 @@ def main():
     # collector's current-dungeon filter regressed (the seeder writes only
     # current dungeons, so a new id can only come from this collector run).
     new_offrotation = offrotation_loadout_ids(cur_dungeon_ids) - base_offrotation
+    new_wrong_spec = wrong_spec_loadout_keys() - base_wrong_spec
 
     print("\n" + "=" * 70)
     print("Smoke test signals")
@@ -466,6 +490,7 @@ def main():
     print(f"  simc sibling launched     : {simc_seen} (corroborating)")
     print(f"  simc chunk succeeded (DB) : {simc_success}")
     print(f"  new off-rotation dungeons : {sorted(new_offrotation) or 'none'}")
+    print(f"  new wrong-spec loadouts   : {len(new_wrong_spec)}")
     print(f"  require_rows              : {require_rows}")
     print(f"  require_simc              : {require_simc}")
 
@@ -512,6 +537,11 @@ def main():
             "collector wrote off-rotation top_player_loadouts rows for dungeon(s) "
             f"{sorted(new_offrotation)} not in data/static/dungeons.json "
             "(current-dungeon filter regressed)")
+    if new_wrong_spec:
+        failures.append(
+            f"collector wrote {len(new_wrong_spec)} top_player_loadouts row(s) whose "
+            f"talent string is another spec's, e.g. {sorted(new_wrong_spec)[:3]} "
+            "(spec filter regressed)")
 
     print("\n" + "=" * 70)
     if failures:

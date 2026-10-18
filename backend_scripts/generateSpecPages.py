@@ -2978,7 +2978,8 @@ def main(template_path, output_dir, debug=False, spec=None):
                 # the gear aggregates already drop last-season crafts; BiS, top
                 # player gear and the Top Players view read these raw loadouts
                 top50_raw = commonUtils.drop_outdated_spark_items(
-                    top50_raw, season_gear_rules["outdated_spark_bonus_ids"]
+                    commonUtils.drop_wrong_spec_loadouts(top50_raw, spec_id),
+                    season_gear_rules["outdated_spark_bonus_ids"],
                 )
 
                 # Defense in depth against off-rotation rows that predate the

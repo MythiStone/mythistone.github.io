@@ -671,6 +671,22 @@ def drop_outdated_spark_items(loadouts, outdated_spark_bonus_ids):
     ]
 
 
+def drop_wrong_spec_loadouts(loadouts, spec_id):
+    """Top-50 loadouts (``fetch_top50_loadouts`` shape) minus those whose export
+    string belongs to another spec. raider.io lists a player's loadouts for every
+    spec, so rows from a sibling spec can sit under the ranked one, and simc
+    rejects such a string ("Wrong specialization"). Loadouts without a string
+    are kept."""
+    kept = [
+        lo for lo in loadouts or []
+        if loadout_spec_id(lo.get("loadout_text")) in (None, int(spec_id))
+    ]
+    dropped = len(loadouts or []) - len(kept)
+    if dropped:
+        print(f"Top-50 loadouts: dropped {dropped} of {len(loadouts)} for spec {spec_id} (spec_mismatch)")
+    return kept
+
+
 # Consumable categories in data/static/consumables.json. Foods are the generic
 # well-fed buff, not a specific food item. Temp weapon enchants (oils/whetstones)
 # are NOT consumables: they are weapon enchantments (see load_temp_enchant_index).
