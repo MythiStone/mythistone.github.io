@@ -36,10 +36,19 @@ from image_generation.pil_helpers import (
 _THUMBNAIL_FETCH = object()
 
 THUMBNAIL_POLL_INTERVAL = 10  # seconds between status polls
-# Must cover the drain of keystone.guru's shared render queue with every
-# dungeon's job submitted at once (8 dungeons x up to ~2.5 min each), not just
-# one render — a too-short budget strands later jobs still in "queued".
+# Default wait for one route when no shared deadline is passed. A job sits
+# "queued" until keystone.guru's shared render queue reaches it, and a failed
+# render goes back to the end of that queue (up to 3 attempts, then "error").
 THUMBNAIL_POLL_TIMEOUT = 25 * 60  # seconds
+# keystone.guru validates these snake_case keys and silently drops any others.
+THUMBNAIL_PAYLOAD = {
+    "viewport_width": 900,
+    "viewport_height": 600,
+    "image_width": 900,
+    "image_height": 600,
+    "zoom_level": 2.2,
+    "quality": 90,
+}
 
 _keystone_dungeons_lock = threading.Lock()
 _keystone_dungeons_cache = None
@@ -69,24 +78,35 @@ def _get_keystone_dungeon_list(auth):
         return _keystone_dungeons_cache
 
 
-def fetch_route_thumbnail(dungeon_id, top_route_key, deadline=None):
-    """Request, poll, and download the keystone.guru thumbnail for a route.
-
-    Pure HTTP (no DB), so it can run in a background thread while the caller
-    does per-dungeon DB work; most of its wall time is waiting on the remote
-    render job. Returns an RGBA PIL image, or None on any failure. `deadline`
-    is a time.monotonic() value several jobs can share; by default each job
-    gets THUMBNAIL_POLL_TIMEOUT of its own.
-    """
-    dungeon_meta = find_dungeon_meta(dungeon_id) or {}
-    name_text = dungeon_meta.get("name", {}).get("en_US", "")
-
-    auth = requests.auth.HTTPBasicAuth(
+def _keystone_auth():
+    return requests.auth.HTTPBasicAuth(
         os.environ.get("KEYSTONE_GURU_USER", ""),
         os.environ.get("KEYSTONE_GURU_PW", ""),
     )
 
-    # Step 1: Check if this dungeon has combined view enabled
+
+def describe_job(job):
+    """One-line job state for logs and the build summary."""
+    if not job:
+        return "no job"
+    text = f"job {job.get('id')} {job.get('status')}"
+    if job.get("status") == "queued":
+        text += f", queue {job.get('queueSize')}, eta {job.get('estimatedCompletion')}"
+    return text
+
+
+def submit_route_thumbnail(dungeon_id, route_key):
+    """POST a thumbnail request and return the job of the floor we render, or None.
+
+    keystone.guru creates a new job per floor on every POST (no dedup), so a
+    caller that may outlive its wait should keep this job and poll it again
+    instead of submitting anew. Combined-view dungeons use the highest floor
+    (all floors combined), others the first.
+    """
+    dungeon_meta = find_dungeon_meta(dungeon_id) or {}
+    name_text = dungeon_meta.get("name", {}).get("en_US", "")
+    auth = _keystone_auth()
+
     combined_view_enabled = False
     for d in _get_keystone_dungeon_list(auth):
         d_name = d.get("name", "")
@@ -95,67 +115,71 @@ def fetch_route_thumbnail(dungeon_id, top_route_key, deadline=None):
             combined_view_enabled = d.get("combinedViewEnabled", False)
             break
 
-    url = f'https://keystone.guru/api/v1/route/{top_route_key}/thumbnail'
-    payload = {
-      "viewportWidth": 900,
-      "viewportHeight": 600,
-      "imageWidth": 900,
-      "imageHeight": 600,
-      "zoomLevel": 2.2,
-      "quality": 90
-    }
+    url = f"https://keystone.guru/api/v1/route/{route_key}/thumbnail"
     try:
-        r = requests.post(url, json=payload, timeout=60, auth=auth)
+        r = requests.post(url, json=THUMBNAIL_PAYLOAD, timeout=60, auth=auth)
         if r.status_code != 200:
-            print(f"Failed to fetch thumbnail for route {top_route_key}, status code: {r.status_code}")
+            print(f"Thumbnail request for route {route_key} failed, status code: {r.status_code}")
             return None
-        resp_data = r.json()
-        jobs = resp_data.get("data", [])
-        if not jobs:
-            return None
-        # Important: If combined view exists use the thumbnail of the last floor otherwise use the first floor
-        if combined_view_enabled:
-            job = max(jobs, key=lambda x: x.get("floorIndex", 0))
-        else:
-            job = min(jobs, key=lambda x: x.get("floorIndex", 0))
+        jobs = r.json().get("data", [])
+    except Exception as e:
+        print(f"Error requesting thumbnail for route {route_key}: {e}")
+        return None
+    if not jobs:
+        print(f"Thumbnail request for route {route_key} returned no jobs")
+        return None
+    pick = max if combined_view_enabled else min
+    job = pick(jobs, key=lambda x: x.get("floorIndex", 0))
+    print(f"Thumbnail requested for route {route_key} floor {job.get('floorIndex')}: {describe_job(job)}")
+    return job
 
-        status = job.get("status")
 
-        if status in ["queued", "processing", "error"]:
-            status_url = job["links"]["status"]
-            # All of the build's jobs are submitted up front and share
-            # keystone.guru's render queue, so the last one can sit "queued"
-            # for the whole queue drain (~N dungeons x render time) — the
-            # deadline must cover that, not a single render.
-            if deadline is None:
-                deadline = time.monotonic() + THUMBNAIL_POLL_TIMEOUT
-            while time.monotonic() < deadline:
-                time.sleep(THUMBNAIL_POLL_INTERVAL)
-                poll_r = requests.get(status_url, auth=auth, timeout=20)
-                if poll_r.status_code == 200:
-                    poll_data = poll_r.json()
-                    poll_job = poll_data.get("data", {})
-                    status = poll_job.get("status")
-                    if status == "completed":
-                        job = poll_job
-                        break
-                    if status not in ("queued", "processing", "error"):
-                        break  # terminal failure state, stop waiting
+def wait_route_thumbnail(route_key, job, deadline=None):
+    """Poll a thumbnail job until it leaves "queued" or the deadline passes.
 
-        if status == "completed" and job.get("links", {}).get("result"):
+    Returns (RGBA image or None, last known job). Only "queued" is worth
+    waiting on; "error" and "expired" are final. `deadline` is a
+    time.monotonic() value several jobs can share.
+    """
+    auth = _keystone_auth()
+    if deadline is None:
+        deadline = time.monotonic() + THUMBNAIL_POLL_TIMEOUT
+    try:
+        while job.get("status") == "queued" and time.monotonic() < deadline:
+            time.sleep(THUMBNAIL_POLL_INTERVAL)
+            poll_r = requests.get(job["links"]["status"], auth=auth, timeout=20)
+            if poll_r.status_code == 404:
+                # expired jobs are eventually deleted
+                job = {**job, "status": "expired"}
+            elif poll_r.status_code == 200:
+                job = poll_r.json().get("data", job)
+
+        if job.get("status") == "completed" and job.get("links", {}).get("result"):
             img_url = job["links"]["result"]
-            print(f"Thumbnail ready, fetching image from {img_url}...")
             img_r = requests.get(img_url, timeout=60)
             if img_r.status_code == 200:
-                print("Thumbnail image fetched successfully, processing image...")
-                return Image.open(io.BytesIO(img_r.content)).convert("RGBA")
-            print(f"Getting image for {top_route_key} failed. Status: {img_r.status_code}")
-            return None
-        print(f"Thumbnail job for {top_route_key} failed or missing result. Status: {status}")
-        return None
+                print(f"Thumbnail for route {route_key} fetched from {img_url}")
+                return Image.open(io.BytesIO(img_r.content)).convert("RGBA"), job
+            print(f"Getting image for {route_key} failed. Status: {img_r.status_code}")
+            # the result link is gone, so the job is as good as expired
+            return None, {**job, "status": "expired"}
     except Exception as e:
-        print(f"Error fetching thumbnail for route {top_route_key}: {str(e)}")
+        print(f"Error polling thumbnail for route {route_key}: {e}")
+        return None, job
+    print(f"Thumbnail for route {route_key} not ready: {describe_job(job)}")
+    return None, job
+
+
+def fetch_route_thumbnail(dungeon_id, top_route_key, deadline=None):
+    """Request, poll, and download the keystone.guru thumbnail for a route.
+
+    Pure HTTP (no DB), so it can run in a background thread while the caller
+    does per-dungeon DB work. Returns an RGBA PIL image, or None on any failure.
+    """
+    job = submit_route_thumbnail(dungeon_id, top_route_key)
+    if job is None:
         return None
+    return wait_route_thumbnail(top_route_key, job, deadline)[0]
 
 
 def createDungeonOverviewImg(

@@ -3,8 +3,10 @@
 Runs as its own CI job next to the page build: the keystone.guru route thumbnail
 on each image can sit in a shared render queue for many minutes. Thumbnails are
 cached by route key, so only a dungeon whose top route changed asks keystone.guru
-again, and one that is not ready within the budget falls back to the dungeon's
-previous thumbnail (retried on the next build).
+again. A job still queued at the end of the budget is saved in the cache and
+polled again by the next build, which keeps its place in the queue. Until the
+top route is ready the image shows the next-ranked route or the dungeon's
+previous one.
 
 Needs DATABASE_*, and KEYSTONE_GURU_USER / KEYSTONE_GURU_PW for cache misses.
 """
@@ -13,12 +15,20 @@ import json
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 
 from PIL import Image
 
 import databaseConnector
 from commonUtils import LOOKUP_DIR, load_json, load_season_info
-from image_generation.dungeon_overview import createDungeonOverviewImg, fetch_route_thumbnail
+from image_generation.dungeon_overview import (
+    createDungeonOverviewImg,
+    describe_job,
+    submit_route_thumbnail,
+    wait_route_thumbnail,
+)
+
+JOBS_FILE = "jobs.json"
 
 
 def fetch_preview_data(season, dungeon_ids):
@@ -60,50 +70,111 @@ def load_cached(dungeon_dir, route_key):
     return Image.open(os.path.join(dungeon_dir, f"{route_key}.png")).convert("RGBA"), route
 
 
+def load_jobs(cache_dir):
+    """{route_key: job} of the keystone.guru jobs earlier builds left queued."""
+    path = os.path.join(cache_dir, JOBS_FILE)
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def save_jobs(cache_dir, jobs):
+    os.makedirs(cache_dir, exist_ok=True)
+    with open(os.path.join(cache_dir, JOBS_FILE), "w", encoding="utf-8") as fh:
+        json.dump(jobs, fh, indent=1)
+
+
+def job_alive(job):
+    """keystone.guru keeps a job, and its result, until expiresAt."""
+    expires = job.get("expiresAt")
+    if job.get("status") not in ("queued", "completed") or not expires:
+        return False
+    return datetime.fromisoformat(expires.replace("Z", "+00:00")) > datetime.now(timezone.utc)
+
+
+def fetch_thumbnail(dungeon_id, route_key, saved_job, deadline):
+    """(image, job) for a route: resume the saved job, else submit a new one.
+    A queued job is only waiting for the render queue, so it is never replaced."""
+    if saved_job and job_alive(saved_job):
+        image, job = wait_route_thumbnail(route_key, saved_job, deadline)
+        if image is not None or job.get("status") == "queued":
+            return image, job
+    job = submit_route_thumbnail(dungeon_id, route_key)
+    if job is None:
+        return None, None
+    return wait_route_thumbnail(route_key, job, deadline)
+
+
+def save_cached(dungeon_dir, route, image):
+    os.makedirs(dungeon_dir, exist_ok=True)
+    image.save(os.path.join(dungeon_dir, f"{route['route_key']}.png"))
+    with open(os.path.join(dungeon_dir, f"{route['route_key']}.json"), "w", encoding="utf-8") as fh:
+        json.dump({"route_key": route["route_key"], "specs": route.get("specs", [])}, fh)
+
+
+def ranked_routes(top_routes):
+    """The top route and the next-ranked one, its stand-in while the top route has no thumbnail."""
+    routes = [r for r in top_routes if r.get("route_key")]
+    return routes[:1] + [r for r in routes[1:] if r["route_key"] != routes[0]["route_key"]][:1]
+
+
 def main(output_dir, cache_dir, budget_seconds):
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
     season = load_season_info(LOOKUP_DIR)["blizzard_season_id"]
     data = fetch_preview_data(season, list(dungeon_lookup))
+    saved_jobs = load_jobs(cache_dir)
 
     deadline = time.monotonic() + budget_seconds
     executor = ThreadPoolExecutor(max_workers=8)
     pending = {}
     for dungeon_id, rows in data.items():
-        top_routes = rows["top_routes_data"]
-        route_key = top_routes[0].get("route_key") if top_routes else None
-        dungeon_dir = os.path.join(cache_dir, str(dungeon_id))
-        if route_key and route_key not in cached_routes(dungeon_dir):
-            pending[dungeon_id] = executor.submit(
-                fetch_route_thumbnail, dungeon_id, route_key, deadline=deadline)
+        ranked = ranked_routes(rows["top_routes_data"])
+        cached = cached_routes(os.path.join(cache_dir, str(dungeon_id)))
+        if not ranked or ranked[0]["route_key"] in cached:
+            continue
+        for route in ranked:
+            if route["route_key"] not in cached:
+                pending[(dungeon_id, route["route_key"])] = (route, executor.submit(
+                    fetch_thumbnail, dungeon_id, route["route_key"],
+                    saved_jobs.get(route["route_key"]), deadline))
+
+    queued_jobs, fetched, job_notes = {}, set(), {}
+    for (dungeon_id, route_key), (route, future) in pending.items():
+        image, job = future.result()
+        job_notes.setdefault(dungeon_id, []).append(f"{route_key}: {describe_job(job)}")
+        if image is not None:
+            save_cached(os.path.join(cache_dir, str(dungeon_id)), route, image)
+            fetched.add(route_key)
+        elif job and job.get("status") == "queued":
+            queued_jobs[route_key] = job
+    executor.shutdown(wait=False)
+    save_jobs(cache_dir, queued_jobs)
 
     summary = []
     for dungeon_id, rows in data.items():
-        top_routes = rows["top_routes_data"]
-        route_key = top_routes[0].get("route_key") if top_routes else None
+        ranked = [r["route_key"] for r in ranked_routes(rows["top_routes_data"])]
+        route_key = ranked[0] if ranked else None
         dungeon_dir = os.path.join(cache_dir, str(dungeon_id))
         thumbnail, status = None, "no top route"
         if route_key:
-            status = "cached"
-            if dungeon_id in pending:
-                thumbnail = pending[dungeon_id].result()
-                status = "fetched"
-                if thumbnail is not None:
-                    os.makedirs(dungeon_dir, exist_ok=True)
-                    thumbnail.save(os.path.join(dungeon_dir, f"{route_key}.png"))
-                    with open(os.path.join(dungeon_dir, f"{route_key}.json"), "w", encoding="utf-8") as fh:
-                        json.dump({"route_key": route_key, "specs": top_routes[0].get("specs", [])}, fh)
             cached = cached_routes(dungeon_dir)
-            if thumbnail is None and cached:
-                if route_key not in cached:
-                    status = f"not ready, previous route {cached[0]} shown"
-                use_key = route_key if route_key in cached else cached[0]
-                thumbnail, route = load_cached(dungeon_dir, use_key)
+            shown = next((k for k in ranked + cached if k in cached), None)
+            if shown == route_key:
+                status = "fetched" if route_key in fetched else "cached"
+            elif shown in ranked:
+                status = f"top route not ready, #2 route {shown} shown"
+            elif shown:
+                status = f"top route not ready, previous route {shown} shown"
+            else:
+                status = "top route not ready, no map"
+            if shown:
+                thumbnail, route = load_cached(dungeon_dir, shown)
                 rows["top_routes_data"] = [route]
-            elif thumbnail is None:
-                status = "not ready, no map"
-            # keep the route shown now and one older as the next fallback
-            keep = [k for k in cached if k == route_key] + [k for k in cached if k != route_key][:1]
-            for stale in set(cached) - set(keep):
+            # keep the top route, the route shown now and one older as the next fallback
+            keep = {k for k in (route_key, shown) if k in cached}
+            keep.update([k for k in cached if k not in keep][:1])
+            for stale in set(cached) - keep:
                 os.remove(os.path.join(dungeon_dir, f"{stale}.png"))
                 os.remove(os.path.join(dungeon_dir, f"{stale}.json"))
 
@@ -118,16 +189,15 @@ def main(output_dir, cache_dir, budget_seconds):
         )
         if result is None:
             raise RuntimeError(f"no preview rendered for dungeon {dungeon_id}")
-        summary.append((slug, route_key or "", status))
+        summary.append((slug, route_key or "", status, "<br>".join(job_notes.get(dungeon_id, []))))
         print(f"{slug}: {status}")
-    executor.shutdown(wait=False)
 
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a", encoding="utf-8") as fh:
-            fh.write("| Dungeon | Top route | Thumbnail |\n|---|---|---|\n")
-            for slug, route_key, status in summary:
-                fh.write(f"| {slug} | {route_key} | {status} |\n")
+            fh.write("| Dungeon | Top route | Thumbnail | keystone.guru jobs |\n|---|---|---|---|\n")
+            for row in summary:
+                fh.write("| " + " | ".join(row) + " |\n")
 
 
 if __name__ == "__main__":
