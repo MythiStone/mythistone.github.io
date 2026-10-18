@@ -89,7 +89,7 @@ def describe_job(job):
     """One-line job state for logs and the build summary."""
     if not job:
         return "no job"
-    text = f"job {job.get('id')} {job.get('status')}"
+    text = f"job {job.get('id')} floor {job.get('floorIndex')} {job.get('status')}"
     if job.get("status") == "queued":
         text += f", queue {job.get('queueSize')}, eta {job.get('estimatedCompletion')}"
     return text
@@ -108,29 +108,34 @@ def submit_route_thumbnail(dungeon_id, route_key):
     auth = _keystone_auth()
 
     combined_view_enabled = False
+    matched = None
     for d in _get_keystone_dungeon_list(auth):
         d_name = d.get("name", "")
         d_key = d.get("key", d.get("slug", ""))
         if str(d.get("gameVersionId")) == str(dungeon_id) or str(d.get("id")) == str(dungeon_id) or d_name == name_text or d_key == dungeon_meta.get("slug"):
             combined_view_enabled = d.get("combinedViewEnabled", False)
+            matched = d.get("id")
             break
+    print(f"[{route_key}] dungeon {dungeon_id} -> keystone.guru dungeon {matched}, combined view {combined_view_enabled}")
 
     url = f"https://keystone.guru/api/v1/route/{route_key}/thumbnail"
     try:
         r = requests.post(url, json=THUMBNAIL_PAYLOAD, timeout=60, auth=auth)
         if r.status_code != 200:
-            print(f"Thumbnail request for route {route_key} failed, status code: {r.status_code}")
+            print(f"[{route_key}] thumbnail request failed: HTTP {r.status_code} {r.text[:300]}")
             return None
         jobs = r.json().get("data", [])
     except Exception as e:
-        print(f"Error requesting thumbnail for route {route_key}: {e}")
+        print(f"[{route_key}] error requesting thumbnail: {e!r}")
         return None
     if not jobs:
-        print(f"Thumbnail request for route {route_key} returned no jobs")
+        print(f"[{route_key}] thumbnail request returned no jobs: {r.text[:300]}")
         return None
     pick = max if combined_view_enabled else min
     job = pick(jobs, key=lambda x: x.get("floorIndex", 0))
-    print(f"Thumbnail requested for route {route_key} floor {job.get('floorIndex')}: {describe_job(job)}")
+    all_jobs = ", ".join(describe_job(j) for j in sorted(jobs, key=lambda x: x.get("floorIndex", 0)))
+    print(f"[{route_key}] thumbnail requested, waiting on floor {job.get('floorIndex')}. "
+          f"All floors: {all_jobs}. Status URL {job.get('links', {}).get('status')}, expires {job.get('expiresAt')}")
     return job
 
 
@@ -144,29 +149,48 @@ def wait_route_thumbnail(route_key, job, deadline=None):
     auth = _keystone_auth()
     if deadline is None:
         deadline = time.monotonic() + THUMBNAIL_POLL_TIMEOUT
-    try:
-        while job.get("status") == "queued" and time.monotonic() < deadline:
-            time.sleep(THUMBNAIL_POLL_INTERVAL)
+    started = time.monotonic()
+    polls = failed_polls = 0
+    last_status, last_report = job.get("status"), started
+    print(f"[{route_key}] waiting on {describe_job(job)}, {int(deadline - started)}s left")
+    while job.get("status") == "queued" and time.monotonic() < deadline:
+        time.sleep(THUMBNAIL_POLL_INTERVAL)
+        polls += 1
+        elapsed = int(time.monotonic() - started)
+        try:
             poll_r = requests.get(job["links"]["status"], auth=auth, timeout=20)
-            if poll_r.status_code == 404:
-                # expired jobs are eventually deleted
-                job = {**job, "status": "expired"}
-            elif poll_r.status_code == 200:
-                job = poll_r.json().get("data", job)
+        except Exception as e:
+            # a dropped poll must not end the wait, the job keeps its queue place
+            failed_polls += 1
+            print(f"[{route_key}] poll {polls} at {elapsed}s failed: {e!r}")
+            continue
+        if poll_r.status_code == 404:
+            # expired jobs are eventually deleted
+            job = {**job, "status": "expired"}
+        elif poll_r.status_code == 200:
+            job = poll_r.json().get("data", job)
+        else:
+            failed_polls += 1
+            print(f"[{route_key}] poll {polls} at {elapsed}s: HTTP {poll_r.status_code} {poll_r.text[:300]}")
+            continue
+        if job.get("status") != last_status or time.monotonic() - last_report >= 60:
+            print(f"[{route_key}] poll {polls} at {elapsed}s: {describe_job(job)}")
+            last_status, last_report = job.get("status"), time.monotonic()
+    waited = f"after {int(time.monotonic() - started)}s, {polls} polls ({failed_polls} failed)"
 
-        if job.get("status") == "completed" and job.get("links", {}).get("result"):
-            img_url = job["links"]["result"]
+    if job.get("status") == "completed" and job.get("links", {}).get("result"):
+        img_url = job["links"]["result"]
+        try:
             img_r = requests.get(img_url, timeout=60)
             if img_r.status_code == 200:
-                print(f"Thumbnail for route {route_key} fetched from {img_url}")
+                print(f"[{route_key}] thumbnail fetched {waited} from {img_url}")
                 return Image.open(io.BytesIO(img_r.content)).convert("RGBA"), job
-            print(f"Getting image for {route_key} failed. Status: {img_r.status_code}")
-            # the result link is gone, so the job is as good as expired
-            return None, {**job, "status": "expired"}
-    except Exception as e:
-        print(f"Error polling thumbnail for route {route_key}: {e}")
-        return None, job
-    print(f"Thumbnail for route {route_key} not ready: {describe_job(job)}")
+            print(f"[{route_key}] getting image {img_url} failed: HTTP {img_r.status_code}")
+        except Exception as e:
+            print(f"[{route_key}] getting image {img_url} failed: {e!r}")
+        # the result link is gone, so the job is as good as expired
+        return None, {**job, "status": "expired"}
+    print(f"[{route_key}] not ready {waited}: {describe_job(job)}. Last job state: {job}")
     return None, job
 
 

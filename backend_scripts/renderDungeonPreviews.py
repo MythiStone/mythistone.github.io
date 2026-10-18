@@ -97,9 +97,13 @@ def fetch_thumbnail(dungeon_id, route_key, saved_job, deadline):
     """(image, job) for a route: resume the saved job, else submit a new one.
     A queued job is only waiting for the render queue, so it is never replaced."""
     if saved_job and job_alive(saved_job):
+        print(f"[{route_key}] resuming saved {describe_job(saved_job)}, expires {saved_job.get('expiresAt')}")
         image, job = wait_route_thumbnail(route_key, saved_job, deadline)
         if image is not None or job.get("status") == "queued":
             return image, job
+        print(f"[{route_key}] saved job ended {job.get('status')}, submitting a new one")
+    elif saved_job:
+        print(f"[{route_key}] saved {describe_job(saved_job)} expired at {saved_job.get('expiresAt')}, submitting a new one")
     job = submit_route_thumbnail(dungeon_id, route_key)
     if job is None:
         return None, None
@@ -124,6 +128,8 @@ def main(output_dir, cache_dir, budget_seconds):
     season = load_season_info(LOOKUP_DIR)["blizzard_season_id"]
     data = fetch_preview_data(season, list(dungeon_lookup))
     saved_jobs = load_jobs(cache_dir)
+    print(f"{len(saved_jobs)} saved keystone.guru jobs: "
+          + (", ".join(f"{k} ({describe_job(j)})" for k, j in saved_jobs.items()) or "none"))
 
     deadline = time.monotonic() + budget_seconds
     executor = ThreadPoolExecutor(max_workers=8)
@@ -133,6 +139,7 @@ def main(output_dir, cache_dir, budget_seconds):
         cached = cached_routes(os.path.join(cache_dir, str(dungeon_id)))
         if not ranked or ranked[0]["route_key"] in cached:
             continue
+        print(f"dungeon {dungeon_id}: ranked {[r['route_key'] for r in ranked]}, cached {cached}")
         for route in ranked:
             if route["route_key"] not in cached:
                 pending[(dungeon_id, route["route_key"])] = (route, executor.submit(
@@ -150,6 +157,7 @@ def main(output_dir, cache_dir, budget_seconds):
             queued_jobs[route_key] = job
     executor.shutdown(wait=False)
     save_jobs(cache_dir, queued_jobs)
+    print(f"saved {len(queued_jobs)} queued jobs for the next build: {list(queued_jobs) or 'none'}")
 
     summary = []
     for dungeon_id, rows in data.items():
