@@ -465,3 +465,13 @@ main.main-content > .container-fluid {
 .route-embed[data-name="keystoneGuru"] {
   min-height: 18rem;
 }
+
+/* ---------- Wowhead tooltips ---------- */
+/* power.js hangs its logo outside the tooltip's right edge and ignores it when fitting the
+   tooltip to the viewport, so near the edge it widened the page. Keep it within the tooltip. */
+.wowhead-tooltip .wowhead-tooltip-powered {
+  left: auto;
+  right: 0;
+  top: auto;
+  bottom: calc(100% + 3px);
+}
