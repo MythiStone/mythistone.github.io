@@ -2095,5 +2095,16 @@
         "persona": "lore_nerd",
         "judge_score": null,
         "timestamp": 1792185111204
+    },
+    "data/social/weekly_mover_dungeon_586_2026-10-18.png": {
+        "title": "Weekly Mover: Den of Nalorakk",
+        "post_type": "weekly_mover",
+        "link": "https://mythistone.com/dungeons/den-of-nalorakk",
+        "social": "Den of Nalorakk jumped from A to S tier in a week, and the highest timed key crept from +23 to +24. The meta finally found a new favorite to overhype. #WoW #MythicPlus https://mythistone.com/dungeons/den-of-nalorakk",
+        "blog": "Nothing moved more over the last seven days than Den of Nalorakk: highest timed key from +23 to +24 and tier from A to S.\n\nMost of the ladder barely shifts week to week this deep into a season, so a jump like this stands out.",
+        "post": "Den of Nalorakk jumped from A to S tier in a week, and the highest timed key crept from +23 to +24. The meta finally found a new favorite to overhype. #WoW #MythicPlus https://mythistone.com/dungeons/den-of-nalorakk",
+        "persona": "snarky_analyst",
+        "judge_score": 33.0,
+        "timestamp": 1792355724174
     }
 }
