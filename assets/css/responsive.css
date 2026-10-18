@@ -344,14 +344,10 @@ main.main-content > .container-fluid {
   padding-right: max(0px, (100% - 122rem) / 2);
 }
 
-/* Paragraphs keep a readable line length however wide the column gets. */
-main p,
+/* Legal pages are long-form reading, so they keep a readable line length. */
+.prose-page p,
 .prose-page li {
   max-width: 75ch;
-}
-main p.text-center {
-  margin-left: auto;
-  margin-right: auto;
 }
 /* Legal pages carry long unbroken URLs. */
 .prose-page {
