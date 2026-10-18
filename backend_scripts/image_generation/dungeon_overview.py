@@ -36,10 +36,9 @@ from image_generation.pil_helpers import (
 _THUMBNAIL_FETCH = object()
 
 THUMBNAIL_POLL_INTERVAL = 10  # seconds between status polls
-# Default wait for one route when no shared deadline is passed. A job sits
-# "queued" until keystone.guru's shared render queue reaches it, and a failed
-# render goes back to the end of that queue (up to 3 attempts, then "error").
-THUMBNAIL_POLL_TIMEOUT = 25 * 60  # seconds
+# A queued job can take well over half an hour (failed renders are retried at
+# the end of keystone.guru's shared queue), so this only guards against a hung queue.
+THUMBNAIL_TIMEOUT = 2 * 60 * 60  # seconds
 # keystone.guru validates these snake_case keys and silently drops any others.
 THUMBNAIL_PAYLOAD = {
     "viewport_width": 900,
@@ -139,20 +138,20 @@ def submit_route_thumbnail(dungeon_id, route_key):
     return job
 
 
-def wait_route_thumbnail(route_key, job, deadline=None):
-    """Poll a thumbnail job until it leaves "queued" or the deadline passes.
+def wait_route_thumbnail(route_key, job):
+    """Poll a thumbnail job until keystone.guru finishes it or THUMBNAIL_TIMEOUT passes.
 
-    Returns (RGBA image or None, last known job). Only "queued" is worth
-    waiting on; "error" and "expired" are final. `deadline` is a
-    time.monotonic() value several jobs can share.
+    Returns (RGBA image or None, last known job). A job stays "queued" until
+    the shared render queue reaches it, and a failed render goes back to the
+    end of that queue (up to 3 attempts, then "error"). Only "completed",
+    "error", "expired" or the timeout end the wait.
     """
     auth = _keystone_auth()
-    if deadline is None:
-        deadline = time.monotonic() + THUMBNAIL_POLL_TIMEOUT
     started = time.monotonic()
+    deadline = started + THUMBNAIL_TIMEOUT
     polls = failed_polls = 0
     last_status, last_report = job.get("status"), started
-    print(f"[{route_key}] waiting on {describe_job(job)}, {int(deadline - started)}s left")
+    print(f"[{route_key}] waiting on {describe_job(job)}")
     while job.get("status") == "queued" and time.monotonic() < deadline:
         time.sleep(THUMBNAIL_POLL_INTERVAL)
         polls += 1
@@ -190,11 +189,12 @@ def wait_route_thumbnail(route_key, job, deadline=None):
             print(f"[{route_key}] getting image {img_url} failed: {e!r}")
         # the result link is gone, so the job is as good as expired
         return None, {**job, "status": "expired"}
-    print(f"[{route_key}] not ready {waited}: {describe_job(job)}. Last job state: {job}")
+    reason = "timed out still queued" if job.get("status") == "queued" else "job ended"
+    print(f"[{route_key}] no thumbnail, {reason} {waited}: {describe_job(job)}. Last job state: {job}")
     return None, job
 
 
-def fetch_route_thumbnail(dungeon_id, top_route_key, deadline=None):
+def fetch_route_thumbnail(dungeon_id, top_route_key):
     """Request, poll, and download the keystone.guru thumbnail for a route.
 
     Pure HTTP (no DB), so it can run in a background thread while the caller
@@ -203,7 +203,7 @@ def fetch_route_thumbnail(dungeon_id, top_route_key, deadline=None):
     job = submit_route_thumbnail(dungeon_id, top_route_key)
     if job is None:
         return None
-    return wait_route_thumbnail(top_route_key, job, deadline)[0]
+    return wait_route_thumbnail(top_route_key, job)[0]
 
 
 def createDungeonOverviewImg(

@@ -676,11 +676,12 @@ jobs:
 
   # ----------------------------------------------------------------------
   # Dungeon page preview images (runs in parallel with the page build). Each
-  # carries a keystone.guru route thumbnail whose render can queue for many
-  # minutes, so the wait happens here instead of inside the dungeon step.
+  # carries a keystone.guru route thumbnail whose render can queue for a long
+  # time, so the wait happens here instead of inside the dungeon step. Every
+  # job is polled until keystone.guru completes or fails it, for at most 2h
+  # (THUMBNAIL_TIMEOUT), after which the dungeon shows its previous route.
   # Thumbnails are cached by route key: only a dungeon whose top route changed
-  # asks keystone.guru again, and one that is not ready within the budget shows
-  # the dungeon's previous route until the next build.
+  # asks keystone.guru again.
   # ----------------------------------------------------------------------
   dungeon-previews:
     needs: [resolve-season]
@@ -688,7 +689,8 @@ jobs:
     env:
       MYTHISTONE_SEASON_INFO: ${{ needs.resolve-season.outputs.season_info }}
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # above the script's own 2h thumbnail timeout, so it can still fall back and render
+    timeout-minutes: 150
     steps:
       - name: Clone project
         uses: actions/checkout@v7
@@ -731,8 +733,7 @@ jobs:
         run: |
           python backend_scripts/renderDungeonPreviews.py \
             --output_dir dungeon_previews \
-            --cache_dir route-thumbs \
-            --budget_seconds 900
+            --cache_dir route-thumbs
 
       - name: Upload dungeon previews
         uses: actions/upload-artifact@v4
