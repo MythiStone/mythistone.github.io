@@ -52,6 +52,7 @@
     const key = safeId(`${slug}-${v.video_ref}`);
     const runUrl = `https://raider.io/mythic-plus-runs/${window.current_season}/${v.run_id}`;
     const embedSrc = buildVodEmbedSrc(v.video_ref, v.video_type, v.start_seconds);
+    const routeUrl = `https://keystone.guru/route/${slug}/${v.route_key}/${slug}`;
     const pov = (window.spec_data || {})[String(v.pov_spec)];
 
     // Same shared modern pill style as the route accordion badges (mirror of `badge_cls`).
@@ -115,6 +116,11 @@
             <span>View full run details on Raider.io</span>
             <i class="material-symbols-rounded text-sm">open_in_new</i>
           </a>
+          <a href="${routeUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mb-0 d-inline-flex align-items-center gap-2">
+            <i class="material-symbols-rounded text-sm">map</i>
+            <span>View route on Keystone.guru</span>
+            <i class="material-symbols-rounded text-sm">open_in_new</i>
+          </a>
           ${streamerLink}
         </div>
         <div class="iframe-container position-relative">
@@ -122,6 +128,15 @@
             <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
           </div>
           <iframe loading="lazy" allowfullscreen data-name="${v.video_type}" data-src="${embedSrc}" class="w-100 route-embed vod-embed"></iframe>
+        </div>
+        <div class="px-3 pt-3 pb-2 text-sm font-weight-bold d-flex align-items-center gap-2">
+          <i class="material-symbols-rounded text-primary text-sm">route</i>Route used in this run
+        </div>
+        <div class="iframe-container position-relative">
+          <div class="iframe-spinner position-absolute top-50 start-50 translate-middle d-none">
+            <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+          </div>
+          <iframe loading="lazy" data-name="keystoneGuru" data-src="${routeUrl}/embed" class="w-100 route-embed" style="border:none;width:100%;height:calc(80vh - 3rem);display:block;"></iframe>
         </div>
       </div>
     </div>
@@ -142,23 +157,31 @@
     accordionId: "vodDungeonAccordion",
     sentinelId: "route-sentinel",
     overlayId: "route-search-overlay",
+    advancedCollapseId: "compFormMore",
     jsonUrl: "/assets/json/compVods.json",
     indexFields: ["dungeon", "specs", "spells", "npcs", "pov_spec", "video_type"],
-    sort: [
-      { key: "level", dir: "desc" },
-      { key: "timestamp", dir: "desc" },
-      { key: "duration", dir: "asc" },
-    ],
+    sortControl: {
+      selectId: "sortSelect",
+      param: "sort",
+      options: {
+        key: [{ key: "level", dir: "desc" }, { key: "timestamp", dir: "desc" }, { key: "duration", dir: "asc" }],
+        new: [{ key: "timestamp", dir: "desc" }, { key: "level", dir: "desc" }],
+        fast: [{ key: "duration", dir: "asc" }, { key: "level", dir: "desc" }],
+      },
+    },
     noun: "VOD",
     relaxFilterId: "specSelect",
+    // Same as the routes page: one VOD per dungeon until a filter is set.
+    skeletonWhenEmpty: true,
     filters: [
       { id: "dungeonSelect", param: "dungeons", field: "dungeon", mode: "anyOf" },
-      { id: "specSelect", param: "specs", field: "specs", mode: "allRelax", priorityByRole: true, multiset: true, max: 5, label: specLabel },
+      { id: "specSelect", param: "specs", field: "specs", mode: "allRelax", priorityByRole: true, multiset: true, max: 5, label: specLabel, advanced: true },
+      { id: "minKeySelect", param: "minKey", field: "level", mode: "gte" },
       { id: "povSpecSelect", param: "povSpecs", field: "pov_spec", mode: "anyOf", label: specLabel },
-      { id: "videoTypeSelect", param: "videoTypes", field: "video_type", mode: "anyOf" },
-      { id: "spellSelect", param: "spells", field: "spells", mode: "anyOf", expand: expandLust },
-      { id: "npcIncludeSelect", param: "npcInclude", field: "npcs", mode: "anyOf" },
-      { id: "npcExcludeSelect", param: "npcExclude", field: "npcs", mode: "noneOf" },
+      { id: "videoTypeSelect", param: "videoTypes", field: "video_type", mode: "anyOf", advanced: true },
+      { id: "spellSelect", param: "spells", field: "spells", mode: "anyOf", expand: expandLust, advanced: true },
+      { id: "npcIncludeSelect", param: "npcInclude", field: "npcs", mode: "anyOf", advanced: true, scopedBy: "dungeonSelect" },
+      { id: "npcExcludeSelect", param: "npcExclude", field: "npcs", mode: "noneOf", advanced: true, scopedBy: "dungeonSelect" },
     ],
     renderItem: renderVodItem,
   });

@@ -3,7 +3,7 @@
 
 <head>
   {% include "header_imports.html" %}
-  <link rel="stylesheet" href="/assets/css/routes.css" />
+  <link rel="stylesheet" href="/assets/css/routes.css?v={{ generated_at | int }}" />
   <!-- Primary SEO -->
   <title>Route Finder - Find Routes for Your Team-Comp in {{ season_info.name }} | MythiStone</title>
   {% from "_search_macros.html" import search_meta %}
@@ -119,16 +119,26 @@
         </div>
       </div>
       {% import "_finder_macros.html" as fm %}
-      {% call fm.finder_card('compForm', 'Search for specific routes', 'Pick dungeons, specs, spells or NPCs', submit_label='Search Routes') %}
+      {% call(section) fm.finder_card('compForm', 'Search for specific routes', 'Results update as you pick filters') %}
+        {% if section == 'main' %}
         <div class="row gx-3">
           {{ fm.dungeon_filter(dungeon_lookup) }}
           {{ fm.spec_filter(specs, class_lookup, multiset=true) }}
         </div>
         <div class="row gx-3 mt-2">
-          {{ fm.spell_filter(spell_lookup, bloodlust_id_strs, bloodlust_icon) }}
-          {{ fm.npc_filter(npc_map, npc_lookup, dungeon_lookup, 'npcIncludeSelect', 'NPCs include (match ANY)', 'Include NPC(s)…') }}
-          {{ fm.npc_filter(npc_map, npc_lookup, dungeon_lookup, 'npcExcludeSelect', 'NPCs exclude (must NOT include either)', 'Exclude NPC(s)…') }}
+          {{ fm.min_key_filter(key_levels, col='col-12 col-lg-6') }}
+          {{ fm.sort_filter([('used', 'Most used'), ('key', 'Highest key'), ('fast', 'Fastest'), ('new', 'Newest')], col='col-12 col-lg-6') }}
         </div>
+        {% else %}
+        <div class="row gx-3">
+          {{ fm.spell_filter(spell_lookup, bloodlust_id_strs, bloodlust_icon, col='col-12 col-lg-6') }}
+          {{ fm.has_vod_filter(col='col-12 col-lg-6') }}
+        </div>
+        <div class="row gx-3 mt-2">
+          {{ fm.npc_filter(npc_map, npc_lookup, dungeon_lookup, 'npcIncludeSelect', 'NPCs include (match ANY)', 'Include NPC(s)…', col='col-12 col-lg-6') }}
+          {{ fm.npc_filter(npc_map, npc_lookup, dungeon_lookup, 'npcExcludeSelect', 'NPCs exclude (must NOT include either)', 'Exclude NPC(s)…', col='col-12 col-lg-6') }}
+        </div>
+        {% endif %}
       {% endcall %}
 
       <div class="ms-3 align-self-center small text-muted pagination-summary" style="display:none">
@@ -192,8 +202,8 @@
     // panels it renders itself once the worker replaces the skeleton.
     MythiConsent.wireAccordionEmbeds('#routeDungeonAccordion');
   </script>
-  <script src="/assets/js/finder.js"></script>
-  <script src="/assets/js/routes-finder.js"></script>
+  <script src="/assets/js/finder.js?v={{ generated_at | int }}"></script>
+  <script src="/assets/js/routes-finder.js?v={{ generated_at | int }}"></script>
 
   <div id="route-search-overlay" role="status" aria-hidden="true" aria-live="polite">
     <div class="overlay-backdrop" aria-hidden="true"></div>

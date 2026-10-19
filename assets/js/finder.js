@@ -6,10 +6,21 @@
 // with the matching Jinja macro), and the sort/index fields. Per-page filters
 // (e.g. VOD-only video type / POV spec) are just extra entries in `filters`, so
 // adding a filter is a one-line change on whichever page(s) want it.
+//
+// Results update live as filters change (no Search button). Each query is
+// tagged with a sequence id so only the latest answer renders, and rendering is
+// paged (PAGE_SIZE + infinite scroll), so a change never draws the full set.
+// Filter entry options beyond id/param/field/mode:
+//   advanced: true  lives in the folded "More filters" section (badge count)
+//   scopedBy: id    a picker whose <optgroup data-dungeon> are limited to the
+//                   values picked in filter `id`
 (function () {
   "use strict";
 
   const PAGE_SIZE = 50;
+  // The worker inherits this script's ?v= so a rebuild never pairs new page code
+  // with a cached worker (an old worker drops the seq id and every result).
+  const VERSION = document.currentScript ? new URL(document.currentScript.src).search : "";
 
   function debounce(fn, ms) {
     let t = null;
@@ -35,12 +46,15 @@
     if ($el && $el.selectpicker) v = $el.selectpicker("val");
     else if ($el) v = $el.val();
     if (v === undefined || v === null) return [];
-    return Array.isArray(v) ? v : v ? [v] : [];
+    // An NPC id can sit under several dungeons, so the picker may hold it twice.
+    return Array.isArray(v) ? Array.from(new Set(v)) : v ? [v] : [];
   }
 
   function setVal(id, values) {
+    const el = document.getElementById(id);
     const $el = window.jQuery ? window.jQuery("#" + id) : null;
-    if ($el && $el.selectpicker) $el.selectpicker("val", values);
+    if (!$el || !$el.selectpicker) return;
+    $el.selectpicker("val", el && !el.multiple ? values[0] || "" : values);
   }
 
   function create(config) {
@@ -57,10 +71,14 @@
       filters = [],
       renderItem,
       relaxFilterId = null,
-      // Pages with no server-rendered skeleton (VOD finder) run an empty query on
-      // load to show everything; the routes page keeps its skeleton and stays idle
-      // until the visitor searches.
+      // Pages with no server-rendered skeleton run an empty query on load.
       autoQueryOnLoad = false,
+      // With no active filter and the default sort, show the server-rendered
+      // skeleton (one row per dungeon) instead of querying everything.
+      skeletonWhenEmpty = false,
+      // { selectId, param, options: { value: sortSpec[] } }, first key is the default.
+      sortControl = null,
+      advancedCollapseId = null,
     } = config;
 
     let worker = null;
@@ -72,6 +90,10 @@
     let appendResolve = null;
     let infinite = null;
     let lastResults = { total: 0, relaxHint: null };
+    let querySeq = 0;
+    let lastQueryKey = null;
+    let skeletonNodes = null;
+    let showingSkeleton = false;
 
     const relaxFilter = filters.find((f) => f.id === relaxFilterId) || null;
 
@@ -135,11 +157,26 @@
       renderMultisetChips();
     }
 
+    // ---- sort --------------------------------------------------------------
+    const sortKeys = sortControl ? Object.keys(sortControl.options) : [];
+    function currentSortKey() {
+      if (!sortControl) return null;
+      const v = valOf(sortControl.selectId)[0];
+      return v && sortControl.options[v] ? v : sortKeys[0];
+    }
+    function currentSort() {
+      return sortControl ? sortControl.options[currentSortKey()] : sort;
+    }
+
     // ---- form <-> params ---------------------------------------------------
     function paramsFromForm() {
       const p = {};
       for (const f of filters) {
         p[f.param] = f.multiset ? multisetValues() : valOf(f.id);
+      }
+      if (sortControl) {
+        const k = currentSortKey();
+        p[sortControl.param] = k === sortKeys[0] ? [] : [k];
       }
       return p;
     }
@@ -153,6 +190,10 @@
         const v = sp.get(f.param) || "";
         p[f.param] = v ? v.split(",").map((s) => s.trim()).filter(Boolean) : [];
       }
+      if (sortControl) {
+        const v = sp.get(sortControl.param) || "";
+        p[sortControl.param] = sortControl.options[v] ? [v] : [];
+      }
       return p;
     }
     function updateUrl(p, { replace = true } = {}) {
@@ -160,19 +201,25 @@
       for (const f of filters) {
         if ((p[f.param] || []).length) sp.set(f.param, p[f.param].join(","));
       }
+      if (sortControl && (p[sortControl.param] || []).length) {
+        sp.set(sortControl.param, p[sortControl.param][0]);
+      }
       // Keep the hash: deep-link.js owns it (e.g. #vods-streamers), and this runs at
       // boot, possibly before deep-link has read it.
       const url = window.location.pathname + (sp.toString() ? "?" + sp.toString() : "") + window.location.hash;
       if (replace) history.replaceState(p, "", url);
       else history.pushState(p, "", url);
     }
+    // Sets every filter, clearing those absent from p, so back/forward lands
+    // on exactly the state described.
     function applyParamsToForm(p) {
       for (const f of filters) {
         const vals = p[f.param] || [];
-        if (!vals.length) continue;
         if (f.multiset) applyMultisetFromValues(vals);
         else setVal(f.id, vals);
       }
+      if (sortControl) setVal(sortControl.selectId, [(p[sortControl.param] || [])[0] || sortKeys[0]]);
+      applyScopes();
     }
 
     // ---- clause building ---------------------------------------------------
@@ -212,7 +259,7 @@
     // ---- worker ------------------------------------------------------------
     function initWorker() {
       if (worker) return;
-      worker = new Worker("/assets/js/finder-worker.js");
+      worker = new Worker("/assets/js/finder-worker.js" + VERSION);
       worker.onmessage = function (ev) {
         const msg = ev.data;
         if (!msg || !msg.cmd) return;
@@ -224,6 +271,9 @@
             doQuery({ page: 1 });
           }
         } else if (msg.cmd === "result") {
+          // A newer query (or the skeleton) superseded this one.
+          if (msg.seq !== querySeq) return;
+          setSummaryBusy(false);
           lastResults.total = msg.total;
           lastResults.relaxHint = msg.relaxHint || null;
           const isAppend = pendingAppend;
@@ -268,10 +318,19 @@
 
     function doQuery({ page = 1, pageSize = PAGE_SIZE, append = false } = {}) {
       if (!worker) initWorker();
+      if (!append) {
+        querySeq++;
+        // A fresh query supersedes an in-flight page load, so release the scroller.
+        if (appendResolve) {
+          const resolve = appendResolve;
+          appendResolve = null;
+          resolve(false);
+        }
+      }
       pendingAppend = append;
       worker.postMessage({
         cmd: "query",
-        payload: { clauses: buildClauses(), sort, page, pageSize },
+        payload: { clauses: buildClauses(), sort: currentSort(), page, pageSize, seq: querySeq },
       });
     }
 
@@ -280,6 +339,39 @@
       if (!worker) initWorker();
       if (workerReady) doQuery({ page: 1 });
       else pendingInitialQuery = true;
+    }
+
+    // Query for the current form state, or show the skeleton when the page wants
+    // one and nothing is filtered. A state that is already shown is skipped.
+    function refresh({ overlay = false } = {}) {
+      const p = paramsFromForm();
+      const key = JSON.stringify(p);
+      if (key === lastQueryKey) return;
+      lastQueryKey = key;
+      const sorted = sortControl && p[sortControl.param].length > 0;
+      if (skeletonWhenEmpty && !hasAnyParams(p) && !sorted) {
+        restoreSkeleton();
+        return;
+      }
+      if (overlay) showOverlayUntilMutates(10000);
+      else setSummaryBusy(true);
+      currentPage = 1;
+      queryWhenReady();
+    }
+
+    function restoreSkeleton() {
+      querySeq++; // drop any answer still in flight
+      pendingInitialQuery = false;
+      setSummaryBusy(false);
+      const accordion = document.getElementById(accordionId);
+      if (accordion && skeletonNodes && !showingSkeleton) {
+        accordion.replaceChildren(...skeletonNodes);
+        showingSkeleton = true;
+      }
+      loadedCount = 0;
+      lastResults = { total: 0, relaxHint: null };
+      updateSummary(0, 0);
+      if (infinite) infinite.finish();
     }
 
     // ---- rendering ---------------------------------------------------------
@@ -323,10 +415,7 @@
       wrap.querySelector("[data-relax-btn]").addEventListener("click", function () {
         if (relaxFilter.multiset) applyMultisetFromValues(kept);
         else setVal(relaxFilter.id, kept);
-        currentPage = 1;
-        const params = paramsFromForm();
-        updateUrl(params, { replace: false });
-        doQuery({ page: 1 });
+        afterFormChange({ push: true });
       });
     }
 
@@ -335,8 +424,8 @@
       if (!collapse || collapse.getAttribute("data-consent-wired")) return;
       collapse.setAttribute("data-consent-wired", "1");
       collapse.addEventListener("shown.bs.collapse", function () {
-        const iframe = collapse.querySelector("iframe[data-src]");
-        if (iframe && window.MythiConsent) window.MythiConsent.loadEmbed(iframe);
+        if (!window.MythiConsent) return;
+        collapse.querySelectorAll("iframe[data-src]").forEach((el) => window.MythiConsent.loadEmbed(el));
       });
     }
 
@@ -351,7 +440,11 @@
 
     function renderMatches(items, append) {
       const accordion = document.getElementById(accordionId);
-      if (!append) accordion.innerHTML = "";
+      if (!append) {
+        // Detaches the skeleton nodes too; restoreSkeleton re-attaches them.
+        accordion.innerHTML = "";
+        showingSkeleton = false;
+      }
       if (!items || items.length === 0) {
         if (!append) renderNoResults(accordion);
         return;
@@ -368,8 +461,7 @@
 
     // ---- multiset count chips ----------------------------------------------
     // One chip per selected spec with a stepper that sets how many copies the
-    // comp requires (1..remaining, total capped at MULTISET_MAX). Mirrors the
-    // filter-change path: update the URL, then the visitor clicks Search.
+    // comp requires (1..remaining, total capped at MULTISET_MAX).
     function renderMultisetChips() {
       if (!multisetFilter) return;
       const box = document.getElementById(multisetFilter.id + "Counts");
@@ -420,12 +512,84 @@
         if (cur <= 1) return;
         multisetCounts.set(s, cur - 1);
       }
-      renderMultisetChips();
-      currentPage = 1;
-      updateUrl(paramsFromForm(), { replace: true });
+      afterFormChange();
+    }
+
+    // ---- pickers scoped to another filter (NPCs to the picked dungeons) ------
+    // Out-of-scope groups are detached rather than disabled: the same NPC id can
+    // sit in several dungeons, and bootstrap-select would keep selecting (and
+    // counting) every copy of a value that is still in the DOM.
+    const scopeGroups = new Map(); // filter id -> original <optgroup>s in order
+    function applyScopes() {
+      for (const f of filters) {
+        if (!f.scopedBy) continue;
+        const el = document.getElementById(f.id);
+        if (!el) continue;
+        if (!scopeGroups.has(f.id)) {
+          scopeGroups.set(f.id, Array.from(el.querySelectorAll("optgroup[data-dungeon]")));
+        }
+        const groups = scopeGroups.get(f.id);
+        const scope = valOf(f.scopedBy).map(String);
+        const visible = groups.filter(
+          (g) => !scope.length || scope.includes(g.getAttribute("data-dungeon"))
+        );
+        const current = Array.from(el.querySelectorAll("optgroup[data-dungeon]"));
+        if (current.length === visible.length && current.every((g, i) => g === visible[i])) continue;
+        const kept = valOf(f.id).map(String);
+        el.replaceChildren();
+        visible.forEach((g, i) => {
+          if (i) {
+            const divider = document.createElement("option");
+            divider.setAttribute("data-divider", "true");
+            el.appendChild(divider);
+          }
+          el.appendChild(g);
+        });
+        groups.forEach((g) => g.querySelectorAll("option").forEach((o) => (o.selected = false)));
+        // refresh() keeps stale per-option state for swapped groups (wrong
+        // "N items selected"), so rebuild the picker instead.
+        kept.forEach((v) => {
+          const opt = el.querySelector('option[value="' + v + '"]');
+          if (opt) opt.selected = true;
+        });
+        if (window.jQuery) window.jQuery(el).selectpicker("destroy").selectpicker();
+      }
+    }
+
+    // ---- "More filters" badge ------------------------------------------------
+    function advancedActiveCount() {
+      return filters.filter((f) => f.advanced && valOf(f.id).length).length;
+    }
+
+    function updateAdvancedBadge() {
+      const badge = advancedCollapseId && document.getElementById(advancedCollapseId + "Count");
+      if (!badge) return;
+      const n = advancedActiveCount();
+      badge.textContent = n ? String(n) : "";
+      badge.classList.toggle("d-none", !n);
+    }
+
+    function openAdvancedIfActive() {
+      const panel = advancedCollapseId && document.getElementById(advancedCollapseId);
+      if (!panel || !advancedActiveCount() || !window.bootstrap) return;
+      window.bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false }).show();
+    }
+
+    // Every filter edit lands here: badge, URL, then the live query.
+    function afterFormChange({ push = false } = {}) {
+      if (multisetFilter) renderMultisetChips();
+      applyScopes();
+      updateAdvancedBadge();
+      updateUrl(paramsFromForm(), { replace: !push });
+      refresh();
     }
 
     // ---- summary + overlay -------------------------------------------------
+    function setSummaryBusy(on) {
+      const summary = document.querySelector(summarySelector);
+      if (summary) summary.classList.toggle("finder-busy", on);
+    }
+
     function updateSummary(loaded, total) {
       const summary = document.querySelector(summarySelector);
       if (!summary) return;
@@ -479,52 +643,43 @@
     // ---- wiring ------------------------------------------------------------
     function runFromUrlOrForm() {
       const initial = parseUrlParams();
-      if (hasAnyParams(initial)) {
-        showOverlayUntilMutates(10000);
+      const sorted = sortControl && (initial[sortControl.param] || []).length;
+      initWorker();
+      if (hasAnyParams(initial) || sorted) {
         applyParamsToForm(initial);
-        currentPage = 1;
-        queryWhenReady();
-      } else {
-        initWorker();
-        updateUrl(paramsFromForm(), { replace: true });
-        if (autoQueryOnLoad) {
-          showOverlayUntilMutates(10000);
-          queryWhenReady();
-        }
+        openAdvancedIfActive();
       }
+      if (multisetFilter) renderMultisetChips();
+      updateAdvancedBadge();
+      updateUrl(paramsFromForm(), { replace: true });
+      if (hasAnyParams(initial) || sorted || autoQueryOnLoad) refresh({ overlay: true });
+      else lastQueryKey = JSON.stringify(paramsFromForm());
     }
 
     function init() {
       const form = document.getElementById(formId);
-      if (form) {
-        form.addEventListener("submit", function (e) {
-          e.preventDefault();
-          currentPage = 1;
-          updateUrl(paramsFromForm(), { replace: false });
-          showOverlayUntilMutates(10000);
-          doQuery({ page: 1 });
-        });
+      if (form) form.addEventListener("submit", (e) => e.preventDefault());
+
+      const accordion = document.getElementById(accordionId);
+      if (skeletonWhenEmpty && accordion) {
+        skeletonNodes = Array.from(accordion.children);
+        showingSkeleton = true;
       }
 
       runFromUrlOrForm();
 
-      const onChange = debounce(() => {
-        if (multisetFilter) renderMultisetChips();
-        updateUrl(paramsFromForm(), { replace: true });
-      }, 220);
-      const selector = filters.map((f) => "#" + f.id).join(", ");
+      const onChange = debounce(() => afterFormChange(), 300);
+      const ids = filters.map((f) => f.id);
+      if (sortControl) ids.push(sortControl.selectId);
+      const selector = ids.map((id) => "#" + id).join(", ");
       if (window.jQuery) window.jQuery(selector).on("changed.bs.select change", onChange);
-      if (multisetFilter) renderMultisetChips();
 
       window.addEventListener("popstate", function (ev) {
         const state = ev.state || parseUrlParams();
         if (!state) return;
         applyParamsToForm(state);
-        currentPage = 1;
-        if (hasAnyParams(state)) {
-          showOverlayUntilMutates(10000);
-          queryWhenReady();
-        }
+        updateAdvancedBadge();
+        refresh({ overlay: true });
       });
 
       const sentinel = document.getElementById(sentinelId);

@@ -10,6 +10,8 @@
 //             "largest matching subset" relaxation + relaxHint. Used by team comp.
 //   noneOf  - item must have NONE of the selected values (subtract). Used by NPC
 //             exclude.
+//   gte     - item[field] must be >= the (single) numeric value. Used by min key.
+//             Needs no index; it filters the matched items directly.
 // Item ids are opaque strings (route_key for routes, route_key+video for vods).
 //
 // This replaces the old comp-routes-worker.js; the route semantics are preserved
@@ -164,15 +166,17 @@ self.onmessage = (ev) => {
     sort = [],
     page = 1,
     pageSize = 50,
+    seq = 0,
   } = msg.payload || {};
 
   const empty = () =>
-    self.postMessage({ cmd: "result", total: 0, page, pageSize, results: [] });
+    self.postMessage({ cmd: "result", total: 0, page, pageSize, results: [], seq });
 
   // anyOf clauses become the AND-ed candidate sets. An anyOf clause whose values
   // are all unknown to the index matches nothing (same early-out as before).
   const candidateSets = [];
   const excludeClauses = [];
+  const gteClauses = [];
   let relaxClause = null;
 
   for (const c of clauses) {
@@ -180,6 +184,8 @@ self.onmessage = (ev) => {
     if (!values.length) continue;
     if (c.mode === "noneOf") {
       excludeClauses.push(c);
+    } else if (c.mode === "gte") {
+      gteClauses.push({ field: c.field, min: Number(values[0]) });
     } else if (c.mode === "allRelax") {
       relaxClause = c;
     } else {
@@ -198,6 +204,11 @@ self.onmessage = (ev) => {
         const s = idx.get(String(ex));
         if (!s) continue;
         for (const id of s) out.delete(id);
+      }
+    }
+    for (const g of gteClauses) {
+      for (const id of out) {
+        if (!(Number((meta.get(id) || {})[g.field]) >= g.min)) out.delete(id);
       }
     }
     return out;
@@ -247,5 +258,5 @@ self.onmessage = (ev) => {
   const total = matched.length;
   const start = (page - 1) * pageSize;
   const results = matched.slice(start, start + pageSize);
-  self.postMessage({ cmd: "result", total, page, pageSize, results, relaxHint });
+  self.postMessage({ cmd: "result", total, page, pageSize, results, relaxHint, seq });
 };

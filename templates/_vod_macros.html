@@ -22,6 +22,9 @@
                      the POV pill, because the header is a <button> and a nested <a>
                      is invalid and would toggle the accordion.
 
+    The body shows the run's keystone.guru route under the video (every VOD has one:
+    route_videos has a foreign key to route_data).
+
     Uses its own #vodDungeonAccordion parent and vod- id namespace so it coexists
     with a route accordion on the same page. Embed src is built by the `vod_embed`
     filter (commonUtils.build_vod_embed_src); the iframe's data-name matches the Klaro
@@ -33,6 +36,7 @@
 {% macro vod_accordion_item(dungeon, vod, spec_lookup, season_slug, item_class='', link_streamer=true) %}
 {% set vodKey = dungeon.slug ~ '-' ~ vod.video_ref %}
 {% set run_url = 'https://raider.io/mythic-plus-runs/' ~ season_slug ~ '/' ~ vod.run_id %}
+{% set route_url = 'https://keystone.guru/route/' ~ dungeon.slug ~ '/' ~ vod.route_key ~ '/' ~ dungeon.slug %}
 {% set pov = spec_lookup[vod.pov_spec_id|string] %}
 {#- Same shared modern pill style as the route accordion badges. -#}
 {% set badge_cls = 'rt-pill' %}
@@ -88,6 +92,11 @@
             <span>View full run details on Raider.io</span>
             <i class="material-symbols-rounded text-sm">open_in_new</i>
           </a>
+          <a href="{{ route_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mb-0 d-inline-flex align-items-center gap-2">
+            <i class="material-symbols-rounded text-sm">map</i>
+            <span>View route on Keystone.guru</span>
+            <i class="material-symbols-rounded text-sm">open_in_new</i>
+          </a>
           {% if link_streamer and vod.streamer_slug %}
           <a href="/streamers/{{ vod.streamer_slug }}" class="btn btn-sm btn-outline-primary mb-0 d-inline-flex align-items-center gap-2">
             <i class="material-symbols-rounded text-sm">person_play</i>
@@ -102,6 +111,15 @@
           <iframe loading="lazy" allowfullscreen data-name="{{ vod.video_type }}"
             data-src="{{ vod.video_ref | vod_embed(vod.video_type, vod.start_seconds) }}"
             class="w-100 route-embed vod-embed"></iframe>
+        </div>
+        <div class="px-3 pt-3 pb-2 text-sm font-weight-bold d-flex align-items-center gap-2">
+          <i class="material-symbols-rounded text-primary text-sm">route</i>Route used in this run
+        </div>
+        <div class="iframe-container position-relative">
+          <div class="iframe-spinner position-absolute top-50 start-50 translate-middle d-none">
+            <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+          </div>
+          <iframe loading="lazy" data-name="keystoneGuru" data-src="{{ route_url }}/embed" class="w-100 route-embed" style="border:none;width:100%;height:calc(80vh - 3rem);display:block;"></iframe>
         </div>
       </div>
     </div>

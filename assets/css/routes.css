@@ -160,3 +160,16 @@
     margin-left: auto;
   }
 }
+
+/* Live query in flight: dim the stale count instead of covering the page. */
+.pagination-summary.finder-busy {
+  opacity: 0.5;
+}
+
+.finder-more-btn .finder-less-label,
+.finder-more-btn[aria-expanded="true"] .finder-more-label {
+  display: none;
+}
+.finder-more-btn[aria-expanded="true"] .finder-less-label {
+  display: inline;
+}

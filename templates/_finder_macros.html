@@ -5,9 +5,12 @@
     page calls. The `id`s here are the contract with assets/js/finder.js filter
     configs and with the client render functions. -#}
 
-{#- Card + form shell. Use with {% call %}; the caller supplies the filter columns.
-    `form_id` must match the finder config's formId. -#}
-{% macro finder_card(form_id, title, subtitle, icon='route', submit_label='Search') %}
+{#- Card + form shell. Use with {% call(section) %}: the caller is rendered for
+    section 'main' (always visible) and 'more' (folded under "More filters").
+    `form_id` must match the finder config's formId. Results update live, so there
+    is no submit button. The collapse badge ({form_id}MoreCount) is filled by
+    finder.js. -#}
+{% macro finder_card(form_id, title, subtitle, icon='route') %}
 <div class="card route-search-card mb-3 mt-4">
   <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
     <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 px-3 d-flex justify-content-between align-items-center">
@@ -19,12 +22,22 @@
     </div>
   </div>
   <div class="card-body">
-    <form id="{{ form_id }}" class="row g-3">
-      {{ caller() }}
-      <div class="row form-actions mt-3">
-        <div class="col-12 d-flex justify-content-center">
-          <button type="submit" class="btn btn-primary btn-lg">{{ submit_label }}</button>
-        </div>
+    <form id="{{ form_id }}">
+      {{ caller('main') }}
+      <div class="collapse" id="{{ form_id }}More" data-no-deep-link>
+        <hr class="horizontal dark mt-3 mb-2">
+        {{ caller('more') }}
+      </div>
+      {#- Below the filters so opening it does not push the button into the middle.
+          Bootstrap keeps aria-expanded in step, which swaps the two labels (routes.css). -#}
+      <div class="mt-3">
+        <button class="btn btn-sm btn-outline-primary mb-0 d-inline-flex align-items-center gap-1 finder-more-btn" type="button"
+          data-bs-toggle="collapse" data-bs-target="#{{ form_id }}More" aria-expanded="false" aria-controls="{{ form_id }}More">
+          <i class="material-symbols-rounded text-sm">tune</i>
+          <span class="finder-more-label">More filters</span>
+          <span class="finder-less-label">Less filters</span>
+          <span id="{{ form_id }}MoreCount" class="badge bg-primary d-none"></span>
+        </button>
       </div>
     </form>
   </div>
@@ -121,11 +134,13 @@
 {% macro npc_filter(npc_map, npc_lookup, dungeon_lookup, id, label, title, col='col-12 col-md-4') %}
 <div class="{{ col }}">
   <label class="form-label">{{ label }}</label>
+  {#- data-dungeon: finder.js detaches the groups of dungeons that are not
+      picked (filter option scopedBy). -#}
   <select id="{{ id }}" class="selectpicker form-control" data-style="btn-outline-primary"
     data-live-search="true" multiple title="{{ title }}" data-selected-text-format="count >1"
     data-actions-box="true" data-sanitize="false">
     {% for did in npc_map %}
-    <optgroup label="{{ dungeon_lookup[did]['name']['en_US'] }}">
+    <optgroup label="{{ dungeon_lookup[did]['name']['en_US'] }}" data-dungeon="{{ did }}">
       {% for nid in npc_map[did] %}
       {% set nname = npc_lookup['en_US'][nid|string] %}
       <option value="{{ nid }}" data-tokens="{{ nid }} {{ dungeon_lookup[did]['name']['en_US'] }}"
@@ -149,6 +164,44 @@
     multiple title="Any source" data-selected-text-format="count >1" data-sanitize="false">
     <option value="twitch" data-content="<span class='dropdown-icon-label'>Twitch</span>">Twitch</option>
     <option value="youtube" data-content="<span class='dropdown-icon-label'>YouTube</span>">YouTube</option>
+  </select>
+</div>
+{% endmacro %}
+
+{#- Single-select sort order; option values are the keys of the page's
+    sortControl.options in finder.js (first one is the default). -#}
+{% macro sort_filter(options, col='col-12 col-md-4') %}
+<div class="{{ col }}">
+  <label class="form-label" for="sortSelect">Sort by</label>
+  <select id="sortSelect" class="selectpicker form-control" data-style="btn-outline-primary">
+    {% for value, label in options %}
+    <option value="{{ value }}"{% if loop.first %} selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endmacro %}
+
+{#- Minimum keystone level ("gte" clause on the item's level). -#}
+{% macro min_key_filter(levels, col='col-12 col-md-4') %}
+<div class="{{ col }}">
+  <label class="form-label" for="minKeySelect">Minimum key</label>
+  <select id="minKeySelect" class="selectpicker form-control" data-style="btn-outline-primary">
+    <option value="" selected>Any key</option>
+    {% for lvl in levels %}
+    <option value="{{ lvl }}">+{{ lvl }} or higher</option>
+    {% endfor %}
+  </select>
+</div>
+{% endmacro %}
+
+{#- Routes only: keep every route or only those with a POV VOD (has_vod in
+    compRoutes.json). -#}
+{% macro has_vod_filter(col='col-12 col-md-4') %}
+<div class="{{ col }}">
+  <label class="form-label" for="hasVodSelect">VODs</label>
+  <select id="hasVodSelect" class="selectpicker form-control" data-style="btn-outline-primary">
+    <option value="" selected>Any route</option>
+    <option value="1">Only routes with a VOD</option>
   </select>
 </div>
 {% endmacro %}

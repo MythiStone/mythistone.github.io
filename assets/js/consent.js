@@ -244,7 +244,7 @@
   function wireAccordionEmbeds(accordionSelector) {
     document.querySelectorAll(accordionSelector + " .accordion-collapse").forEach(function (panel) {
       panel.addEventListener("shown.bs.collapse", function () {
-        loadEmbed(panel.querySelector("iframe[data-src]"));
+        panel.querySelectorAll("iframe[data-src]").forEach(function (el) { loadEmbed(el); });
       });
     });
   }

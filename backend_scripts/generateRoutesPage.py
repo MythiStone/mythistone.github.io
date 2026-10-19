@@ -119,6 +119,8 @@ def main(template_path, output_dir, limit):
         route_videos_map = fetch_route_videos(conn, cursor)
         for rk, info in comp_routes.items():
             info["videos"] = route_videos_map.get(rk, [])
+            # Indexed by the finder worker for the "Has VOD" toggle.
+            info["has_vod"] = 1 if info["videos"] else 0
             _du = dungeon_lookup.get(info.get("dungeon")) or {}
             _up = upgrade_info(
                 info.get("duration"), _du.get("keystone_upgrades") or {}, info.get("level")
@@ -180,6 +182,7 @@ def main(template_path, output_dir, limit):
         dungeon_nav=generateDungeonNav(dungeon_lookup),
         comp_routes=comp_routes_json,
         comp_routes_by_dungeon=comp_routes_by_dungeon,
+        key_levels=sorted({r["level"] for r in comp_routes.values() if r.get("level")}),
         slug_lookup=slug_lookup,
         dungeon_lookup=dungeon_lookup,
         specs=spec_lookup,

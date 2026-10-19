@@ -473,6 +473,7 @@ def main(template_path, output_dir, limit, streamers_dir):
     output_html = template.render(
         **common,
         comp_vods_by_dungeon=comp_vods_by_dungeon,
+        key_levels=sorted({v["level"] for v in comp_vods.values() if v.get("level")}),
         streamer_pages=streamer_pages,
         specs=spec_lookup,
         class_lookup=class_lookup,
