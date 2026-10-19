@@ -2106,5 +2106,16 @@
         "persona": "snarky_analyst",
         "judge_score": 33.0,
         "timestamp": 1792355724174
+    },
+    "data/social/underdog_spotlight_261_2026-10.png": {
+        "title": "Underdog Spotlight: Subtlety Rogue",
+        "post_type": "underdog_spotlight",
+        "link": "https://mythistone.com/classes/Dps/Subtlety_Rogue",
+        "social": "Ever see a Subtlety Rogue in the finder and think it's a joke? They're S tier and time 90% of keys, crushing the 88% DPS average. The underdog that actually delivers. #WoW #MythicPlus https://mythistone.com/classes/Dps/Subtlety_Rogue",
+        "blog": "By popularity Subtlety Rogue is only #15 of 27 DPS specs, but its results put it in S tier.\n\nAcross 397.8 K tracked runs it times 90% of its keys, against a role average of 88%.",
+        "post": "Ever see a Subtlety Rogue in the finder and think it's a joke? They're S tier and time 90% of keys, crushing the 88% DPS average. The underdog that actually delivers. #WoW #MythicPlus https://mythistone.com/classes/Dps/Subtlety_Rogue",
+        "persona": "pug_veteran",
+        "judge_score": 34.0,
+        "timestamp": 1792448323380
     }
 }
