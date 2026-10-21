@@ -524,9 +524,12 @@
         ' data-bs-container="body" title="' + esc(topTip) + '">TOP</span>';
     }
     if (pick && pick.priority) {
-      return '<span class="badge an-new-badge item-icon-top-badge" data-bs-toggle="tooltip"' +
-        ' data-bs-container="body" title="New this season. Suggested because it is part of the' +
-        ' current season&#39;s gear.">NEW</span>';
+      var legendary = pick.priority === "legendary";
+      return '<span class="badge an-priority-badge item-icon-top-badge" data-bs-toggle="tooltip"' +
+        ' data-bs-container="body" title="' + (legendary
+          ? 'Legendary of the current expansion. Suggested first.'
+          : 'Part of the current season&#39;s tier set. Suggested first.') + '">' +
+        (legendary ? 'LEGENDARY' : 'TIER') + '</span>';
     }
     return "";
   }

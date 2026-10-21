@@ -1114,7 +1114,7 @@ def build_spec_meta_json(
     bis_summary, socket_lookup,
     talent_lookup=None, loadouts=None,
     hero_variants=None, top_hero=None, top_hero_pct=0.0, hero_tree_top_counts=None,
-    sections_by_tree=None, outdated_spark_bonus_ids=(),
+    sections_by_tree=None, outdated_spark_bonus_ids=(), priority_reasons=None,
 ):
     """Compact, machine-readable meta snapshot for one spec, consumed by the
     client-side "Am I meta?" analyzer (assets/js/analyzer.js). Built entirely
@@ -1178,7 +1178,7 @@ def build_spec_meta_json(
         if occupies_both_hands(item_lookup.get(item_id), spec_id):
             pick["two_handed"] = True
         if entry.get("priority"):
-            pick["priority"] = True
+            pick["priority"] = (priority_reasons or {}).get(item_id) or "tier"
         pick.update(extra)
         return pick
 
@@ -3960,6 +3960,7 @@ def main(template_path, output_dir, debug=False, spec=None):
                 hero_tree_top_counts=hero_tree_top_counts,
                 sections_by_tree=sections_by_tree,
                 outdated_spark_bonus_ids=season_gear_rules["outdated_spark_bonus_ids"],
+                priority_reasons=season_gear_rules["priority_item_ids"],
             )
             spec_meta_dir = os.path.join("assets", "json", "spec_meta")
             os.makedirs(spec_meta_dir, exist_ok=True)
@@ -3969,6 +3970,7 @@ def main(template_path, output_dir, debug=False, spec=None):
             output_html = template.render(
                 generated_at=datetime.now(timezone.utc).timestamp(),
                 spec_id=spec_id,
+                priority_reasons=season_gear_rules["priority_item_ids"],
                 section_variants=section_variants,
                 has_top_view=bool(top_sections_by_tree),
                 spec=spec_data,

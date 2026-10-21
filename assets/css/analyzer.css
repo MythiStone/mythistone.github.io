@@ -347,8 +347,8 @@
 }
 .bis-badge { background: #ffd100; color: #000; }
 .simc-badge { background: #2a6fb0; color: #fff; }
-/* Pinned current-season `common` target (pick.priority). */
-.an-new-badge { background: var(--mythi-text-info); color: #fff; border-radius: 6px; }
+/* Pinned current-season `common` target (pick.priority = "tier" or "legendary"). */
+.an-priority-badge { background: var(--mythi-text-info); color: #fff; border-radius: 6px; }
 
 .item-icon-top-badge,
 .item-icon-sim-badge {
@@ -367,7 +367,7 @@
   left: -5px;
   box-shadow: 0 0 6px rgba(255, 209, 0, 0.55);
 }
-.an-new-badge.item-icon-top-badge { box-shadow: none; }
+.an-priority-badge.item-icon-top-badge { box-shadow: none; }
 .item-icon-sim-badge {
   bottom: -6px;
   left: -5px;
