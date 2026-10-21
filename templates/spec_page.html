@@ -1114,11 +1114,16 @@
                     <div class="card-body p-3 text-center">
                       <p class="text-xs text-secondary text-uppercase mb-2">{{ sec.label }}{% if top.simc_pick %} {{ simc_badge(top.simc_pick, sec.label | lower) }}{% endif %}</p>
                       {% if top.icon_url %}
-                      <img src="{{ top.icon_url }}" alt="{{ top.name }}" width="40" height="40" class="rounded border border-grey-100">
+                      {% set top_icon %}<img src="{{ top.icon_url }}" alt="{{ top.name }}" width="40" height="40" class="rounded border border-grey-100">{% endset %}
+                      {% if top.slug %}
+                      <a href="/consumables/{{ top.slug }}"{% if top.item_id %} data-wowhead="item={{ top.item_id }}&spec={{ spec_id }}"{% endif %}>{{ top_icon }}</a>
+                      {% elif top.item_id %}
+                      <a target="_blank" href="https://www.wowhead.com/item={{ top.item_id }}&spec={{ spec_id }}">{{ top_icon }}</a>
+                      {% else %}{{ top_icon }}{% endif %}
                       {% endif %}
                       <p class="text-sm font-weight-bold mb-0 mt-2">
                         {% if top.slug %}
-                        <a href="/consumables/{{ top.slug }}">{{ top.name }}</a>
+                        <a href="/consumables/{{ top.slug }}"{% if top.item_id %} data-wowhead="item={{ top.item_id }}&spec={{ spec_id }}"{% endif %}>{{ top.name }}</a>
                         {% elif top.item_id %}
                         <a target="_blank" href="https://www.wowhead.com/item={{ top.item_id }}&spec={{ spec_id }}">{{ top.name }}</a>
                         {% else %}{{ top.name }}{% endif %}
@@ -2440,7 +2445,7 @@
                                 <div class="col-auto">
                                   {% if entry.icon_url %}
                                   {% if entry.slug %}
-                                  <a href="/consumables/{{ entry.slug }}" class="icon-link position-relative detail-row-icon">
+                                  <a href="/consumables/{{ entry.slug }}" class="icon-link position-relative detail-row-icon"{% if entry.item_id %} data-wowhead="item={{ entry.item_id }}&spec={{ spec_id }}"{% endif %}>
                                     <img src="{{ entry.icon_url }}" alt="" class="base-icon border border-grey-100">
                                   </a>
                                   {% elif entry.item_id %}
@@ -2456,7 +2461,7 @@
                                 <div class="col">
                                   {{ simc_badge(entry.simc_pick, sec.label | lower, cls='simc-badge-inline float-end ms-2') }}
                                   {% if entry.slug %}
-                                  <a href="/consumables/{{ entry.slug }}"><p class="mb-1">{{ entry.name }}</p></a>
+                                  <a href="/consumables/{{ entry.slug }}"{% if entry.item_id %} data-wowhead="item={{ entry.item_id }}&spec={{ spec_id }}"{% endif %}><p class="mb-1">{{ entry.name }}</p></a>
                                   {% elif entry.item_id %}
                                   <a target="_blank" href="https://www.wowhead.com/item={{ entry.item_id }}&spec={{ spec_id }}">
                                     <p class="mb-1">{{ entry.name }}</p>
