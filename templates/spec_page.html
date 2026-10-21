@@ -32,11 +32,15 @@
 {% macro overall_data_note() -%}
 <p class="cohort-overall-note text-xs mb-2"><i class="material-symbols-rounded">info</i><span>No top player data for this section. Showing overall data.</span></p>
 {%- endmacro %}
-{# Pinned current-season tier piece or legendary (entry.priority / comp.has_priority). #}
+{# Pinned current-season tier piece or legendary (entry.priority), or a set combo holding current
+   tier (comp.has_priority). Only shown while pin_priority (commonUtils.season_priority_active). #}
 {% macro priority_badge(reason, cls='', title=none) -%}
-{%- if reason == 'legendary' %}{% set label, default_title = 'Legendary', "Legendary of the current expansion. Listed first." %}
-{%- else %}{% set label, default_title = 'Tier', "Part of the current season's tier set. Listed first." %}{% endif -%}
+{%- if reason == 'legendary' %}{% set label, default_title = 'Legendary', "Legendary of the current expansion." %}
+{%- else %}{% set label, default_title = 'Tier', "Part of the current season's tier set." %}{% endif -%}
 <span class="badge item-source-badge item-source-badge-priority {{ cls }}" data-bs-toggle="tooltip" data-bs-container="body" title="{{ title or default_title }}">{{ label }}</span>
+{%- endmacro %}
+{% macro tier_badge() -%}
+<span class="badge item-source-badge item-source-badge-tier" data-bs-toggle="tooltip" data-bs-container="body" title="Part of the current season's tier set.">Tier</span>
 {%- endmacro %}
 {% macro render_slot(entry, slot_count=0, is_button=false, slug="") -%}
 {# choose tag and base classes #}
@@ -89,9 +93,10 @@
 
     {% set src = item_sources.get(entry.id) if item_sources else none %}
     <div class="my-1 item-stats-container">
-      {% if display_stats or src or entry.priority %}
+      {% set is_tier = entry.id in current_tier_item_ids %}
+      {% if display_stats or src or entry.priority or is_tier %}
       <div class="d-flex flex-wrap gap-1">
-        {% if entry.priority %}{{ priority_badge(priority_reasons.get(entry.id)) }}{% endif %}
+        {% if entry.priority %}{{ priority_badge(priority_reasons.get(entry.id)) }}{% elif is_tier %}{{ tier_badge() }}{% endif %}
         {# Loot-source badges lead the row: where this item drops. #}
         {% if src %}
           {% for d in src.source_dungeons %}
@@ -1159,8 +1164,8 @@
                 <span class="class-{{ class_slug }}-text">{{ spec.name }} {{ class_info.name }}</span>
                 players equip most often in those high keys, broken down slot by slot. For each slot the most popular item
                 is shown first with its alternatives underneath, and the percentage next to each item tells you how common
-                that choice is. Tier pieces and legendaries of the current season are listed first and marked Tier or Legendary,
-                even while few players run them. It is a snapshot of what is being played, not a guaranteed upgrade for your character, so
+                that choice is. Pieces of the current season's tier set are marked Tier. In the first weeks of a season, tier
+                pieces and legendaries are also listed first, even while few players run them yet. It is a snapshot of what is being played, not a guaranteed upgrade for your character, so
                 always simulate your own character before committing to gear changes. You can do that with
                 <a href="https://www.raidbots.com/simbot/topgear" target="_blank" rel="noopener">Raidbots Top Gear</a>.
               </p>
@@ -2043,7 +2048,7 @@
                                   <span class="badge tt-top-badge tt-top-badge-inline mb-1" data-bs-toggle="tooltip" data-bs-container="body"
                                     title="Used by {{ '%.0f' % comp.bis_pct }}% of the top 50 {{ spec.name }} {{ class_info.name }} players according to Raider.io verified Loadouts.">TOP</span>
                                   {% endif %}
-                                  {% if comp.has_priority %}{{ priority_badge('tier', 'mb-1', "Includes the current season's tier set.") }}{% endif %}
+                                  {% if pin_priority and comp.has_priority %}{{ priority_badge('tier', 'mb-1', "Includes the current season's tier set.") }}{% endif %}
                                   {{ simc_badge(comp.simc_pick, 'set combo', cls='simc-badge-inline mb-1') }}
                                   {% if comp.simc_pick and comp.simc_pick.only %}{{ simc_share() }}{% else %}
                                   <p data-bs-toggle="tooltip" data-bs-placement="top"

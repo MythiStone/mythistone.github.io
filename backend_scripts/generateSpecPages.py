@@ -2051,10 +2051,12 @@ def filter_weapon_gear_entries(weapon_lists, slot_totals):
 def fetch_slot_rows(conn, cursor, spec_id, current_season_id, slot, hero_talent_id=None):
     if MULTI_SLOT_GROUPS.get(slot):
         return databaseConnector.fetch_top_items_for_slot_group_with_bonus(
-            conn, cursor, spec_id, current_season_id, MULTI_SLOT_GROUPS[slot], hero_talent_id
+            conn, cursor, spec_id, current_season_id, MULTI_SLOT_GROUPS[slot], hero_talent_id,
+            pin_priority=commonUtils.pin_priority(),
         )
     return databaseConnector.fetch_top_items_for_slot_with_bonus(
-        conn, cursor, spec_id, current_season_id, slot, hero_talent_id
+        conn, cursor, spec_id, current_season_id, slot, hero_talent_id,
+        pin_priority=commonUtils.pin_priority(),
     )
 
 
@@ -3971,6 +3973,8 @@ def main(template_path, output_dir, debug=False, spec=None):
                 generated_at=datetime.now(timezone.utc).timestamp(),
                 spec_id=spec_id,
                 priority_reasons=season_gear_rules["priority_item_ids"],
+                pin_priority=commonUtils.pin_priority(),
+                current_tier_item_ids=season_gear_rules["current_tier_item_ids"],
                 section_variants=section_variants,
                 has_top_view=bool(top_sections_by_tree),
                 spec=spec_data,

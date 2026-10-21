@@ -626,7 +626,8 @@ a.item-source-badge:hover {
   color: var(--mythi-text-primary);
   border-color: var(--mythi-text-primary);
 }
-.item-source-badge-priority {
+.item-source-badge-priority,
+.item-source-badge-tier {
   color: var(--mythi-text-info);
   border-color: var(--mythi-text-info);
   cursor: help;

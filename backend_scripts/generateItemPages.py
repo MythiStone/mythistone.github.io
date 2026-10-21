@@ -704,7 +704,8 @@ def build_payloads(season, ctx, only_item=None):
         rendered_groups = sorted(set(MULTI_SLOT_GROUPS.values()))
         spec_page_linked = databaseConnector.fetch_spec_page_linked_items(
             conn, cursor, season, spec_ids, rendered_slots, rendered_groups,
-            WEAPON_SLOTS, GEAR_LIST_MIN_KEEP, GEAR_LIST_MIN_SLOT_SHARE)
+            WEAPON_SLOTS, GEAR_LIST_MIN_KEEP, GEAR_LIST_MIN_SLOT_SHARE,
+            pin_priority=commonUtils.pin_priority())
 
         top50_totals = databaseConnector.fetch_top50_loadout_totals(conn, cursor, season)
         top_specs_by_item = defaultdict(list)

@@ -579,7 +579,7 @@ def fetch_slot_rows(conn, cursor, spec_id, season, slot, group_cache=None):
             base = group_cache[group]
         else:
             base = databaseConnector.fetch_top_items_for_slot_group_with_bonus(
-                conn, cursor, spec_id, season, group
+                conn, cursor, spec_id, season, group, pin_priority=commonUtils.pin_priority()
             )
             if group_cache is not None:
                 group_cache[group] = base
@@ -589,7 +589,7 @@ def fetch_slot_rows(conn, cursor, spec_id, season, slot, group_cache=None):
             del rows[idx]
         return rows
     return databaseConnector.fetch_top_items_for_slot_with_bonus(
-        conn, cursor, spec_id, season, slot
+        conn, cursor, spec_id, season, slot, pin_priority=commonUtils.pin_priority()
     )
 
 

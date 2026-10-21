@@ -7,6 +7,7 @@ free of jinja2/matplotlib/PIL/openai is what breaks the old circular-import
 chains (generateSocialsPost <-> generateSpecPages/generateDashboardPage).
 """
 
+import functools
 import hashlib
 import json
 import os
@@ -1092,6 +1093,25 @@ def current_expansion_id(lookup_dir=None):
     if exp is None:
         raise ValueError("expansion_id missing from seasonInfo.json")
     return int(exp)
+
+
+PRIORITY_PIN_WEEKS = 4
+
+
+def season_priority_active(now=None, lookup_dir=None):
+    """True during the first PRIORITY_PIN_WEEKS after the season start (and
+    pre-season), when current tier and legendaries are still scarce in the data and
+    get pinned first. priority_item_ids always holds them, the readers gate on this."""
+    now_ms = int((now or datetime.now(timezone.utc)).timestamp() * 1000)
+    start_ms = computeBuildPhase._season_start_ms(load_season_info(lookup_dir))
+    return now_ms < start_ms + PRIORITY_PIN_WEEKS * 7 * 24 * 3600 * 1000
+
+
+@functools.cache
+def pin_priority():
+    """season_priority_active() once per run: the `pin_priority` argument of the gear
+    list readers in databaseConnector and the set-combo badge on the spec page."""
+    return season_priority_active()
 
 
 # Raidbots mirrors the live retail client build; the collector reads the current

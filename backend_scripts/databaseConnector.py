@@ -870,7 +870,7 @@ WITH top_items AS (
     SUM(ae.run_count) AS equip_count,
     MAX(P.item_id IS NOT NULL) AS is_priority
   FROM Mythistone.global_aggregated_equipment ae
-  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
+  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id AND %s
   WHERE ae.spec_id = %s
     AND ae.season  = %s
     AND ae.slot    = %s
@@ -923,7 +923,7 @@ FETCH_TOP_ITEMS_BY_SLOT_WITH_BONUS_BY_HERO_SQL = """
 WITH top_items AS (
   SELECT ae.item_id, SUM(ae.run_count) AS equip_count, MAX(P.item_id IS NOT NULL) AS is_priority
   FROM Mythistone.global_aggregated_equipment ae
-  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
+  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id AND %s
   WHERE ae.spec_id = %s AND ae.season = %s AND ae.slot = %s AND ae.hero_talent_id = %s
   GROUP BY ae.item_id
   ORDER BY is_priority DESC, equip_count DESC, ae.item_id
@@ -952,20 +952,21 @@ ORDER BY ti.is_priority DESC, ti.equip_count DESC, ti.item_id;
 
 
 def fetch_top_items_for_slot_with_bonus(
-    connection, cursor, spec_id, season, slot, hero_talent_id=None
+    connection, cursor, spec_id, season, slot, hero_talent_id=None, *, pin_priority
 ):
     """Fetch the top items with bonus for a specific slot from the database.
 
     When ``hero_talent_id`` is given, reads the per-hero-tree twin tables so the
-    result covers only that hero tree.
+    result covers only that hero tree. ``pin_priority``
+    (commonUtils.season_priority_active) ranks priority_item_ids first.
     """
     if hero_talent_id is None:
         sql = FETCH_TOP_ITEMS_BY_SLOT_WITH_BONUS_SQL
-        params = (spec_id, season, slot, spec_id, season, spec_id, season)
+        params = (pin_priority, spec_id, season, slot, spec_id, season, spec_id, season)
     else:
         sql = FETCH_TOP_ITEMS_BY_SLOT_WITH_BONUS_BY_HERO_SQL
         params = (
-            spec_id, season, slot, hero_talent_id,
+            pin_priority, spec_id, season, slot, hero_talent_id,
             spec_id, season, hero_talent_id,
             spec_id, season, hero_talent_id,
         )
@@ -1004,7 +1005,7 @@ WITH top_items AS (
     MAX(P.item_id IS NOT NULL) AS is_priority
   FROM Mythistone.global_aggregated_equipment ae
   JOIN Mythistone.slot_group_map sgm ON sgm.slot = ae.slot
-  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
+  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id AND %s
   WHERE ae.spec_id = %s
     AND ae.season  = %s
     AND sgm.slot_group = %s
@@ -1056,7 +1057,7 @@ WITH top_items AS (
   SELECT ae.item_id, SUM(ae.run_count) AS equip_count, MAX(P.item_id IS NOT NULL) AS is_priority
   FROM Mythistone.global_aggregated_equipment ae
   JOIN Mythistone.slot_group_map sgm ON sgm.slot = ae.slot
-  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
+  LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id AND %s
   WHERE ae.spec_id = %s AND ae.season = %s AND sgm.slot_group = %s AND ae.hero_talent_id = %s
   GROUP BY ae.item_id
   ORDER BY is_priority DESC, equip_count DESC, ae.item_id
@@ -1085,17 +1086,18 @@ ORDER BY ti.is_priority DESC, ti.equip_count DESC, ti.item_id;
 
 
 def fetch_top_items_for_slot_group_with_bonus(
-    connection, cursor, spec_id, season, slot_group, hero_talent_id=None
+    connection, cursor, spec_id, season, slot_group, hero_talent_id=None, *, pin_priority
 ):
-    """Fetch top items for a slot_group along with each item's top bonus_list (MySQL 8+)."""
+    """Fetch top items for a slot_group along with each item's top bonus_list (MySQL 8+).
+    ``pin_priority`` as in fetch_top_items_for_slot_with_bonus."""
     if hero_talent_id is None:
         sql = FETCH_TOP_ITEMS_BY_SLOT_GROUP_WITH_BONUS_SQL
-        # param order must match the SQL: spec, season, slot_group, spec, season, spec, season
-        params = (spec_id, season, slot_group, spec_id, season, spec_id, season)
+        # param order must match the SQL: pin, spec, season, slot_group, spec, season, spec, season
+        params = (pin_priority, spec_id, season, slot_group, spec_id, season, spec_id, season)
     else:
         sql = FETCH_TOP_ITEMS_BY_SLOT_GROUP_WITH_BONUS_BY_HERO_SQL
         params = (
-            spec_id, season, slot_group, hero_talent_id,
+            pin_priority, spec_id, season, slot_group, hero_talent_id,
             spec_id, season, hero_talent_id,
             spec_id, season, hero_talent_id,
         )
@@ -1196,7 +1198,7 @@ WITH slot_sums AS (
   SELECT ae.spec_id, ae.slot, ae.item_id, SUM(ae.run_count) AS equip_count,
          MAX(P.item_id IS NOT NULL) AS is_priority
     FROM Mythistone.global_aggregated_equipment ae
-    LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
+    LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id AND %s
    WHERE ae.season = %s
      AND ae.spec_id IN ({spec_ph})
      AND ae.slot IN ({slot_ph})
@@ -1216,7 +1218,7 @@ group_sums AS (
          MAX(P.item_id IS NOT NULL) AS is_priority
     FROM Mythistone.global_aggregated_equipment ae
     JOIN Mythistone.slot_group_map sgm ON sgm.slot = ae.slot
-    LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
+    LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id AND %s
    WHERE ae.season = %s
      AND ae.spec_id IN ({spec_ph})
      AND sgm.slot_group IN ({group_ph})
@@ -1235,7 +1237,7 @@ weapon_sums AS (
   SELECT ae.spec_id, ae.slot, ae.item_id, SUM(ae.run_count) AS equip_count,
          MAX(P.item_id IS NOT NULL) AS is_priority
     FROM Mythistone.global_aggregated_equipment ae
-    LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id
+    LEFT JOIN Mythistone.priority_item_ids P ON P.item_id = ae.item_id AND %s
    WHERE ae.season = %s
      AND ae.spec_id IN ({spec_ph})
      AND ae.slot IN ({weapon_ph})
@@ -1264,7 +1266,7 @@ SELECT item_id FROM weapon_ranked
 
 
 def fetch_spec_page_linked_items(connection, cursor, season, spec_ids, slots,
-                                 slot_groups, weapon_slots, min_keep, min_share_pct):
+                                 slot_groups, weapon_slots, min_keep, min_share_pct, *, pin_priority):
     """Item ids linked from any spec page's per-slot top-10 gear lists, after
     the gear-list noise filter.
 
@@ -1276,8 +1278,8 @@ def fetch_spec_page_linked_items(connection, cursor, season, spec_ids, slots,
     two-hander spec's stray off-hand loadouts never surface. ``min_keep`` /
     ``min_share_pct`` are generateSpecPages.GEAR_LIST_MIN_KEEP /
     GEAR_LIST_MIN_SLOT_SHARE: past the floor a list entry must hold
-    ``min_share_pct``% of its denominator. Priority items (priority_item_ids)
-    rank first and always pass the filter. Returns a set of str item ids."""
+    ``min_share_pct``% of its denominator. With ``pin_priority`` priority items
+    (priority_item_ids) rank first and always pass the filter. Returns a set of str item ids."""
     if not (spec_ids and slots and slot_groups and weapon_slots):
         raise ValueError("spec_ids, slots, slot_groups and weapon_slots must all be non-empty")
     sql = FETCH_SPEC_PAGE_LINKED_ITEMS_SQL.format(
@@ -1288,9 +1290,9 @@ def fetch_spec_page_linked_items(connection, cursor, season, spec_ids, slots,
     )
     share = float(min_share_pct) / 100.0
     params = (
-        (season,) + tuple(spec_ids) + tuple(slots)
-        + (season,) + tuple(spec_ids) + tuple(slot_groups)
-        + (season,) + tuple(spec_ids) + tuple(weapon_slots)
+        (pin_priority, season) + tuple(spec_ids) + tuple(slots)
+        + (pin_priority, season) + tuple(spec_ids) + tuple(slot_groups)
+        + (pin_priority, season) + tuple(spec_ids) + tuple(weapon_slots)
         + (min_keep, share, min_keep, share, min_keep, share)
     )
     rows = fetch_with_retry(connection, cursor, sql, params)
