@@ -318,37 +318,5 @@
     "role": "2",
     "SpellIconFileId": "7455385",
     "primary_stat": "INTELLECT"
-  },
-  "1492": {
-    "name": "Traveler",
-    "description": "",
-    "classID": "15",
-    "role": "2",
-    "SpellIconFileId": "1392951",
-    "primary_stat": null
-  },
-  "1496": {
-    "name": "Witch",
-    "description": "Wear a crown of moonlight and speak forgotten names. Nature bends to those who dance the crooked path.",
-    "classID": "15",
-    "role": "2",
-    "SpellIconFileId": "1392951",
-    "primary_stat": null
-  },
-  "1497": {
-    "name": "Slayer",
-    "description": "Take up your rifle, your pistol, your blades. As the poets say: a hunter must hunt.",
-    "classID": "15",
-    "role": "2",
-    "SpellIconFileId": "1392951",
-    "primary_stat": null
-  },
-  "1498": {
-    "name": "Inquisitor",
-    "description": "Wield your words like weapons, and keep the cleansing fires tended. They will be needed in the dark.",
-    "classID": "15",
-    "role": "2",
-    "SpellIconFileId": "1392951",
-    "primary_stat": null
   }
 }
