@@ -2128,5 +2128,16 @@
         "persona": "hype_caster",
         "judge_score": 29.0,
         "timestamp": 1792532171624
+    },
+    "data/social/dungeon_overview_585_2026-10.png": {
+        "title": "Voidscar Arena Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/voidscar-arena",
+        "social": "Voidscar Arena sits D tier on the list yet we've logged 2 M runs through the void. Even the ethereals are confused why we keep queueing this forsaken pit. #WoW #MythicPlus https://mythistone.com/dungeons/voidscar-arena",
+        "blog": "Voidscar Arena has 2 M Mythic+ runs tracked this season.\n\nThe most common group through it is Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. The most-used route right now is keystone.guru/LluuZda.",
+        "post": "Voidscar Arena sits D tier on the list yet we've logged 2 M runs through the void. Even the ethereals are confused why we keep queueing this forsaken pit. #WoW #MythicPlus https://mythistone.com/dungeons/voidscar-arena",
+        "persona": "lore_nerd",
+        "judge_score": 34.0,
+        "timestamp": 1792618606306
     }
 }
