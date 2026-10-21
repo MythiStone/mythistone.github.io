@@ -15,7 +15,7 @@ OUTPUT_JSON = "data/static/specs.json"
 
 # Names and classIDs to exclude
 EXCLUDE_NAMES = {"Initial", "Adventurer"}
-EXCLUDE_CLASSIDS = {"0"}
+EXCLUDE_CLASSIDS = {"0", "15"}
 # Fields we care about (header names in CSV)
 # The CSV is expected to have these exact headers
 CSV_FIELD_NAMES = [
@@ -59,6 +59,13 @@ def main():
             if not id_value or name in EXCLUDE_NAMES or class_id in EXCLUDE_CLASSIDS:
                 continue
 
+            # Non-playable specs have no primary stat (and no talent tree for the generators)
+            primary_stat = get_primary_stat(
+                get_access_token(CLIENT_ID, CLIENT_SECRET), id_value
+            )
+            if primary_stat is None:
+                continue
+
             # Build spec entry
             specs[id_value] = {
                 "name": name,
@@ -66,9 +73,7 @@ def main():
                 "classID": class_id,
                 "role": row.get("Role", "").strip(),
                 "SpellIconFileId": row.get("SpellIconFileID", "").strip(),
-                "primary_stat": get_primary_stat(
-                    get_access_token(CLIENT_ID, CLIENT_SECRET), id_value
-                ),
+                "primary_stat": primary_stat,
             }
 
     # Write JSON file
