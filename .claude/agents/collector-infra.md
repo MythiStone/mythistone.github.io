@@ -21,5 +21,5 @@ Follow-ups unless the packet assigns them to you.
   collector smoke test in lockstep (`collector-smoke-test`).
 - simc build changes: the build must pass the gate that simulates a real fight (`simc-resilient-build`).
 - Social image changes: render with the mock harness (`social-image-mock-harness`).
-- Workflows cannot run locally. Trace each changed step against the scripts it calls, and list
-  what was not exercised under Not verified.
+- Workflow changes: run the changed job through act against the seeded DB (`local-workflow-run`),
+  and list what act cannot exercise under Not verified.

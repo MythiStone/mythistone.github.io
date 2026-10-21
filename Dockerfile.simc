@@ -1,7 +1,8 @@
 # Unofficial build of SimulationCraft (https://github.com/simulationcraft/simc),
 # GPL-3.0. We recompile upstream at a pinned commit and republish so the
-# collector's sibling-container sims use current game data instead of the
-# official image (simulationcraftorg/simc:latest), which lags weeks behind.
+# collector's sibling-container sims and the tierlist sims (buildPages.yml) use
+# current game data instead of the official image (simulationcraftorg/simc:latest),
+# which lags weeks behind.
 #
 # GPL-3.0 compliance: we ship the upstream LICENSE and record the exact source
 # commit via SIMC_REV (also stamped as an OCI revision label in the workflow),

@@ -30,11 +30,10 @@ Never hand back page work that was only reasoned about. Render it against the se
 
 Traps:
 
-- **The Bash tool cannot reach Docker on Windows.** Its `npipe ... cannot find the file` error is
-  the Bash docker client, not proof that Docker is down. Run docker and the seeder from the
-  PowerShell tool and set the variables with `$env:`. If Docker Desktop really is not running,
-  start it and wait until `docker version` reports a server. Never fall back to a hand-built test
-  page.
+- **Docker unreachable means start it yourself.** `npipe ... dockerDesktopLinuxEngine ... cannot
+  find the file` means the engine is not up, even when the Docker Desktop window is open. Launch
+  `C:\Program Files\Docker\Docker\Docker Desktop.exe` and wait until `docker version` reports a
+  server, then continue. Do not ask the user to start it. Never fall back to a hand-built test page.
 - Every generator needs only the `DATABASE_*` exports. Without keystone.guru credentials a dungeon
   render fails fast on the route thumbnail and renders without the map image, which is what you
   want for seeded routes.

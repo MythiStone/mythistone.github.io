@@ -69,6 +69,9 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  # fetch-simc: pull the private simc image and wait on buildSimcImage runs.
+  packages: read
+  actions: read
 jobs:
   # ----------------------------------------------------------------------
   # Which season is this build for? Normally seasonInfo.json. A season_override
@@ -196,7 +199,7 @@ jobs:
     needs: [resolve-season]
     # Skip the entire build when the season has no runs yet (pre-season gap /
     # post-wipe) OR when the cadence gate skips this scheduled day (see
-    # computeBuildPhase.py). build-simc, simulate, buildPages, assemble and deploy
+    # computeBuildPhase.py). fetch-simc, simulate, buildPages, assemble and deploy
     # all need prepare-sims (directly or transitively) and dungeon-previews carries
     # the same gate, so they skip too and the run ends green without touching the
     # live site.
@@ -242,27 +245,18 @@ jobs:
           path: simc_profiles
           retention-days: 7
 
-  # Build a VALIDATED SimulationCraft binary from source so the sims use current
-  # game data — the published Docker image lags weeks behind and skews DPS. simc's
-  # `midnight` branch is actively developed and its tip occasionally can't sim a
-  # spec (e.g. the Unholy DK army_ghoul break that failed runs 31325084815 and
-  # 31335443090), so we do NOT trust the raw tip: buildResilientSimc.sh samples
-  # recent commits newest->oldest and picks the first whose build can actually
-  # SIMULATE every spec in the real gearset profiles (hence needs: prepare-sims)
-  # plus simc's own profiles/CI.simc. Validation runs a real fight, not a 1-second
-  # init — pet actions like army_ghoul are only created when the pet is summoned,
-  # which is exactly how the previous gate let a broken build through.
-  # Compiled ONCE here and reused by every matrix leg; an unchanged,
-  # already-validated HEAD skips the recompile via cache, and a last-known-good
-  # binary is kept as a floor if everything we sample is broken.
-  build-simc:
+  # The tierlist sims use the simc image buildSimcImage.yml publishes weekly, the
+  # same build the collector runs. It was already walked back to a commit that
+  # passes simc's own CI.simc; here it is re-gated against OUR gearset profiles
+  # (hence needs: prepare-sims) so a spec we rank that it cannot sim fails the
+  # build loudly instead of dropping out of the tierlist. The binary is extracted
+  # once, so every matrix leg runs the same image even if :latest moves mid-run.
+  fetch-simc:
     needs: [prepare-sims]
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
     env:
-      # Window to ASK upstream for; simcWalkback.sh samples it geometrically, so a
-      # big cap only widens how far back a sustained break can be escaped from.
-      SIMC_WALKBACK_CAP: '40'
+      IMAGE: ghcr.io/mythistone/simc:latest
     steps:
       - name: Clone project
         uses: actions/checkout@v7
@@ -276,65 +270,65 @@ jobs:
           name: simc-profiles
           path: simc_io
 
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake g++ libssl-dev libcurl4-openssl-dev
-
-      - name: Resolve candidate simc commits (newest first)
-        id: cands
+      # On Wednesday this run follows getStaticData while the 04:00 image build may
+      # still be going, and a push can start one any day. Sim on its result, not
+      # on the image it is about to replace.
+      - name: Wait for an in-flight simc image build
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh api "repos/simulationcraft/simc/commits?sha=midnight&per_page=${SIMC_WALKBACK_CAP}" \
-            --jq '.[].sha' > candidates.txt
-          head=$(head -1 candidates.txt)
-          echo "head=$head" >> "$GITHUB_OUTPUT"
-          echo "Newest simc commit (HEAD): $head"
-          echo "Candidate window ($(wc -l < candidates.txt) commits):"; cat candidates.txt
+          ids=$(gh run list -R "$GITHUB_REPOSITORY" --workflow buildSimcImage.yml \
+                  --limit 20 --json databaseId,status \
+                  --jq '.[] | select(.status != "completed") | .databaseId')
+          for id in $ids; do
+            echo "Waiting for buildSimcImage run $id"
+            if ! gh run watch "$id" -R "$GITHUB_REPOSITORY" --exit-status --interval 60 >/dev/null; then
+              echo "::warning::buildSimcImage run $id did not succeed; sims use the previous :latest image"
+            fi
+          done
 
-      - name: Cache simc binary (fast path for an already-validated HEAD)
-        id: cache
-        uses: actions/cache@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          path: simc-cache
-          key: simc-bin-${{ steps.cands.outputs.head }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Restore last-known-good simc (fallback floor)
-        uses: actions/cache@v4
-        with:
-          path: simc-lastgood
-          key: simc-lastgood-${{ github.run_id }}
-          restore-keys: |
-            simc-lastgood-
+      - name: Extract simc from the image
+        id: extract
+        run: |
+          set -euo pipefail
+          docker pull "$IMAGE"
+          sha=$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$IMAGE")
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          mkdir -p simc-bin
+          # docker cp instead of a bind mount: no host path has to line up with the job's.
+          cid=$(docker create "$IMAGE")
+          docker cp "$cid:/app/simc" simc-bin/simc
+          docker rm "$cid" >/dev/null
+          chmod +x simc-bin/simc
 
-      - name: Build & validate (walk back to the newest working commit)
+      - name: Validate against our gearsets
         env:
-          HEAD_SHA: ${{ steps.cands.outputs.head }}
-          HEAD_CACHED: ${{ steps.cache.outputs.cache-hit }}
-        run: bash backend_scripts/buildResilientSimc.sh
+          SHA: ${{ steps.extract.outputs.sha }}
+        run: |
+          rc=0
+          bash backend_scripts/validateSimc.sh simc-bin/simc \
+            simc_io/gearset_popular.simc simc_io/gearset_simcbis.simc || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::simc image $IMAGE ($SHA) cannot sim every spec in our gearsets; rebuild it with buildSimcImage once upstream is fixed"
+            exit "$rc"
+          fi
 
-      - name: Update last-known-good
+      - name: Record the simc commit
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_SHA: ${{ steps.cands.outputs.head }}
+          SHA: ${{ steps.extract.outputs.sha }}
         run: |
-          mkdir -p simc-cache simc-lastgood
-          cp simc-bin/simc simc-lastgood/simc
-          cp simc-bin/CHOSEN_SHA simc-lastgood/CHOSEN_SHA 2>/dev/null || true
-          # Record which commit the sims will run on. (simc has no --version flag:
-          # it reads the argument as a profile path and errors, which is why that
-          # call used to redden every run's log.)
-          CHOSEN=$(cat simc-bin/CHOSEN_SHA)
-          DATE=$(gh api "repos/simulationcraft/simc/commits/$CHOSEN" \
+          DATE=$(gh api "repos/simulationcraft/simc/commits/$SHA" \
                    --jq '.commit.author.date' 2>/dev/null || echo unknown)
-          echo "Sims run on simc \`$CHOSEN\` (authored $DATE)." >> "$GITHUB_STEP_SUMMARY"
-          # A long upstream break means we keep falling back to an older binary and
-          # silently sim on stale game data. Say so where a human will see it.
-          if [ "$CHOSEN" != "$HEAD_SHA" ]; then
-            echo "::warning::simc HEAD ($HEAD_SHA) did not validate; using $CHOSEN from $DATE"
-          fi
+          echo "Sims run on simc \`$SHA\` (authored $DATE), image \`$IMAGE\`." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload simc binary
         uses: actions/upload-artifact@v4
@@ -344,7 +338,7 @@ jobs:
           retention-days: 1
 
   simulate:
-    needs: [prepare-sims, build-simc]
+    needs: [prepare-sims, fetch-simc]
     runs-on: ubuntu-latest
     # Healthy legs take 2-7 minutes (measured in run 31163721535). The old 300
     # allowed a deadlocked simc to run out a FIVE HOUR clock on five legs at once

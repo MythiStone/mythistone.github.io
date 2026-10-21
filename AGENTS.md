@@ -154,6 +154,9 @@ template uses.
 
 ## Working preferences (always apply)
 
+- **Ask, do not guess.** If the intent is unclear, ask instead of assuming it. If the work would go
+  beyond what was asked, ask before doing it. If the kb, gotchas and code do not answer a question,
+  ask instead of searching in circles.
 - **Fail loudly.** Missing data files or failed fetches must raise, never warn-and-continue (unless
   a skill documents an intentional fail-soft, like raids.json or icon self-heal).
 - **No git interaction.** Never run git write commands (`commit`, `push`, `add`, `reset`,
@@ -186,3 +189,8 @@ Any change to a `templates/*.html`, a `backend_scripts/generate*.py`,
 against a locally seeded DB before it is considered done. See
 [backend_scripts/localDev/README.md](backend_scripts/localDev/README.md) and the
 `local-test-render` skill, which holds the procedure.
+
+## Verifying workflow changes
+
+A change to `.github/workflows/*` is verified by running the changed job through act against the
+seeded DB. The `local-workflow-run` gotcha (`season-ops`) holds the procedure.

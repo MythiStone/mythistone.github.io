@@ -1,9 +1,11 @@
 name: Build and publish simc image
 
-# Recompiles SimulationCraft from upstream and publishes it to GHCR so the
-# collector's short-lived sibling sims (simcBis.py) run current game data. The
-# collector self-pulls SIMC_DOCKER_IMAGE on SIMC_PULL_INTERVAL, so a fresh image
-# here propagates to production without touching the collector image.
+# Recompiles SimulationCraft from upstream and publishes it to GHCR. It is the
+# only simc build: the collector's short-lived sibling sims (simcBis.py) and the
+# tierlist sims (buildPages.yml fetch-simc) both run it. The collector self-pulls
+# SIMC_DOCKER_IMAGE on SIMC_PULL_INTERVAL, so a fresh image here propagates to
+# production without touching the collector image. buildPages waits for an
+# in-flight run of this workflow before it pulls :latest.
 #
 # We do NOT trust the raw tip of simc's actively-developed `midnight` branch: it
 # occasionally can't sim a spec (e.g. the Unholy DK army_ghoul break that failed
@@ -18,10 +20,9 @@ name: Build and publish simc image
 # See Dockerfile.simc for the GPL-3.0 compliance notes (LICENSE + source commit).
 
 on:
-  # Daily (not weekly): the walk-back handles a transient broken tip, but if an
-  # entire candidate window is broken this cadence bounds recovery to ~a day
-  # instead of a week. Cache-cheap when the chosen commit is unchanged. 04:00 UTC,
-  # clear of the Wednesday full update.
+  # Weekly, ahead of the Wednesday getStaticData -> buildPages chain, so every
+  # build that week sims on the same simc. A broken window is recovered by a
+  # manual dispatch.
   schedule:
     - cron: '0 4 * * WED'
   push:

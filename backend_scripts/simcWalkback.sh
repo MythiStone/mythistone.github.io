@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
-# Shared candidate selection for the two simc walk-backs (buildResilientSimc.sh
-# for the tierlist binary, buildResilientSimcImage.sh for the collector image).
-#
-# Sourced, not executed. Kept in one place deliberately: if the two walk-backs
-# ever searched different windows, the binary and the image could end up on
-# different simc commits without anything failing.
+# Candidate selection for the simc image walk-back (buildResilientSimcImage.sh).
+# Sourced, not executed.
 
 # select_candidates <candidates-file>
 #

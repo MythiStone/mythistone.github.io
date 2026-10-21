@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Build & publish a *validated* simc image to GHCR (buildSimcImage.yml).
 #
-# Same walk-back idea as buildResilientSimc.sh, but for the collector's image and
-# self-contained (this workflow installs no DB driver, and has no generated
-# gearset profiles). Validation therefore runs simc's own all-spec CI profile,
-# fetched at the exact candidate commit. Publish the newest sampled commit whose
-# image can actually simulate every spec.
+# The one simc build: the collector's sims and the tierlist sims (buildPages
+# fetch-simc) both run this image. This workflow installs no DB driver and has no
+# generated gearset profiles, so validation runs simc's own all-spec CI profile,
+# fetched at the exact candidate commit, and buildPages re-gates the image against
+# our gearsets. Publish the newest sampled commit whose image can actually
+# simulate every spec.
 #
 # Using upstream's CI.simc rather than a hand-rolled profile is deliberate: its
 # actors carry `load_default_gear=1`, so they are properly geared. The previous

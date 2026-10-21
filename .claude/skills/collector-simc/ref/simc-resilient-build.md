@@ -1,11 +1,11 @@
 ---
 name: simc-resilient-build
-description: simc builds validate-and-walk-back over commits instead of trusting raw HEAD, and the gate must SIMULATE a real fight (not just init). Use when editing simcWalkback.sh, validateSimc.sh, the build-simc job in buildPages.yml, or buildSimcImage.yml.
+description: The one simc build (the GHCR image) walks back over commits instead of trusting raw HEAD, its gate must SIMULATE a real fight (not just init), and buildPages re-gates that image against our gearsets. Use when editing simcWalkback.sh, validateSimc.sh, the fetch-simc job in buildPages.yml, or buildSimcImage.yml.
 kind: external
 files:
   - backend_scripts/simcWalkback.sh
   - backend_scripts/validateSimc.sh
-  - backend_scripts/buildResilientSimc*.sh
+  - backend_scripts/buildResilientSimcImage.sh
   - .github/workflows/buildSimcImage.yml
   - .github/workflows/buildPages.yml
   - Dockerfile.simc
@@ -13,10 +13,13 @@ files:
 
 # simc builds ship a validated commit
 
-Both simc builds, the binary for the tierlist in `.github/workflows/buildPages.yml` and the
-collector image in `.github/workflows/buildSimcImage.yml`, walk back over commits until one passes
-`backend_scripts/validateSimc.sh`. The reasons are in the headers of that script and of
-`backend_scripts/simcWalkback.sh`. What is not written there:
+simc is built once, as the image `.github/workflows/buildSimcImage.yml` publishes. Its walk-back
+publishes the newest sampled commit that passes `backend_scripts/validateSimc.sh` on simc's own
+`profiles/CI.simc`. The collector and the tierlist sims both run that image. The `fetch-simc` job in
+`.github/workflows/buildPages.yml` extracts the binary and gates it again on our generated
+gearsets. If a spec we rank cannot sim, the build fails and has no fallback. The fix is a new
+image, published by dispatching buildSimcImage. The reasons for the gate are in the headers of
+`backend_scripts/validateSimc.sh` and `backend_scripts/simcWalkback.sh`. What is not written there:
 
 - **Pinning is not an option.** simc's `midnight` branch is the live-WoW branch, and simc stopped
   publishing usable release tags years ago.
