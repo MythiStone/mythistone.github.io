@@ -10512,6 +10512,10 @@
       "offset": 0,
       "priority": 0,
       "squishEra": 0
+    },
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
     }
   },
   "1724": {
@@ -10522,6 +10526,10 @@
       "offset": 3,
       "priority": 0,
       "squishEra": 0
+    },
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
     }
   },
   "1725": {
@@ -28803,6 +28811,10 @@
       "offset": 1,
       "priority": 0,
       "squishEra": 0
+    },
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
     }
   },
   "6501": {
@@ -31358,6 +31370,10 @@
       "offset": 1,
       "priority": 0,
       "squishEra": 0
+    },
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
     }
   },
   "6815": {
@@ -31430,6 +31446,10 @@
       "offset": 3,
       "priority": 0,
       "squishEra": 0
+    },
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
     }
   },
   "6823": {
@@ -64016,6 +64036,10 @@
       "offset": 0,
       "priority": 0,
       "squishEra": 1
+    },
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
     }
   },
   "10385": {
@@ -92810,6 +92834,10 @@
       "offset": 6,
       "priority": 0,
       "squishEra": 2
+    },
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
     }
   },
   "13442": {
@@ -94458,6 +94486,10 @@
       "offset": 0,
       "priority": 300,
       "squishEra": 2
+    },
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
     }
   },
   "13565": {
@@ -94835,7 +94867,11 @@
       "priority": 1,
       "squishEra": 2
     },
-    "tag": "Timewarped"
+    "tag": "Timewarped",
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
+    }
   },
   "13608": {
     "id": 13608,
@@ -94872,7 +94908,11 @@
       "priority": 290,
       "squishEra": 2
     },
-    "quality": 3
+    "quality": 3,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
+    }
   },
   "13611": {
     "id": 13611,
@@ -94895,7 +94935,11 @@
       "priority": 200,
       "squishEra": 2
     },
-    "quality": 3
+    "quality": 3,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
+    }
   },
   "13614": {
     "id": 13614,
@@ -95052,6 +95096,10 @@
       "offset": 0,
       "priority": 0,
       "squishEra": 0
+    },
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
     }
   },
   "13636": {
@@ -95114,7 +95162,11 @@
       "priority": 200,
       "squishEra": 2
     },
-    "quality": 3
+    "quality": 3,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
+    }
   },
   "13646": {
     "id": 13646,
@@ -95124,7 +95176,11 @@
       "priority": 100,
       "squishEra": 2
     },
-    "quality": 4
+    "quality": 4,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
+    }
   },
   "13647": {
     "id": 13647,
@@ -95148,7 +95204,11 @@
       "priority": 200,
       "squishEra": 2
     },
-    "quality": 3
+    "quality": 3,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
+    }
   },
   "13649": {
     "id": 13649,
@@ -95234,6 +95294,10 @@
       "offset": 6,
       "priority": 0,
       "squishEra": 2
+    },
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
     }
   },
   "13661": {
@@ -95845,6 +95909,10 @@
       "offset": 0,
       "priority": 300,
       "squishEra": 2
+    },
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
     }
   },
   "13753": {
@@ -96578,7 +96646,11 @@
       "priority": 1,
       "squishEra": 2
     },
-    "tag": "Timewarped"
+    "tag": "Timewarped",
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
+    }
   },
   "13826": {
     "id": 13826,
@@ -96883,7 +96955,11 @@
       "priority": 200,
       "squishEra": 2
     },
-    "quality": 3
+    "quality": 3,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
+    }
   },
   "13935": {
     "id": 13935,
@@ -96893,7 +96969,11 @@
       "priority": 300,
       "squishEra": 2
     },
-    "quality": 2
+    "quality": 2,
+    "requiredLevelCurve": {
+      "curve": 96502,
+      "val": 0
+    }
   },
   "13936": {
     "id": 13936,
