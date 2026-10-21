@@ -3,7 +3,8 @@ import glob
 import json
 import asyncio
 import argparse
-from collections import defaultdict
+import statistics
+from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 import databaseConnector
@@ -27,6 +28,9 @@ LOOKUP_DIR = "data/static"
 
 # Latest Hotfixes card only shows fixes at most this many days old (age from build time).
 HOTFIX_MAX_AGE_DAYS = 7
+
+# Boss Pacing card: a "+N or higher" filter is offered once that many timed routes qualify.
+PACING_MIN_ROUTES = 10
 
 def parse_run_rows(rows):
     if not rows:
@@ -86,6 +90,119 @@ def pull_boss_ids(top_npcs_str, dungeon_bosses):
         if n.strip() and int(n.split(':')[0].strip()) in dungeon_bosses:
             ids.append(n.split(':')[0].strip())
     return ids
+
+
+def _spread(values):
+    """(median, p25, p75) of a list, or Nones when it is empty."""
+    if not values:
+        return None, None, None
+    if len(values) == 1:
+        return values[0], values[0], values[0]
+    q1, q2, q3 = statistics.quantiles(values, n=4, method="inclusive")
+    return q2, q1, q3
+
+
+def build_boss_pacing(encounter_rows, death_rows, timer_ms):
+    """Boss Pacing card data: one bucket per "+N or higher" key-level filter.
+
+    The queries return timed routes only, so every number is a pace to beat. Pulls carry
+    no timestamps, so a death is placed on the boss whose fight window holds it, else on
+    the trash leading up to that route's next boss."""
+    routes = {}
+    boss_names = defaultdict(Counter)
+    for r in encounter_rows or []:
+        route = routes.setdefault(r['route_key'], {
+            'level': int(r['keystone_level']),
+            'duration': int(r['duration']), 'encounters': [], 'deaths': []})
+        route['encounters'].append((int(r['started_at_ms']), int(r['ended_at_ms']), int(r['ordinal'])))
+        if r.get('boss_name'):
+            boss_names[int(r['ordinal'])][r['boss_name']] += 1
+    for r in death_rows or []:
+        route = routes.get(r['route_key'])
+        if route is not None and r['died_at_ms'] is not None:
+            route['deaths'].append(int(r['died_at_ms']))
+    if not routes:
+        return {"levels": [], "buckets": []}
+
+    def death_segment(encounters, t):
+        for start, end, ordinal in encounters:
+            if start <= t <= end:
+                return ('boss', ordinal)
+            if t < start:
+                return ('trash', ordinal)
+        return ('trash', None)
+
+    def pct(ms):
+        return min(100.0, max(0.0, ms / timer_ms * 100))
+
+    def bucket(key, members):
+        starts, ends, lengths, trash = (defaultdict(list) for _ in range(4))
+        deaths, death_runs = defaultdict(int), defaultdict(int)
+        for route in members:
+            encounters = sorted(route['encounters'])
+            prev_end = 0
+            for start, end, ordinal in encounters:
+                starts[ordinal].append(start)
+                ends[ordinal].append(end)
+                lengths[ordinal].append(end - start)
+                trash[ordinal].append(max(0, start - prev_end))
+                prev_end = end
+            trash[None].append(max(0, route['duration'] - prev_end))
+            hit = set()
+            for t in route['deaths']:
+                seg = death_segment(encounters, t)
+                deaths[seg] += 1
+                hit.add(seg)
+            for seg in hit:
+                death_runs[seg] += 1
+
+        n = len(members)
+
+        def death_stats(seg):
+            return {"per_run": deaths[seg] / n, "run_pct": death_runs[seg] / n * 100}
+
+        bosses = []
+        for ordinal in sorted(starts, key=lambda o: statistics.median(starts[o])):
+            start, p25, p75 = _spread(starts[ordinal])
+            end = statistics.median(ends[ordinal])
+            bosses.append({
+                "name": boss_names[ordinal].most_common(1)[0][0] if boss_names[ordinal] else f"Boss {ordinal + 1}",
+                "start": start, "start_p25": p25, "start_p75": p75, "end": end,
+                "length": statistics.median(lengths[ordinal]),
+                "trash_length": statistics.median(trash[ordinal]),
+                "trash_deaths": death_stats(('trash', ordinal)),
+                "boss_deaths": death_stats(('boss', ordinal)),
+                "bar_left": pct(start), "bar_width": max(0.5, pct(end) - pct(start)),
+            })
+        # Bar labels alternate between two rows, so each may run until the boss after next.
+        for i, cur in enumerate(bosses):
+            limit = bosses[i + 2]["bar_left"] if i + 2 < len(bosses) else 100.0
+            cur["label_width"] = limit - cur["bar_left"]
+        after = {"length": statistics.median(trash[None]), "deaths": death_stats(('trash', None)),
+                 "end": statistics.median(r['duration'] for r in members)}
+
+        total_deaths = sum(deaths.values())
+        boss_deaths = sum(c for (kind, _o), c in deaths.items() if kind == 'boss')
+        max_per_run = max([b["trash_deaths"]["per_run"] for b in bosses]
+                          + [after["deaths"]["per_run"]]) or 1
+        return {
+            "key": key,
+            "routes": n,
+            "deaths_per_run": total_deaths / n,
+            "boss_death_pct": boss_deaths / total_deaths * 100 if total_deaths else None,
+            "max_per_run": max_per_run,
+            "bosses": bosses,
+            "after": after,
+        }
+
+    # "Any key" covers the lowest level, so filters start one level above it, and a
+    # level with no runs of its own would repeat the next level's numbers.
+    levels = sorted({r['level'] for r in routes.values()})[1:]
+    levels = [lvl for lvl in levels
+              if sum(1 for r in routes.values() if r['level'] >= lvl) >= PACING_MIN_ROUTES]
+    buckets = [bucket("", list(routes.values()))]
+    buckets += [bucket(str(lvl), [r for r in routes.values() if r['level'] >= lvl]) for lvl in levels]
+    return {"timer": timer_ms, "levels": levels, "buckets": buckets}
 
 
 DUNGEON_INTRO_CLOSING = ("It is a snapshot of what is working right now, not a fixed guide, "
@@ -490,7 +607,11 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
 
                 lust_timeline = databaseConnector.fetch_dungeon_lust_timeline(conn, cursor, dungeon_id)
                 skip_rates = databaseConnector.fetch_dungeon_skip_rates(conn, cursor, dungeon_id, current_season)
-                
+                boss_pacing = build_boss_pacing(
+                    databaseConnector.fetch_dungeon_route_encounters(conn, cursor, dungeon_id),
+                    databaseConnector.fetch_dungeon_route_deaths(conn, cursor, dungeon_id),
+                    dungeon_data["keystone_upgrades"]["1"]["qualifying_duration"])
+
                 # one batched round trip each instead of one query per skip/pull
                 skip_examples = databaseConnector.fetch_example_skip_routes(
                     conn, cursor, dungeon_id, [skip['npc_id'] for skip in skip_rates[:15]]
@@ -607,6 +728,7 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                     lust_timeline=lust_timeline,
                     bloodlust_spell_ids=bloodlust_spell_ids,
                     skip_rates=skip_rates,
+                    boss_pacing=boss_pacing,
                     npcs=npcs_lookup,
                     npc_icons=npc_icons,
                     bosses=bosses_lookup.get(dungeon_id, []),

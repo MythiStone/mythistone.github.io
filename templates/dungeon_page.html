@@ -536,6 +536,149 @@
                 </div>
             </div>
 
+            {% if boss_pacing.buckets %}
+            {% import "_finder_macros.html" as fm %}
+            {% macro mmss(ms) %}{{ (ms | int | duration)[:-4] if ms is not none else '-' }}{% endmacro %}
+            {% macro death_cell(d, max_per_run) %}
+            <div class="pacing-deaths">
+                <div class="d-flex justify-content-between text-xs">
+                    <span class="font-weight-bold">{{ "%.2f"|format(d.per_run) }}</span>
+                    <span class="text-secondary" data-bs-toggle="tooltip" title="Share of runs with at least one death here.">{{ "%.0f"|format(d.run_pct) }}% of runs</span>
+                </div>
+                <div class="progress pacing-death-bar">
+                    <div class="progress-bar bg-gradient-danger" role="progressbar"
+                        style="width: {{ (d.per_run / max_per_run * 100) | round(1) }}%;"></div>
+                </div>
+            </div>
+            {% endmacro %}
+            <div class="row mb-4">
+                <!-- Boss Pacing & Deaths -->
+                <div class="col-12 mb-4">
+                    <div class="card h-100" id="dungeon-boss-pacing" data-share>
+                        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                            <div data-share-anchor
+                                class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                                <h6 class="text-white text-capitalize ps-3 mb-0" data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="When timed runs reach and kill each boss, and where groups die along the way.">
+                                    Boss Pacing &amp; Deaths</h6>
+                            </div>
+                        </div>
+                        <div class="card-body pb-2">
+                            <div class="row align-items-end g-3 mb-3">
+                                {{ fm.min_key_filter(boss_pacing.levels, col='col-12 col-md-4 col-lg-3') }}
+                                <div class="col-12 col-md-8 col-lg-9">
+                                    <p class="text-sm text-secondary mb-0">
+                                        Built from timed runs only, so the pull and kill times work as a pace to beat.
+                                        Deaths are placed on the boss fight they happened in, or on the trash leading
+                                        up to that boss.
+                                    </p>
+                                </div>
+                            </div>
+                            {% for b in boss_pacing.buckets %}
+                            <div class="pacing-panel{% if not loop.first %} d-none{% endif %}" data-pacing="{{ b.key }}">
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <span class="pacing-stat"><span class="material-symbols-rounded">timer</span><b>{{ b.routes }}</b> timed runs</span>
+                                    <span class="pacing-stat"><span class="material-symbols-rounded">skull</span><b>{{ "%.1f"|format(b.deaths_per_run) }}</b> deaths per run</span>
+                                    {% if b.boss_death_pct is not none %}
+                                    <span class="pacing-stat"><span class="material-symbols-rounded">swords</span><b>{{ "%.0f"|format(b.boss_death_pct) }}%</b> of deaths on bosses</span>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex justify-content-between text-xxs text-secondary mb-1">
+                                    <span>00:00</span><span>Timer {{ mmss(boss_pacing.timer) }}</span>
+                                </div>
+                                <div class="pacing-track" role="img"
+                                    aria-label="Median boss fight windows across the {{ mmss(boss_pacing.timer) }} timer">
+                                    {% for boss in b.bosses %}
+                                    <div class="pacing-fight" style="left: {{ boss.bar_left | round(2) }}%; width: {{ boss.bar_width | round(2) }}%;"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="{{ boss.name }}: pulled at {{ mmss(boss.start) }} (most runs {{ mmss(boss.start_p25) }} to {{ mmss(boss.start_p75) }}), killed by {{ mmss(boss.end) }}, {{ "%.2f"|format(boss.boss_deaths.per_run) }} deaths per run"><span class="d-lg-none">{{ loop.index }}</span></div>
+                                    {% endfor %}
+                                </div>
+                                {# Labels sit under each fight (dungeon-page.js drops one to a second row only when it
+                                would overlap); on phones they would truncate to nothing, so a list replaces them. #}
+                                <div class="pacing-labels d-none d-lg-block mb-3">
+                                    {% for boss in b.bosses %}
+                                    <div class="pacing-label" style="left: {{ boss.bar_left | round(2) }}%; width: {{ boss.label_width | round(2) }}%;"
+                                        title="{{ boss.name }} ({{ "%.1f"|format(boss.boss_deaths.per_run) }} deaths). Usually pulled between {{ mmss(boss.start_p25) }} and {{ mmss(boss.start_p75) }}, the fight takes {{ mmss(boss.length) }}.">
+                                        <div class="text-xs text-truncate"><span class="font-weight-bolder text-warning">{{ boss.name }}</span> <span class="text-secondary">({{ "%.1f"|format(boss.boss_deaths.per_run) }} deaths)</span></div>
+                                        <div class="text-xxs text-secondary text-truncate">Pull {{ mmss(boss.start_p25) }} to {{ mmss(boss.start_p75) }} ({{ mmss(boss.length) }} fight)</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <ul class="list-unstyled d-lg-none row row-cols-1 row-cols-sm-2 gx-3 gy-2 mt-1 mb-3">
+                                    {% for boss in b.bosses %}
+                                    <li class="d-flex align-items-start">
+                                        <span class="pacing-num me-2">{{ loop.index }}</span>
+                                        <div class="lh-sm">
+                                            <div class="text-xs"><span class="font-weight-bolder text-warning">{{ boss.name }}</span> <span class="text-secondary">({{ "%.1f"|format(boss.boss_deaths.per_run) }} deaths)</span></div>
+                                            <div class="text-xxs text-secondary">Pull {{ mmss(boss.start_p25) }} to {{ mmss(boss.start_p75) }} ({{ mmss(boss.length) }} fight)</div>
+                                        </div>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                <div class="table-responsive">
+                                    <table class="table align-items-center mb-0 w-100 pacing-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Trash Section</th>
+                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center d-none d-lg-table-cell"
+                                                    data-bs-toggle="tooltip" title="Median kill time of the boss before it, or the key start.">From</th>
+                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center d-none d-lg-table-cell"
+                                                    data-bs-toggle="tooltip" title="Median pull time of the next boss, or the end of the run.">To</th>
+                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center d-none d-sm-table-cell"
+                                                    data-bs-toggle="tooltip" title="Median time groups spend on this trash.">Time Spent</th>
+                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 pe-2"
+                                                    data-bs-toggle="tooltip" title="Deaths per run on this trash.">Deaths</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for boss in b.bosses %}
+                                            {% set prev = b.bosses[loop.index0 - 1] if not loop.first else none %}
+                                            <tr>
+                                                <td class="ps-2 text-sm text-wrap">
+                                                    {{ prev.name if prev else 'Key start' }} <span class="text-secondary">to</span> {{ boss.name }}
+                                                    <span class="d-block d-sm-none text-xxs text-secondary">{{ mmss(boss.trash_length) }} spent</span>
+                                                </td>
+                                                <td class="text-sm text-center text-secondary d-none d-lg-table-cell">{{ mmss(prev.end) if prev else '00:00' }}</td>
+                                                <td class="text-sm text-center text-secondary d-none d-lg-table-cell">{{ mmss(boss.start) }}</td>
+                                                <td class="text-sm text-center d-none d-sm-table-cell">{{ mmss(boss.trash_length) }}</td>
+                                                <td class="pe-2">{{ death_cell(boss.trash_deaths, b.max_per_run) }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                            {% if b.bosses and (b.after.length >= 1000 or b.after.deaths.per_run) %}
+                                            {% set last = b.bosses[-1] %}
+                                            <tr>
+                                                <td class="ps-2 text-sm text-wrap">{{ last.name }} <span class="text-secondary">to the end</span>
+                                                    <span class="d-block d-sm-none text-xxs text-secondary">{{ mmss(b.after.length) }} spent</span></td>
+                                                <td class="text-sm text-center text-secondary d-none d-lg-table-cell">{{ mmss(last.end) }}</td>
+                                                <td class="text-sm text-center text-secondary d-none d-lg-table-cell">{{ mmss(b.after.end) }}</td>
+                                                <td class="text-sm text-center d-none d-sm-table-cell">{{ mmss(b.after.length) }}</td>
+                                                <td class="pe-2">{{ death_cell(b.after.deaths, b.max_per_run) }}</td>
+                                            </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="card-footer pt-0 pb-3">
+                            <hr class="horizontal dark my-2">
+                            <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 text-xs text-secondary">
+                                <span>Data powered by</span>
+                                <a href="https://raider.io/" target="_blank" rel="noopener"
+                                    class="d-inline-flex align-items-center gap-1 text-secondary font-weight-bold" title="Raider.IO">
+                                    <img src="/assets/img/logos/RaiderIOLogo.png" alt="Raider.IO" width="18" height="18" class="rounded">
+                                    Raider.IO
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="row mb-4">
                 <!-- Popular Team Comps -->
                 <div class="col-lg-6 col-md-12 mb-4">
@@ -925,6 +1068,10 @@
                         cooldowns from those runs, so they show how the best groups genuinely route
                         {{ dungeon.name.en_US }} rather than a planned or theoretical route. Only runs from roughly the
                         last four weeks are included, so this part of the page keeps up with the current meta.
+                    </p>
+                    <p>
+                        Boss pacing and deaths use the combat logs of the timed runs among them, which record when
+                        each boss fight started and ended and when each player died.
                     </p>
                 </div>
                 <div class="modal-footer">

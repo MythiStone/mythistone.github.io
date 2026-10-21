@@ -42,6 +42,37 @@ const DUNGEON = JSON.parse(document.getElementById('dungeon-page-data').textCont
                     });
                 })();
 
+// --- Boss Pacing: fight labels drop to a second row only when they would overlap ---
+function layoutPacingLabels() {
+    document.querySelectorAll('#dungeon-boss-pacing .pacing-panel:not(.d-none) .pacing-labels').forEach(function (lane) {
+        if (!lane.offsetWidth) return;
+        var upperEnd = -Infinity, stacked = false;
+        lane.querySelectorAll('.pacing-label').forEach(function (label) {
+            label.classList.remove('pacing-label-low');
+            var textWidth = Math.max.apply(null, Array.prototype.map.call(label.children, function (c) { return c.offsetWidth; }));
+            if (label.offsetLeft < upperEnd) {
+                label.classList.add('pacing-label-low');
+                stacked = true;
+            } else {
+                upperEnd = label.offsetLeft + textWidth + 16;
+            }
+        });
+        lane.classList.toggle('pacing-labels-stacked', stacked);
+    });
+}
+document.addEventListener('DOMContentLoaded', layoutPacingLabels);
+window.addEventListener('load', layoutPacingLabels);
+window.addEventListener('resize', layoutPacingLabels);
+
+// --- Boss Pacing minimum-key filter (bootstrap-select fires change via jQuery) ---
+$('#dungeon-boss-pacing #minKeySelect').on('change', function () {
+    var key = this.value;
+    document.querySelectorAll('#dungeon-boss-pacing .pacing-panel').forEach(function (p) {
+        p.classList.toggle('d-none', p.dataset.pacing !== key);
+    });
+    layoutPacingLabels();
+});
+
 // --- Route embeds (Klaro-gated) ---
     // Route embeds load on first open, gated on Klaro consent (see consent.js).
     MythiConsent.wireAccordionEmbeds('#routeDungeonAccordion');

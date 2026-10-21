@@ -5198,6 +5198,36 @@ LIMIT 50
 def fetch_dungeon_skip_rates(connection, cursor, dungeon_id: str, season: int = None):
     return fetch_with_retry(connection, cursor, FETCH_DUNGEON_SKIP_RATES_SQL, (dungeon_id,))
 
+FETCH_DUNGEON_ROUTE_ENCOUNTERS_SQL = """
+SELECT rd.route_key, rd.keystone_level, rd.duration,
+       re.ordinal, re.boss_encounter_id, re.boss_name, re.started_at_ms, re.ended_at_ms
+FROM route_data rd
+JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
+JOIN route_encounters re ON re.route_key = rd.route_key
+WHERE rd.dungeon_id = %s
+  AND rd.duration <= dd.upgrade_1_duration
+  AND re.started_at_ms IS NOT NULL AND re.ended_at_ms IS NOT NULL
+ORDER BY rd.route_key, re.started_at_ms
+"""
+
+def fetch_dungeon_route_encounters(connection, cursor, dungeon_id: str):
+    """Per-route boss timings (one row per boss) of timed routes, for the dungeon page's pacing card."""
+    return fetch_with_retry(connection, cursor, FETCH_DUNGEON_ROUTE_ENCOUNTERS_SQL, (dungeon_id,))
+
+FETCH_DUNGEON_ROUTE_DEATHS_SQL = """
+SELECT rdt.route_key, rdt.died_at_ms
+FROM route_deaths rdt
+JOIN route_data rd ON rd.route_key = rdt.route_key
+JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
+WHERE rd.dungeon_id = %s
+  AND rd.duration <= dd.upgrade_1_duration
+  AND EXISTS (SELECT 1 FROM route_encounters re WHERE re.route_key = rdt.route_key)
+"""
+
+def fetch_dungeon_route_deaths(connection, cursor, dungeon_id: str):
+    """Death timings of the dungeon's timed routes that have boss timings to place them against."""
+    return fetch_with_retry(connection, cursor, FETCH_DUNGEON_ROUTE_DEATHS_SQL, (dungeon_id,))
+
 FETCH_EXAMPLE_SKIP_ROUTE_SQL = """
 SELECT rd.rio_run_id, rd.route_key, rd.keystone_level
 FROM route_data rd
