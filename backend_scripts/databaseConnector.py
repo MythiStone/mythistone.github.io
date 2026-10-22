@@ -5139,14 +5139,16 @@ WITH PullSigs AS (
         rp.route_key,
         rp.pull_id,
         GROUP_CONCAT(CONCAT(pe.npc_id, ':', pe.count) ORDER BY pe.npc_id ASC SEPARATOR ',') as pull_sig,
-        CASE WHEN MAX(ps.spell_id) IS NOT NULL THEN 1 ELSE 0 END as lusted,
+        EXISTS (
+            SELECT 1 FROM pull_spells ps
+            WHERE ps.route_key = rp.route_key AND ps.pull_id = rp.pull_id
+            AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
+        ) as lusted,
         MAX(rd.keystone_level) as keystone_level
     FROM route_data rd
     JOIN route_pulls rp ON rd.route_key = rp.route_key
     JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
     JOIN pull_enemies pe ON rp.pull_id = pe.pull_id AND rp.route_key = pe.route_key
-    LEFT JOIN pull_spells ps ON rp.pull_id = ps.pull_id AND rp.route_key = ps.route_key
-        AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
     WHERE rd.dungeon_id = %s
     AND rd.duration <= dd.upgrade_1_duration
     AND EXISTS (
@@ -5324,10 +5326,13 @@ WITH matching_pull AS (
     JOIN route_pulls rp ON rd.route_key = rp.route_key
     JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
     JOIN pull_enemies pe ON rp.pull_id = pe.pull_id AND rp.route_key = pe.route_key
-    JOIN pull_spells ps ON rp.pull_id = ps.pull_id AND rp.route_key = ps.route_key
-        AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
     WHERE rd.dungeon_id = %s
     AND rd.duration <= dd.upgrade_1_duration
+    AND EXISTS (
+        SELECT 1 FROM pull_spells ps
+        WHERE ps.route_key = rp.route_key AND ps.pull_id = rp.pull_id
+        AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
+    )
     GROUP BY rp.route_key, rp.pull_id, rd.keystone_level
     HAVING GROUP_CONCAT(CONCAT(pe.npc_id, ':', pe.count) ORDER BY pe.npc_id ASC SEPARATOR ',') = %s
 ),
@@ -5374,10 +5379,13 @@ FROM (
         JOIN route_pulls rp ON rd.route_key = rp.route_key
         JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
         JOIN pull_enemies pe ON rp.pull_id = pe.pull_id AND rp.route_key = pe.route_key
-        JOIN pull_spells ps ON rp.pull_id = ps.pull_id AND rp.route_key = ps.route_key
-            AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
         WHERE rd.dungeon_id = %s
         AND rd.duration <= dd.upgrade_1_duration
+        AND EXISTS (
+            SELECT 1 FROM pull_spells ps
+            WHERE ps.route_key = rp.route_key AND ps.pull_id = rp.pull_id
+            AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
+        )
         GROUP BY rp.route_key, rp.pull_id, rd.keystone_level
         HAVING GROUP_CONCAT(CONCAT(pe.npc_id, ':', pe.count) ORDER BY pe.npc_id ASC SEPARATOR ',') = %s
     ) mp
