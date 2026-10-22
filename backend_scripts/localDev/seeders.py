@@ -101,8 +101,9 @@ class StaticData:
             self.item_sets = []
         self.npcs = load_json(os.path.join(lookup_dir, "npcs.json")).get("en_US", {})
         self.spells = load_json(os.path.join(lookup_dir, "spells.json"))
-        # boss_npcs.json lives in data/ (parent of data/static), keyed by challenge_mode_id.
-        self.boss_npcs = load_json(os.path.join(os.path.dirname(lookup_dir), "boss_npcs.json"))
+        # Journal bosses with their npc ids, keyed by challenge_mode_id (fetchDungeonData.py).
+        self.bosses = {cmid: d.get("bosses") or []
+                       for cmid, d in load_json(os.path.join(lookup_dir, "dungeons.json")).items()}
 
         # outdated sparks + pinned current tier, the same rules processBonusIds writes
         self.gear_rules = load_season_gear_rules({int(i["id"]): i for i in self.items}, lookup_dir)
@@ -792,6 +793,8 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
     # route_data.timestamp is stored in SECONDS (raider.io epoch), unlike runs.timestamp (ms).
     now_s = _now_ms() // _MS
     npc_ids = [int(n) for n in static.npcs.keys()] or [100000]
+    all_boss_ids = {i for bosses in static.bosses.values() for b in bosses for i in b["npc_ids"]}
+    trash_npc_ids = [n for n in npc_ids if n not in all_boss_ids] or [100000]
     lust_ids = ref["lust_ids"] or [32182]
     # Trash pulls draw from every utility spell so routes carry non-lust spells too
     # (e.g. Shroud of Concealment), which the routes-page spell filter keeps separate.
@@ -830,7 +833,7 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
     for d in static.dungeons:
         cmid = str(d["challenge_mode_id"])
         timer_ms = int(d["keystone_timer_seconds"]) * _MS
-        for _ in range(cfg["routes_per_dungeon"]):
+        for r_idx in range(cfg["routes_per_dungeon"]):
             rio += 1
             route_key = f"seedroute-{cmid}-{rio}"
             duration_ms = int(timer_ms * rng.uniform(0.5, 1.1))
@@ -861,17 +864,19 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
             # deaths: a few timings spread across the run duration
             for seq in range(rng.randint(0, 8)):
                 route_deaths.append((route_key, seq, rio, rng.randint(0, duration_ms)))
-            # encounters: one per dungeon boss, spaced through the run
-            route_bosses = [int(b) for b in static.boss_npcs.get(cmid, [])]
+            # encounters: one per dungeon boss, spaced through the run, named like the journal
+            # boss so the pacing card can join its lust by name
+            route_bosses = static.bosses.get(cmid, [])
             n_enc = len(route_bosses) or rng.randint(3, 5)
             for ordinal in range(n_enc):
                 seg = duration_ms / n_enc
                 start = int(seg * ordinal + seg * 0.4)
                 end = int(seg * (ordinal + 1) - 1)
-                boss_id = route_bosses[ordinal] if ordinal < len(route_bosses) else 3000 + ordinal
+                boss = route_bosses[ordinal] if ordinal < len(route_bosses) else None
                 route_encounters.append((
-                    route_key, ordinal, rio, 3100 + ordinal, boss_id,
-                    f"Seed Boss {ordinal}", start, max(start + 1, end),
+                    route_key, ordinal, rio, 3100 + ordinal,
+                    boss["npc_ids"][0] if boss else 3000 + ordinal,
+                    boss["name"] if boss else f"Seed Boss {ordinal}", start, max(start + 1, end),
                 ))
             # POV videos: attach one to some routes, POV = a spec from the comp
             if rng.random() < 0.4:
@@ -888,25 +893,47 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
                     char_name, realm, region, char_id, persona,
                     rng.choice(comp),
                 ))
-            # pulls. The last pull is a "boss pull": it carries a dungeon boss npc AND a
-            # bloodlust spell, which the dungeon page requires (it validates that the lust
-            # timeline contains at least one boss pull, and fails loudly otherwise).
-            bosses = [int(b) for b in static.boss_npcs.get(cmid, [])] or npc_ids
-            n_pulls = rng.randint(6, 10)
-            for pull_id in range(1, n_pulls + 1):
-                route_pulls.append((route_key, pull_id))
-                is_boss_pull = pull_id == n_pulls
-                enemies = rng.sample(npc_ids, min(len(npc_ids), rng.randint(1, 4)))
-                if is_boss_pull:
-                    enemies.append(rng.choice(bosses))
-                for npc in set(enemies):
-                    pull_enemies.append((route_key, npc, pull_id, rng.randint(1, 6)))
-                # real lust on the boss pull always (the dungeon page requires it), plus
-                # occasional trash-pull utility from the wider set
-                if is_boss_pull:
-                    pull_spells.append((route_key, rng.choice(lust_ids), pull_id))
-                elif rng.random() < 0.2:
-                    pull_spells.append((route_key, rng.choice(utility_ids), pull_id))
+            # pulls. With a boss list, each boss gets exactly one boss pull in encounter order,
+            # with trash in between. The dungeon page requires a lusted boss pull in the lust
+            # timeline, so most routes lust the first boss.
+            # Lust shares cycle by route index, not rng, so the icon cutoff holds on few routes.
+            if route_bosses:
+                lust_boss = 0 if r_idx % 7 else None
+                lust_pre_last = r_idx % 5 != 1
+                plan = []
+                for b_idx in range(len(route_bosses)):
+                    plan += [None] * rng.randint(1, 3)
+                    plan.append(b_idx)
+                plan += [None] * rng.randint(0, 2)
+                last_boss_pos = plan.index(len(route_bosses) - 1)
+                for pos, b_idx in enumerate(plan):
+                    pull_id = pos + 1
+                    route_pulls.append((route_key, pull_id))
+                    enemies = rng.sample(trash_npc_ids, min(len(trash_npc_ids), rng.randint(1, 4)))
+                    if b_idx is not None:
+                        enemies.append(route_bosses[b_idx]["npc_ids"][0])
+                    for npc in set(enemies):
+                        pull_enemies.append((route_key, npc, pull_id, rng.randint(1, 6)))
+                    if (b_idx is not None and b_idx == lust_boss) or (
+                            lust_pre_last and pos == last_boss_pos - 1 and len(route_bosses) > 1):
+                        pull_spells.append((route_key, rng.choice(lust_ids), pull_id))
+                    elif b_idx is None and rng.random() < 0.2:
+                        pull_spells.append((route_key, rng.choice(utility_ids), pull_id))
+            else:
+                # No boss list: the last pull is the boss pull and always carries lust.
+                n_pulls = rng.randint(6, 10)
+                for pull_id in range(1, n_pulls + 1):
+                    route_pulls.append((route_key, pull_id))
+                    is_boss_pull = pull_id == n_pulls
+                    enemies = rng.sample(npc_ids, min(len(npc_ids), rng.randint(1, 4)))
+                    if is_boss_pull:
+                        enemies.append(rng.choice(npc_ids))
+                    for npc in set(enemies):
+                        pull_enemies.append((route_key, npc, pull_id, rng.randint(1, 6)))
+                    if is_boss_pull:
+                        pull_spells.append((route_key, rng.choice(lust_ids), pull_id))
+                    elif rng.random() < 0.2:
+                        pull_spells.append((route_key, rng.choice(utility_ids), pull_id))
 
     _insert_many(conn, cursor,
         "INSERT INTO route_data (rio_run_id, mapping_version, enemy_forces, timestamp, "

@@ -24,6 +24,7 @@ from generateSpecPages import (
 )
 
 import databaseConnector
+import commonUtils
 from commonUtils import fetch_route_videos
 
 
@@ -162,14 +163,7 @@ def main(template_path, output_dir, limit):
         slug_lookup[slug] = {**d, "_id": slug}
 
     bloodlust_id_strs = [str(x) for x in bloodlust_spell_ids]
-    bloodlust_icon = next(
-        (
-            spell_lookup[sid]["icon"]
-            for sid in ["2825", "32182", *bloodlust_id_strs]
-            if sid in spell_lookup and spell_lookup[sid].get("icon")
-        ),
-        None,
-    )
+    bloodlust_icon = commonUtils.bloodlust_icon(spell_lookup, bloodlust_spell_ids)
 
     # render
     template = env.get_template(os.path.basename(template_path))

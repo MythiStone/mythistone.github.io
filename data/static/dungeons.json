@@ -31,11 +31,36 @@
     },
     "icon": "altar-of-fangs-small.jpg",
     "raiderio_short_name": "AOF",
+    "bosses": [
+      {
+        "name": "Rav'i",
+        "npc_ids": [
+          259445
+        ]
+      },
+      {
+        "name": "The Writhing Coil",
+        "npc_ids": [
+          259446,
+          262398,
+          270417
+        ]
+      },
+      {
+        "name": "Zul'jan",
+        "npc_ids": [
+          259447,
+          268358
+        ]
+      }
+    ],
     "boss_npc_ids": [
-      262398,
       259445,
       259446,
-      259447
+      259447,
+      262398,
+      268358,
+      270417
     ],
     "journal_instance_id": 1322
   },
@@ -71,15 +96,34 @@
     },
     "icon": "den-of-nalorakk-small.jpg",
     "raiderio_short_name": "DON",
+    "bosses": [
+      {
+        "name": "The Hoardmonger",
+        "npc_ids": [
+          241812
+        ]
+      },
+      {
+        "name": "Sentinel of Winter",
+        "npc_ids": [
+          244100
+        ]
+      },
+      {
+        "name": "Nalorakk",
+        "npc_ids": [
+          246404,
+          246409,
+          247301
+        ]
+      }
+    ],
     "boss_npc_ids": [
+      241812,
       244100,
       246404,
-      247301,
-      241812,
-      245076,
-      251189,
-      244759,
-      244696
+      246409,
+      247301
     ],
     "journal_instance_id": 1311
   },
@@ -115,16 +159,53 @@
     },
     "icon": "kings-rest-small.jpg",
     "raiderio_short_name": "KR",
+    "bosses": [
+      {
+        "name": "The Golden Serpent",
+        "npc_ids": [
+          135322
+        ]
+      },
+      {
+        "name": "Mchimba the Embalmer",
+        "npc_ids": [
+          134993,
+          136256
+        ]
+      },
+      {
+        "name": "The Council of Tribes",
+        "npc_ids": [
+          135761,
+          135764,
+          135765,
+          269808,
+          269810,
+          269811
+        ]
+      },
+      {
+        "name": "Dazar, The First King",
+        "npc_ids": [
+          136160,
+          136976,
+          136984
+        ]
+      }
+    ],
     "boss_npc_ids": [
-      136160,
-      135406,
-      269808,
       134993,
-      269810,
-      269811,
+      135322,
+      135761,
+      135764,
+      135765,
+      136160,
+      136256,
       136976,
       136984,
-      135322
+      269808,
+      269810,
+      269811
     ],
     "journal_instance_id": 1041
   },
@@ -160,12 +241,53 @@
     },
     "icon": "murder-row-small.jpg",
     "raiderio_short_name": "MR",
+    "bosses": [
+      {
+        "name": "Kystia Manaheart",
+        "npc_ids": [
+          234648,
+          234660,
+          255050
+        ]
+      },
+      {
+        "name": "Zaen Bladesorrow",
+        "npc_ids": [
+          234649,
+          234852,
+          234860
+        ]
+      },
+      {
+        "name": "Xathuux the Annihilator",
+        "npc_ids": [
+          234647,
+          235520
+        ]
+      },
+      {
+        "name": "Lithiel Cinderfury",
+        "npc_ids": [
+          234763,
+          234799,
+          237626,
+          238414
+        ]
+      }
+    ],
     "boss_npc_ids": [
-      234660,
-      234763,
       234647,
       234648,
-      234649
+      234649,
+      234660,
+      234763,
+      234799,
+      234852,
+      234860,
+      235520,
+      237626,
+      238414,
+      255050
     ],
     "journal_instance_id": 1304
   },
@@ -201,12 +323,32 @@
     },
     "icon": "ruby-life-pools-small.jpg",
     "raiderio_short_name": "RLP",
+    "bosses": [
+      {
+        "name": "Melidrussa Chillworn",
+        "npc_ids": [
+          188252
+        ]
+      },
+      {
+        "name": "Kokia Blazehoof",
+        "npc_ids": [
+          189232
+        ]
+      },
+      {
+        "name": "Kyrakka and Erkhart Stormvein",
+        "npc_ids": [
+          190484,
+          190485
+        ]
+      }
+    ],
     "boss_npc_ids": [
+      188252,
       189232,
       190484,
-      190485,
-      188252,
-      189886
+      190485
     ],
     "journal_instance_id": 1202
   },
@@ -242,20 +384,55 @@
     },
     "icon": "temple-of-sethraliss-small.jpg",
     "raiderio_short_name": "TOS",
+    "bosses": [
+      {
+        "name": "Adderis and Aspix",
+        "npc_ids": [
+          262530,
+          262822
+        ]
+      },
+      {
+        "name": "Merektha",
+        "npc_ids": [
+          133384,
+          134388,
+          134487,
+          263181,
+          263383
+        ]
+      },
+      {
+        "name": "Galvazzt",
+        "npc_ids": [
+          135445,
+          139131,
+          263658
+        ]
+      },
+      {
+        "name": "Avatar of Sethraliss",
+        "npc_ids": [
+          133392,
+          268364,
+          268747
+        ]
+      }
+    ],
     "boss_npc_ids": [
-      262530,
-      262822,
       133384,
-      263658,
-      268747,
-      268364,
-      263181,
       133392,
       134388,
-      135445,
       134487,
+      135445,
+      139131,
+      262530,
+      262822,
+      263181,
       263383,
-      139131
+      263658,
+      268364,
+      268747
     ],
     "journal_instance_id": 1030
   },
@@ -291,11 +468,45 @@
     },
     "icon": "the-blinding-vale-small.jpg",
     "raiderio_short_name": "BV",
+    "bosses": [
+      {
+        "name": "Lightblossom Trinity",
+        "npc_ids": [
+          243028,
+          243029,
+          243030
+        ]
+      },
+      {
+        "name": "Ikuzz the Light Hunter",
+        "npc_ids": [
+          244887
+        ]
+      },
+      {
+        "name": "Lightwarden Ruia",
+        "npc_ids": [
+          245912,
+          246367,
+          246371
+        ]
+      },
+      {
+        "name": "Ziekket",
+        "npc_ids": [
+          247676
+        ]
+      }
+    ],
     "boss_npc_ids": [
-      245912,
-      247676,
       243028,
-      244887
+      243029,
+      243030,
+      244887,
+      245912,
+      246367,
+      246371,
+      247676
     ],
     "journal_instance_id": 1309
   },
@@ -331,10 +542,38 @@
     },
     "icon": "voidscar-arena-small.jpg",
     "raiderio_short_name": "VSA",
+    "bosses": [
+      {
+        "name": "Taz'Rah",
+        "npc_ids": [
+          238887,
+          254677
+        ]
+      },
+      {
+        "name": "Atroxus",
+        "npc_ids": [
+          239008,
+          239070
+        ]
+      },
+      {
+        "name": "Charonus",
+        "npc_ids": [
+          239167,
+          255000,
+          255001
+        ]
+      }
+    ],
     "boss_npc_ids": [
-      239008,
       238887,
-      239167
+      239008,
+      239070,
+      239167,
+      254677,
+      255000,
+      255001
     ],
     "journal_instance_id": 1313
   }

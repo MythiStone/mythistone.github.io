@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import time
 import requests
@@ -14,6 +15,101 @@ RAIDERIO_API_KEY = os.environ["RAIDERIO_API_KEY"]
 NAMESPACE = "dynamic-us"
 API_BASE = "https://us.api.blizzard.com"
 ICON_DIR = "data/icons"
+MDT_REPO = "Nnoggie/MythicDungeonTools"
+MDT_RAW = f"https://raw.githubusercontent.com/{MDT_REPO}/master/"
+
+
+def get_with_retry(url, **kwargs):
+    resp = requests.get(url, **kwargs)
+    if resp.status_code == 429:
+        time.sleep(int(resp.headers.get("Retry-After", 1)))
+        resp = requests.get(url, **kwargs)
+    resp.raise_for_status()
+    return resp
+
+
+def _norm(s):
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def mdt_dungeon_files():
+    """Every '<Expansion>/<Dungeon>.lua' in MythicDungeonTools, by normalised file name."""
+    tree = get_with_retry(f"https://api.github.com/repos/{MDT_REPO}/git/trees/master",
+                          params={"recursive": "1"}).json()
+    files = {}
+    for t in tree["tree"]:
+        m = re.fullmatch(r"[A-Za-z]+/([A-Za-z]+)\.lua", t["path"])
+        if m:
+            files.setdefault(_norm(m.group(1)), []).append(t["path"])
+    return files
+
+
+def mdt_boss_npcs(dungeon_id, english_name, mdt_files):
+    """(npc_id, name, add ids) of the enemies MDT flags isBoss with an encounterID (mini-bosses
+    have none), from the file whose mapID is this challenge mode id. A boss's adds are the
+    enemies worth no forces in its MDT pull group. The encounterID values are placeholders in
+    new dungeons, so they do not group the npcs."""
+    hits = []
+    for path in mdt_files.get(_norm(english_name), []):
+        lua = get_with_retry(MDT_RAW + path).text
+        if re.search(rf"\bmapID\s*=\s*{dungeon_id}\b", lua):
+            hits.append(lua)
+    if len(hits) != 1:
+        raise RuntimeError(f"Expected one MythicDungeonTools file with mapID {dungeon_id} "
+                           f"('{english_name}'), found {len(hits)}")
+    bosses, adds = [], []
+    for block in re.split(r"\n  \[\d+\] = \{", hits[0]):
+        name = re.search(r'\["name"\]\s*=\s*"(.*)"', block)
+        npc_id = re.search(r'\["id"\]\s*=\s*(\d+)', block)
+        if not (name and npc_id):
+            continue
+        groups = set(re.findall(r'\["g"\]\s*=\s*(\d+)', block))
+        if re.search(r'\["isBoss"\]\s*=\s*true', block) and re.search(r'\["encounterID"\]', block):
+            bosses.append((int(npc_id.group(1)), name.group(1), groups))
+        elif re.search(r'\["count"\]\s*=\s*0\b', block):
+            adds.append((int(npc_id.group(1)), groups))
+    if not bosses:
+        raise RuntimeError(f"MythicDungeonTools lists no isBoss enemy for dungeon {dungeon_id}")
+    return [(npc_id, name, {a for a, a_groups in adds if a_groups & groups})
+            for npc_id, name, groups in bosses]
+
+
+def journal_bosses(journal_id, headers):
+    """[(encounter name, {creature names})] of a journal instance, in journal order."""
+    params = {"namespace": "static-us", "locale": "en_US"}
+    inst = get_with_retry(f"{API_BASE}/data/wow/journal-instance/{journal_id}",
+                          headers=headers, params=params).json()
+    out = []
+    for e in inst.get("encounters") or []:
+        enc = get_with_retry(f"{API_BASE}/data/wow/journal-encounter/{e['id']}",
+                             headers=headers, params=params).json()
+        out.append((e["name"], {c["name"] for c in enc.get("creatures") or []}))
+    return out
+
+
+def group_bosses(dungeon_id, mdt_npcs, journal):
+    """Journal bosses with the MDT boss npc ids (and their adds) that belong to each: a creature
+    or boss name equal to the npc name, else one containing the other (Echo of Nalorakk -> Nalorakk)."""
+    npc_ids = {name: set() for name, _ in journal}
+    for npc_id, npc_name, add_ids in mdt_npcs:
+        n = _norm(npc_name)
+        for match in (lambda c: c == n, lambda c: c in n or n in c):
+            found = {name for name, creatures in journal
+                     if any(match(_norm(c)) for c in creatures | {name})}
+            if found:
+                break
+        if len(found) != 1:
+            raise RuntimeError(f"Dungeon {dungeon_id}: MDT boss {npc_name} ({npc_id}) matches "
+                               f"{len(found)} journal bosses ({sorted(found)})")
+        npc_ids[found.pop()] |= {npc_id} | add_ids
+    missing = [name for name, ids in npc_ids.items() if not ids]
+    if missing:
+        raise RuntimeError(f"Dungeon {dungeon_id}: no MDT boss npc for journal boss(es) {missing}")
+    shared = [n for n in set().union(*npc_ids.values()) if sum(n in ids for ids in npc_ids.values()) > 1]
+    if shared:
+        raise RuntimeError(f"Dungeon {dungeon_id}: npc(s) {shared} belong to several journal bosses")
+    return [{"name": name, "npc_ids": sorted(npc_ids[name])} for name, _ in journal]
+
 
 
 databaseConnector.init_connection_pool(
@@ -69,13 +165,9 @@ else:
 print("Full Map of Raider.IO short names:")
 print(short_name_map)
 
-# Loading manually maintained mapping because Blizzard's Encounter API returns
-# 4-digit Journal IDs instead of the required 6-digit global NPC IDs.
-# The script will aggressively fail if a dungeon is queried that is missing from this list.
-with open("data/boss_npcs.json", "r") as f:
-    BOSS_NPCS = json.load(f)
-
-bosses_out = {}
+# The journal has no npc ids, so boss npc ids come from MythicDungeonTools and the
+# journal only groups them into bosses.
+mdt_files = mdt_dungeon_files()
 out = {}
 headers = {"Authorization": f"Bearer {token}"}
 for dungeon_id in short_name_map:
@@ -112,12 +204,12 @@ for dungeon_id in short_name_map:
         print(f"Warning: Failed to fetch media for journal instance {journal_id}: {e}")
         media = {"assets": []}
 
-    # Fetch Boss NPCs
-    str_dungeon_id = str(dungeon_id)
-    if str_dungeon_id not in BOSS_NPCS:
-        raise RuntimeError(f"Missing Boss NPC IDs for dungeon ID {dungeon_id} ('{short_name_map.get(dungeon_id)}'). Please manually add it to data/boss_npcs.json")
-    
-    bosses_out[str_dungeon_id] = list(set(BOSS_NPCS[str_dungeon_id]))
+    bosses = group_bosses(
+        dungeon_id,
+        mdt_boss_npcs(dungeon_id, data["name"]["en_US"], mdt_files),
+        journal_bosses(journal_id, headers),
+    )
+    print(f"  bosses: {bosses}")
 
     tile_asset = next(
         (a for a in media.get("assets", []) if a.get("key") == "tile"), None
@@ -140,7 +232,8 @@ for dungeon_id in short_name_map:
         "keystone_upgrades": upgrades,
         "icon": icon_filename,
         "raiderio_short_name": short_name_map.get(dungeon_id),
-        "boss_npc_ids": bosses_out[str(dungeon_id)],
+        "bosses": bosses,
+        "boss_npc_ids": sorted(i for b in bosses for i in b["npc_ids"]),
         # Blizzard Dungeon Journal instance id (matches the instanceId in
         # Raidbots equippable-items.json "sources"), used to map loot to dungeons.
         "journal_instance_id": journal_id,

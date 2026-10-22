@@ -30,7 +30,7 @@
     {% set search_timer = dungeon.keystone_upgrades['1'].qualifying_duration if dungeon.keystone_upgrades else None %}
     {% set search_timed = (overall_stats.upgrade_1 + overall_stats.upgrade_2 + overall_stats.upgrade_3)
         / overall_stats.total_runs * 100 if overall_stats and overall_stats.total_runs else None %}
-    {# boss_npc_ids also lists unnamed adds, so ids missing from npcs.json are skipped #}
+    {# a boss npc missing from npcs.json is skipped #}
     {% set search_bosses = [] %}
     {% for b in dungeon.boss_npc_ids or [] %}
     {% if npcs.en_US[b | string] is defined %}{% set _ = search_bosses.append(npcs.en_US[b | string]) %}{% endif %}
@@ -551,6 +551,7 @@
                 </div>
             </div>
             {% endmacro %}
+            {% macro lust_badge(lust, left=none, tip=true) %}{% if lust and lust.pct >= lust_min_pct %}<img src="/data/icons/{{ bloodlust_icon }}" class="pacing-lust{% if left is not none %} pacing-lust-track{% endif %}"{% if left is not none %} style="left: {{ left | round(2) }}%;"{% endif %} alt="Bloodlust"{% if tip %} data-bs-toggle="tooltip" title="Bloodlust in {{ lust.pct | round | int }}% of {{ lust.routes }} timed runs here"{% endif %}>{% endif %}{% endmacro %}
             <div class="row mb-4">
                 <!-- Boss Pacing & Deaths -->
                 <div class="col-12 mb-4">
@@ -571,7 +572,8 @@
                                     <p class="text-sm text-secondary mb-0">
                                         Built from timed runs only, so the pull and kill times work as a pace to beat.
                                         Deaths are placed on the boss fight they happened in, or on the trash leading
-                                        up to that boss.
+                                        up to that boss. The Bloodlust icon marks sections where at least
+                                        {{ lust_min_pct }}% of these runs use Bloodlust.
                                     </p>
                                 </div>
                             </div>
@@ -592,8 +594,19 @@
                                     {% for boss in b.bosses %}
                                     <div class="pacing-fight" style="left: {{ boss.bar_left | round(2) }}%; width: {{ boss.bar_width | round(2) }}%;"
                                         data-bs-toggle="tooltip" data-bs-placement="top"
-                                        title="{{ boss.name }}: pulled at {{ mmss(boss.start) }} (most runs {{ mmss(boss.start_p25) }} to {{ mmss(boss.start_p75) }}), killed by {{ mmss(boss.end) }}, {{ "%.2f"|format(boss.boss_deaths.per_run) }} deaths per run"><span class="d-lg-none">{{ loop.index }}</span></div>
+                                        title="{{ boss.name }}: pulled at {{ mmss(boss.start) }} (most runs {{ mmss(boss.start_p25) }} to {{ mmss(boss.start_p75) }}), killed by {{ mmss(boss.end) }}, {{ "%.2f"|format(boss.boss_deaths.per_run) }} deaths per run{% if boss.boss_lust and boss.boss_lust.pct >= lust_min_pct %}. Bloodlust in {{ boss.boss_lust.pct | round | int }}% of {{ boss.boss_lust.routes }} timed runs{% endif %}"><span class="d-lg-none">{{ loop.index }}</span>{{ lust_badge(boss.boss_lust, tip=false) }}</div>
                                     {% endfor %}
+                                    {# Trash lust sits in the middle of the gap before each fight. #}
+                                    {% for boss in b.bosses %}
+                                    {% set prev = b.bosses[loop.index0 - 1] if not loop.first else none %}
+                                    {% set gap_from = prev.bar_left + prev.bar_width if prev else 0 %}
+                                    {{ lust_badge(boss.trash_lust, (gap_from + boss.bar_left) / 2) }}
+                                    {% endfor %}
+                                    {% if b.bosses %}
+                                    {% set last = b.bosses[-1] %}
+                                    {% set gap_from = last.bar_left + last.bar_width %}
+                                    {{ lust_badge(b.after.lust, (gap_from + [100, b.after.end / boss_pacing.timer * 100] | min) / 2) }}
+                                    {% endif %}
                                 </div>
                                 {# Labels sit under each fight (dungeon-page.js drops one to a second row only when it
                                 would overlap); on phones they would truncate to nothing, so a list replaces them. #}
@@ -637,7 +650,7 @@
                                             {% set prev = b.bosses[loop.index0 - 1] if not loop.first else none %}
                                             <tr>
                                                 <td class="ps-2 text-sm text-wrap">
-                                                    {{ prev.name if prev else 'Key start' }} <span class="text-secondary">to</span> {{ boss.name }}
+                                                    {{ prev.name if prev else 'Key start' }} <span class="text-secondary">to</span> {{ boss.name }}{{ lust_badge(boss.trash_lust) }}
                                                     <span class="d-block d-sm-none text-xxs text-secondary">{{ mmss(boss.trash_length) }} spent</span>
                                                 </td>
                                                 <td class="text-sm text-center text-secondary d-none d-lg-table-cell">{{ mmss(prev.end) if prev else '00:00' }}</td>
@@ -646,10 +659,11 @@
                                                 <td class="pe-2">{{ death_cell(boss.trash_deaths, b.max_per_run) }}</td>
                                             </tr>
                                             {% endfor %}
-                                            {% if b.bosses and (b.after.length >= 1000 or b.after.deaths.per_run) %}
+                                            {% if b.bosses and (b.after.length >= 1000 or b.after.deaths.per_run
+                                                or (b.after.lust and b.after.lust.pct >= lust_min_pct)) %}
                                             {% set last = b.bosses[-1] %}
                                             <tr>
-                                                <td class="ps-2 text-sm text-wrap">{{ last.name }} <span class="text-secondary">to the end</span>
+                                                <td class="ps-2 text-sm text-wrap">{{ last.name }} <span class="text-secondary">to the end</span>{{ lust_badge(b.after.lust) }}
                                                     <span class="d-block d-sm-none text-xxs text-secondary">{{ mmss(b.after.length) }} spent</span></td>
                                                 <td class="text-sm text-center text-secondary d-none d-lg-table-cell">{{ mmss(last.end) }}</td>
                                                 <td class="text-sm text-center text-secondary d-none d-lg-table-cell">{{ mmss(b.after.end) }}</td>

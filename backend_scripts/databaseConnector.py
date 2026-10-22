@@ -5230,6 +5230,28 @@ def fetch_dungeon_route_deaths(connection, cursor, dungeon_id: str):
     """Death timings of the dungeon's timed routes that have boss timings to place them against."""
     return fetch_with_retry(connection, cursor, FETCH_DUNGEON_ROUTE_DEATHS_SQL, (dungeon_id,))
 
+FETCH_DUNGEON_ROUTE_PULL_LUST_SQL = """
+SELECT rp.route_key, rp.pull_id,
+       GROUP_CONCAT(DISTINCT pe.npc_id) AS npc_ids,
+       MAX(ps.spell_id IS NOT NULL) AS lusted
+FROM route_pulls rp
+JOIN route_data rd ON rd.route_key = rp.route_key
+JOIN dungeon_data dd ON dd.dungeon_id = rd.dungeon_id
+LEFT JOIN pull_enemies pe ON pe.route_key = rp.route_key AND pe.pull_id = rp.pull_id
+LEFT JOIN pull_spells ps ON ps.route_key = rp.route_key AND ps.pull_id = rp.pull_id
+     AND ps.spell_id IN (SELECT spell_id FROM bloodlust_spells)
+WHERE rd.dungeon_id = %s
+  AND rd.duration <= dd.upgrade_1_duration
+  AND EXISTS (SELECT 1 FROM route_encounters re WHERE re.route_key = rp.route_key)
+GROUP BY rp.route_key, rp.pull_id
+ORDER BY rp.route_key, rp.pull_id
+"""
+
+def fetch_dungeon_route_pull_lust(connection, cursor, dungeon_id: str):
+    """Per-pull boss npcs and Bloodlust flag of timed routes with encounter logs, for the pacing
+    card's lust icons. pull_id is AUTO_INCREMENT, so its order is the pull order."""
+    return fetch_with_retry(connection, cursor, FETCH_DUNGEON_ROUTE_PULL_LUST_SQL, (dungeon_id,))
+
 FETCH_EXAMPLE_SKIP_ROUTE_SQL = """
 SELECT rd.rio_run_id, rd.route_key, rd.keystone_level
 FROM route_data rd

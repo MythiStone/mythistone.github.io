@@ -54,7 +54,7 @@ function layoutPacingLabels() {
                 label.classList.add('pacing-label-low');
                 stacked = true;
             } else {
-                upperEnd = label.offsetLeft + textWidth + 16;
+                upperEnd = label.offsetLeft + textWidth + 4;
             }
         });
         lane.classList.toggle('pacing-labels-stacked', stacked);

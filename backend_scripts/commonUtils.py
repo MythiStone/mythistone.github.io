@@ -1299,6 +1299,13 @@ def enchant_slot_pos(info, enchant_id=None):
     )
 
 
+def bloodlust_icon(spell_lookup, bloodlust_spell_ids):
+    """Icon name for Bloodlust: Bloodlust/Heroism first, then any lust spell id, else None."""
+    return next((spell_lookup[sid]["icon"]
+                 for sid in ["2825", "32182", *map(str, bloodlust_spell_ids)]
+                 if sid in spell_lookup and spell_lookup[sid].get("icon")), None)
+
+
 # --- lazily loaded lookup tables --------------------------------------------
 # These replace the old import-time loads in generateSocialsPost.py so that
 # importing any module is side-effect free; the JSON is read on first use.

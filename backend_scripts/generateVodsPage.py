@@ -23,6 +23,7 @@ from generateSpecPages import (
 )
 
 import databaseConnector
+import commonUtils
 from commonUtils import (
     MIN_STREAMER_VODS,
     build_vod_embed_src,
@@ -416,14 +417,7 @@ def main(template_path, output_dir, limit, streamers_dir):
             pass
 
     bloodlust_id_strs = [str(x) for x in bloodlust_spell_ids]
-    bloodlust_icon = next(
-        (
-            spell_lookup[sid]["icon"]
-            for sid in ["2825", "32182", *bloodlust_id_strs]
-            if sid in spell_lookup and spell_lookup[sid].get("icon")
-        ),
-        None,
-    )
+    bloodlust_icon = commonUtils.bloodlust_icon(spell_lookup, bloodlust_spell_ids)
 
     vods = []
     for info in comp_vods.values():

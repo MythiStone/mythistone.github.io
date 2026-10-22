@@ -31,6 +31,8 @@ HOTFIX_MAX_AGE_DAYS = 7
 
 # Boss Pacing card: a "+N or higher" filter is offered once that many timed routes qualify.
 PACING_MIN_ROUTES = 10
+# Boss Pacing card: the Bloodlust icon marks a section only when this share of runs lust there.
+LUST_ICON_MIN_PCT = 65
 
 def parse_run_rows(rows):
     if not rows:
@@ -102,12 +104,37 @@ def _spread(values):
     return q2, q1, q3
 
 
-def build_boss_pacing(encounter_rows, death_rows, timer_ms):
+def route_lust(route_pulls, all_bosses):
+    """Lust sections of one route from its (boss names, lusted) pulls in pull order.
+
+    A boss spans its first to last pull. Its trash runs from the previous boss's last pull
+    (or the key start), and ('trash', None) is everything after the last boss pull, only on
+    routes that pull every boss (keystone.guru can drop a boss, which would make its
+    trash look like the end of the run)."""
+    span = {}
+    for i, (names, _lusted) in enumerate(route_pulls):
+        for name in names:
+            span[name] = (span.get(name, (i, i))[0], i)
+    lusted = [i for i, (_n, l) in enumerate(route_pulls) if l]
+    sections = set()
+    for name, (first, last) in span.items():
+        prev = max((l for f, l in span.values() if l < first), default=-1)
+        if any(first <= i <= last for i in lusted):
+            sections.add(('boss', name))
+        if any(prev < i < first for i in lusted):
+            sections.add(('trash', name))
+    if span.keys() >= all_bosses and any(i > max(l for _f, l in span.values()) for i in lusted):
+        sections.add(('trash', None))
+    return set(span), sections
+
+
+def build_boss_pacing(encounter_rows, death_rows, pull_rows, dungeon_bosses, timer_ms):
     """Boss Pacing card data: one bucket per "+N or higher" key-level filter.
 
     The queries return timed routes only, so every number is a pace to beat. Pulls carry
     no timestamps, so a death is placed on the boss whose fight window holds it, else on
-    the trash leading up to that route's next boss."""
+    the trash leading up to that route's next boss. Lust is placed by pull order instead
+    (route_lust), over the routes that pull that boss, and joins the cards by boss name."""
     routes = {}
     boss_names = defaultdict(Counter)
     for r in encounter_rows or []:
@@ -124,6 +151,15 @@ def build_boss_pacing(encounter_rows, death_rows, timer_ms):
     if not routes:
         return {"levels": [], "buckets": []}
 
+    boss_of = {npc: b['name'] for b in dungeon_bosses for npc in b['npc_ids']}
+    journal_names = {b['name'] for b in dungeon_bosses}
+    pulls = defaultdict(list)
+    for r in pull_rows or []:
+        npcs = {int(n) for n in str(r['npc_ids'] or '').split(',') if n.strip()}
+        pulls[r['route_key']].append(({boss_of[n] for n in npcs if n in boss_of}, bool(r['lusted'])))
+    for key, route in routes.items():
+        route['pulled'], route['lust'] = route_lust(pulls.get(key, []), journal_names)
+
     def death_segment(encounters, t):
         for start, end, ordinal in encounters:
             if start <= t <= end:
@@ -137,7 +173,7 @@ def build_boss_pacing(encounter_rows, death_rows, timer_ms):
 
     def bucket(key, members):
         starts, ends, lengths, trash = (defaultdict(list) for _ in range(4))
-        deaths, death_runs = defaultdict(int), defaultdict(int)
+        deaths, death_runs, lust_runs = defaultdict(int), defaultdict(int), defaultdict(int)
         for route in members:
             encounters = sorted(route['encounters'])
             prev_end = 0
@@ -155,8 +191,16 @@ def build_boss_pacing(encounter_rows, death_rows, timer_ms):
                 hit.add(seg)
             for seg in hit:
                 death_runs[seg] += 1
+            for seg in route['lust']:
+                lust_runs[seg] += 1
 
         n = len(members)
+
+        def lust_stats(seg):
+            """Share of the routes that pull this section's boss (every boss for the end)."""
+            name = seg[1]
+            m = sum(1 for r in members if (name in r['pulled'] if name else r['pulled'] >= journal_names))
+            return {"pct": lust_runs[seg] / m * 100, "routes": m} if m >= PACING_MIN_ROUTES else None
 
         def death_stats(seg):
             return {"per_run": deaths[seg] / n, "run_pct": death_runs[seg] / n * 100}
@@ -165,13 +209,19 @@ def build_boss_pacing(encounter_rows, death_rows, timer_ms):
         for ordinal in sorted(starts, key=lambda o: statistics.median(starts[o])):
             start, p25, p75 = _spread(starts[ordinal])
             end = statistics.median(ends[ordinal])
+            name = boss_names[ordinal].most_common(1)[0][0] if boss_names[ordinal] else None
+            if name and name not in journal_names:
+                raise RuntimeError(f"Raider.IO boss '{name}' is not a journal boss of this dungeon "
+                                   f"{sorted(journal_names)}; rerun fetchDungeonData.py")
             bosses.append({
-                "name": boss_names[ordinal].most_common(1)[0][0] if boss_names[ordinal] else f"Boss {ordinal + 1}",
+                "name": name or f"Boss {ordinal + 1}",
                 "start": start, "start_p25": p25, "start_p75": p75, "end": end,
                 "length": statistics.median(lengths[ordinal]),
                 "trash_length": statistics.median(trash[ordinal]),
                 "trash_deaths": death_stats(('trash', ordinal)),
                 "boss_deaths": death_stats(('boss', ordinal)),
+                "trash_lust": lust_stats(('trash', name)) if name else None,
+                "boss_lust": lust_stats(('boss', name)) if name else None,
                 "bar_left": pct(start), "bar_width": max(0.5, pct(end) - pct(start)),
             })
         # Bar labels alternate between two rows, so each may run until the boss after next.
@@ -179,6 +229,7 @@ def build_boss_pacing(encounter_rows, death_rows, timer_ms):
             limit = bosses[i + 2]["bar_left"] if i + 2 < len(bosses) else 100.0
             cur["label_width"] = limit - cur["bar_left"]
         after = {"length": statistics.median(trash[None]), "deaths": death_stats(('trash', None)),
+                 "lust": lust_stats(('trash', None)),
                  "end": statistics.median(r['duration'] for r in members)}
 
         total_deaths = sum(deaths.values())
@@ -268,6 +319,7 @@ def build_dungeon_intro(dungeon_id, dungeon_name, season_name, overall_stats, le
 def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previews=False):
     dungeon_lookup = load_json(os.path.join(LOOKUP_DIR, "dungeons.json"))
     spec_lookup = load_json(os.path.join(LOOKUP_DIR, "specs.json"))
+    spell_lookup = load_json(os.path.join(LOOKUP_DIR, "spells.json"))
     class_lookup = load_json(os.path.join(LOOKUP_DIR, "classes.json"))
     season_info = load_season_info(LOOKUP_DIR)
     notifications = load_notifications(LOOKUP_DIR)
@@ -405,12 +457,6 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                 source_items_by_dungeon[d_id].add(it["id"])
     all_loot_item_ids = set().union(*source_items_by_dungeon.values()) if source_items_by_dungeon else set()
 
-    try:
-        with open(os.path.join('data', 'boss_npcs.json'), 'r') as f:
-            bosses_lookup = json.load(f)
-    except FileNotFoundError:
-        bosses_lookup = {}
-        
     spec_nav = generateSpecNav(spec_lookup, class_lookup)
     dungeon_nav = generateDungeonNav(dungeon_lookup)
 
@@ -441,6 +487,9 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                 raise RuntimeError(
                     "bloodlust_spells is empty — the lust timeline and the heatmap link both depend on it."
                 )
+            bloodlust_icon = commonUtils.bloodlust_icon(spell_lookup, bloodlust_spell_ids)
+            if not bloodlust_icon:
+                raise RuntimeError("No Bloodlust icon in spells.json for the Boss Pacing card.")
 
             print(f"[{datetime.now(timezone.utc).isoformat()}] Pre-fetching global dungeon success rates...")
             all_dungeon_runs = databaseConnector.fetch_runs_per_dungeon(conn, cursor, current_season)
@@ -607,9 +656,12 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
 
                 lust_timeline = databaseConnector.fetch_dungeon_lust_timeline(conn, cursor, dungeon_id)
                 skip_rates = databaseConnector.fetch_dungeon_skip_rates(conn, cursor, dungeon_id, current_season)
+                dungeon_bosses = set(dungeon_data['boss_npc_ids'])
                 boss_pacing = build_boss_pacing(
                     databaseConnector.fetch_dungeon_route_encounters(conn, cursor, dungeon_id),
                     databaseConnector.fetch_dungeon_route_deaths(conn, cursor, dungeon_id),
+                    databaseConnector.fetch_dungeon_route_pull_lust(conn, cursor, dungeon_id),
+                    dungeon_data['bosses'],
                     dungeon_data["keystone_upgrades"]["1"]["qualifying_duration"])
 
                 # one batched round trip each instead of one query per skip/pull
@@ -636,13 +688,12 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                             pull['example_route'] = example_lust_route
 
                 # Validate lust_timeline contains at least one boss pull
-                dungeon_bosses = bosses_lookup.get(str(dungeon_id), [])
                 has_boss_lust = any(pull_boss_ids(pull.get('top_npcs'), dungeon_bosses)
                                     for pull in lust_timeline)
 
                 # Only throw a validation error if there is actually lust data available
                 if lust_timeline and len(lust_timeline) > 0 and not has_boss_lust:
-                    raise RuntimeError(f"Dungeon {dungeon_data['name']['en_US']} ({dungeon_id}) has no lust pull marked as a boss. This indicates missing boss NPC data in data/boss_npcs.json.")
+                    raise RuntimeError(f"Dungeon {dungeon_data['name']['en_US']} ({dungeon_id}) has no lust pull marked as a boss. This indicates missing boss NPC data in dungeons.json (fetchDungeonData.py).")
 
                 # Every NPC the page shows (the "Most Lusted Pulls" compositions and the
                 # "Least Played NPCs" skip table) needs a name via npcs.json (else the template
@@ -729,9 +780,11 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                     bloodlust_spell_ids=bloodlust_spell_ids,
                     skip_rates=skip_rates,
                     boss_pacing=boss_pacing,
+                    lust_min_pct=LUST_ICON_MIN_PCT,
+                    bloodlust_icon=bloodlust_icon,
                     npcs=npcs_lookup,
                     npc_icons=npc_icons,
-                    bosses=bosses_lookup.get(dungeon_id, []),
+                    bosses=dungeon_bosses,
                     top_routes=top_routes,
                     team_comp_families=team_comp_families,
                     top_loot=top_loot,

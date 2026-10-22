@@ -44,7 +44,9 @@
   color: var(--bs-emphasis-contrast);
   background: var(--bs-primary);
   border-inline: 1px solid var(--mythi-surface-sunken);
+  gap: 0.25rem;
 }
+.pacing-fight .pacing-lust { margin-left: 0; }
 .pacing-num {
   display: inline-flex;
   align-items: center;
@@ -83,4 +85,17 @@
 }
 .pacing-table td { padding-top: 0.6rem; padding-bottom: 0.6rem; }
 .pacing-deaths { min-width: 6.5rem; }
+.pacing-lust {
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.25rem;
+  vertical-align: middle;
+  border-radius: var(--bs-border-radius-sm);
+}
+.pacing-lust-track {
+  position: absolute;
+  top: 50%;
+  margin-left: 0;
+  transform: translate(-50%, -50%);
+}
 .pacing-death-bar { height: 4px; margin-top: 0.25rem; background: var(--mythi-border-subtle); }
