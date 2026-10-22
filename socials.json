@@ -2139,5 +2139,16 @@
         "persona": "lore_nerd",
         "judge_score": 34.0,
         "timestamp": 1792618606306
+    },
+    "data/social/spec_popularity_vs_performance_2026-10.png": {
+        "title": "Spec Popularity vs Performance",
+        "post_type": "spec_popularity_vs_performance",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Subtlety Rogue sits 14th most-played out of 27 and still outdamage the meta. No surprise, just the usual quiet overperformance. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "Plotting popularity against performance, Subtlety Rogue is the biggest overperformer, punching above its play rate.\n\nArcane Mage, meanwhile, is more popular than its performance would predict.",
+        "post": "Subtlety Rogue sits 14th most-played out of 27 and still outdamage the meta. No surprise, just the usual quiet overperformance. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "deadpan_raid_leader",
+        "judge_score": 31.0,
+        "timestamp": 1792704512505
     }
 }
