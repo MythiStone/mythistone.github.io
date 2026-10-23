@@ -2150,5 +2150,16 @@
         "persona": "deadpan_raid_leader",
         "judge_score": 31.0,
         "timestamp": 1792704512505
+    },
+    "data/social/longest_run_mplus_249_19_13433597_1791730070000.png": {
+        "title": "Longest Run: +19 Kings' Rest",
+        "post_type": "longest_run",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Longest run this season? A three hour slog in Kings' Rest where the group treated +19 like a birthday candle and 03:43:53.597 as a polite suggestion. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "The longest Mythic+ run tracked this season is a +19 Kings' Rest that ground on for 03:43:53.597 on the KR region.\n\nThe five who pulled it off: Protection Paladin, Holy Priest, Retribution Paladin, Fury Warrior, Demonology Warlock. It went down 12 days ago, and records like it only stand until the next group pushes higher.",
+        "post": "Longest run this season? A three hour slog in Kings' Rest where the group treated +19 like a birthday candle and 03:43:53.597 as a polite suggestion. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "snarky_analyst",
+        "judge_score": 36.0,
+        "timestamp": 1792790608486
     }
 }
