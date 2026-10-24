@@ -2161,5 +2161,16 @@
         "persona": "snarky_analyst",
         "judge_score": 36.0,
         "timestamp": 1792790608486
+    },
+    "data/social/dungeon_overview_399_2026-10.png": {
+        "title": "Ruby Life Pools Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/ruby-life-pools",
+        "social": "Ruby Life Pools is the 6th most-run dungeon out of 8 this season. We treat C tier like a casual pull. #WoW #MythicPlus https://mythistone.com/dungeons/ruby-life-pools",
+        "blog": "Ruby Life Pools has 2.1 M Mythic+ runs tracked this season.\n\nGroups most often bring Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. The most-used route right now is keystone.guru/I40jxxY.",
+        "post": "Ruby Life Pools is the 6th most-run dungeon out of 8 this season. We treat C tier like a casual pull. #WoW #MythicPlus https://mythistone.com/dungeons/ruby-life-pools",
+        "persona": "deadpan_raid_leader",
+        "judge_score": 33.0,
+        "timestamp": 1792874489944
     }
 }
