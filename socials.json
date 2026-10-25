@@ -2172,5 +2172,16 @@
         "persona": "deadpan_raid_leader",
         "judge_score": 33.0,
         "timestamp": 1792874489944
+    },
+    "data/social/shortest_run_mplus_584_10_459353_1792691689000.png": {
+        "title": "Fastest Run: +10 The Blinding Vale",
+        "post_type": "shortest_run",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "07:39.353. On a +10. Thirty-minute timer never stood a chance. Insane time left when the final boss hit the floor. Blinding Vale got deleted. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "A +10 The Blinding Vale blitzed in 07:39.353 on the EU region is the quickest clear on record this season.\n\nCredit the group that ran it: Guardian Druid, Holy Paladin, Subtlety Rogue, Subtlety Rogue, Elemental Shaman. That was 3 days ago. Every record here keeps moving as new keys get pushed.",
+        "post": "07:39.353. On a +10. Thirty-minute timer never stood a chance. Insane time left when the final boss hit the floor. Blinding Vale got deleted. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "hype_caster",
+        "judge_score": 33.0,
+        "timestamp": 1792961383910
     }
 }
