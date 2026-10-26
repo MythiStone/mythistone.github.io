@@ -295,7 +295,8 @@ def journal_lines(body):
     lines = []
     for line in (body or '').splitlines():
         if line.strip():
-            text = escape(line.strip().removeprefix('$bullet;').strip())
+            # str() first: re.sub on Markup escapes the inserted tags on some Python versions.
+            text = str(escape(line.strip().removeprefix('$bullet;').strip()))
             lines.append({"bullet": line.strip().startswith('$bullet;'),
                           "html": Markup(re.sub(r"\[([^\]]+)\]", r"<b>\1</b>", text))})
     return lines
