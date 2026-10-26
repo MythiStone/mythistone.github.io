@@ -1,0 +1,124 @@
+{#- Boss, trash and lusted-pull detail modals of the dungeon page. Import "with context": the macros
+    read npc_details, npcs and npc_icons from generateDungeonPages.py. -#}
+{% set SPELL_FLAGS = {
+    'interruptible': ('Kick', 'detail-flag-kick', 'Can be interrupted'),
+    'magic': ('Magic', 'detail-flag-dispel', 'Removable with a Magic dispel'),
+    'curse': ('Curse', 'detail-flag-dispel', 'Removable with a Curse dispel'),
+    'poison': ('Poison', 'detail-flag-dispel', 'Removable with a Poison dispel'),
+    'disease': ('Disease', 'detail-flag-dispel', 'Removable with a Disease dispel'),
+    'bleed': ('Bleed', 'detail-flag-dispel', 'Removable with a Bleed removal'),
+    'enrage': ('Enrage', 'detail-flag-enrage', 'Removable with an Enrage dispel such as Soothe'),
+} %}
+
+{% macro detail_modal(id, title, icon=none, subtitle='') %}
+<div class="modal fade detail-modal" id="{{ id }}" tabindex="-1" aria-labelledby="{{ id }}-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl modal-dialog-centered modal-fullscreen-lg-down">
+        <div class="modal-content card">
+            <div class="modal-header gap-3">
+                {% if icon %}<img src="{{ icon }}" class="detail-portrait" alt="">{% endif %}
+                <div class="me-auto">
+                    <h5 class="modal-title mb-0" id="{{ id }}-label">{{ title }}</h5>
+                    {% if subtitle %}<div class="text-xs text-secondary">{{ subtitle }}</div>{% endif %}
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">{{ caller() }}</div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro modal_link(target, text, cls='') %}
+<button type="button" class="detail-link {{ cls }}" data-bs-toggle="modal" data-bs-target="#{{ target }}">{{ text }}</button>
+{%- endmacro %}
+
+{% macro flags(s) %}
+{% for f in s.flags if f in SPELL_FLAGS %}<span class="detail-flag {{ SPELL_FLAGS[f][1] }}" title="{{ SPELL_FLAGS[f][2] }}">{{ SPELL_FLAGS[f][0] }}</span>{% endfor %}
+{%- if s.aoe %}<span class="detail-flag" title="Hits every player in an area">AoE</span>{% endif %}
+{%- endmacro %}
+
+{#- The biggest number first, what it is in small print: a hit plus its DoT, a DoT total, or one tick. #}
+{% macro damage(s) %}
+{% if s.damage %}<b>{{ s.damage | humanize }}</b>{% if s.periodic_damage %}<small>+{{ s.periodic_damage | humanize }} DoT</small>{% endif %}
+{%- elif s.periodic_damage %}<b>{{ s.periodic_damage | humanize }}</b><small>over time</small>
+{%- elif s.tick_damage %}<b>{{ s.tick_damage | humanize }}</b><small>per tick</small>{% endif %}
+{%- endmacro %}
+
+{% macro row_head(s, more) %}
+{% if s.id %}
+<a href="https://www.wowhead.com/spell={{ s.id }}" target="_blank" data-wowhead="spell={{ s.id }}" class="detail-row-icon">
+    <img src="/data/icons/{{ s.icon or 'inv_misc_questionmark' }}.png" alt=""></a>
+{% else %}<span class="detail-row-icon"></span>{% endif %}
+<span class="detail-row-name"><span class="text-truncate">{{ s.name }}</span>{{ flags(s) }}</span>
+<span class="detail-row-dmg">{{ damage(s) }}</span>
+<span class="material-symbols-rounded detail-row-chevron">{{ 'expand_more' if more }}</span>
+{% endmacro %}
+
+{#- One spell or journal ability. Its description, journal text and nested abilities fold out on click. #}
+{% macro spell_line(s) %}
+{% set more = s.description or s.notes or s.subs %}
+{% if more %}
+<details class="detail-row">
+    <summary class="detail-row-head">{{ row_head(s, true) }}</summary>
+    <div class="detail-row-body">
+        {% for line in s.notes %}<p class="{% if line.bullet %}detail-bullet{% endif %}">{{ line.html }}</p>{% endfor %}
+        {% if s.description %}<p>{{ s.description }}{% if s.schools %} <span class="text-secondary">({{ s.schools | join(', ') }})</span>{% endif %}</p>{% endif %}
+        {% for sub in s.subs %}
+        {% if sub.id or sub.notes %}
+        <div class="detail-sub">
+            <div class="detail-row-head">{{ row_head(sub, false) }}</div>
+            {% for line in sub.notes %}<p class="{% if line.bullet %}detail-bullet{% endif %}">{{ line.html }}</p>{% endfor %}
+            {% if sub.description %}<p>{{ sub.description }}</p>{% endif %}
+        </div>
+        {% else %}
+        <div class="detail-sub-label">{{ sub.name }}</div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</details>
+{% else %}
+<div class="detail-row"><div class="detail-row-head">{{ row_head(s, false) }}</div></div>
+{% endif %}
+{% endmacro %}
+
+{% macro npc_card(npc_id, note='') %}
+{% set info = npc_details[npc_id] %}
+<div class="col">
+    <div class="detail-card h-100">
+        <div class="detail-card-head">
+            {% if npc_id in npc_icons %}<img src="/data/icons/npc_{{ npc_id }}.png" class="detail-npc-icon" alt="">{% endif %}
+            <div class="me-auto">
+                <a href="https://www.wowhead.com/npc={{ npc_id }}" target="_blank" data-wowhead="npc={{ npc_id }}"
+                    class="font-weight-bolder text-body-emphasis">{{ npcs.en_US[npc_id] }}</a>
+                {% if info %}<div class="text-xxs text-secondary" title="Health before keystone scaling, from MythicDungeonTools">{{ info.type }} · {{ info.health | humanize }} health</div>{% endif %}
+            </div>
+            {% if note %}<span class="detail-note">{{ note }}</span>{% endif %}
+        </div>
+        {% if info and info.spells %}
+        {% for s in info.spells %}{{ spell_line(s) }}{% endfor %}
+        {% else %}
+        <p class="text-xs text-secondary mb-0 px-3 py-2">MythicDungeonTools lists no abilities for this enemy.</p>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{#- Colour by the rarity of the most-used variant's bonus ids, falling back to the base item quality.
+    Mirrors item.html / the items overview. #}
+{% macro loot_item(l) %}
+{% set l_quality = l.quality_override if l.quality_override is not none else l.quality %}
+<div class="d-flex px-2 py-1 align-items-center">
+    <div>
+        <a href="/items/{{ l.slug }}" class="text-decoration-none" data-wowhead="item={{ l.id }}">
+            <img src="/data/icons/{{ l.icon }}.png" class="avatar avatar-sm me-3 border border-quality-{{ l_quality }} border-1"
+                alt="{{ l.name }}">
+        </a>
+    </div>
+    <div class="d-flex flex-column justify-content-center">
+        <a href="/items/{{ l.slug }}" class="text-decoration-none" data-wowhead="item={{ l.id }}">
+            <h6 class="mb-0 text-sm item-quality-{{ l_quality }}">{{ l.name }}</h6>
+        </a>
+        {{ caller() if caller }}
+    </div>
+</div>
+{% endmacro %}

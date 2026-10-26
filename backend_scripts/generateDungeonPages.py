@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import json
 import asyncio
@@ -7,6 +8,7 @@ import statistics
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
+from markupsafe import Markup, escape
 import databaseConnector
 import commonUtils
 import compArchetypes
@@ -33,6 +35,9 @@ HOTFIX_MAX_AGE_DAYS = 7
 PACING_MIN_ROUTES = 10
 # Boss Pacing card: the Bloodlust icon marks a section only when this share of runs lust there.
 LUST_ICON_MIN_PCT = 65
+# Trash detail modal: enemies pulled in at least this share of the routes reaching a section.
+TRASH_NPC_MIN_PCT = 25
+TRASH_NPC_MAX = 8
 
 def parse_run_rows(rows):
     if not rows:
@@ -104,28 +109,33 @@ def _spread(values):
     return q2, q1, q3
 
 
-def route_lust(route_pulls, all_bosses):
-    """Lust sections of one route from its (boss names, lusted) pulls in pull order.
+def route_sections(pull_bosses, all_bosses):
+    """Pull index range of each section of one route, from its boss names per pull in pull order.
 
     A boss spans its first to last pull. Its trash runs from the previous boss's last pull
     (or the key start), and ('trash', None) is everything after the last boss pull, only on
     routes that pull every boss (keystone.guru can drop a boss, which would make its
     trash look like the end of the run)."""
     span = {}
-    for i, (names, _lusted) in enumerate(route_pulls):
+    for i, names in enumerate(pull_bosses):
         for name in names:
             span[name] = (span.get(name, (i, i))[0], i)
-    lusted = [i for i, (_n, l) in enumerate(route_pulls) if l]
-    sections = set()
+    sections = {}
     for name, (first, last) in span.items():
         prev = max((l for f, l in span.values() if l < first), default=-1)
-        if any(first <= i <= last for i in lusted):
-            sections.add(('boss', name))
-        if any(prev < i < first for i in lusted):
-            sections.add(('trash', name))
-    if span.keys() >= all_bosses and any(i > max(l for _f, l in span.values()) for i in lusted):
-        sections.add(('trash', None))
-    return set(span), sections
+        sections[('boss', name)] = range(first, last + 1)
+        sections[('trash', name)] = range(prev + 1, first)
+    if span and span.keys() >= all_bosses:
+        sections[('trash', None)] = range(max(l for _f, l in span.values()) + 1, len(pull_bosses))
+    return sections
+
+
+def route_lust(route_pulls, all_bosses):
+    """Pulled bosses and lust sections of one route from its (boss names, lusted) pulls."""
+    sections = route_sections([names for names, _l in route_pulls], all_bosses)
+    lusted = [i for i, (_n, l) in enumerate(route_pulls) if l]
+    return ({name for kind, name in sections if kind == 'boss'},
+            {seg for seg, pulls in sections.items() if any(i in pulls for i in lusted)})
 
 
 def build_boss_pacing(encounter_rows, death_rows, pull_rows, dungeon_bosses, timer_ms):
@@ -149,16 +159,34 @@ def build_boss_pacing(encounter_rows, death_rows, pull_rows, dungeon_bosses, tim
         if route is not None and r['died_at_ms'] is not None:
             route['deaths'].append(int(r['died_at_ms']))
     if not routes:
-        return {"levels": [], "buckets": []}
+        return {"levels": [], "buckets": [], "trash": {}}
 
     boss_of = {npc: b['name'] for b in dungeon_bosses for npc in b['npc_ids']}
     journal_names = {b['name'] for b in dungeon_bosses}
-    pulls = defaultdict(list)
+    journal_index = {b['name']: i for i, b in enumerate(dungeon_bosses)}
+    pulls, trash_npcs = defaultdict(list), defaultdict(list)
     for r in pull_rows or []:
         npcs = {int(n) for n in str(r['npc_ids'] or '').split(',') if n.strip()}
         pulls[r['route_key']].append(({boss_of[n] for n in npcs if n in boss_of}, bool(r['lusted'])))
+        trash_npcs[r['route_key']].append(npcs - boss_of.keys())
     for key, route in routes.items():
         route['pulled'], route['lust'] = route_lust(pulls.get(key, []), journal_names)
+
+    # Trash composition over all timed routes: the share of the routes that reach a section
+    # which pull each enemy type there.
+    section_routes, section_npcs = Counter(), defaultdict(Counter)
+    for key in routes:
+        for (kind, name), span in route_sections([b for b, _l in pulls.get(key, [])], journal_names).items():
+            if kind == 'trash':
+                section_routes[name] += 1
+                section_npcs[name].update(set().union(*(trash_npcs[key][i] for i in span)))
+    trash = {}
+    for name, n in section_routes.items():
+        if n >= PACING_MIN_ROUTES:
+            common = [{"npc_id": str(npc), "pct": c / n * 100} for npc, c in section_npcs[name].most_common()
+                      if c / n * 100 >= TRASH_NPC_MIN_PCT][:TRASH_NPC_MAX]
+            if common:
+                trash["end" if name is None else str(journal_index[name])] = {"routes": n, "npcs": common}
 
     def death_segment(encounters, t):
         for start, end, ordinal in encounters:
@@ -215,6 +243,7 @@ def build_boss_pacing(encounter_rows, death_rows, pull_rows, dungeon_bosses, tim
                                    f"{sorted(journal_names)}; rerun fetchDungeonData.py")
             bosses.append({
                 "name": name or f"Boss {ordinal + 1}",
+                "index": journal_index.get(name),
                 "start": start, "start_p25": p25, "start_p75": p75, "end": end,
                 "length": statistics.median(lengths[ordinal]),
                 "trash_length": statistics.median(trash[ordinal]),
@@ -253,7 +282,71 @@ def build_boss_pacing(encounter_rows, death_rows, pull_rows, dungeon_bosses, tim
               if sum(1 for r in routes.values() if r['level'] >= lvl) >= PACING_MIN_ROUTES]
     buckets = [bucket("", list(routes.values()))]
     buckets += [bucket(str(lvl), [r for r in routes.values() if r['level'] >= lvl]) for lvl in levels]
-    return {"timer": timer_ms, "levels": levels, "buckets": buckets}
+    return {"timer": timer_ms, "levels": levels, "buckets": buckets, "trash": trash}
+
+
+# Journal role headings (Tank, Healers, Damage Dealers) by their prefix, as site role names.
+JOURNAL_ROLES = (("tank", ROLE_FOLDERS["0"]), ("heal", ROLE_FOLDERS["1"]), ("damage", ROLE_FOLDERS["2"]))
+
+
+def journal_lines(body):
+    """Journal body text as lines: the client's $bullet; marker makes a list item and [Ability]
+    names are bolded."""
+    lines = []
+    for line in (body or '').splitlines():
+        if line.strip():
+            text = escape(line.strip().removeprefix('$bullet;').strip())
+            lines.append({"bullet": line.strip().startswith('$bullet;'),
+                          "html": Markup(re.sub(r"\[([^\]]+)\]", r"<b>\1</b>", text))})
+    return lines
+
+
+def spell_row(spell_id, dungeon_spells, flags=(), name=None):
+    """One spell as the detail modals list it. A journal heading without a spell keeps only its name."""
+    spell = dungeon_spells.get(spell_id) or {}
+    return dict(spell, id=spell_id if spell else None, name=name or spell.get('name'), flags=list(flags))
+
+
+def hardest_first(rows):
+    return sorted(rows, key=lambda s: sum(s.get(k) or 0 for k in ('damage', 'periodic_damage', 'tick_damage')),
+                  reverse=True)
+
+
+def boss_journal(sections, dungeon_spells, mdt_flags):
+    """(overview lines, role tips, abilities) of a journal encounter. The Overview repeats its role
+    headings once per difficulty, and the later (Mythic) one wins. Each ability carries its own
+    journal text and its nested abilities flattened one level deep."""
+    intro, roles, abilities = [], {}, []
+
+    def row(s):
+        sid = str(s['spell_id']) if s['spell_id'] else None
+        return dict(spell_row(sid, dungeon_spells, mdt_flags.get(sid, ()), s['title']),
+                    notes=journal_lines(s['body_text']))
+
+    def nested(s):
+        for child in s['sections']:
+            yield row(child)
+            yield from nested(child)
+
+    for s in sections:
+        if s['title'] == 'Overview' and not s['spell_id']:
+            intro = journal_lines(s['body_text'])
+            for child in s['sections']:
+                key = next((r for r in JOURNAL_ROLES if child['title'].lower().startswith(r[0])), None)
+                if key:
+                    roles[key] = journal_lines(child['body_text'])
+        else:
+            abilities.append(dict(row(s), subs=list(nested(s))))
+    return intro, [{"role": r[1], "lines": roles[r]} for r in JOURNAL_ROLES if r in roles], abilities
+
+
+def npc_detail(enemy, dungeon_spells):
+    """MDT health and type of an enemy with its spells, hardest hitting first. None for an enemy
+    MDT does not list, which the modal shows by name only."""
+    if enemy is None:
+        return None
+    spells = [spell_row(sid, dungeon_spells, flags) for sid, flags in enemy['spells'].items() if sid in dungeon_spells]
+    return {"health": enemy['health'], "type": enemy['type'], "spells": hardest_first(spells)}
 
 
 DUNGEON_INTRO_CLOSING = ("It is a snapshot of what is working right now, not a fixed guide, "
@@ -338,6 +431,10 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
     }
     hotfix_source_url = hotfixes_data.get("source_url")
     npcs_lookup = load_json(os.path.join(LOOKUP_DIR, "npcs.json"))
+    # Journal text and MDT enemies (fetchDungeonData.py) and their spells (fetchDungeonSpells.py)
+    # for the boss, trash and pull detail modals.
+    dungeon_details = load_json(os.path.join(LOOKUP_DIR, "dungeon_details.json"))
+    dungeon_spells = load_json(os.path.join(LOOKUP_DIR, "dungeon_spells.json"))
     # NPC model thumbnails downloaded by fetchNpcIcons.py -> data/icons/npc_<id>.png.
     # Set of npc_id strings that actually have an icon file, so the template only
     # renders <img> for npcs we have art for; the rest fall back to text.
@@ -448,13 +545,15 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
         if jii is not None:
             instance_to_dungeon[int(jii)] = str(d_id)
 
-    # dungeon key (str) -> set of item ids that drop there
+    # dungeon key (str) -> set of item ids that drop there, and the same per journal boss
     source_items_by_dungeon = defaultdict(set)
+    items_by_encounter = defaultdict(set)
     for it in equippable_items:
         for src in it.get("sources", []) or []:
             d_id = instance_to_dungeon.get(src.get("instanceId"))
             if d_id:
                 source_items_by_dungeon[d_id].add(it["id"])
+                items_by_encounter[src.get("encounterId")].add(it["id"])
     all_loot_item_ids = set().union(*source_items_by_dungeon.values()) if source_items_by_dungeon else set()
 
     spec_nav = generateSpecNav(spec_lookup, class_lookup)
@@ -593,6 +692,31 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                 for iid, combos in item_bonus_runs.items() if combos
             }
 
+            def loot_entry(iid):
+                item = item_lookup.get(iid)
+                if not item:
+                    return None
+                slot_label, _slot_key = slot_for_item(item)
+                top_spec_id, _top_runs = item_top_spec.get(iid, (None, 0))
+                top_spec = spec_lookup.get(top_spec_id) if top_spec_id else None
+                top_class = class_lookup.get(str(top_spec.get('classID', '')), {}) if top_spec else {}
+                return {
+                    'id': iid,
+                    'name': item.get('name', 'Unknown'),
+                    'icon': item.get('icon', ''),
+                    'quality': item.get('quality'),
+                    'quality_override': commonUtils.resolve_bonus_quality(
+                        item_top_bonus.get(iid), bonus_quality_lookup),
+                    'ilvl': item.get('itemLevel'),
+                    'slot': slot_label,
+                    'slug': item_slug_map.get(iid),
+                    'runs': item_total_runs.get(iid, 0),
+                    'top_spec_name': top_spec.get('name') if top_spec else None,
+                    'top_class_name': top_class.get('name') if top_spec else None,
+                    'top_spec_role': str(top_spec.get('role', 2)) if top_spec else None,
+                    'top_spec_icon': top_spec.get('SpellIconFileId', '') if top_spec else None,
+                }
+
             for dungeon_id, dungeon_data in dungeon_lookup.items():
                 print(f"[{datetime.now(timezone.utc).isoformat()}] Processing dungeon: {dungeon_data['name']['en_US']} ({dungeon_id})")
                 if target_dungeon and str(dungeon_id) != str(target_dungeon):
@@ -609,35 +733,8 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                 # the current meta actually equips them. Drop source comes from the
                 # Raidbots "sources" field, joined to this dungeon via journal_instance_id;
                 # usage comes from the global per-item sweep above.
-                loot = []
-                for iid in source_items_by_dungeon.get(str(dungeon_id), ()):
-                    runs = item_total_runs.get(iid, 0)
-                    if runs <= 0:
-                        continue
-                    item = item_lookup.get(iid)
-                    if not item:
-                        continue
-                    slot_label, _slot_key = slot_for_item(item)
-                    top_spec_id, _top_runs = item_top_spec.get(iid, (None, 0))
-                    top_spec = spec_lookup.get(top_spec_id) if top_spec_id else None
-                    top_class = class_lookup.get(str(top_spec.get('classID', '')), {}) if top_spec else {}
-                    loot.append({
-                        'id': iid,
-                        'name': item.get('name', 'Unknown'),
-                        'icon': item.get('icon', ''),
-                        'quality': item.get('quality'),
-                        'quality_override': commonUtils.resolve_bonus_quality(
-                            item_top_bonus.get(iid), bonus_quality_lookup),
-                        'ilvl': item.get('itemLevel'),
-                        'slot': slot_label,
-                        'slug': item_slug_map.get(iid),
-                        'runs': runs,
-                        'top_spec_name': top_spec.get('name') if top_spec else None,
-                        'top_class_name': top_class.get('name') if top_spec else None,
-                        'top_spec_role': str(top_spec.get('role', 2)) if top_spec else None,
-                        'top_spec_icon': top_spec.get('SpellIconFileId', '') if top_spec else None,
-                    })
-
+                loot = [l for l in map(loot_entry, source_items_by_dungeon.get(str(dungeon_id), ()))
+                        if l and l['runs'] > 0]
                 loot.sort(key=lambda x: x['runs'], reverse=True)
                 top_loot = loot[:8]
 
@@ -702,18 +799,42 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                 # pull_enemies ids (the week-1-of-season race, see resolve_missing_* above), so
                 # self-heal both on demand instead of shipping a broken page or waiting a week.
                 npc_names = npcs_lookup.get('en_US', {})
-                referenced_npc_ids = set()
-                for pull in lust_timeline:
-                    top_npcs_str = pull.get('top_npcs', '')
-                    if top_npcs_str:
-                        for n in str(top_npcs_str).split(','):
-                            n = n.split(':')[0].strip()
-                            if n:
-                                referenced_npc_ids.add(n)
+                lust_npc_ids = {n.split(':')[0].strip() for pull in lust_timeline
+                                for n in str(pull.get('top_npcs') or '').split(',') if n.strip()}
+                referenced_npc_ids = set(lust_npc_ids)
                 for skip in skip_rates:
                     n = str(skip.get('npc_id', '')).strip()
                     if n:
                         referenced_npc_ids.add(n)
+
+                # Detail modals: the bosses (journal order, matching the pacing card's boss
+                # index), the enemies of each trash section and lusted pull, and their spells.
+                details = dungeon_details[str(dungeon_id)]
+                boss_details = []
+                for i, b in enumerate(dungeon_data['bosses']):
+                    journal = details['journal'][str(b['journal_encounter_id'])]
+                    boss_loot = [l for l in map(loot_entry, items_by_encounter.get(b['journal_encounter_id'], ())) if l]
+                    # The boss is the npc with the most health; the others are its adds.
+                    npc_id = max((str(n) for n in b['npc_ids'] if str(n) in details['enemies']),
+                                 key=lambda n: details['enemies'][n]['health'], default=str(b['npc_ids'][0]))
+                    enemy = details['enemies'].get(npc_id)
+                    mdt_flags = {sid: flags for n in b['npc_ids'] for sid, flags
+                                 in details['enemies'].get(str(n), {}).get('spells', {}).items()}
+                    intro, roles, abilities = boss_journal(journal['sections'], dungeon_spells, mdt_flags)
+                    in_journal = {a['id'] for a in abilities} | {s['id'] for a in abilities for s in a['subs']}
+                    # Casts MDT knows that the journal does not describe (melee swings, minor spells).
+                    abilities += [dict(r, notes=[], subs=[]) for r in hardest_first(
+                        spell_row(sid, dungeon_spells, flags) for sid, flags in (enemy or {}).get('spells', {}).items()
+                        if sid in dungeon_spells and sid not in in_journal)]
+                    boss_details.append({
+                        "index": i, "name": b['name'], "description": journal['description'],
+                        "npc_id": npc_id, "enemy": enemy, "intro": intro, "roles": roles, "abilities": abilities,
+                        "loot": sorted(boss_loot, key=lambda x: x['runs'], reverse=True),
+                    })
+                modal_npc_ids = lust_npc_ids | {b['npc_id'] for b in boss_details}
+                modal_npc_ids |= {n['npc_id'] for t in boss_pacing['trash'].values() for n in t['npcs']}
+                npc_details = {n: npc_detail(details['enemies'].get(n), dungeon_spells) for n in modal_npc_ids}
+                referenced_npc_ids |= modal_npc_ids
 
                 missing_name_ids = {n for n in referenced_npc_ids if n not in npc_names}
                 if missing_name_ids:
@@ -780,6 +901,9 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                     bloodlust_spell_ids=bloodlust_spell_ids,
                     skip_rates=skip_rates,
                     boss_pacing=boss_pacing,
+                    boss_details=boss_details,
+                    npc_details=npc_details,
+                    dungeon_spells=dungeon_spells,
                     lust_min_pct=LUST_ICON_MIN_PCT,
                     bloodlust_icon=bloodlust_icon,
                     npcs=npcs_lookup,

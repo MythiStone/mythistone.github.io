@@ -120,6 +120,10 @@ jobs:
         run: |
           python backend_scripts/fetchDungeonData.py
 
+      - name: Fetch dungeon spells
+        run: |
+          python backend_scripts/fetchDungeonSpells.py
+
       - name: Fetch raid metadata
         env:
           BLIZ_CLIENT_ID:     ${{ secrets.BLIZ_CLIENT_ID }}

@@ -99,3 +99,105 @@
   transform: translate(-50%, -50%);
 }
 .pacing-death-bar { height: 4px; margin-top: 0.25rem; background: var(--mythi-border-subtle); }
+.pacing-fight[data-modal] { cursor: pointer; }
+.pacing-fight[data-modal]:hover { filter: brightness(1.15); }
+
+/* Boss, trash and lusted-pull detail modals */
+.detail-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.detail-link:hover { text-decoration-style: solid; }
+.detail-portrait { width: 52px; height: 52px; object-fit: contain; flex-shrink: 0; }
+.detail-card {
+  border: 1px solid var(--mythi-border-subtle);
+  border-radius: var(--bs-border-radius-lg);
+  background: var(--mythi-surface-sunken);
+  overflow: hidden;
+}
+.detail-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--mythi-border-subtle);
+  background: var(--mythi-surface-raised);
+}
+.detail-npc-icon { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
+.detail-note {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--mythi-chip-bg);
+  border: 1px solid var(--mythi-border-subtle);
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.detail-tips { margin: 0; padding: 0.6rem 0.75rem 0.6rem 1.75rem; font-size: 0.8rem; }
+.detail-tips li + li { margin-top: 0.35rem; }
+
+.detail-row + .detail-row { border-top: 1px solid var(--mythi-border-subtle); }
+.detail-row-head {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto 18px;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.75rem;
+  list-style: none;
+}
+summary.detail-row-head { cursor: pointer; }
+summary.detail-row-head::-webkit-details-marker { display: none; }
+summary.detail-row-head:hover { background: var(--mythi-hover-bg); }
+.detail-row-icon img { display: block; width: 24px; height: 24px; border-radius: var(--bs-border-radius-sm); }
+.detail-row-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--bs-emphasis-color);
+}
+.detail-row-name > .text-truncate { max-width: 100%; margin-right: 0.15rem; }
+.detail-row-dmg { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; white-space: nowrap; }
+.detail-row-dmg b { font-size: 0.85rem; color: var(--mythi-text-danger); }
+.detail-row-dmg small { font-size: 0.65rem; color: var(--mythi-text-muted); }
+.detail-row-chevron { font-size: 1.1rem; color: var(--mythi-text-muted); transition: transform 0.15s; }
+details[open] > summary .detail-row-chevron { transform: rotate(180deg); }
+.detail-row-body { padding: 0 0.75rem 0.6rem calc(24px + 1.35rem); font-size: 0.78rem; color: var(--mythi-text-muted); }
+.detail-row-body p { margin-bottom: 0.35rem; font-size: inherit; line-height: 1.45; color: inherit; }
+.detail-sub { margin-top: 0.4rem; border-left: 2px solid var(--mythi-border-subtle); }
+.detail-sub > .detail-row-head { padding: 0.25rem 0.5rem; grid-template-columns: 20px minmax(0, 1fr) auto 0; }
+.detail-sub > .detail-row-head .detail-row-icon img { width: 20px; height: 20px; }
+.detail-sub > p { padding-left: calc(20px + 1.1rem); }
+.detail-sub-label {
+  margin-top: 0.6rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mythi-text-warning);
+}
+.detail-flag {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--mythi-text-muted);
+  background: var(--mythi-chip-bg);
+  border: 1px solid var(--mythi-border-subtle);
+}
+.detail-flag-kick { color: var(--mythi-text-warning); border-color: currentColor; }
+.detail-flag-dispel { color: var(--mythi-text-info); border-color: currentColor; }
+.detail-flag-enrage { color: var(--mythi-text-danger); border-color: currentColor; }
+.detail-bullet { position: relative; padding-left: 0.9rem; }
+.detail-bullet::before { content: "•"; position: absolute; left: 0.2rem; }

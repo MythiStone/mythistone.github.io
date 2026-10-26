@@ -36,7 +36,8 @@
         "name": "Rav'i",
         "npc_ids": [
           259445
-        ]
+        ],
+        "journal_encounter_id": 2878
       },
       {
         "name": "The Writhing Coil",
@@ -44,14 +45,16 @@
           259446,
           262398,
           270417
-        ]
+        ],
+        "journal_encounter_id": 2879
       },
       {
         "name": "Zul'jan",
         "npc_ids": [
           259447,
           268358
-        ]
+        ],
+        "journal_encounter_id": 2880
       }
     ],
     "boss_npc_ids": [
@@ -101,13 +104,15 @@
         "name": "The Hoardmonger",
         "npc_ids": [
           241812
-        ]
+        ],
+        "journal_encounter_id": 2776
       },
       {
         "name": "Sentinel of Winter",
         "npc_ids": [
           244100
-        ]
+        ],
+        "journal_encounter_id": 2777
       },
       {
         "name": "Nalorakk",
@@ -115,7 +120,8 @@
           246404,
           246409,
           247301
-        ]
+        ],
+        "journal_encounter_id": 2778
       }
     ],
     "boss_npc_ids": [
@@ -164,14 +170,16 @@
         "name": "The Golden Serpent",
         "npc_ids": [
           135322
-        ]
+        ],
+        "journal_encounter_id": 2165
       },
       {
         "name": "Mchimba the Embalmer",
         "npc_ids": [
           134993,
           136256
-        ]
+        ],
+        "journal_encounter_id": 2171
       },
       {
         "name": "The Council of Tribes",
@@ -182,7 +190,8 @@
           269808,
           269810,
           269811
-        ]
+        ],
+        "journal_encounter_id": 2170
       },
       {
         "name": "Dazar, The First King",
@@ -190,7 +199,8 @@
           136160,
           136976,
           136984
-        ]
+        ],
+        "journal_encounter_id": 2172
       }
     ],
     "boss_npc_ids": [
@@ -248,7 +258,8 @@
           234648,
           234660,
           255050
-        ]
+        ],
+        "journal_encounter_id": 2679
       },
       {
         "name": "Zaen Bladesorrow",
@@ -256,14 +267,16 @@
           234649,
           234852,
           234860
-        ]
+        ],
+        "journal_encounter_id": 2680
       },
       {
         "name": "Xathuux the Annihilator",
         "npc_ids": [
           234647,
           235520
-        ]
+        ],
+        "journal_encounter_id": 2681
       },
       {
         "name": "Lithiel Cinderfury",
@@ -272,7 +285,8 @@
           234799,
           237626,
           238414
-        ]
+        ],
+        "journal_encounter_id": 2682
       }
     ],
     "boss_npc_ids": [
@@ -328,20 +342,23 @@
         "name": "Melidrussa Chillworn",
         "npc_ids": [
           188252
-        ]
+        ],
+        "journal_encounter_id": 2488
       },
       {
         "name": "Kokia Blazehoof",
         "npc_ids": [
           189232
-        ]
+        ],
+        "journal_encounter_id": 2485
       },
       {
         "name": "Kyrakka and Erkhart Stormvein",
         "npc_ids": [
           190484,
           190485
-        ]
+        ],
+        "journal_encounter_id": 2503
       }
     ],
     "boss_npc_ids": [
@@ -390,7 +407,8 @@
         "npc_ids": [
           262530,
           262822
-        ]
+        ],
+        "journal_encounter_id": 2142
       },
       {
         "name": "Merektha",
@@ -400,7 +418,8 @@
           134487,
           263181,
           263383
-        ]
+        ],
+        "journal_encounter_id": 2143
       },
       {
         "name": "Galvazzt",
@@ -408,7 +427,8 @@
           135445,
           139131,
           263658
-        ]
+        ],
+        "journal_encounter_id": 2144
       },
       {
         "name": "Avatar of Sethraliss",
@@ -416,7 +436,8 @@
           133392,
           268364,
           268747
-        ]
+        ],
+        "journal_encounter_id": 2145
       }
     ],
     "boss_npc_ids": [
@@ -475,13 +496,15 @@
           243028,
           243029,
           243030
-        ]
+        ],
+        "journal_encounter_id": 2769
       },
       {
         "name": "Ikuzz the Light Hunter",
         "npc_ids": [
           244887
-        ]
+        ],
+        "journal_encounter_id": 2770
       },
       {
         "name": "Lightwarden Ruia",
@@ -489,13 +512,15 @@
           245912,
           246367,
           246371
-        ]
+        ],
+        "journal_encounter_id": 2771
       },
       {
         "name": "Ziekket",
         "npc_ids": [
           247676
-        ]
+        ],
+        "journal_encounter_id": 2772
       }
     ],
     "boss_npc_ids": [
@@ -548,14 +573,16 @@
         "npc_ids": [
           238887,
           254677
-        ]
+        ],
+        "journal_encounter_id": 2791
       },
       {
         "name": "Atroxus",
         "npc_ids": [
           239008,
           239070
-        ]
+        ],
+        "journal_encounter_id": 2792
       },
       {
         "name": "Charonus",
@@ -563,7 +590,8 @@
           239167,
           255000,
           255001
-        ]
+        ],
+        "journal_encounter_id": 2793
       }
     ],
     "boss_npc_ids": [

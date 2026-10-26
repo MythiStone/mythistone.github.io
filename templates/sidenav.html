@@ -90,11 +90,6 @@
           <h2 class="accordion-header" id="heading-{{ rid }}">
             <button class="nav-link collapsed" type="button" data-bs-toggle="collapse"
               data-bs-target="#collapse-{{ rid }}" aria-expanded="false" aria-controls="collapse-{{ rid }}">
-              {% set ROLE_ICONS = {
-              'Tank' : 'shield',
-              'Healer': 'health_cross',
-              'Dps' : 'swords'
-              } %}
               <i class="material-symbols-rounded text-body-emphasis opacity-5">{{ ROLE_ICONS[role_name] }}</i>
               <span class="nav-link-text text-body-emphasis ms-1">{{ role_name }}</span>
             </button>

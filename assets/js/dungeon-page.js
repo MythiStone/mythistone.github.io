@@ -65,12 +65,22 @@ window.addEventListener('load', layoutPacingLabels);
 window.addEventListener('resize', layoutPacingLabels);
 
 // --- Boss Pacing minimum-key filter (bootstrap-select fires change via jQuery) ---
+// The boss detail modals carry their own pacing panels, so they follow it too.
 $('#dungeon-boss-pacing #minKeySelect').on('change', function () {
     var key = this.value;
-    document.querySelectorAll('#dungeon-boss-pacing .pacing-panel').forEach(function (p) {
+    document.querySelectorAll('.pacing-panel').forEach(function (p) {
         p.classList.toggle('d-none', p.dataset.pacing !== key);
     });
     layoutPacingLabels();
+});
+
+// --- Boss Pacing bars open their boss modal (a bar's tooltip rules out data-bs-toggle="modal") ---
+document.addEventListener('click', function (e) {
+    var bar = e.target.closest('[data-modal]');
+    if (!bar) return;
+    var tip = bootstrap.Tooltip.getInstance(bar);
+    if (tip) tip.hide();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById(bar.dataset.modal)).show();
 });
 
 // --- Route embeds (Klaro-gated) ---

@@ -1,0 +1,5959 @@
+{
+  "588": {
+    "journal": {
+      "2878": {
+        "description": "This ravenous hydra has survived this cursed place through scavenging the meat of the fallen. That doesn't mean it is not a fearsome combatant, eager to add some fresh temple explorers to its otherwise rotting diet.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Rav'i's domain is littered with Carrion Piles from the many sacrificed creatures thrown into the pit. Occasionally, Rav'i makes a [Ravenous Stomp], dropping [Fresh Meat].\r\n\r\nUpon running out of energy, Rav'i begins [Ssscavenging] from the nearest Carrion Pile. If the Carrion Pile contains [Fresh Meat], Rav'i goes into a [Feeding Frenzy].",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Tanks",
+                "body_text": "$bullet; [Ravenous Stomp] drops [Fresh Meat] on some Carrion Piles.\r\n$bullet; Carrion Piles with [Fresh Meat] cause Rav'i to go into a [Feeding Frenzy].\r\n$bullet; Rav'i inflicts melee damage with [Hydrastrike].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; Rav'i stops [Ssscavenging] or her [Feeding Frenzy] when her absorb shield is removed.\r\n$bullet; [Ssscavenging] and [Feeding Frenzy] both continuously apply [Carrion Burst] to all players until stopped.\r\n$bullet; [Regurgitate] hurls waves of acid in a player's direction.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; [Triple Shot] inflicts damage around 3 players over time.\r\n$bullet; While Rav'i is eating, she afflicts all players with increasing applications of [Carrion Burst] and is a [Messy Eater].\r\n$bullet; [Regurgitate] hurls waves of acid in a player's direction.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Ssscavenging",
+            "body_text": null,
+            "spell_id": 1298221,
+            "sections": [
+              {
+                "title": "Feeding Frenzy",
+                "body_text": null,
+                "spell_id": 1307765,
+                "sections": []
+              },
+              {
+                "title": "Carrion Burst",
+                "body_text": null,
+                "spell_id": 1307700,
+                "sections": []
+              },
+              {
+                "title": "Messy Eater",
+                "body_text": null,
+                "spell_id": 1306345,
+                "sections": [
+                  {
+                    "title": "Carrion Burst",
+                    "body_text": null,
+                    "spell_id": 1307700,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Fresh Meat",
+                "body_text": null,
+                "spell_id": 1307703,
+                "sections": [
+                  {
+                    "title": "Scent of Blood",
+                    "body_text": null,
+                    "spell_id": 1310378,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Ravenous Stomp",
+            "body_text": null,
+            "spell_id": 1307915,
+            "sections": [
+              {
+                "title": "Fresh Meat",
+                "body_text": null,
+                "spell_id": 1307703,
+                "sections": [
+                  {
+                    "title": "Scent of Blood",
+                    "body_text": null,
+                    "spell_id": 1310378,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Triple Shot",
+            "body_text": null,
+            "spell_id": 1297876,
+            "sections": []
+          },
+          {
+            "title": "Regurgitate",
+            "body_text": null,
+            "spell_id": 1296069,
+            "sections": []
+          },
+          {
+            "title": "Hydrastrike",
+            "body_text": null,
+            "spell_id": 1298683,
+            "sections": []
+          }
+        ]
+      },
+      "2879": {
+        "description": "In the feeding frenzy upon each other, there has been one Child of Ula'tek that has proved victorious over the rest of the brood. With every battle won, the twisting monstrosity known as the Writhing Coil only grows stronger.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "The Writhing Coil assaults its enemies relentlessly with [Vindictive Onslaught] and its razor sharp [Tail Scythe].\r\n\r\nWhen the beast prepares to unleash [Death Rattle], Orweyna empowers players with [Vine Grip] to [Uncoil] the creature and clash with the serpents one by one.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Tanks",
+                "body_text": "$bullet; [Tail Scythe] inflicts heavy Physical damage.\r\n$bullet; Interrupting [Death Rattle] with [Vine Grip] causes the creature to [Uncoil].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; Interrupting [Death Rattle] with [Vine Grip] causes the creature to [Uncoil].\r\n$bullet; Damage inflicted while the Writhing Coil is [Uncoiled] persists after [Assimilation].\r\n$bullet; [Toxic Atrophy] reduces all players' speed and damage done.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; [Death Rattle] inflicts increasing damage to all players.\r\n$bullet; Interrupting [Death Rattle] with [Vine Grip] causes the creature to [Uncoil].",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "The Writhing Coil",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Death Rattle",
+                "body_text": null,
+                "spell_id": 1299053,
+                "sections": [
+                  {
+                    "title": "Vine Grip",
+                    "body_text": null,
+                    "spell_id": 1287798,
+                    "sections": []
+                  },
+                  {
+                    "title": "Uncoil",
+                    "body_text": null,
+                    "spell_id": 1287811,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Toxic Barrage",
+                "body_text": null,
+                "spell_id": 1310357,
+                "sections": [
+                  {
+                    "title": "Toxic Atrophy",
+                    "body_text": null,
+                    "spell_id": 1310974,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Vindictive Onslaught",
+                "body_text": null,
+                "spell_id": 1299940,
+                "sections": [
+                  {
+                    "title": "Burrowing Charge",
+                    "body_text": null,
+                    "spell_id": 1300083,
+                    "sections": []
+                  },
+                  {
+                    "title": "Venom Jet",
+                    "body_text": null,
+                    "spell_id": 1300044,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Tail Scythe",
+                "body_text": null,
+                "spell_id": 1298949,
+                "sections": []
+              },
+              {
+                "title": "Synchronized Venom",
+                "body_text": null,
+                "spell_id": 1299189,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "The Uncoiled Writhe",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Uncoiled",
+                "body_text": null,
+                "spell_id": 1300612,
+                "sections": []
+              },
+              {
+                "title": "Spiteful Hunt",
+                "body_text": null,
+                "spell_id": 1300503,
+                "sections": []
+              },
+              {
+                "title": "Toxic Atrophy",
+                "body_text": null,
+                "spell_id": 1310974,
+                "sections": []
+              },
+              {
+                "title": "Undermining",
+                "body_text": null,
+                "spell_id": 1305393,
+                "sections": []
+              }
+            ]
+          }
+        ]
+      },
+      "2880": {
+        "description": "With the Fang of Ula'tek, Zul'jan performs the final ritual to gain the power to release the monstrous weapon his ancestors sealed away thousands of years ago. Still held in the sway of the spirit of Malacrass, Zul'jan is unaware that the Fang is also the only hope for his sister Zul'jarra's survival.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "During [Ritual of the Fang], Zul'jan invokes the altar's ancient venoms to empower the dagger.\r\n\r\nZul'jan then hacks, slashes, and chops down his enemies as the sacred grounds stain crimson with [Bloodletting].",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Tanks",
+                "body_text": "$bullet;[Chop Down] inflicts heavy Physical damage.\r\n$bullet;[Ritual of the Fang] inflicts damage to all players unless intercepted.\r\n$bullet;[Bloodletting] removes [Ritual Venom].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Ritual of the Fang] inflicts damage to all players unless intercepted.\r\n$bullet;[Bloodletting] removes [Ritual Venom].\r\n$bullet;[Axegrinder] and [Boneslicer] inflict Physical damage to players struck.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet;[Axegrinder] and [Boneslicer] inflict Physical damage to players struck.\r\n$bullet;[Ritual of the Fang] inflicts damage to all players unless intercepted.\r\n$bullet;[Bloodletting] removes [Ritual Venom].",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Ritual of the Fang",
+            "body_text": null,
+            "spell_id": 1300876,
+            "sections": [
+              {
+                "title": "Fang Empowered",
+                "body_text": null,
+                "spell_id": 1300888,
+                "sections": []
+              },
+              {
+                "title": "Ritual Venom",
+                "body_text": null,
+                "spell_id": 1300894,
+                "sections": []
+              },
+              {
+                "title": "Ritual Venom",
+                "body_text": null,
+                "spell_id": 1300894,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Bloodletting",
+            "body_text": null,
+            "spell_id": 1301217,
+            "sections": []
+          },
+          {
+            "title": "Boneslicer",
+            "body_text": null,
+            "spell_id": 1301413,
+            "sections": []
+          },
+          {
+            "title": "Axegrinder",
+            "body_text": null,
+            "spell_id": 1301111,
+            "sections": []
+          },
+          {
+            "title": "Chop Down",
+            "body_text": null,
+            "spell_id": 1301350,
+            "sections": []
+          }
+        ]
+      }
+    },
+    "enemies": {
+      "270306": {
+        "health": 5189208,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "1306517": [],
+          "1306844": [],
+          "1306893": [],
+          "1306911": []
+        }
+      },
+      "261552": {
+        "health": 3243255,
+        "count": 5,
+        "type": "Beast",
+        "spells": {
+          "1307526": []
+        }
+      },
+      "261557": {
+        "health": 2918930,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1287544": [],
+          "1289416": [
+            "interruptible",
+            "poison"
+          ],
+          "1292904": [],
+          "1306385": [],
+          "1307567": [
+            "interruptible"
+          ],
+          "1307602": []
+        }
+      },
+      "261556": {
+        "health": 972977,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1306383": []
+        }
+      },
+      "263112": {
+        "health": 1297302,
+        "count": 1,
+        "type": "Elemental",
+        "spells": {
+          "1303366": [
+            "poison"
+          ]
+        }
+      },
+      "261560": {
+        "health": 2918930,
+        "count": 7,
+        "type": "Beast",
+        "spells": {
+          "1294557": [
+            "interruptible"
+          ],
+          "1306381": []
+        }
+      },
+      "261553": {
+        "health": 3567581,
+        "count": 5,
+        "type": "Humanoid",
+        "spells": {
+          "1306308": [
+            "enrage"
+          ],
+          "1306333": []
+        }
+      },
+      "263109": {
+        "health": 4864883,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "1289416": [
+            "interruptible",
+            "poison"
+          ],
+          "1292892": [],
+          "1306852": [],
+          "1306856": [],
+          "1307567": [
+            "interruptible"
+          ]
+        }
+      },
+      "261573": {
+        "health": 8173003,
+        "count": 30,
+        "type": "Beast",
+        "spells": {
+          "1293420": [],
+          "1294934": [],
+          "1295055": [],
+          "1308864": [],
+          "1309416": []
+        }
+      },
+      "261554": {
+        "health": 5513534,
+        "count": 25,
+        "type": "Beast",
+        "spells": {
+          "1294567": [
+            "magic"
+          ],
+          "1294572": [],
+          "1306668": []
+        }
+      },
+      "261550": {
+        "health": 1945953,
+        "count": 1,
+        "type": "Beast",
+        "spells": {
+          "1294432": [],
+          "1307098": []
+        }
+      },
+      "262011": {
+        "health": 5513534,
+        "count": 25,
+        "type": "Beast",
+        "spells": {
+          "1294845": [
+            "poison"
+          ],
+          "1294849": []
+        }
+      },
+      "271453": {
+        "health": 3243255,
+        "count": 5,
+        "type": "Humanoid",
+        "spells": {
+          "1308518": []
+        }
+      },
+      "259445": {
+        "health": 21216292,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1296058": [
+            "disease"
+          ],
+          "1296219": [],
+          "1296220": [],
+          "1298223": [],
+          "1298683": [],
+          "1306345": [],
+          "1307700": [],
+          "1307703": [],
+          "1307768": [],
+          "1307894": [],
+          "1310378": []
+        }
+      },
+      "259446": {
+        "health": 30405514,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1287798": [],
+          "1287811": [],
+          "1298949": [],
+          "1299053": [],
+          "1299130": [],
+          "1299154": [],
+          "1299940": [],
+          "1300044": [],
+          "1300503": [],
+          "1300612": [],
+          "1300686": [],
+          "1305368": [
+            "poison"
+          ],
+          "1305393": [],
+          "1310357": [],
+          "1310974": []
+        }
+      },
+      "259447": {
+        "health": 27027124,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1300876": [],
+          "1300888": [],
+          "1300894": [],
+          "1301111": [],
+          "1301217": [],
+          "1301350": [],
+          "1301413": []
+        }
+      },
+      "262398": {
+        "health": 33783904,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1300503": [],
+          "1300698": [],
+          "1305368": [
+            "poison"
+          ],
+          "1305393": [],
+          "1310666": [
+            "interruptible"
+          ]
+        }
+      },
+      "264798": {
+        "health": 648651,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1293059": []
+        }
+      },
+      "268358": {
+        "health": 10000,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1300885": []
+        }
+      },
+      "270378": {
+        "health": 5189208,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1306657": []
+        }
+      },
+      "270417": {
+        "health": 32432550,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1300698": [],
+          "1305393": []
+        }
+      }
+    }
+  },
+  "586": {
+    "journal": {
+      "2776": {
+        "description": "Driven by voracious greed, the gluttonous Hoardmonger fiercely defends the stashes of food and supplies he has stolen from nearby troll tribes. Nalorakk's first trial is to eliminate him before the tribes go hungry.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "The Hoardmonger prevents his reserves from being pilfered at all costs, casting [Resourceful Measures] upon reaching 90%, 70%, and 40% health, empowering one of his abilities.\r\n\r\nUpon reaching 100 energy, he tosses [Spoiled Supplies] throughout the arena, growing Rotten Mushrooms for 12 seconds. Upon contact, these apply [Toxic Spores] destroying the fungi, preventing [Putrid Burst].",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; Rotten Mushrooms apply [Toxic Spores] upon contact, preventing them from detonating in a [Putrid Burst].\r\n$bullet; [Earthshatter Slam] and [Bonespike Slam] inflict massive damage in a frontal cone.\r\n$bullet; [Ravenous Bellow] and [Hearty Bellow] inflicts high damage to all players.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; [Ravenous Bellow] and [Hearty Bellow] inflict high damage to all players.\r\n$bullet; Rotten Mushrooms' [Toxic Spores] can be removed by Poison-cleansing effects.\r\n$bullet; [Earthshatter Slam] and [Bonespike Slam] inflict massive damage in a frontal cone.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet; The Hoardmonger gathers from the nearest resource pile during [Resourceful Measures].\r\n$bullet; Rotten Mushrooms apply [Toxic Spores] upon contact, preventing them from detonating in a [Putrid Burst].\r\n$bullet; [Ravenous Bellow] and [Hearty Bellow] inflict high damage to all players.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Resourceful Measures",
+            "body_text": null,
+            "spell_id": 1235072,
+            "sections": [
+              {
+                "title": "Overflowing Supplies",
+                "body_text": null,
+                "spell_id": 1235105,
+                "sections": []
+              },
+              {
+                "title": "Bonespike Slam",
+                "body_text": null,
+                "spell_id": 1235129,
+                "sections": [
+                  {
+                    "title": "Bonespiked",
+                    "body_text": null,
+                    "spell_id": 1235405,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Hearty Bellow",
+                "body_text": null,
+                "spell_id": 1235125,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Resourceful Measures",
+            "body_text": null,
+            "spell_id": 1235072,
+            "sections": [
+              {
+                "title": "Overflowing Supplies",
+                "body_text": null,
+                "spell_id": 1235105,
+                "sections": []
+              },
+              {
+                "title": "Bonespike Slam",
+                "body_text": null,
+                "spell_id": 1235129,
+                "sections": [
+                  {
+                    "title": "Bonespiked",
+                    "body_text": null,
+                    "spell_id": 1235405,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Hearty Bellow",
+                "body_text": null,
+                "spell_id": 1235125,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Spoiled Supplies",
+            "body_text": null,
+            "spell_id": 1234233,
+            "sections": [
+              {
+                "title": "Rotten Mushroom",
+                "body_text": "This fungi grows for 12 seconds then detonates in a Putrid Burst, covering all players in Toxic Spores.\r\n\r\nUpon contact, the spores transfer, applying Toxic Spores and destroying the fungi.",
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Toxic Spores",
+                    "body_text": null,
+                    "spell_id": 1234846,
+                    "sections": []
+                  },
+                  {
+                    "title": "Putrid Burst",
+                    "body_text": null,
+                    "spell_id": 1245593,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Earthshatter Slam",
+            "body_text": null,
+            "spell_id": 1234021,
+            "sections": []
+          },
+          {
+            "title": "Ravenous Bellow",
+            "body_text": null,
+            "spell_id": 1234681,
+            "sections": []
+          }
+        ]
+      },
+      "2777": {
+        "description": "The seasons can be kind or cruel. Sentinel of Winter unleashes the harshest of winter storms to test all who face him. To surpass Nalorakk's second trial, endure the biting cold and defeat the embodiment of a winter storm.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "The Sentinel of Winter harnesses the power of the surrounding blizzard. This forms [Raging Squalls] which wander the landscape, and Fractured Shivercores which cast [Winter's Shroud] until defeated.\r\n\r\n[Frozen Tempest] creates a massive storm that pulses Frost damage to all players and continously pushes them back.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "\r\n\r\n$bullet;[Frozen Tempest] inflicts heavy damage and pushes players back.\r\n$bullet;[Raging Squalls] wander the landscape and inflict moderate damage.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet;[Frozen Tempest] inflicts heavy damage and pushes players back.\r\n$bullet;[Glacial Torment] inflicts a large amount of damage, but can be removed by Magic-cleansing effects.\r\n\r\n",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "\r\n\r\n$bullet;[Frozen Tempest] inflicts heavy damage and pushes players back.\r\n$bullet;[Raging Squalls] wander the landscape and inflict moderate damage.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Frozen Tempest",
+            "body_text": null,
+            "spell_id": 1235656,
+            "sections": []
+          },
+          {
+            "title": "Shattering Frostspike",
+            "body_text": null,
+            "spell_id": 1235783,
+            "sections": [
+              {
+                "title": "Fractured Shivercore",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Winter's Shroud",
+                    "body_text": null,
+                    "spell_id": 1235829,
+                    "sections": []
+                  },
+                  {
+                    "title": "Snowdrift",
+                    "body_text": null,
+                    "spell_id": 1234314,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Shattering Frostspike",
+            "body_text": null,
+            "spell_id": 1235783,
+            "sections": [
+              {
+                "title": "Fractured Shivercore",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Rimeshatter",
+                    "body_text": null,
+                    "spell_id": 1263590,
+                    "sections": [
+                      {
+                        "title": "Rime Detonation",
+                        "body_text": null,
+                        "spell_id": 1263597,
+                        "sections": []
+                      }
+                    ]
+                  },
+                  {
+                    "title": "Winter's Shroud",
+                    "body_text": null,
+                    "spell_id": 1235829,
+                    "sections": []
+                  },
+                  {
+                    "title": "Snowdrift",
+                    "body_text": null,
+                    "spell_id": 1234314,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Raging Squall",
+            "body_text": null,
+            "spell_id": 1235623,
+            "sections": []
+          },
+          {
+            "title": "Glacial Torment",
+            "body_text": null,
+            "spell_id": 1235548,
+            "sections": []
+          }
+        ]
+      },
+      "2778": {
+        "description": "Slumbering in his fitful and battle-filled dream, Nalorakk, the Loa of War, will only test the mettle of the worthy. Survive his trial and receive his blessing or die trying.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "The Loa of War spares no mortal as the final trial, assailing players with [Echoing Maul] and pushing them with [Forceful Roar].\r\n\r\nAt 100 energy, Nalorakk casts [Fury of the War God], slamming Zul'jarra across the arena and incapacitating her with [Concussive Shock]. Nalorakk commands Echoes of Nalorakk to charge the defenseless Zul'jarra, casting [Echoing Fury] when colliding with the first target they encounter.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; [Fury of the War God] sends Echoes of Nalorakk to attack Zul'jarra, stopping only to cast [Echoing Fury] on the first target they encounter.\r\n$bullet; Each Echo of Nalorakk casts [Echoing Maul] when Nalorakk casts [Echoing Maul].\r\n$bullet; Nalorakk's [Forceful Roar] pushes all players away.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; [Overwhelming Onslaught] inflicts significant damage even while protected from Zul'jarra's [Defensive Stance].\r\n$bullet; Each Echo of Nalorakk casts [Echoing Maul] when Nalorakk casts [Echoing Maul].\r\n$bullet; Nalorakk's [Forceful Roar] pushes all players away.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet; Zul'jarra's [Defensive Stance] greatly reduces Nalorakk's [Overwhelming Onslaught].\r\n$bullet; [Fury of the War God] sends Echoes of Nalorakk to attack Zul'jarra, stopping only to cast [Echoing Fury] on the first target they encounter.\r\n$bullet; Each Echo of Nalorakk casts [Echoing Maul] when Nalorakk casts [Echoing Maul].",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Fury of the War God",
+            "body_text": null,
+            "spell_id": 1243002,
+            "sections": [
+              {
+                "title": "Concussive Shock",
+                "body_text": null,
+                "spell_id": 1243063,
+                "sections": []
+              },
+              {
+                "title": "Demoralizing Scream",
+                "body_text": null,
+                "spell_id": 1262253,
+                "sections": []
+              },
+              {
+                "title": "Echoing Fury",
+                "body_text": null,
+                "spell_id": 1243408,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Overwhelming Onslaught",
+            "body_text": null,
+            "spell_id": 1297792,
+            "sections": [
+              {
+                "title": "Defensive Stance",
+                "body_text": null,
+                "spell_id": 1261776,
+                "sections": []
+              },
+              {
+                "title": "Forceful Slam",
+                "body_text": null,
+                "spell_id": 1297797,
+                "sections": []
+              },
+              {
+                "title": "Demoralizing Scream",
+                "body_text": null,
+                "spell_id": 1262253,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Echoing Maul",
+            "body_text": null,
+            "spell_id": 1242860,
+            "sections": []
+          },
+          {
+            "title": "Echo of Nalorakk",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Spectral Slash",
+                "body_text": null,
+                "spell_id": 1255577,
+                "sections": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "enemies": {
+      "245855": {
+        "health": 4864883,
+        "count": 25,
+        "type": "Undead",
+        "spells": {
+          "1238687": [],
+          "1238760": []
+        }
+      },
+      "241814": {
+        "health": 3729743,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1241214": [
+            "interruptible"
+          ],
+          "1297696": [
+            "interruptible",
+            "magic"
+          ]
+        }
+      },
+      "241813": {
+        "health": 3243255,
+        "count": 5,
+        "type": "Humanoid",
+        "spells": {
+          "1241217": [],
+          "1297699": [
+            "disease"
+          ],
+          "1297701": []
+        }
+      },
+      "241808": {
+        "health": 3729743,
+        "count": 8,
+        "type": "Beast",
+        "spells": {
+          "1238053": [
+            "enrage"
+          ],
+          "1241219": []
+        }
+      },
+      "250478": {
+        "health": 3243255,
+        "count": 50,
+        "type": "Elemental",
+        "spells": {
+          "1309947": []
+        }
+      },
+      "241874": {
+        "health": 2789199,
+        "count": 5,
+        "type": "Beast",
+        "spells": {
+          "1241226": [],
+          "1265400": []
+        }
+      },
+      "241911": {
+        "health": 2918930,
+        "count": 7,
+        "type": "Elemental",
+        "spells": {
+          "1296518": []
+        }
+      },
+      "241872": {
+        "health": 3567581,
+        "count": 9,
+        "type": "Beast",
+        "spells": {
+          "1309919": [
+            "interruptible"
+          ]
+        }
+      },
+      "241876": {
+        "health": 3081092,
+        "count": 7,
+        "type": "Elemental",
+        "spells": {
+          "1239860": [
+            "magic"
+          ],
+          "1266178": []
+        }
+      },
+      "241869": {
+        "health": 6486510,
+        "count": 28,
+        "type": "Undead",
+        "spells": {
+          "1240280": [],
+          "1241463": []
+        }
+      },
+      "245143": {
+        "health": 3243255,
+        "count": 5,
+        "type": "Humanoid",
+        "spells": {
+          "1246820": []
+        }
+      },
+      "245139": {
+        "health": 2918930,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1246687": [
+            "interruptible"
+          ],
+          "1297778": [
+            "interruptible"
+          ]
+        }
+      },
+      "245146": {
+        "health": 5513534,
+        "count": 25,
+        "type": "Beast",
+        "spells": {
+          "1246957": [],
+          "1246986": []
+        }
+      },
+      "245145": {
+        "health": 3081092,
+        "count": 6,
+        "type": "Humanoid",
+        "spells": {
+          "1246847": [
+            "interruptible"
+          ],
+          "1246865": [
+            "enrage"
+          ],
+          "1246877": [],
+          "1266207": []
+        }
+      },
+      "241809": {
+        "health": 778381,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1238053": [
+            "enrage"
+          ]
+        }
+      },
+      "241812": {
+        "health": 23648734,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1232012": [],
+          "1234021": [],
+          "1234233": [],
+          "1234681": [],
+          "1234846": [
+            "poison"
+          ],
+          "1235072": [],
+          "1235079": [],
+          "1235105": [],
+          "1235125": [],
+          "1235129": [],
+          "1235405": [],
+          "1245593": []
+        }
+      },
+      "241816": {
+        "health": 2918930,
+        "count": 7,
+        "type": "Beast",
+        "spells": {
+          "1238439": [
+            "bleed"
+          ]
+        }
+      },
+      "244100": {
+        "health": 21283861,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1235548": [
+            "magic"
+          ],
+          "1235623": [],
+          "1235656": [],
+          "1235783": [],
+          "1236289": []
+        }
+      },
+      "244696": {
+        "health": 428857,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1235641": []
+        }
+      },
+      "244759": {
+        "health": 675678,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "1234314": [],
+          "1235829": [
+            "interruptible"
+          ],
+          "1263590": [],
+          "1263597": []
+        }
+      },
+      "244889": {
+        "health": 7783812,
+        "count": 35,
+        "type": "Humanoid",
+        "spells": {
+          "1251027": [],
+          "1264753": [],
+          "1290205": [
+            "interruptible"
+          ],
+          "1296722": [],
+          "1309925": []
+        }
+      },
+      "245148": {
+        "health": 606102,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1247030": [],
+          "1311572": []
+        }
+      },
+      "245190": {
+        "health": 2594604,
+        "count": 5,
+        "type": "Beast",
+        "spells": {
+          "1246865": [
+            "enrage"
+          ],
+          "1246882": []
+        }
+      },
+      "245567": {
+        "health": 589867,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1238801": [
+            "curse"
+          ]
+        }
+      },
+      "246404": {
+        "health": 21891972,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1242860": [],
+          "1243002": [],
+          "1243408": [],
+          "1254622": [],
+          "1297792": [],
+          "1297796": [],
+          "1297797": []
+        }
+      },
+      "246409": {
+        "health": 21891972,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1243018": [],
+          "1243078": [],
+          "1249186": [],
+          "1261776": [],
+          "1262253": []
+        }
+      },
+      "247301": {
+        "health": 3378390,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1242976": [],
+          "1255577": []
+        }
+      },
+      "251189": {
+        "health": 648651,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1253083": []
+        }
+      },
+      "272074": {
+        "health": 462070,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1309931": []
+        }
+      },
+      "245076": {
+        "health": 457907,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1250805": []
+        }
+      },
+      "245752": {
+        "health": 2918930,
+        "count": 7,
+        "type": "Beast",
+        "spells": {
+          "110960": [],
+          "1238439": [
+            "bleed"
+          ],
+          "1239394": [
+            "interruptible"
+          ]
+        }
+      },
+      "248666": {
+        "health": 589867,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1246825": []
+        }
+      }
+    }
+  },
+  "249": {
+    "journal": {
+      "2165": {
+        "description": "Kings' Rest has come under attack before. After a foolish troll tried to summon Hakkar the Soulflayer to this island many millennia ago, the priests of Zandalar created a mighty construct to defend this tomb. The Golden Serpent has stood against intruders ever since, judging who is worthy to enter these sacred halls.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "The Golden Serpent spits gold at party members, who then leave it behind in the form of [Molten Gold]. The Golden Serpent later animates these pools with [Lucre's Call]. Any Animated Gold that reaches The Golden Serpent is absorbed, granting a stack of [Luster] that shields the Serpent and increases its damage.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Tank",
+                "body_text": "$bullet;[Tail Thrash] inflicts Physical damage to the current target player.\r\n$bullet;Each stack of [Luster] shields The Golden Serpent and increases its damage.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healer",
+                "body_text": "$bullet;[Spit Gold] inflicts Fire damage over time to the afflicted player and leaves a pool of [Molten Gold] at their location.\r\n$bullet;[Serpentine Gust] inflicts damage to all  players.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Lucre's Call] turns all pools of [Molten Gold] into Animated Gold, which move toward The Golden Serpent.\r\n$bullet;[Spit Gold] inflicts Fire damage over time to the afflicted player and leaves a pool of [Molten Gold] at their location.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Spit Gold",
+            "body_text": null,
+            "spell_id": 265773,
+            "sections": [
+              {
+                "title": "Molten Gold",
+                "body_text": null,
+                "spell_id": 265914,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Lucre's Call",
+            "body_text": null,
+            "spell_id": 265923,
+            "sections": [
+              {
+                "title": "Animated Gold",
+                "body_text": "Attempts to move towards The Golden Serpent. If any reach it, The Golden Serpent absorbs them and gains a stack of Luster. When any Animated Gold are killed, they return to pools of Molten Gold.",
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Luster",
+                    "body_text": null,
+                    "spell_id": 265991,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Serpentine Gust",
+            "body_text": null,
+            "spell_id": 1311987,
+            "sections": []
+          },
+          {
+            "title": "Tail Thrash",
+            "body_text": null,
+            "spell_id": 265910,
+            "sections": []
+          },
+          {
+            "title": "Heroic and Mythic Difficulty Only",
+            "body_text": "Kings' Rest is not available in Normal Difficulty.",
+            "spell_id": null,
+            "sections": []
+          }
+        ]
+      },
+      "2171": {
+        "description": "There was once a caste of Zandalari whose purpose was to preserve and defend the remains of past rulers. But when a terrible plague of corrupted blood tore through the empire, it was too risky for mortals to handle the dead. Golems were summoned for the grim work of preservation and burial; they have been used ever since.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Mchimba the Embalmer prepares his victims for mummification. [Drain Fluids] inflicts Nature damage over time on target player that ends in [Desiccation]. [Entomb] seals a player inside one of the chamber's crypts, after which Mchimba begins to [Open Coffin] on the remaining crypts one at a time, releasing a Finished Mummy from every unoccupied crypt.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Tank",
+                "body_text": "$bullet;[Entomb] seals the afflicted player inside one of the crypts.\r\n$bullet;[Open Coffin] opens one of the crypts and summons a Finished Mummy.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healer",
+                "body_text": "$bullet;[Drain Fluids] inflicts Nature damage over time to the afflicted player. When the effect completes, it applies [Desiccation], reducing the afflicted player's damage done and movement speed until they are healed above 90% health.\r\n$bullet;[Burn Corruption] inflicts Fire damage to target player and creates a patch of [Burning Ground].\r\n$bullet;[Entomb] seals the afflicted player inside one of the crypts.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Entomb] seals the afflicted player inside one of the crypts.\r\n$bullet;[Drain Fluids] inflicts Nature damage over time to the afflicted player. When the effect completes, it applies [Desiccation], reducing the afflicted player's damage done and movement speed until they are healed above 90% health.\r\n$bullet;[Burn Corruption] inflicts Fire damage to target player and creates a patch of [Burning Ground].",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Command Constructs",
+            "body_text": null,
+            "spell_id": 1312848,
+            "sections": [
+              {
+                "title": "Interment Construct",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Embalm",
+                    "body_text": null,
+                    "spell_id": 1312569,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Awakening Slam",
+            "body_text": null,
+            "spell_id": 1312146,
+            "sections": [
+              {
+                "title": "Half-Finished Mummy",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Wretched Discharge",
+                    "body_text": null,
+                    "spell_id": 267763,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Burn Corruption",
+            "body_text": null,
+            "spell_id": 267639,
+            "sections": [
+              {
+                "title": "Burning Ground",
+                "body_text": null,
+                "spell_id": 267874,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Drain Fluids",
+            "body_text": null,
+            "spell_id": 267618,
+            "sections": [
+              {
+                "title": "Explosive Acids",
+                "body_text": null,
+                "spell_id": 1312143,
+                "sections": []
+              },
+              {
+                "title": "Desiccation",
+                "body_text": null,
+                "spell_id": 267626,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Entomb",
+            "body_text": null,
+            "spell_id": 267702,
+            "sections": [
+              {
+                "title": "Open Coffin",
+                "body_text": null,
+                "spell_id": 271290,
+                "sections": []
+              },
+              {
+                "title": "Struggle",
+                "body_text": "While trapped, players can struggle against the doors of the crypt, alerting other players to their presence.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Finished Mummy",
+                "body_text": "When a coffin that does not contain a player is opened, a Finished Mummy will emerge and attack the party.",
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Wretched Discharge",
+                    "body_text": null,
+                    "spell_id": 267763,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Heroic and Mythic Difficulty Only",
+            "body_text": "Kings' Rest is not available in Normal Difficulty.",
+            "spell_id": null,
+            "sections": []
+          }
+        ]
+      },
+      "2170": {
+        "description": "There was once a time when no single emperor could rule Zandalar. After a period of civil war, the heads of three families formed an uneasy coalition and tried to rule the empire together. Though they did not often agree, there was peace in Zandalar. Briefly.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "The battle will begin with Kula the Butcher.\r\n\r\nWhen a councilor is defeated, they will return to their urn and the next will join the encounter. However, the defeated councilor will periodically rejoin the battle to use a single ability, and then return to their urn.\r\n\r\nWhen all three councilors are defeated, the encounter ends.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Tank",
+                "body_text": "$bullet;[Debilitating Backhand] inflicts Physical damage to Aka'ali the Conqueror's current target player, knocks them back, and applies [Shattered Defenses], increasing the target's Physical damage taken.\r\n$bullet;[Barrel Through] causes Aka'ali the Conqueror to charge a targeted player, inflicting heavy Physical damage that splits among all players hit.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healer",
+                "body_text": "$bullet;[Barrel Through] causes Aka'ali the Conqueror to charge a targeted player, inflicting heavy Physical damage that splits among all players hit.\r\n$bullet;[Severing Axe] inflicts Physical damage over time to random players.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Barrel Through] causes Aka'ali the Conqueror to charge a targeted player, inflicting heavy Physical damage that splits among all players hit.\r\n$bullet;[Poison Nova] inflicts Nature damage over time to all players.\r\n$bullet;[Call of the Elements] summons three elemental totems with powerful effects.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Kula the Butcher",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Whirling Axes",
+                "body_text": null,
+                "spell_id": 266206,
+                "sections": []
+              },
+              {
+                "title": "Severing Axe",
+                "body_text": null,
+                "spell_id": 266231,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Aka'ali the Conqueror",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Barrel Through",
+                "body_text": null,
+                "spell_id": 266951,
+                "sections": []
+              },
+              {
+                "title": "Debilitating Backhand",
+                "body_text": null,
+                "spell_id": 266237,
+                "sections": [
+                  {
+                    "title": "Shattered Defenses",
+                    "body_text": null,
+                    "spell_id": 266238,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Zanazal the Wise",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Arc Lightning",
+                "body_text": null,
+                "spell_id": 1305810,
+                "sections": []
+              },
+              {
+                "title": "Poison Nova",
+                "body_text": null,
+                "spell_id": 267273,
+                "sections": []
+              },
+              {
+                "title": "Call of the Elements",
+                "body_text": null,
+                "spell_id": 267060,
+                "sections": [
+                  {
+                    "title": "Explosive Totem",
+                    "body_text": null,
+                    "spell_id": null,
+                    "sections": [
+                      {
+                        "title": "Explode",
+                        "body_text": null,
+                        "spell_id": 267077,
+                        "sections": []
+                      }
+                    ]
+                  },
+                  {
+                    "title": "Torrent Totem",
+                    "body_text": null,
+                    "spell_id": null,
+                    "sections": [
+                      {
+                        "title": "Torrent",
+                        "body_text": null,
+                        "spell_id": 267105,
+                        "sections": []
+                      }
+                    ]
+                  },
+                  {
+                    "title": "Thundering Totem",
+                    "body_text": null,
+                    "spell_id": null,
+                    "sections": [
+                      {
+                        "title": "Disruption",
+                        "body_text": null,
+                        "spell_id": 267257,
+                        "sections": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Heroic and Mythic Difficulty Only",
+            "body_text": "Kings' Rest is not available in Normal Difficulty.",
+            "spell_id": null,
+            "sections": []
+          }
+        ]
+      },
+      "2172": {
+        "description": "Dazar. The founder and first King of Zandalar, who led an exodus of his people out of the muck and mire and built a city of gold. The first tamer of raptors. The warrior undefeated. The father of a kingdom.\r\n\r\nHis eternal repose cut short by Zul's dark magic, it lies to you to once again put him to rest.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Dominated by Zul's dark magic, Dazar returns from the dead with his overwhelming martial prowess intact. \r\n\r\nAt 80% health, he mounts T'zala, his loyal steed.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Tank",
+                "body_text": "$bullet;[Blade Combo] inflicts heavy damage to its target.\r\n$bullet;T'zala's [Savage Maul] increases its target's Phyiscal damage taken.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healer",
+                "body_text": "$bullet;[Gilded Destruction] inflicts Fire damage on all players.\r\n$bullet;[Impaling Spear] periodically springs from the ceiling, inflicting heavy Phyical damage to players hit and causing them to bleed.\r\n$bullet;T'zala's [Savage Maul] increases its target's Phyiscal damage taken.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Impaling Spear] periodically springs from the ceiling, inflicting heavy Phyical damage to players hit and causing them to bleed.\r\n$bullet;King Dazar's [Aerial Smash] and T'zala's [Quaking Leap] inflict Physical damage to all players at their destinations.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "King Dazar",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Eternal Bond",
+                "body_text": null,
+                "spell_id": 1303523,
+                "sections": []
+              },
+              {
+                "title": "Gilded Destruction",
+                "body_text": null,
+                "spell_id": 1303267,
+                "sections": []
+              },
+              {
+                "title": "Gilded Destruction",
+                "body_text": null,
+                "spell_id": 1303267,
+                "sections": [
+                  {
+                    "title": "Searing Gold",
+                    "body_text": null,
+                    "spell_id": 1303372,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Blade Combo",
+                "body_text": null,
+                "spell_id": 268586,
+                "sections": []
+              },
+              {
+                "title": "Aerial Smash",
+                "body_text": null,
+                "spell_id": 1303115,
+                "sections": []
+              },
+              {
+                "title": "Impaling Spear",
+                "body_text": null,
+                "spell_id": 1302945,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Reban",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Hunting Leap",
+                "body_text": null,
+                "spell_id": 269231,
+                "sections": []
+              },
+              {
+                "title": "Deathly Roar",
+                "body_text": null,
+                "spell_id": 269369,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "T'zala",
+            "body_text": "When Dazar reaches 80% health, he will mount T'zala.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Eternal Bond",
+                "body_text": null,
+                "spell_id": 1303519,
+                "sections": []
+              },
+              {
+                "title": "Savage Maul",
+                "body_text": null,
+                "spell_id": 1303490,
+                "sections": []
+              },
+              {
+                "title": "Quaking Leap",
+                "body_text": null,
+                "spell_id": 1303324,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Heroic and Mythic Difficulty Only",
+            "body_text": "Kings' Rest is not available in Normal Difficulty.",
+            "spell_id": null,
+            "sections": []
+          }
+        ]
+      }
+    },
+    "enemies": {
+      "133935": {
+        "health": 5513534,
+        "count": 22,
+        "type": "Undead",
+        "spells": {
+          "270003": [],
+          "270016": [],
+          "1310755": []
+        }
+      },
+      "133943": {
+        "health": 362169,
+        "count": 0,
+        "type": "Aberration",
+        "spells": {
+          "269935": [
+            "magic"
+          ]
+        }
+      },
+      "134174": {
+        "health": 4864883,
+        "count": 20,
+        "type": "Undead",
+        "spells": {
+          "269972": [
+            "interruptible",
+            "curse"
+          ],
+          "1294815": [
+            "interruptible",
+            "magic"
+          ]
+        }
+      },
+      "134158": {
+        "health": 5189208,
+        "count": 25,
+        "type": "Undead",
+        "spells": {
+          "269928": [],
+          "269976": [
+            "enrage"
+          ],
+          "1305945": [],
+          "1310758": []
+        }
+      },
+      "134157": {
+        "health": 3243255,
+        "count": 5,
+        "type": "Undead",
+        "spells": {
+          "1311942": []
+        }
+      },
+      "135322": {
+        "health": 21283860,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "265773": [],
+          "265910": [],
+          "265923": [],
+          "265991": [],
+          "1311987": []
+        }
+      },
+      "137487": {
+        "health": 3243255,
+        "count": 10,
+        "type": "Undead",
+        "spells": {
+          "270502": [],
+          "1297763": [
+            "enrage"
+          ]
+        }
+      },
+      "137486": {
+        "health": 5189208,
+        "count": 25,
+        "type": "Undead",
+        "spells": {
+          "1294883": [],
+          "1297763": [
+            "enrage"
+          ],
+          "1305982": [],
+          "1306763": [
+            "poison"
+          ]
+        }
+      },
+      "137484": {
+        "health": 8432462,
+        "count": 25,
+        "type": "Undead",
+        "spells": {
+          "1297918": [
+            "bleed"
+          ],
+          "1297970": []
+        }
+      },
+      "137485": {
+        "health": 3243255,
+        "count": 7,
+        "type": "Undead",
+        "spells": {
+          "1297781": [
+            "bleed"
+          ]
+        }
+      },
+      "134251": {
+        "health": 3243255,
+        "count": 10,
+        "type": "Undead",
+        "spells": {
+          "270901": [
+            "interruptible",
+            "magic"
+          ],
+          "1296671": [
+            "magic"
+          ]
+        }
+      },
+      "137473": {
+        "health": 5270289,
+        "count": 10,
+        "type": "Undead",
+        "spells": {
+          "1296671": [
+            "magic"
+          ]
+        }
+      },
+      "134331": {
+        "health": 5189208,
+        "count": 25,
+        "type": "Undead",
+        "spells": {
+          "270889": [],
+          "1296671": [
+            "magic"
+          ],
+          "1296719": []
+        }
+      },
+      "137474": {
+        "health": 7783811,
+        "count": 25,
+        "type": "Undead",
+        "spells": {
+          "270927": [],
+          "1297326": [],
+          "1306049": []
+        }
+      },
+      "137478": {
+        "health": 7783811,
+        "count": 25,
+        "type": "Undead",
+        "spells": {
+          "270920": [
+            "interruptible",
+            "magic"
+          ],
+          "1294972": [
+            "interruptible",
+            "magic"
+          ],
+          "1297326": []
+        }
+      },
+      "134739": {
+        "health": 7783811,
+        "count": 25,
+        "type": "Undead",
+        "spells": {
+          "270292": [],
+          "270293": [],
+          "1310755": []
+        }
+      },
+      "137969": {
+        "health": 5837859,
+        "count": 15,
+        "type": "Undead",
+        "spells": {
+          "271555": [],
+          "271561": [],
+          "1310755": [],
+          "1312569": []
+        }
+      },
+      "134993": {
+        "health": 21283860,
+        "count": 0,
+        "type": "Mechanical",
+        "spells": {
+          "267618": [],
+          "267639": [],
+          "267702": [],
+          "267874": [],
+          "271290": [],
+          "1312146": [],
+          "1312848": []
+        }
+      },
+      "135204": {
+        "health": 2918930,
+        "count": 7,
+        "type": "Undead",
+        "spells": {
+          "270492": [
+            "interruptible",
+            "curse"
+          ],
+          "1295125": [
+            "interruptible",
+            "magic"
+          ]
+        }
+      },
+      "135167": {
+        "health": 3891906,
+        "count": 22,
+        "type": "Undead",
+        "spells": {
+          "270482": [],
+          "1301851": [
+            "bleed"
+          ]
+        }
+      },
+      "135239": {
+        "health": 3243255,
+        "count": 7,
+        "type": "Undead",
+        "spells": {
+          "270497": [],
+          "270499": [
+            "magic"
+          ]
+        }
+      },
+      "135231": {
+        "health": 6486509,
+        "count": 25,
+        "type": "Undead",
+        "spells": {
+          "270514": [],
+          "1302028": []
+        }
+      },
+      "135192": {
+        "health": 3243255,
+        "count": 5,
+        "type": "Undead",
+        "spells": {
+          "270502": []
+        }
+      },
+      "138489": {
+        "health": 8432462,
+        "count": 30,
+        "type": "Humanoid",
+        "spells": {
+          "272388": [],
+          "1298304": [],
+          "1309385": []
+        }
+      },
+      "136160": {
+        "health": 30405514,
+        "count": 0,
+        "type": "Undead",
+        "spells": {
+          "268586": [],
+          "1302945": [],
+          "1303105": [],
+          "1303267": [],
+          "1303372": [],
+          "1303396": []
+        }
+      },
+      "137989": {
+        "health": 1945953,
+        "count": 1,
+        "type": "Aberration",
+        "spells": {
+          "271563": [],
+          "1298104": [
+            "poison"
+          ]
+        }
+      },
+      "135761": {
+        "health": 444902,
+        "count": 0,
+        "type": "Totem",
+        "spells": {
+          "267257": [],
+          "1309499": []
+        }
+      },
+      "135764": {
+        "health": 440583,
+        "count": 0,
+        "type": "Totem",
+        "spells": {
+          "267077": [],
+          "1309499": []
+        }
+      },
+      "135765": {
+        "health": 324326,
+        "count": 0,
+        "type": "Totem",
+        "spells": {
+          "267105": [],
+          "1309499": []
+        }
+      },
+      "136256": {
+        "health": 540543,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {}
+      },
+      "136976": {
+        "health": 27027125,
+        "count": 0,
+        "type": "Undead",
+        "spells": {
+          "1303324": [],
+          "1303396": [],
+          "1303488": []
+        }
+      },
+      "136984": {
+        "health": 3783798,
+        "count": 0,
+        "type": "Undead",
+        "spells": {
+          "269232": [],
+          "269369": [
+            "interruptible"
+          ]
+        }
+      },
+      "138493": {
+        "health": 6,
+        "count": 0,
+        "type": "Aberration",
+        "spells": {
+          "269935": [
+            "magic"
+          ]
+        }
+      },
+      "269808": {
+        "health": 8108137,
+        "count": 0,
+        "type": "Undead",
+        "spells": {
+          "266237": [],
+          "266951": []
+        }
+      },
+      "269810": {
+        "health": 10135171,
+        "count": 0,
+        "type": "Undead",
+        "spells": {
+          "267060": [],
+          "267273": [
+            "interruptible",
+            "poison"
+          ],
+          "1305810": []
+        }
+      },
+      "269811": {
+        "health": 5405425,
+        "count": 0,
+        "type": "Undead",
+        "spells": {
+          "266191": [
+            "bleed"
+          ],
+          "266206": [],
+          "266231": [
+            "bleed"
+          ]
+        }
+      },
+      "270502": {
+        "health": 3243255,
+        "count": 7,
+        "type": "Undead",
+        "spells": {
+          "267763": [
+            "interruptible",
+            "disease"
+          ]
+        }
+      },
+      "135406": {
+        "health": 385943,
+        "count": 0,
+        "type": "Aberration",
+        "spells": {
+          "265991": [],
+          "1289063": []
+        }
+      },
+      "137591": {
+        "health": 372519,
+        "count": 0,
+        "type": "Totem",
+        "spells": {}
+      }
+    }
+  },
+  "587": {
+    "journal": {
+      "2679": {
+        "description": "Although an accomplished Magister, Kystia Manaheart was far too devoted to fel magic to give it up entirely. Little wonder she's become a staunch supporter and ally to underground fel smuggling operations in the Row.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Kystia Manaheart is accompanied by her pet mana wyrm Nibbles, who is controlled by [Illicit Infusion]. When this infusion is removed, Nibbles breaks free of Kystia's control and reverts back to her light form to assist players in battle with [Light Infusion].",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; Kystia turns Nibbles hostile to players with [Illicit Infusion].\r\n$bullet; Avoid Nibbles' [Fel Spray].\r\n$bullet; Interrupt Kystia's [Mirror Images].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; Kystia turns Nibbles hostile to players with [Illicit Infusion].\r\n$bullet; Avoid Nibbles' [Fel Spray].\r\n$bullet; Kystia inflicts heavy damage to all players while [Destabilized].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tank",
+                "body_text": "$bullet; Kystia turns Nibbles hostile to players with [Illicit Infusion].\r\n$bullet; Avoid Nibbles' [Fel Spray].\r\n$bullet; Interrupt Kystia's [Mirror Images].",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Kystia Manaheart",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Illicit Infusion",
+                "body_text": null,
+                "spell_id": 1230289,
+                "sections": []
+              },
+              {
+                "title": "Felshield",
+                "body_text": null,
+                "spell_id": 1217989,
+                "sections": []
+              },
+              {
+                "title": "Chaos Barrage",
+                "body_text": null,
+                "spell_id": 1230298,
+                "sections": []
+              },
+              {
+                "title": "Fel Nova",
+                "body_text": null,
+                "spell_id": 1223906,
+                "sections": []
+              },
+              {
+                "title": "Mirror Images",
+                "body_text": null,
+                "spell_id": 1264095,
+                "sections": [
+                  {
+                    "title": "Felstorm",
+                    "body_text": null,
+                    "spell_id": 1264106,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Nibbles",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Fel Spray",
+                "body_text": null,
+                "spell_id": 1253811,
+                "sections": []
+              },
+              {
+                "title": "Corroding Spittle",
+                "body_text": null,
+                "spell_id": 1228198,
+                "sections": []
+              },
+              {
+                "title": "Light Infusion",
+                "body_text": null,
+                "spell_id": 1230304,
+                "sections": [
+                  {
+                    "title": "Destabilized",
+                    "body_text": null,
+                    "spell_id": 1265412,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "2680": {
+        "description": "Clever, quick-witted and commanding, Zaen Bladesorrow oversees the shipments of illegal fel artifacts. Those under his command follow his orders to the letter... or pay the price.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Zaen Bladesorrow demonstrates how this town got its name by occassionally casting [Murder in a Row] at all players. Dodge his deadly aim by taking cover to avoid heavy damage.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; At 100 energy, Zaen casts [Murder in a Row]. Get to cover!\r\n$bullet; Avoid damage from [Same-Day Delivery] and [Fire Bomb].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; At 100 energy, Zaen casts [Murder in a Row]. Get to cover!\r\n$bullet; Avoid damage from [Same-Day Delivery] and [Fire Bomb].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tank",
+                "body_text": "$bullet; At 100 energy, Zaen casts [Murder in a Row]. Get to cover!\r\n$bullet; Avoid damage from [Same-Day Delivery] and [Fire Bomb].\r\n$bullet; Zaen inflicts heavy damage to his current target with [Envenom].",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Murder in a Row",
+            "body_text": null,
+            "spell_id": 1218347,
+            "sections": []
+          },
+          {
+            "title": "Same-Day Delivery",
+            "body_text": null,
+            "spell_id": 474765,
+            "sections": [
+              {
+                "title": "Forbidden Freight",
+                "body_text": "A shipment meant to be kept hidden from prying eyes. Provides an excellent source of cover.",
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Freight Explosion",
+                    "body_text": null,
+                    "spell_id": 1266241,
+                    "sections": []
+                  },
+                  {
+                    "title": "Fel-Infused Freight",
+                    "body_text": null,
+                    "spell_id": 1201553,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Killing Spree",
+            "body_text": null,
+            "spell_id": 474478,
+            "sections": []
+          },
+          {
+            "title": "Fire Bomb",
+            "body_text": null,
+            "spell_id": 1214357,
+            "sections": []
+          },
+          {
+            "title": "Envenom",
+            "body_text": null,
+            "spell_id": 1222795,
+            "sections": [
+              {
+                "title": "Heartstop Poison",
+                "body_text": null,
+                "spell_id": 474515,
+                "sections": []
+              }
+            ]
+          }
+        ]
+      },
+      "2681": {
+        "description": "Xathuux the Annihilator is one of Lithiel Cinderfury's most powerful summons. Although he loathes serving the warlock, he follows her commands for the sheer visceral joy of destruction.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Xathuux the Annihilator's rage increases until he erupts with [Demonic Rage] and gains [Burning Steps].",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Burning Steps] leaves damaging pools of fel magic on the ground for a long duration.\r\n\r\n$bullet;[Axe Toss] targets a random player and applies [Fel Lightning] to all players until the axe is destroyed.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet;[Legion Strike] inflicts heavy Physical damage and reduces incoming healing.\r\n\r\n$bullet;[Axe Toss] targets a random player and applies [Fel Lightning] to all players until the axe is destroyed.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet;[Legion Strike] inflicts heavy Physical damage and reduces incoming healing.\r\n\r\n$bullet;[Burning Steps] creates damaging pools of fel magic that expand from Xathuux the Annihilator's location and remain on the ground for a long duration.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Demonic Rage",
+            "body_text": null,
+            "spell_id": 474197,
+            "sections": [
+              {
+                "title": "Burning Steps",
+                "body_text": null,
+                "spell_id": 474234,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Axe Toss",
+            "body_text": null,
+            "spell_id": 1214663,
+            "sections": [
+              {
+                "title": "Fel Lightning",
+                "body_text": null,
+                "spell_id": 1214650,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Infernal Crush",
+            "body_text": null,
+            "spell_id": 1295455,
+            "sections": []
+          },
+          {
+            "title": "Legion Strike",
+            "body_text": null,
+            "spell_id": 473898,
+            "sections": []
+          }
+        ]
+      },
+      "2682": {
+        "description": "Lithiel Cinderfury sees the Voidstorm above Silvermoon as both threat and opportunity. Her people are afraid, and she has a perfect solution... the power of fel. She claims her smuggling operation protects her people from the dangers above, but the profits she receives are a pleasing bonus.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "[Fingers of Gul'dan] will summon Wild Imps near every target.\r\n\r\nAfter casting [Fingers of Gul'dan] Lithiel Cinderfury casts [Demonic Gateway] to escape and then begins casting [Malefic Wave].\r\n\r\n[Malefic Wave] slowly expands over a large area inflicting heavy damage along with lingering damage over time.\r\n\r\nPlayers traveling through Lithiel's [Demonic Gateway] are immune to the initial impact and lingering Fire vulnerability from passing through [Malefic Wave].",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; [Malefic Wave] grants [Malefic Empowerment] to any summoned demons still alive when it passes over them.\r\n\r\n$bullet; [Chaos Bolt] inflicts high damage to a random target if not interrupted.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet; [Chaos Bolt] inflicts high damage to a random target if not interrupted.\r\n\r\n$bullet;Furious Vilefiend inflicts heavy damage.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; [Malefic Wave]  applies lingering damage over time when players using Lithiel's [Demonic Gateway] pass through [Malefic Wave].\r\n\r\n$bullet;Furious Vilefiend inflicts heavy damage.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Malefic Wave",
+            "body_text": null,
+            "spell_id": 1217384,
+            "sections": [
+              {
+                "title": "Malefic Empowerment",
+                "body_text": null,
+                "spell_id": 1226469,
+                "sections": []
+              },
+              {
+                "title": "Felshield",
+                "body_text": null,
+                "spell_id": 1217415,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Demonic Gateway",
+            "body_text": null,
+            "spell_id": 1214675,
+            "sections": []
+          },
+          {
+            "title": "Chaos Bolt",
+            "body_text": null,
+            "spell_id": 474375,
+            "sections": []
+          },
+          {
+            "title": "Fingers of Gul'dan",
+            "body_text": null,
+            "spell_id": 474457,
+            "sections": [
+              {
+                "title": "Wild Imp",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Felfire Burst",
+                    "body_text": null,
+                    "spell_id": 1223204,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Summon Vilefiend",
+            "body_text": "Lithiel summons a vilefiend that attacks players.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Shadow Bite",
+                "body_text": null,
+                "spell_id": 1217881,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Summon Infernal",
+            "body_text": "Summons a slow but powerful Infernal that fixates onto players.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Felfire Core",
+                "body_text": null,
+                "spell_id": 1231262,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Searing Fel Flame",
+            "body_text": null,
+            "spell_id": 1216945,
+            "sections": []
+          }
+        ]
+      }
+    },
+    "enemies": {
+      "236085": {
+        "health": 1297302,
+        "count": 1,
+        "type": "Beast",
+        "spells": {
+          "1214966": [],
+          "1216538": [
+            "magic"
+          ]
+        }
+      },
+      "236073": {
+        "health": 1945953,
+        "count": 3,
+        "type": "Humanoid",
+        "spells": {
+          "1216300": [
+            "bleed"
+          ]
+        }
+      },
+      "236084": {
+        "health": 2854064,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1216571": [
+            "interruptible"
+          ],
+          "1229433": [
+            "magic"
+          ]
+        }
+      },
+      "236071": {
+        "health": 5189208,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "1216529": [],
+          "1295035": []
+        }
+      },
+      "252529": {
+        "health": 7783812,
+        "count": 35,
+        "type": "Humanoid",
+        "spells": {
+          "1216529": [],
+          "1256276": [],
+          "1295035": []
+        }
+      },
+      "236082": {
+        "health": 2270279,
+        "count": 6,
+        "type": "Demon",
+        "spells": {
+          "1201554": [
+            "interruptible",
+            "magic"
+          ]
+        }
+      },
+      "236902": {
+        "health": 4540557,
+        "count": 12,
+        "type": "Beast",
+        "spells": {
+          "1217633": [
+            "magic"
+          ],
+          "1256299": [],
+          "1256300": [
+            "magic"
+          ],
+          "1258537": [],
+          "1297667": []
+        }
+      },
+      "236091": {
+        "health": 2918930,
+        "count": 3,
+        "type": "Humanoid",
+        "spells": {
+          "1216284": [],
+          "1216589": [
+            "poison"
+          ]
+        }
+      },
+      "236893": {
+        "health": 2270279,
+        "count": 2,
+        "type": "Humanoid",
+        "spells": {
+          "1216970": [
+            "enrage"
+          ],
+          "1217992": [],
+          "1311136": []
+        }
+      },
+      "236897": {
+        "health": 3243255,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1216970": [
+            "enrage"
+          ]
+        }
+      },
+      "234849": {
+        "health": 486488,
+        "count": 2,
+        "type": "Demon",
+        "spells": {
+          "1223204": [
+            "interruptible"
+          ]
+        }
+      },
+      "235261": {
+        "health": 3405418,
+        "count": 5,
+        "type": "Demon",
+        "spells": {
+          "1217930": [
+            "magic"
+          ],
+          "1293101": []
+        }
+      },
+      "235268": {
+        "health": 5513534,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1214980": [
+            "interruptible"
+          ],
+          "1297693": []
+        }
+      },
+      "235267": {
+        "health": 3405418,
+        "count": 5,
+        "type": "Demon",
+        "spells": {
+          "1214922": [
+            "interruptible",
+            "enrage"
+          ],
+          "1295427": []
+        }
+      },
+      "235265": {
+        "health": 5027045,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "1217973": [
+            "curse"
+          ],
+          "1297682": [],
+          "1297684": []
+        }
+      },
+      "235257": {
+        "health": 1621628,
+        "count": 1,
+        "type": "Demon",
+        "spells": {
+          "1293022": []
+        }
+      },
+      "235465": {
+        "health": 5513534,
+        "count": 25,
+        "type": "Demon",
+        "spells": {
+          "1294770": [],
+          "1297676": [],
+          "1297691": []
+        }
+      },
+      "236905": {
+        "health": 6486510,
+        "count": 30,
+        "type": "Humanoid",
+        "spells": {
+          "1216954": [],
+          "1217930": [
+            "magic"
+          ],
+          "1217937": [],
+          "1302007": []
+        }
+      },
+      "235322": {
+        "health": 8432463,
+        "count": 35,
+        "type": "Mechanical",
+        "spells": {
+          "1215961": [],
+          "1294824": [],
+          "1294836": [],
+          "1294870": []
+        }
+      },
+      "234647": {
+        "health": 23648734,
+        "count": 0,
+        "type": "Demon",
+        "spells": {
+          "473898": [],
+          "474197": [],
+          "474234": [],
+          "1214641": [],
+          "1295453": []
+        }
+      },
+      "234648": {
+        "health": 20270343,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "474238": [],
+          "1214959": [],
+          "1217989": [],
+          "1223906": [],
+          "1230298": [],
+          "1264095": []
+        }
+      },
+      "234649": {
+        "health": 23648734,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "474478": [],
+          "474515": [
+            "poison"
+          ],
+          "1214357": [],
+          "1218347": [
+            "bleed",
+            "interruptible"
+          ],
+          "1222795": [
+            "poison"
+          ]
+        }
+      },
+      "234660": {
+        "health": 20270343,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1217464": [],
+          "1228198": [
+            "magic"
+          ],
+          "1230304": [],
+          "1253811": []
+        }
+      },
+      "234763": {
+        "health": 17567631,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "474375": [
+            "interruptible"
+          ],
+          "474408": [],
+          "474462": [],
+          "1214675": [],
+          "1217345": [],
+          "1217415": [],
+          "1217881": [],
+          "1226469": [],
+          "1287627": [
+            "interruptible"
+          ]
+        }
+      },
+      "234799": {
+        "health": 1621628,
+        "count": 0,
+        "type": "Demon",
+        "spells": {
+          "1293101": []
+        }
+      },
+      "234852": {
+        "health": 459705,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1217099": [
+            "interruptible"
+          ],
+          "1222598": [],
+          "1266241": []
+        }
+      },
+      "234860": {
+        "health": 648651,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "474766": [],
+          "474768": []
+        }
+      },
+      "234984": {
+        "health": 648651,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "44427": [],
+          "1214260": [],
+          "1214487": []
+        }
+      },
+      "235520": {
+        "health": 1013518,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "5543": [],
+          "1214650": []
+        }
+      },
+      "235841": {
+        "health": 648651,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1216074": []
+        }
+      },
+      "236088": {
+        "health": 10000,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1219468": []
+        }
+      },
+      "236525": {
+        "health": 648651,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1213658": [
+            "interruptible",
+            "enrage"
+          ]
+        }
+      },
+      "237626": {
+        "health": 459705,
+        "count": 0,
+        "type": "Demon",
+        "spells": {
+          "1223204": [
+            "interruptible"
+          ],
+          "1226469": []
+        }
+      },
+      "238414": {
+        "health": 202703433,
+        "count": 0,
+        "type": "Demon",
+        "spells": {
+          "1231256": [],
+          "1231262": []
+        }
+      },
+      "240289": {
+        "health": 648651,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1216076": []
+        }
+      },
+      "253081": {
+        "health": 648651,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1257877": [
+            "interruptible"
+          ]
+        }
+      },
+      "253324": {
+        "health": 648651,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1214966": [],
+          "1216538": [
+            "magic"
+          ]
+        }
+      },
+      "255050": {
+        "health": 5405427,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1264106": [
+            "interruptible"
+          ]
+        }
+      },
+      "255604": {
+        "health": 2270279,
+        "count": 6,
+        "type": "Demon",
+        "spells": {
+          "1201554": [
+            "interruptible",
+            "magic"
+          ]
+        }
+      },
+      "263940": {
+        "health": 648651,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1218465": [],
+          "1218466": [],
+          "1218467": [],
+          "1218468": [],
+          "1218508": [],
+          "1255881": []
+        }
+      },
+      "272246": {
+        "health": 10000,
+        "count": 0,
+        "type": "Demon",
+        "spells": {
+          "1293101": []
+        }
+      }
+    }
+  },
+  "399": {
+    "journal": {
+      "2488": {
+        "description": "Melidrussa Chillworn leads the Primalist infusion efforts in the Ruby Life Pools. Her fervent belief is that she is protecting young dragon eggs from the influence of the titans and cleansing them from the stain of Order magic. She will stop at nothing to fulfill her calling and return the eggs to what she believes is their natural state.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Tank",
+                "body_text": "$bullet;[Awaken Whelps] causes many Infused Whelps to swarm the party.\r\n$bullet;Melidrussa's Infused Whelps apply [Cold Claws] to their current target until defeated.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Awaken Whelps] causes many Infused Whelps to swarm the party.\r\n$bullet;[Chillstorm] and [Hailburst] cause significant damage.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healer",
+                "body_text": "$bullet;[Chillstorm] and [Hailburst] cause significant damage.\r\n$bullet;Melidrussa's Infused Whelps apply [Cold Claws] to their current target until defeated.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tank",
+                "body_text": "$bullet;[Awaken Whelps] causes many Infused Whelps to swarm the party.\r\n$bullet;Melidrussa's Infused Whelps apply [Cold Claws] to their current target until defeated.\r\n$bullet;[Frost Overload] becomes deadly quickly unless stopped.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Frost Overload] becomes deadly quickly unless stopped.\r\n$bullet;[Awaken Whelps] causes many Infused Whelps to swarm the party.\r\n$bullet;[Chillstorm] and [Hailburst] cause significant damage.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healer",
+                "body_text": "$bullet;[Chillstorm] and [Hailburst] cause significant damage.\r\n$bullet;[Frost Overload] becomes deadly quickly unless stopped.\r\n$bullet;Melidrussa's Infused Whelps apply [Cold Claws] to their current target until defeated.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Awaken Whelps",
+            "body_text": null,
+            "spell_id": 373046,
+            "sections": [
+              {
+                "title": "Infused Whelp",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Cold Claws",
+                    "body_text": null,
+                    "spell_id": 1305233,
+                    "sections": [
+                      {
+                        "title": "Frozen Solid",
+                        "body_text": null,
+                        "spell_id": 373593,
+                        "sections": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Frost Overload",
+            "body_text": null,
+            "spell_id": 373680,
+            "sections": [
+              {
+                "title": "Ice Bulwark",
+                "body_text": null,
+                "spell_id": 372988,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Chillstorm",
+            "body_text": null,
+            "spell_id": 372851,
+            "sections": [
+              {
+                "title": "Storm's Eye",
+                "body_text": null,
+                "spell_id": 372963,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Hailburst",
+            "body_text": null,
+            "spell_id": 396044,
+            "sections": [
+              {
+                "title": "Hailbombs",
+                "body_text": null,
+                "spell_id": 384024,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Frigid Shard",
+            "body_text": null,
+            "spell_id": 372808,
+            "sections": []
+          }
+        ]
+      },
+      "2485": {
+        "description": "As Primalist forces assault the Ruby Life Pools from all sides, it falls to Kokia and her Blazebound lieutenants to capture precious eggs from overwhelmed defenders, all while spreading flame and havoc as they go.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Throughout the fight, Kokia alternates between hurling [Molten Boulders] at players and pummeling her target with [Searing Blows].\r\n\r\nUpon reaching 100 energy, Kokia performs a [Ritual of Blazebinding].",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Tank",
+                "body_text": "$bullet;[Searing Blows] applies additional [Searing Wounds] with each hit.\r\n$bullet;[Blaze Volley] inflicts significant damage to all players unless interrupted.\r\n$bullet;Blazebound Firestorms from [Ritual of Blazebinding] cast damaging abilities until defeated.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;Blazebound Firestorms from [Ritual of Blazebinding] cast damaging abilities until defeated.\r\n$bullet;[Blaze Volley] inflicts significant damage to all players unless interrupted.\r\n$bullet;[Molten Boulder] inflicts heavy Fire damage and knocks away any player it hits.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healer",
+                "body_text": "$bullet;[Inferno] inflicts significant damage to all players.\r\n$bullet;[Ritual of Blazebinding] inflicts significant damage to the targeted player.\r\n$bullet;[Molten Boulder] inflicts heavy Fire damage and knocks away any player it hits.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Ritual of Blazebinding",
+            "body_text": null,
+            "spell_id": 372863,
+            "sections": [
+              {
+                "title": "Blazebound Firestorm",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Burnout",
+                    "body_text": null,
+                    "spell_id": 373087,
+                    "sections": [
+                      {
+                        "title": "Scorched Earth",
+                        "body_text": null,
+                        "spell_id": 372820,
+                        "sections": []
+                      }
+                    ]
+                  },
+                  {
+                    "title": "Blaze Volley",
+                    "body_text": null,
+                    "spell_id": 373017,
+                    "sections": []
+                  },
+                  {
+                    "title": "Inferno",
+                    "body_text": null,
+                    "spell_id": 384823,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Molten Boulder",
+            "body_text": null,
+            "spell_id": 372107,
+            "sections": [
+              {
+                "title": "Scorched Earth",
+                "body_text": null,
+                "spell_id": 372820,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Searing Blows",
+            "body_text": null,
+            "spell_id": 372858,
+            "sections": [
+              {
+                "title": "Searing Wounds",
+                "body_text": null,
+                "spell_id": 372860,
+                "sections": []
+              }
+            ]
+          }
+        ]
+      },
+      "2503": {
+        "description": "Kyrakka and Erkhart roam the skies above the Ruby Life Pools coordinating attacks on the shrine below, while also taking out any interfering dragons. If left unchecked, they will burn the Life Pools to the ground and blow the remaining ash away in a cleansing elemental storm.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Kyrakka begins the battle airborne, breathing flames and spitting fire from around the Ruby Overlook, whilst Erkhart intercepts players directly.\r\n\r\nUpon either of them reaching 40% health, Kyrakka lands so Erkhart can remount, battling players atop Kyrakka.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Tank",
+                "body_text": "$bullet; Erkhart's [Stormslam] inflicts high damage.\r\n$bullet; Kyrakka's [Inferno Spit] denies space with resultant [Flaming Embers].\r\n$bullet; Erkhart's [Winds of Change] push players and Kyrakka's [Flaming Embers].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; Kyrakka's [Inferno Spit] denies space with resultant [Flaming Embers].\r\n$bullet; Erkhart's [Winds of Change] push players and Kyrakka's [Flaming Embers].\r\n$bullet; Erkhart's [Interrupting Cloudburst] interrupts casts.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healer",
+                "body_text": "$bullet; Kyrakka's [Inferno Spit] inflicts significant damage to players.\r\n$bullet; Erkhart's [Interrupting Cloudburst] interrupts casts.\r\n$bullet; Erkhart's [Winds of Change] push players and Kyrakka's [Flaming Embers].",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Kyrakka",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Inferno Spit",
+                "body_text": null,
+                "spell_id": 381862,
+                "sections": [
+                  {
+                    "title": "Flaming Embers",
+                    "body_text": null,
+                    "spell_id": 384773,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Roaring Firebreath",
+                "body_text": null,
+                "spell_id": 381525,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Erkhart Stormvein",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Winds of Change",
+                "body_text": null,
+                "spell_id": 381517,
+                "sections": []
+              },
+              {
+                "title": "Interrupting Cloudburst",
+                "body_text": null,
+                "spell_id": 381516,
+                "sections": []
+              },
+              {
+                "title": "Stormslam",
+                "body_text": null,
+                "spell_id": 381512,
+                "sections": []
+              },
+              {
+                "title": "Stormslam",
+                "body_text": null,
+                "spell_id": 381512,
+                "sections": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "enemies": {
+      "188244": {
+        "health": 6486510,
+        "count": 25,
+        "type": "Elemental",
+        "spells": {
+          "372730": [],
+          "372793": [],
+          "1305201": [],
+          "1310489": []
+        }
+      },
+      "187969": {
+        "health": 3567581,
+        "count": 5,
+        "type": "Humanoid",
+        "spells": {
+          "371471": [],
+          "1305225": []
+        }
+      },
+      "188011": {
+        "health": 3567581,
+        "count": 5,
+        "type": "Elemental",
+        "spells": {
+          "384933": [
+            "interruptible"
+          ],
+          "1307205": []
+        }
+      },
+      "188067": {
+        "health": 2918930,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "371489": [],
+          "371984": [
+            "interruptible"
+          ],
+          "372743": [
+            "interruptible"
+          ]
+        }
+      },
+      "187894": {
+        "health": 1297302,
+        "count": 0,
+        "type": "Dragonkin",
+        "spells": {
+          "1305234": [
+            "magic"
+          ]
+        }
+      },
+      "187897": {
+        "health": 9729765,
+        "count": 30,
+        "type": "Dragonkin",
+        "spells": {
+          "372047": [],
+          "372087": []
+        }
+      },
+      "188252": {
+        "health": 20270343,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "372808": [
+            "interruptible"
+          ],
+          "372851": [],
+          "372988": [],
+          "373046": [],
+          "373680": [],
+          "373727": [],
+          "384024": [],
+          "396044": []
+        }
+      },
+      "190205": {
+        "health": 648651,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "1307372": []
+        }
+      },
+      "197698": {
+        "health": 8432463,
+        "count": 48,
+        "type": "Dragonkin",
+        "spells": {
+          "391726": [],
+          "392395": [],
+          "392640": [
+            "magic"
+          ],
+          "1310599": []
+        }
+      },
+      "190207": {
+        "health": 2918930,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "373693": [],
+          "384194": [
+            "interruptible"
+          ]
+        }
+      },
+      "190034": {
+        "health": 7135161,
+        "count": 25,
+        "type": "Elemental",
+        "spells": {
+          "373614": [],
+          "373692": [],
+          "384139": [],
+          "1305955": [
+            "interruptible"
+          ]
+        }
+      },
+      "190206": {
+        "health": 3567581,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "373972": [
+            "magic"
+          ],
+          "385536": []
+        }
+      },
+      "195119": {
+        "health": 10740817,
+        "count": 10,
+        "type": "Humanoid",
+        "spells": {
+          "385310": [
+            "interruptible"
+          ],
+          "385311": [],
+          "385312": [],
+          "385313": []
+        }
+      },
+      "197697": {
+        "health": 9729765,
+        "count": 40,
+        "type": "Dragonkin",
+        "spells": {
+          "391723": [],
+          "392394": [],
+          "392569": []
+        }
+      },
+      "189232": {
+        "health": 21621700,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "372107": [],
+          "372820": [],
+          "372858": [],
+          "372860": [],
+          "372863": []
+        }
+      },
+      "197982": {
+        "health": 3567581,
+        "count": 5,
+        "type": "Humanoid",
+        "spells": {
+          "392406": []
+        }
+      },
+      "197509": {
+        "health": 1621628,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "391031": [
+            "magic"
+          ],
+          "392399": []
+        }
+      },
+      "198047": {
+        "health": 5189208,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "392576": [
+            "interruptible"
+          ],
+          "1306366": [],
+          "1307502": []
+        }
+      },
+      "197535": {
+        "health": 6486510,
+        "count": 30,
+        "type": "Humanoid",
+        "spells": {
+          "1306366": [],
+          "1307511": [],
+          "1310355": []
+        }
+      },
+      "190485": {
+        "health": 15202758,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "181089": [],
+          "381512": [
+            "magic"
+          ],
+          "381516": [],
+          "381517": []
+        }
+      },
+      "190484": {
+        "health": 13513562,
+        "count": 0,
+        "type": "Dragonkin",
+        "spells": {
+          "381525": [],
+          "381602": [],
+          "384773": []
+        }
+      },
+      "189886": {
+        "health": 2162170,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "373017": [
+            "interruptible"
+          ],
+          "373087": [],
+          "384823": []
+        }
+      },
+      "189893": {
+        "health": 810814,
+        "count": 0,
+        "type": "Dragonkin",
+        "spells": {
+          "1305234": [
+            "magic"
+          ]
+        }
+      },
+      "194622": {
+        "health": 613089,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "1307372": []
+        }
+      }
+    }
+  },
+  "250": {
+    "journal": {
+      "2142": {
+        "description": "A pair of powerful sethrak that are blessed by the storm and charged with guarding the temple's entrance.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Adderis is a fearsome warrior, unleashing deadly electric attacks like his twofold strike [Thunder and Lightning].\r\n\r\nAspix is a relentless caster, creating powerful winds that damage and disrupt.\r\n\r\nAdderis and Aspix alternate being [Storm Blessed], which grants them immunity to damage.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Storm Blessed] alternates between the sethrak duo which grants damage immunity.\r\n$bullet;[Thunder and Lightning] is a two part attack, the first of which inflicts damage divided evenly between players hit.\r\n$bullet;[Gale Force] violently pushes players backwards.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet;[Tempest Winds] inflict damage to players upon creation.\r\n$bullet;[Thunder and Lightning] is a two part attack, the first of which inflicts damage divided evenly between players hit.\r\n$bullet;[Gale Force] violently pushes players backwards.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet;[Overload] causes Adderis to rapidly inflict additional Nature damage with each attack.\r\n$bullet;[Thunder and Lightning] is a two part attack, the first of which inflicts damage divided evenly between players hit.\r\n$bullet;[Gale Force] violently pushes players backwards.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Storm Blessed",
+            "body_text": null,
+            "spell_id": 1310311,
+            "sections": []
+          },
+          {
+            "title": "Frenzy",
+            "body_text": null,
+            "spell_id": 1292035,
+            "sections": []
+          },
+          {
+            "title": "Adderis",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Thunder and Lightning",
+                "body_text": null,
+                "spell_id": 1288049,
+                "sections": []
+              },
+              {
+                "title": "Overload",
+                "body_text": null,
+                "spell_id": 1288428,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Aspix",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Tempest Winds",
+                "body_text": null,
+                "spell_id": 1288864,
+                "sections": []
+              },
+              {
+                "title": "Tempest Winds",
+                "body_text": null,
+                "spell_id": 1288864,
+                "sections": []
+              },
+              {
+                "title": "Gale Force",
+                "body_text": null,
+                "spell_id": 1289059,
+                "sections": []
+              },
+              {
+                "title": "Gust",
+                "body_text": null,
+                "spell_id": 1288455,
+                "sections": []
+              }
+            ]
+          }
+        ]
+      },
+      "2143": {
+        "description": "Merektha is the product of foul experiments to produce an army of unstoppable beasts. With her clutch of eggs beginning to hatch, this mother is on the hunt for victims to serve as food for her ravenous children.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Hatch] releases snakes that join the fight.\r\n$bullet;Toxic Viper's [Poison Spit] can be interrupted.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Hatch] releases snakes that join the fight.\r\n$bullet;Toxic Viper's [Poison Spit] can be interrupted.\r\n$bullet;[A Knot of Snakes] stuns allies until destroyed or incapacitated.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet;[Serpentstorm] inflicts significant damage to all players.\r\n$bullet;[Burrowquake] damages the party while Merektha [Burrows].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet;[Serpentstorm] inflicts significant damage to all players.\r\n$bullet;[A Knot of Snakes] damages allies while active.\r\n$bullet;[Burrowquake] damages the party while Merektha [Burrows].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet;[Lightning Bite] inflicts significant damage to Merektha's current target.\r\n$bullet;Storm Serpent's [Storm Catalyst] leaves [Lingering Storm] underneath the creature.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet;[Lightning Bite] inflicts significant damage to Merektha's current target.\r\n$bullet;Storm Serpent's [Storm Catalyst] leaves [Lingering Storm] underneath the creature.\r\n$bullet;[Hatch] releases snakes that join the fight.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Hatch",
+            "body_text": null,
+            "spell_id": 1289205,
+            "sections": [
+              {
+                "title": "Toxic Viper",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Poison Spit",
+                    "body_text": null,
+                    "spell_id": 267027,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Storm Serpent",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Storm Catalyst",
+                    "body_text": null,
+                    "spell_id": 1291622,
+                    "sections": [
+                      {
+                        "title": "Lingering Storm",
+                        "body_text": null,
+                        "spell_id": 1289589,
+                        "sections": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Burrow",
+            "body_text": null,
+            "spell_id": 264206,
+            "sections": [
+              {
+                "title": "Burrowquake",
+                "body_text": null,
+                "spell_id": 1300227,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "A Knot of Snakes",
+            "body_text": null,
+            "spell_id": 263958,
+            "sections": []
+          },
+          {
+            "title": "Lightning Bite",
+            "body_text": null,
+            "spell_id": 1290797,
+            "sections": []
+          },
+          {
+            "title": "Thunder Spit",
+            "body_text": null,
+            "spell_id": 1289109,
+            "sections": [
+              {
+                "title": "Lingering Storm",
+                "body_text": null,
+                "spell_id": 1289589,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Serpentstorm",
+            "body_text": null,
+            "spell_id": 1293048,
+            "sections": [
+              {
+                "title": "Storm Strikes",
+                "body_text": null,
+                "spell_id": 1296912,
+                "sections": []
+              }
+            ]
+          }
+        ]
+      },
+      "2144": {
+        "description": "With the corruption of her temple, Sethraliss' command of lightning has created twisted elementals that roam the sunken chambers. Formed by this aberrant energy, Galvazzt seeks to grow in power by any means.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Galvazzt attempts to accumulate energy with [Lightning Spires]. Players standing between Galvazzt and these spires become [Galvanized], preventing energy from flowing to Galvazzt.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; [Lightning Spires] form at targeted locations, inflicting damage and knocking away any players struck.\r\n$bullet;Standing between Galvazzt and his [Lightning Spires] prevents Galvazzt from unleashing [Consume Charge].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet;Standing between Galvazzt and his [Lightning Spires] prevents Galvazzt from unleashing [Consume Charge].\r\n$bullet;[Galvanized] inflicts significant damage to players.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet; [Lightning Spires] form at targeted locations, inflicting damage and knocking away any players struck.\r\n$bullet;[Galvanized] significantly increases Physical damage taken.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Lightning Spire",
+            "body_text": null,
+            "spell_id": 1291618,
+            "sections": [
+              {
+                "title": "Energize",
+                "body_text": null,
+                "spell_id": 265973,
+                "sections": [
+                  {
+                    "title": "Consume Charge",
+                    "body_text": null,
+                    "spell_id": 266512,
+                    "sections": [
+                      {
+                        "title": "Capacitance",
+                        "body_text": null,
+                        "spell_id": 266511,
+                        "sections": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "title": "Galvanized",
+                "body_text": null,
+                "spell_id": 266923,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Induction",
+            "body_text": null,
+            "spell_id": 1290531,
+            "sections": [
+              {
+                "title": "Induction Field",
+                "body_text": null,
+                "spell_id": 1291815,
+                "sections": []
+              }
+            ]
+          }
+        ]
+      },
+      "2145": {
+        "description": "The Heart of Sethraliss is in the grips of a terrible power that seeks to corrupt her. Her avatar must be restored before this evil takes root and she is reborn as a dark loa capable of destroying the whole of Vol'dun.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Essence Defilers arrive to channel [Defiling Taint] upon the Avatar of Sethraliss until their defeat. As part of their assault, Corrupted Guardians appear whose [Corrupted Lifeforce] can be cleansed to heal the Avatar. Upon removal of [Defiling Taint], Faithless Tormentors fixate on the party's healer and attempt to strike them with [Shadowlash]. The battle ends once players fully restore the Avatar.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;Defeating all Essence Defilers cleanses the Avatar of [Defiling Taint].\r\n$bullet;The Avatar consumes [Corrupted Lifeforce] from Corrupted Guardians once purified.\r\n$bullet;After damaging Faithless Tormentors, the Avatar [Siphons the Weak].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet;The battle ends in victory once the Avatar reaches full health.\r\n$bullet;Essence Defilers' [Defiling Taint] and Faithless Tormentors' [Shadowlash] thwart healing.\r\n$bullet;The Avatar consumes [Corrupted Lifeforce] from Corrupted Guardians once purified.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet;Corrupted Guardians inflict significant Physical and Shadow damage with [Tainted Strike].\r\n$bullet;The Avatar consumes [Corrupted Lifeforce] from Corrupted Guardians once purified.\r\n$bullet;Essence Defilers' [Defiling Taint] and Faithless Tormentors' [Shadowlash] thwart healing.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Stage One: Defiler's Corruption",
+            "body_text": "Jakra'zet's allies arrive to prevent healing energy from reaching the Avatar.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Corrupted Guardian",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Unstable Corruption",
+                    "body_text": null,
+                    "spell_id": 1302761,
+                    "sections": [
+                      {
+                        "title": "Corrupted Lifeforce",
+                        "body_text": null,
+                        "spell_id": 1300871,
+                        "sections": [
+                          {
+                            "title": "Corruption",
+                            "body_text": null,
+                            "spell_id": 1300877,
+                            "sections": []
+                          },
+                          {
+                            "title": "Consume Lifeforce",
+                            "body_text": null,
+                            "spell_id": 1302895,
+                            "sections": []
+                          },
+                          {
+                            "title": "Corruption Burst",
+                            "body_text": null,
+                            "spell_id": 1302826,
+                            "sections": []
+                          }
+                        ]
+                      },
+                      {
+                        "title": "Corrupted Lifeforce",
+                        "body_text": null,
+                        "spell_id": 1300871,
+                        "sections": [
+                          {
+                            "title": "Corruption",
+                            "body_text": null,
+                            "spell_id": 1300877,
+                            "sections": []
+                          },
+                          {
+                            "title": "Consume Lifeforce",
+                            "body_text": null,
+                            "spell_id": 1302895,
+                            "sections": []
+                          },
+                          {
+                            "title": "Corruption Burst",
+                            "body_text": null,
+                            "spell_id": 1302826,
+                            "sections": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "title": "Tainted Strike",
+                    "body_text": null,
+                    "spell_id": 1300803,
+                    "sections": []
+                  },
+                  {
+                    "title": "Vile Charge",
+                    "body_text": null,
+                    "spell_id": 1302616,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Twisted Hexxer",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Flame Shock",
+                    "body_text": null,
+                    "spell_id": 1302158,
+                    "sections": []
+                  },
+                  {
+                    "title": "Latent Hex",
+                    "body_text": null,
+                    "spell_id": 1302153,
+                    "sections": [
+                      {
+                        "title": "Hex Muck",
+                        "body_text": null,
+                        "spell_id": 1300684,
+                        "sections": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "title": "Essence Defiler",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Defiling Taint",
+                    "body_text": null,
+                    "spell_id": 1301199,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Stage Two: Tormentor's Fixation",
+            "body_text": "Faithless Tormentors attempt to disrupt the Avatar's restoration.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Faithless Tormentor",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Shadowlash",
+                    "body_text": null,
+                    "spell_id": 1300714,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Avatar of Sethraliss",
+            "body_text": "The battle concludes upon full restoration of the Avatar of Sethraliss.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Siphon the Weak",
+                "body_text": null,
+                "spell_id": 1302296,
+                "sections": []
+              },
+              {
+                "title": "Agony of Sethraliss",
+                "body_text": null,
+                "spell_id": 1301253,
+                "sections": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "enemies": {
+      "134600": {
+        "health": 3567581,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1292585": [],
+          "1308113": []
+        }
+      },
+      "134616": {
+        "health": 2594604,
+        "count": 5,
+        "type": "Beast",
+        "spells": {
+          "1291399": []
+        }
+      },
+      "134990": {
+        "health": 2918930,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1291262": [
+            "interruptible"
+          ]
+        }
+      },
+      "134991": {
+        "health": 5837859,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "265966": [],
+          "1291468": []
+        }
+      },
+      "134602": {
+        "health": 3243255,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1295635": [],
+          "1308100": [
+            "interruptible",
+            "poison"
+          ]
+        }
+      },
+      "134629": {
+        "health": 5189208,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "262046": [],
+          "272655": [],
+          "1291399": [],
+          "1292990": []
+        }
+      },
+      "135562": {
+        "health": 3243255,
+        "count": 7,
+        "type": "Beast",
+        "spells": {
+          "1308148": [
+            "interruptible",
+            "poison"
+          ]
+        }
+      },
+      "135846": {
+        "health": 3243255,
+        "count": 5,
+        "type": "Beast",
+        "spells": {
+          "1293133": [],
+          "1310396": []
+        }
+      },
+      "139422": {
+        "health": 3243255,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1291399": [],
+          "1292990": []
+        }
+      },
+      "134686": {
+        "health": 4216232,
+        "count": 16,
+        "type": "Beast",
+        "spells": {
+          "272654": [],
+          "272655": []
+        }
+      },
+      "134364": {
+        "health": 3243255,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "269896": [],
+          "1293307": [
+            "interruptible",
+            "curse"
+          ]
+        }
+      },
+      "139425": {
+        "health": 3243255,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1310683": [
+            "interruptible"
+          ]
+        }
+      },
+      "133384": {
+        "health": 15540596,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "264172": [],
+          "1289205": [],
+          "1289589": [],
+          "1289602": [],
+          "1290031": [],
+          "1290797": [],
+          "1293048": [],
+          "1296912": [],
+          "1297034": []
+        }
+      },
+      "136076": {
+        "health": 5189208,
+        "count": 25,
+        "type": "Elemental",
+        "spells": {
+          "1293464": [
+            "magic"
+          ],
+          "1293475": [],
+          "1293650": []
+        }
+      },
+      "134599": {
+        "health": 3243255,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "269116": [],
+          "1291262": [
+            "interruptible"
+          ],
+          "1296052": [
+            "magic"
+          ],
+          "1310739": [
+            "magic"
+          ]
+        }
+      },
+      "134691": {
+        "health": 3243255,
+        "count": 5,
+        "type": "Elemental",
+        "spells": {
+          "264763": [],
+          "1310693": []
+        }
+      },
+      "136250": {
+        "health": 4864883,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "268013": [
+            "interruptible"
+          ],
+          "1300666": [],
+          "1300684": [],
+          "1311980": []
+        }
+      },
+      "133392": {
+        "health": 23783870,
+        "count": 0,
+        "type": "Undead",
+        "spells": {}
+      },
+      "265057": {
+        "health": 648651,
+        "count": 5,
+        "type": "Humanoid",
+        "spells": {}
+      },
+      "134388": {
+        "health": 540542,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "263958": []
+        }
+      },
+      "134389": {
+        "health": 324056,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "267027": [
+            "interruptible",
+            "poison"
+          ]
+        }
+      },
+      "134390": {
+        "health": 2972984,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1289589": [],
+          "1291622": []
+        }
+      },
+      "134487": {
+        "health": 369424,
+        "count": 0,
+        "type": "Beast",
+        "spells": {}
+      },
+      "135007": {
+        "health": 6486510,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "1303443": [],
+          "1303452": [],
+          "1303486": []
+        }
+      },
+      "135445": {
+        "health": 235746,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {}
+      },
+      "139097": {
+        "health": 214315,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "273225": []
+        }
+      },
+      "139108": {
+        "health": 3243255,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "267483": [],
+          "273241": []
+        }
+      },
+      "139131": {
+        "health": 10000,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {}
+      },
+      "240681": {
+        "health": 324056,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1303596": []
+        }
+      },
+      "262530": {
+        "health": 10135171,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "263425": [],
+          "1288087": [],
+          "1288428": [],
+          "1310311": []
+        }
+      },
+      "262822": {
+        "health": 10135171,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1288457": [],
+          "1288864": [],
+          "1289062": [],
+          "1292035": [],
+          "1310311": []
+        }
+      },
+      "263181": {
+        "health": 10000,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1289208": [],
+          "1296738": []
+        }
+      },
+      "263658": {
+        "health": 21621698,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "1290531": [],
+          "1291815": []
+        }
+      },
+      "264785": {
+        "health": 810814,
+        "count": 0,
+        "type": "Beast",
+        "spells": {}
+      },
+      "268317": {
+        "health": 1135139,
+        "count": 5,
+        "type": "Humanoid",
+        "spells": {
+          "1300704": [],
+          "1300714": []
+        }
+      },
+      "268344": {
+        "health": 1702709,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "1300803": [],
+          "1302616": [],
+          "1302761": []
+        }
+      },
+      "268364": {
+        "health": 224234,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1300871": [],
+          "1302826": [],
+          "1302897": [],
+          "1312214": []
+        }
+      },
+      "268427": {
+        "health": 4324340,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1301199": []
+        }
+      },
+      "268491": {
+        "health": 2351360,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1300684": [],
+          "1302153": [],
+          "1302158": [
+            "interruptible"
+          ]
+        }
+      },
+      "268729": {
+        "health": 486488,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1300704": [],
+          "1300714": []
+        }
+      },
+      "139110": {
+        "health": 972977,
+        "count": 5,
+        "type": "Humanoid",
+        "spells": {
+          "267483": []
+        }
+      },
+      "135971": {
+        "health": 648651,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {}
+      },
+      "263383": {
+        "health": 1081085,
+        "count": 0,
+        "type": "Beast",
+        "spells": {}
+      },
+      "268747": {
+        "health": 10000,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {}
+      },
+      "269227": {
+        "health": 1945953,
+        "count": 5,
+        "type": "Humanoid",
+        "spells": {}
+      }
+    }
+  },
+  "584": {
+    "journal": {
+      "2769": {
+        "description": "The Lightbloom has suffered a terrible defeat, but like the rutaani it imbues, it changes. These Lightblossomed rutaani fanatically propagate their vicious and invasive garden.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "The trio of Lightbloom rutaani work in tandem to sow and nurture a Lightblossom garden. Meittik creates [Fertile Loam] that is then planted by Lekshi's [Lightsower Dash]. Kezkitt rapidly germinates the flora with [Lightblossom Beam] until they burst in a [Lightbloom Overgrowth].",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; Lightblossoms gain an increasing amount of [Light-Gorged] unless the rays of [Lightblossom Beam] are blocked.\r\n$bullet; Damage taken is shared between the trio with [Thicket's Trinity].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; [Lightbloom Overgrowth] inflicts higher damage based on applications of [Light-Gorged].\r\n$bullet; [Thornblade] causes random players to bleed for high damage.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; [Lightbloom Overgrowth] inflicts higher damage based on applications of [Light-Gorged].\r\n$bullet; [Thornblade] causes random players to bleed for high damage.\r\n$bullet; [Bedrock Surge] inflicts periodic damage to all players.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tank",
+                "body_text": "$bullet; [Bedrock Slam] creates patches of [Fertile Loam] near the location of the target.\r\n$bullet; Lightblossoms gain an increasing amount of [Light-Gorged] unless the rays of [Lightblossom Beam] are blocked.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Thicket's Trinity",
+            "body_text": null,
+            "spell_id": 1253028,
+            "sections": []
+          },
+          {
+            "title": "Meittik",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Bedrock Slam",
+                "body_text": null,
+                "spell_id": 1234753,
+                "sections": [
+                  {
+                    "title": "Fertile Loam",
+                    "body_text": null,
+                    "spell_id": 1234782,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Bedrock Slam",
+                "body_text": null,
+                "spell_id": 1234753,
+                "sections": [
+                  {
+                    "title": "Fertile Loam",
+                    "body_text": null,
+                    "spell_id": 1234782,
+                    "sections": []
+                  },
+                  {
+                    "title": "Bedrock Surge",
+                    "body_text": null,
+                    "spell_id": 1276586,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Lekshi",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Lightsower Dash",
+                "body_text": null,
+                "spell_id": 1234850,
+                "sections": [
+                  {
+                    "title": "Lightblossom",
+                    "body_text": null,
+                    "spell_id": null,
+                    "sections": [
+                      {
+                        "title": "Light-Gorged",
+                        "body_text": null,
+                        "spell_id": 1235729,
+                        "sections": []
+                      },
+                      {
+                        "title": "Lightbloom Overgrowth",
+                        "body_text": null,
+                        "spell_id": 1235751,
+                        "sections": [
+                          {
+                            "title": "Light-Scorched Earth",
+                            "body_text": null,
+                            "spell_id": 1235814,
+                            "sections": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "title": "Thornblade",
+                "body_text": null,
+                "spell_id": 1235640,
+                "sections": []
+              },
+              {
+                "title": "Thornblade",
+                "body_text": null,
+                "spell_id": 1235640,
+                "sections": [
+                  {
+                    "title": "Fan Of Thorns",
+                    "body_text": null,
+                    "spell_id": 1261011,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Kezkitt",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Lightblossom Beam",
+                "body_text": null,
+                "spell_id": 1235564,
+                "sections": [
+                  {
+                    "title": "Lightblossom",
+                    "body_text": null,
+                    "spell_id": null,
+                    "sections": [
+                      {
+                        "title": "Light-Gorged",
+                        "body_text": null,
+                        "spell_id": 1235729,
+                        "sections": []
+                      },
+                      {
+                        "title": "Lightbloom Overgrowth",
+                        "body_text": null,
+                        "spell_id": 1235751,
+                        "sections": [
+                          {
+                            "title": "Light-Scorched Earth",
+                            "body_text": null,
+                            "spell_id": 1235814,
+                            "sections": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "title": "Light Bolt",
+                "body_text": null,
+                "spell_id": 1235616,
+                "sections": []
+              }
+            ]
+          }
+        ]
+      },
+      "2770": {
+        "description": "Ikuzz is a fearsome carnivore who once stalked prey throughout Harandar. Now the Light Hunter has succumbed to the overwhelming power of the Lightbloom, and his insatiable hunger serves its growth.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Ikuzz entangles players in [Bloodthorn Roots] to immobilize his prey. At 100 energy, he fixates on a player with a [Bloodthirsty Gaze] and attempts to [Incise] them.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; [Bloodthorn Roots] immobilize players until the roots are destroyed.\r\n$bullet; Players targeted by [Bloodthirsty Gaze] will be [Incised] if Ikuzz reaches their location.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; [Bloodthorn Roots] immobilize players until the roots are destroyed.\r\n$bullet; [Thorncaller Roar] channels Nature damage on all players.\r\n$bullet; Players take a high amount of damage when [Incised].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tank",
+                "body_text": "$bullet; [Bloodthorn Roots] immobilize players until the roots are destroyed.\r\n$bullet; Players targeted by [Bloodthirsty Gaze] will be [Incised] if Ikuzz reaches their location.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Bloodthorn Roots",
+            "body_text": null,
+            "spell_id": 1236658,
+            "sections": []
+          },
+          {
+            "title": "Bloodthirsty Gaze",
+            "body_text": null,
+            "spell_id": 1237090,
+            "sections": [
+              {
+                "title": "Crushing Footfalls",
+                "body_text": null,
+                "spell_id": 1237093,
+                "sections": []
+              },
+              {
+                "title": "Incise",
+                "body_text": null,
+                "spell_id": 1237166,
+                "sections": [
+                  {
+                    "title": "Crunched",
+                    "body_text": null,
+                    "spell_id": 1272290,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Verdant Stomp",
+            "body_text": null,
+            "spell_id": 1236746,
+            "sections": []
+          },
+          {
+            "title": "Verdant Stomp",
+            "body_text": null,
+            "spell_id": 1236746,
+            "sections": []
+          },
+          {
+            "title": "Thorncaller Roar",
+            "body_text": null,
+            "spell_id": 1236709,
+            "sections": []
+          },
+          {
+            "title": "Lightcrazed Frenzy",
+            "body_text": null,
+            "spell_id": 1237073,
+            "sections": []
+          }
+        ]
+      },
+      "2771": {
+        "description": "The once-respected Rootwarden Ruia could not defeat the Lightbloom on his own. His wounded pride led him to drawing power from the Lightbloom and using it to punish all others instead of aiding his allies.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Lightwaden Ruia unleashes his druidic power, shapeshifting between Moonkin and Bear forms. At 40% remaining health, he returns to Haranir form and channels [Spirits of the Vale], casting all his abilities in a rapid flurry.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; [Pulverizing Strikes] launches a cone of Physical damage at each target.\r\n$bullet; [Lightfall] inflicts high damage to players within each impact.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; [Grievous Thrash] is only removed when the afflicted target reaches full health.\r\n$bullet; [Pulverizing Strikes] launches a cone of Physical damage at each target.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tank",
+                "body_text": "$bullet; In Moonkin form, Ruia's melee attacks are replaced with [Warden's Wrath].\r\n$bullet; [Pulverizing Strikes] launches a cone of Physical damage at each target.\r\n$bullet; [Lightfall] inflicts high damage to players within each impact.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Moonkin Form",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Lightfire",
+                "body_text": null,
+                "spell_id": 1239824,
+                "sections": [
+                  {
+                    "title": "Lightfire Beams",
+                    "body_text": null,
+                    "spell_id": 1239830,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Lightfall",
+                "body_text": null,
+                "spell_id": 1240098,
+                "sections": []
+              },
+              {
+                "title": "Warden's Wrath",
+                "body_text": null,
+                "spell_id": 1239821,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Bear Form",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Pulverizing Strikes",
+                "body_text": null,
+                "spell_id": 1240210,
+                "sections": [
+                  {
+                    "title": "Pulverized",
+                    "body_text": null,
+                    "spell_id": 1257094,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Grievous Thrash",
+                "body_text": null,
+                "spell_id": 1241058,
+                "sections": []
+              },
+              {
+                "title": "Mangling Claws",
+                "body_text": null,
+                "spell_id": 1272265,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Haranir Form",
+            "body_text": null,
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Spirits of the Vale",
+                "body_text": null,
+                "spell_id": 1241067,
+                "sections": []
+              }
+            ]
+          }
+        ]
+      },
+      "2772": {
+        "description": "Born from the Lightbloom's epicenter, Ziekket was spawned and incubated by Light-infested rutaani to create an unstoppable engine of the Lightbloom's expansion.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Ziekket will periodically [Awaken the Lightbloom], sprouting Lightspawn Lashers from the earth and awakening any [Dormant] ones.\r\n\r\nSurging with the Light's power, Ziekket projects a [Concentrated Lightbeam] at players that annihilates flora and fauna alike.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet; [Concentrated Lightbeam] vaporizes [Dormant] Lightspawn Lashers into [Lightsap].\r\n$bullet; Touching globules of [Lightbloom's Essence] inflicts Holy damage while increasing damage and healing done.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet; [Lightbloom's Essence] inflicts Holy damage to players, but increases damage and healing done.\r\n$bullet; [Oozing Xylem] continually inflicts Holy damage to all players.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tank",
+                "body_text": "$bullet; [Thornspike] impales Ziekket's current target.\r\n$bullet; [Awaken the Lightbloom] summons a thicket of vicious Lightspawn Lashers.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Awaken the Lightbloom",
+            "body_text": null,
+            "spell_id": 1246372,
+            "sections": [
+              {
+                "title": "Lightspawn Lasher",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Lightspore Shot",
+                    "body_text": null,
+                    "spell_id": 1247669,
+                    "sections": []
+                  },
+                  {
+                    "title": "Dormant",
+                    "body_text": null,
+                    "spell_id": 1246379,
+                    "sections": []
+                  },
+                  {
+                    "title": "Vicious Regrowth",
+                    "body_text": null,
+                    "spell_id": 1253320,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Concentrated Lightbeam",
+            "body_text": null,
+            "spell_id": 1246607,
+            "sections": [
+              {
+                "title": "Lightsap",
+                "body_text": null,
+                "spell_id": 1246660,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Lightbloom's Essence",
+            "body_text": null,
+            "spell_id": 1246858,
+            "sections": [
+              {
+                "title": "Fluorescent Outburst",
+                "body_text": null,
+                "spell_id": 1247039,
+                "sections": [
+                  {
+                    "title": "Fluorescent Shield",
+                    "body_text": null,
+                    "spell_id": 1247050,
+                    "sections": []
+                  }
+                ]
+              },
+              {
+                "title": "Lightbloom's Might",
+                "body_text": null,
+                "spell_id": 1247052,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Thornspike",
+            "body_text": null,
+            "spell_id": 1247685,
+            "sections": []
+          },
+          {
+            "title": "Oozing Xylem",
+            "body_text": null,
+            "spell_id": 1247377,
+            "sections": []
+          }
+        ]
+      }
+    },
+    "enemies": {
+      "245345": {
+        "health": 8756789,
+        "count": 7,
+        "type": "Elemental",
+        "spells": {
+          "1238158": [
+            "interruptible"
+          ],
+          "1238173": []
+        }
+      },
+      "245410": {
+        "health": 648651,
+        "count": 1,
+        "type": "Elemental",
+        "spells": {
+          "1238084": [
+            "magic"
+          ]
+        }
+      },
+      "245339": {
+        "health": 3243254,
+        "count": 6,
+        "type": "Humanoid",
+        "spells": {
+          "1238066": [
+            "bleed"
+          ]
+        }
+      },
+      "245346": {
+        "health": 5189207,
+        "count": 20,
+        "type": "Humanoid",
+        "spells": {
+          "1237855": [],
+          "1237858": [],
+          "1255205": []
+        }
+      },
+      "254850": {
+        "health": 5837858,
+        "count": 25,
+        "type": "Elemental",
+        "spells": {
+          "1242200": [],
+          "1263636": [],
+          "1271385": []
+        }
+      },
+      "245336": {
+        "health": 2918930,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1238063": [
+            "interruptible"
+          ],
+          "1238200": [
+            "interruptible"
+          ],
+          "1267029": [],
+          "1301834": [
+            "interruptible"
+          ]
+        }
+      },
+      "245484": {
+        "health": 3891906,
+        "count": 7,
+        "type": "Elemental",
+        "spells": {
+          "1238294": [
+            "interruptible"
+          ],
+          "1242200": []
+        }
+      },
+      "245473": {
+        "health": 3243254,
+        "count": 5,
+        "type": "Elemental",
+        "spells": {
+          "1242200": [],
+          "1314883": []
+        }
+      },
+      "245527": {
+        "health": 385226,
+        "count": 1,
+        "type": "Beast",
+        "spells": {
+          "1238581": [
+            "magic"
+          ],
+          "1242200": []
+        }
+      },
+      "245460": {
+        "health": 3243254,
+        "count": 7,
+        "type": "Elemental",
+        "spells": {
+          "1238232": [
+            "interruptible"
+          ],
+          "1242200": []
+        }
+      },
+      "245513": {
+        "health": 6162185,
+        "count": 25,
+        "type": "Elemental",
+        "spells": {
+          "1238368": [],
+          "1238642": []
+        }
+      },
+      "246871": {
+        "health": 5675695,
+        "count": 22,
+        "type": "Elemental",
+        "spells": {
+          "1242135": [],
+          "1242138": [],
+          "1242200": []
+        }
+      },
+      "243028": {
+        "health": 45608271,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1234753": [],
+          "1234802": [],
+          "1253028": [],
+          "1276586": []
+        }
+      },
+      "243029": {
+        "health": 45608271,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1235564": [],
+          "1235616": [
+            "interruptible"
+          ],
+          "1235828": [],
+          "1253028": []
+        }
+      },
+      "243030": {
+        "health": 45608271,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1234850": [],
+          "1235640": [
+            "bleed"
+          ],
+          "1253028": [],
+          "1261011": []
+        }
+      },
+      "245912": {
+        "health": 21283860,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1239821": [
+            "interruptible"
+          ],
+          "1239824": [],
+          "1239882": [],
+          "1239883": [],
+          "1239885": [],
+          "1239919": [],
+          "1240100": [],
+          "1240210": [],
+          "1241058": [
+            "bleed"
+          ],
+          "1241067": [],
+          "1242180": [],
+          "1242244": [],
+          "1257094": [],
+          "1272265": []
+        }
+      },
+      "247676": {
+        "health": 23648733,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "1246372": [],
+          "1246607": [],
+          "1246753": [],
+          "1246858": [],
+          "1247039": [],
+          "1247050": [],
+          "1247377": [],
+          "1247685": [
+            "bleed"
+          ]
+        }
+      },
+      "244887": {
+        "health": 23648733,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "1236709": [],
+          "1236746": [],
+          "1237073": [],
+          "1237093": [],
+          "1237166": [
+            "bleed"
+          ],
+          "1237330": [],
+          "1253410": [],
+          "1272290": []
+        }
+      },
+      "244528": {
+        "health": 10000,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1235752": []
+        }
+      },
+      "246367": {
+        "health": 540543,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1240210": [],
+          "1241058": [
+            "bleed"
+          ],
+          "1257094": []
+        }
+      },
+      "246371": {
+        "health": 540543,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1239824": [],
+          "1240100": []
+        }
+      },
+      "247755": {
+        "health": 1081085,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "1246527": [],
+          "1247669": [
+            "interruptible"
+          ],
+          "1253320": []
+        }
+      },
+      "249756": {
+        "health": 8756789,
+        "count": 60,
+        "type": "Elemental",
+        "spells": {
+          "1250100": [],
+          "1250199": [],
+          "1250813": [],
+          "1250937": [
+            "poison"
+          ]
+        }
+      },
+      "249783": {
+        "health": 648651,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1250203": []
+        }
+      },
+      "250202": {
+        "health": 648651,
+        "count": 0,
+        "type": "Elemental",
+        "spells": {
+          "1250829": []
+        }
+      },
+      "253571": {
+        "health": 405407,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1259365": [
+            "magic"
+          ]
+        }
+      }
+    }
+  },
+  "585": {
+    "journal": {
+      "2791": {
+        "description": "The domanaar's prized champion, Taz'Rah, is forced to fight against his will. Taz'Rah demands his own death from every opponent, hoping each battle will finally end his suffering.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Taz'Rah summons Ethereal Shades that perform [Nether Dash], damaging targets in a line in front of them.\r\n\r\nTaz'rah's [Dark Bloom] causes [Void Fissures] to erupt.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;Ethereal Shades periodically cast [Nether Dash] on a random player, damaging targets in a line in front of them.\r\n$bullet;[Dark Bloom] causes [Void Fissures] to erupt.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet;[Nether Dash] strikes all players in a line and inflicts Shadow damage over a long duration.\r\n$bullet;[Dark Bloom] inflicts heavy Shadow damage on all players and causes [Void Fissures] to erupt.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet;[Void Blast] inflicts heavy Shadowstrike damage.\r\n$bullet;[Dark Bloom] causes [Void Fissures] to erupt.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Dark Bloom",
+            "body_text": null,
+            "spell_id": 1300259,
+            "sections": []
+          },
+          {
+            "title": "Umbral Rupture",
+            "body_text": null,
+            "spell_id": 1296963,
+            "sections": [
+              {
+                "title": "Void Fissure",
+                "body_text": null,
+                "spell_id": 1296967,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Umbral Rupture",
+            "body_text": null,
+            "spell_id": 1296963,
+            "sections": [
+              {
+                "title": "Void Fissure",
+                "body_text": null,
+                "spell_id": 1296967,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Ethereal Shades",
+            "body_text": null,
+            "spell_id": 1296889,
+            "sections": [
+              {
+                "title": "Ethereal Shade",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Nether Dash",
+                    "body_text": null,
+                    "spell_id": 1222098,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Void Blast",
+            "body_text": null,
+            "spell_id": 1297017,
+            "sections": []
+          }
+        ]
+      },
+      "2792": {
+        "description": "Imprisoned by Charonus, this starving behemoth is hoping for a new victim to sate his appetite. Atroxus's sheer size is almost as dangerous as the poison he spews.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Atroxus assaults players with its powerful venoms using [Noxious Breath] and [Poison Splash]. Its [Monstrous Roar] inflicts heavy physical damage to all players summons a Toxic Creeper.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Noxious Breath] inflicts high damage in front of Atroxus.\r\n\r\n$bullet;[Monstrous Roar] inflicts heavy physical damage to all players summons a Toxic Creeper to attack its target.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet;[Hulking Claw] inflicts high Nature damage to the primary target.\r\n\r\n$bullet;[Noxious Breath] inflicts high damage in front of Atroxus.",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet;[Hulking Claw] inflicts high Nature damage to the primary target.\r\n\r\n$bullet;[Sickening Bite] applies stacking vulnerability to Nature damage.",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Monstrous Roar",
+            "body_text": null,
+            "spell_id": 1262497,
+            "sections": [
+              {
+                "title": "Toxic Creeper",
+                "body_text": null,
+                "spell_id": null,
+                "sections": [
+                  {
+                    "title": "Fixate",
+                    "body_text": null,
+                    "spell_id": 1283506,
+                    "sections": []
+                  },
+                  {
+                    "title": "Sickening Bite",
+                    "body_text": null,
+                    "spell_id": 1282892,
+                    "sections": []
+                  },
+                  {
+                    "title": "Toxic Aura",
+                    "body_text": null,
+                    "spell_id": 1222692,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Poison Splash",
+            "body_text": null,
+            "spell_id": 1226031,
+            "sections": [
+              {
+                "title": "Poison Pool",
+                "body_text": null,
+                "spell_id": 1222484,
+                "sections": [
+                  {
+                    "title": "Mind-Numbing Poison",
+                    "body_text": null,
+                    "spell_id": 1263971,
+                    "sections": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Noxious Breath",
+            "body_text": null,
+            "spell_id": 1222724,
+            "sections": []
+          },
+          {
+            "title": "Hulking Claw",
+            "body_text": null,
+            "spell_id": 1222642,
+            "sections": []
+          }
+        ]
+      },
+      "2793": {
+        "description": "The overly confident and ostentatious owner of the Voidscar Arena, Charonus, is impressed by the fighting ability of Azerothians and demands them for his grand collection.",
+        "sections": [
+          {
+            "title": "Overview",
+            "body_text": "Charonus truly tests his prey to learn their limits. He attacks players using [Unstable Singularity] and creates [Gravitic Orbs] to hunt them down.",
+            "spell_id": null,
+            "sections": [
+              {
+                "title": "Damage Dealers",
+                "body_text": "$bullet;[Unstable Singularity] inflicts Shadow damage and reduces the movement speed of players caught within it.\r\n\r\n$bullet;[Gravitic Orbs] continually seek out players until collapsed by an [Unstable Singularity].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Healers",
+                "body_text": "$bullet;[Condensed Mass] inflicts high damage to all players.\r\n\r\n$bullet;[Gravitic Orbs] continually seek out players until collapsed by an [Unstable Singularity].",
+                "spell_id": null,
+                "sections": []
+              },
+              {
+                "title": "Tanks",
+                "body_text": "$bullet;[Unstable Singularity] inflicts Shadow damage and reduces the movement speed of players caught within it.\r\n\r\n$bullet;[Gravitic Orbs] continually seek out players until collapsed by an [Unstable Singularity].",
+                "spell_id": null,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Unstable Singularity",
+            "body_text": null,
+            "spell_id": 1264191,
+            "sections": [
+              {
+                "title": "Atomized",
+                "body_text": null,
+                "spell_id": 1310026,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Gravitic Orbs",
+            "body_text": null,
+            "spell_id": 1223298,
+            "sections": [
+              {
+                "title": "Condensed Mass",
+                "body_text": null,
+                "spell_id": 1263983,
+                "sections": []
+              }
+            ]
+          },
+          {
+            "title": "Void Cascade",
+            "body_text": null,
+            "spell_id": 1222755,
+            "sections": []
+          },
+          {
+            "title": "Dark Waves",
+            "body_text": null,
+            "spell_id": 1311923,
+            "sections": []
+          },
+          {
+            "title": "Cosmic Crash",
+            "body_text": null,
+            "spell_id": 1227197,
+            "sections": []
+          }
+        ]
+      }
+    },
+    "enemies": {
+      "243996": {
+        "health": 2918930,
+        "count": 4,
+        "type": "Humanoid",
+        "spells": {
+          "1250640": []
+        }
+      },
+      "243988": {
+        "health": 3405418,
+        "count": 4,
+        "type": "Humanoid",
+        "spells": {
+          "1249661": [
+            "enrage"
+          ],
+          "1267894": []
+        }
+      },
+      "243983": {
+        "health": 2918930,
+        "count": 4,
+        "type": "Dragonkin",
+        "spells": {
+          "1249661": [
+            "enrage"
+          ],
+          "1250043": [
+            "magic"
+          ]
+        }
+      },
+      "243985": {
+        "health": 3243255,
+        "count": 5,
+        "type": "Humanoid",
+        "spells": {
+          "1249661": [
+            "enrage"
+          ],
+          "1310319": [
+            "enrage"
+          ]
+        }
+      },
+      "238883": {
+        "health": 3891906,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1254826": [
+            "enrage"
+          ],
+          "1298899": [
+            "interruptible"
+          ]
+        }
+      },
+      "241496": {
+        "health": 6227050,
+        "count": 7,
+        "type": "Humanoid",
+        "spells": {
+          "1228176": [
+            "interruptible"
+          ],
+          "1246820": []
+        }
+      },
+      "252072": {
+        "health": 5513534,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "1299913": [],
+          "1299938": [
+            "interruptible"
+          ]
+        }
+      },
+      "252053": {
+        "health": 5675696,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "1298900": [],
+          "1310309": []
+        }
+      },
+      "267545": {
+        "health": 8432463,
+        "count": 40,
+        "type": "Humanoid",
+        "spells": {
+          "1298903": [],
+          "1298908": [],
+          "1298924": [],
+          "1299125": [],
+          "1299145": [],
+          "1299210": []
+        }
+      },
+      "267546": {
+        "health": 7459487,
+        "count": 40,
+        "type": "Humanoid",
+        "spells": {
+          "1298902": [],
+          "1299240": [],
+          "1299257": [],
+          "1299270": [],
+          "1311712": [],
+          "1311747": [],
+          "1311754": []
+        }
+      },
+      "244260": {
+        "health": 5837859,
+        "count": 25,
+        "type": "Beast",
+        "spells": {
+          "1234833": [],
+          "1234855": [],
+          "1249661": [
+            "enrage"
+          ]
+        }
+      },
+      "249608": {
+        "health": 3891906,
+        "count": 5,
+        "type": "Beast",
+        "spells": {
+          "1249661": [
+            "enrage"
+          ]
+        }
+      },
+      "249603": {
+        "health": 1945953,
+        "count": 5,
+        "type": "Beast",
+        "spells": {
+          "1249661": [
+            "enrage"
+          ],
+          "1250021": [],
+          "1250023": [],
+          "1310320": []
+        }
+      },
+      "244309": {
+        "health": 7135161,
+        "count": 25,
+        "type": "Humanoid",
+        "spells": {
+          "1234890": [],
+          "1245186": [],
+          "1249661": [
+            "enrage"
+          ],
+          "1269284": [],
+          "1310321": []
+        }
+      },
+      "249461": {
+        "health": 3243255,
+        "count": 5,
+        "type": "Dragonkin",
+        "spells": {
+          "1249238": [
+            "magic"
+          ],
+          "1249661": [
+            "enrage"
+          ]
+        }
+      },
+      "249590": {
+        "health": 3567581,
+        "count": 8,
+        "type": "Beast",
+        "spells": {
+          "1249621": [
+            "interruptible"
+          ]
+        }
+      },
+      "243835": {
+        "health": 3405418,
+        "count": 5,
+        "type": "Beast",
+        "spells": {
+          "1233535": []
+        }
+      },
+      "243766": {
+        "health": 3081092,
+        "count": 7,
+        "type": "Beast",
+        "spells": {
+          "1233398": [
+            "interruptible"
+          ]
+        }
+      },
+      "263228": {
+        "health": 5189208,
+        "count": 25,
+        "type": "Beast",
+        "spells": {
+          "1233472": [],
+          "1289265": [
+            "poison"
+          ]
+        }
+      },
+      "243736": {
+        "health": 648651,
+        "count": 1,
+        "type": "Beast",
+        "spells": {
+          "1233264": []
+        }
+      },
+      "245950": {
+        "health": 8756789,
+        "count": 65,
+        "type": "Beast",
+        "spells": {
+          "1239856": [
+            "magic"
+          ],
+          "1300116": [],
+          "1300138": []
+        }
+      },
+      "268184": {
+        "health": 6227050,
+        "count": 30,
+        "type": "Humanoid",
+        "spells": {
+          "1252406": [],
+          "1282959": [],
+          "1300243": [],
+          "1300249": [],
+          "1300250": [],
+          "1310324": [
+            "interruptible"
+          ]
+        }
+      },
+      "252508": {
+        "health": 1297302,
+        "count": 1,
+        "type": "Aberration",
+        "spells": {
+          "1269866": []
+        }
+      },
+      "244708": {
+        "health": 6227050,
+        "count": 7,
+        "type": "Aberration",
+        "spells": {
+          "1227020": [],
+          "1310324": [
+            "interruptible"
+          ]
+        }
+      },
+      "238887": {
+        "health": 21283860,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1296889": [],
+          "1296963": [],
+          "1296967": [],
+          "1297017": [],
+          "1300259": []
+        }
+      },
+      "239008": {
+        "health": 21283860,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1222484": [],
+          "1222519": [],
+          "1222642": [],
+          "1222721": [],
+          "1226120": [
+            "poison"
+          ],
+          "1262497": [],
+          "1263971": [
+            "poison"
+          ]
+        }
+      },
+      "239167": {
+        "health": 24324411,
+        "count": 0,
+        "type": "Aberration",
+        "spells": {
+          "1227197": [],
+          "1227247": [],
+          "1248112": [],
+          "1310025": [],
+          "1311923": []
+        }
+      },
+      "239070": {
+        "health": 945949,
+        "count": 0,
+        "type": "Beast",
+        "spells": {
+          "1222692": [],
+          "1282892": []
+        }
+      },
+      "248666": {
+        "health": 441313,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1246825": []
+        }
+      },
+      "254677": {
+        "health": 675678,
+        "count": 0,
+        "type": "Humanoid",
+        "spells": {
+          "1222100": [],
+          "1296963": []
+        }
+      },
+      "255000": {
+        "health": 10000,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1263984": []
+        }
+      },
+      "255001": {
+        "health": 540543,
+        "count": 0,
+        "type": "Not specified",
+        "spells": {
+          "1263983": []
+        }
+      }
+    }
+  }
+}

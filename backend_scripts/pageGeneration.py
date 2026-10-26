@@ -66,6 +66,7 @@ def make_jinja_env(template_dir, extensions=None):
         extensions=extensions or [],
     )
     env.template_class = _PageTemplate
+    env.globals["ROLE_ICONS"] = ROLE_ICONS
     return env
 
 
@@ -92,6 +93,12 @@ ROLE_FOLDERS = {
     "0": "Tank",
     "1": "Healer",
     "2": "Dps",
+}
+# Material Symbols icon per role name, shared by the sidenav and the dungeon boss modal.
+ROLE_ICONS = {
+    "Tank": "shield",
+    "Healer": "health_cross",
+    "Dps": "swords",
 }
 
 # S..F letters, index-aligned with tierMath / snapshotTrends (0 = S = best).
