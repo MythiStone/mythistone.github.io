@@ -2183,5 +2183,16 @@
         "persona": "hype_caster",
         "judge_score": 33.0,
         "timestamp": 1792961383910
+    },
+    "data/social/weekly_mover_dungeon_584_2026-10-26.png": {
+        "title": "Weekly Mover: The Blinding Vale",
+        "post_type": "weekly_mover",
+        "link": "https://mythistone.com/dungeons/the-blinding-vale",
+        "social": "The Blinding Vale went from D tier to B tier in a week. The meta shift hits different when the dungeon stops being a punchline and starts being a pickup. #WoW #MythicPlus https://mythistone.com/dungeons/the-blinding-vale",
+        "blog": "The Blinding Vale had the biggest move of the week: highest timed key from +23 to +24 and tier from D to B.\n\nMost of the ladder barely shifts week to week this deep into a season, so a jump like this stands out.",
+        "post": "The Blinding Vale went from D tier to B tier in a week. The meta shift hits different when the dungeon stops being a punchline and starts being a pickup. #WoW #MythicPlus https://mythistone.com/dungeons/the-blinding-vale",
+        "persona": "snarky_analyst",
+        "judge_score": 36.0,
+        "timestamp": 1793054272353
     }
 }
