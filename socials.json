@@ -2205,5 +2205,16 @@
         "persona": "pug_veteran",
         "judge_score": 31.0,
         "timestamp": 1793139476618
+    },
+    "data/social/highest_run_mplus_586_24_1674349_1793114582000.png": {
+        "title": "Highest Run: +24 Den of Nalorakk",
+        "post_type": "highest_run",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Notes: Den of Nalorakk +24. Highest run this season. 27:54.349. EU Druid, Paladin, Arms, Rogue, Ele beat the clock while the rest stalled. Watch this meta. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "A +24 Den of Nalorakk cleared in 27:54.349 on the EU region stands as the highest key on record this season.\n\nThe five who pulled it off: Guardian Druid, Holy Paladin, Arms Warrior, Subtlety Rogue, Elemental Shaman. It went down 1 day ago, and records like it only stand until the next group pushes higher.",
+        "post": "Notes: Den of Nalorakk +24. Highest run this season. 27:54.349. EU Druid, Paladin, Arms, Rogue, Ele beat the clock while the rest stalled. Watch this meta. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "deadpan_raid_leader",
+        "judge_score": 29.0,
+        "timestamp": 1793227107578
     }
 }
