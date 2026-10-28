@@ -90620,7 +90620,7 @@
     "id": 12856,
     "quality": 4,
     "itemLevel": {
-      "amount": 340,
+      "amount": 341,
       "priority": 0,
       "squishEra": 2
     },
@@ -95265,10 +95265,7 @@
   },
   "13655": {
     "id": 13655,
-    "levelOffsetSecondary": {
-      "amount": 10
-    },
-    "tag": "Ascendant Voidforged"
+    "serverside": true
   },
   "13656": {
     "id": 13656,
@@ -96879,7 +96876,7 @@
   "13852": {
     "id": 13852,
     "levelOffsetSecondary": {
-      "amount": 7
+      "amount": 6
     },
     "tag": "Ascendant Venomforged"
   },
