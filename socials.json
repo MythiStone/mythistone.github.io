@@ -2216,5 +2216,16 @@
         "persona": "deadpan_raid_leader",
         "judge_score": 29.0,
         "timestamp": 1793227107578
+    },
+    "data/social/spec_overview_105_2026-10.png": {
+        "title": "Restoration Druid Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Healer/Restoration_Druid",
+        "social": "The courtroom is back and the verdict is F tier for Restoration Druid. Wildstalker did not save them. The dungeon did not forgive them. The chart just shrugged. #WoW #MythicPlus https://mythistone.com/classes/Healer/Restoration_Druid",
+        "blog": "Restoration Druid has 671.7 K Mythic+ runs tracked this season. The Wildstalker hero tree leads at 93% of builds, with Keeper of the Grove (7%) trailing.\n\n88% of tracked runs beat the timer, and 8% earn all three chests. The stat priority skews toward Haste > Mastery > Versatility > Crit. The best key so far: +23 Den of Nalorakk in 31:49.057.",
+        "post": "The courtroom is back and the verdict is F tier for Restoration Druid. Wildstalker did not save them. The dungeon did not forgive them. The chart just shrugged. #WoW #MythicPlus https://mythistone.com/classes/Healer/Restoration_Druid",
+        "persona": "snarky_analyst",
+        "judge_score": 33.0,
+        "timestamp": 1793313874759
     }
 }
