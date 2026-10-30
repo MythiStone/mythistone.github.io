@@ -2227,5 +2227,16 @@
         "persona": "snarky_analyst",
         "judge_score": 33.0,
         "timestamp": 1793313874759
+    },
+    "data/social/dungeon_overview_584_2026-10.png": {
+        "title": "The Blinding Vale Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/the-blinding-vale",
+        "social": "The Blinding Vale is the dungeon you forget exists until it pops in group finder and everyone suddenly has to walk their dog. 2.2 M runs tracked and it's still the ghost town of the season. #WoW #MythicPlus https://mythistone.com/dungeons/the-blinding-vale",
+        "blog": "The Blinding Vale has 2.2 M Mythic+ runs tracked this season.\n\nGroups most often bring Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. Most players follow the keystone.guru/qZWRyuy route.",
+        "post": "The Blinding Vale is the dungeon you forget exists until it pops in group finder and everyone suddenly has to walk their dog. 2.2 M runs tracked and it's still the ghost town of the season. #WoW #MythicPlus https://mythistone.com/dungeons/the-blinding-vale",
+        "persona": "pug_veteran",
+        "judge_score": 33.0,
+        "timestamp": 1793398749698
     }
 }
