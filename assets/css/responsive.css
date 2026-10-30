@@ -475,3 +475,11 @@ main.main-content > .container-fluid {
   top: auto;
   bottom: calc(100% + 3px);
 }
+
+/* Footer: the copyright may break to two lines so the Simple Analytics badge fits beside it */
+@media (min-width: 992px) {
+  .footer-credit {
+    flex: 1 1 190px;
+    max-width: max-content;
+  }
+}

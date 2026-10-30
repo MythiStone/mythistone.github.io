@@ -348,6 +348,10 @@ var klaroConfig = {
             title: 'Simple Web Analytics',
             default: true,
             purposes: ['analytics'],
+            // the footer badge (templates/footer.html) shows only with analytics consent
+            callback: function (consent) {
+                document.querySelectorAll('.sa-badge').forEach(function (el) { el.hidden = !consent; });
+            },
         },
         {
             name: 'keystoneGuru',
