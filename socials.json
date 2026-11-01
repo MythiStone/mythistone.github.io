@@ -2238,5 +2238,16 @@
         "persona": "pug_veteran",
         "judge_score": 33.0,
         "timestamp": 1793398749698
+    },
+    "data/social/spec_overview_64_2026-10.png": {
+        "title": "Frost Mage Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Dps/Frost_Mage",
+        "social": "The spec tier list dropped Frost Mage in F tier and the Kirin Tor is writing Jaina apology notes. 322.6 K runs prove we still blink through the fire #WoW #MythicPlus https://mythistone.com/classes/Dps/Frost_Mage",
+        "blog": "This season MythiStone has logged 322.6 K Frost Mage runs. The Spellslinger hero tree leads at 55% of builds, with Frostfire (45%) trailing.\n\nGroups time keys with the spec 87% of the time and three-chest 8% of them. Most builds prioritise Mastery > Crit > Haste > Versatility. The best key so far: +22 Murder Row in 32:07.310.",
+        "post": "The spec tier list dropped Frost Mage in F tier and the Kirin Tor is writing Jaina apology notes. 322.6 K runs prove we still blink through the fire #WoW #MythicPlus https://mythistone.com/classes/Dps/Frost_Mage",
+        "persona": "lore_nerd",
+        "judge_score": 34.0,
+        "timestamp": 1793491117377
     }
 }
