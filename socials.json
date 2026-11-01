@@ -2249,5 +2249,16 @@
         "persona": "lore_nerd",
         "judge_score": 34.0,
         "timestamp": 1793491117377
+    },
+    "data/social/spec_popularity_tierlist_2026-11.png": {
+        "title": "Spec Popularity Tier List",
+        "post_type": "spec_popularity_tierlist",
+        "link": "https://mythistone.com/",
+        "social": "Subtlety tops the tier list while sitting 12th most played out of 27 specs. The meta called and nobody answered #WoW #MythicPlus https://mythistone.com/",
+        "blog": "Across 7.4 M tracked Mythic+ runs this season, Subtlety Rogue tops the spec tier list and Destruction Warlock sits at the bottom.\n\nThe ranking rewards timed keys and weighs higher key levels more heavily.",
+        "post": "Subtlety tops the tier list while sitting 12th most played out of 27 specs. The meta called and nobody answered #WoW #MythicPlus https://mythistone.com/",
+        "persona": "snarky_analyst",
+        "judge_score": 35.0,
+        "timestamp": 1793570346281
     }
 }
