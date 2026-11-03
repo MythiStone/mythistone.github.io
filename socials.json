@@ -2260,5 +2260,16 @@
         "persona": "snarky_analyst",
         "judge_score": 35.0,
         "timestamp": 1793570346281
+    },
+    "data/social/spec_distribution_by_level_2026-11.png": {
+        "title": "Spec Distribution Across Key Levels",
+        "post_type": "spec_distribution_by_level",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "At +25 the meta breaks. Arms Warrior standing tall next to Holy Paladin and Blood Death Knight at the absolute ceiling. Nobody saw the bladestorm coming this high. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "Once keys reach level 25, the field narrows to a handful of specs: Holy - Paladin, Arms - Warrior, Blood - Death Knight.\n\nLower keys stay far more varied; the highest levels concentrate around a few specs.",
+        "post": "At +25 the meta breaks. Arms Warrior standing tall next to Holy Paladin and Blood Death Knight at the absolute ceiling. Nobody saw the bladestorm coming this high. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "hype_caster",
+        "judge_score": 33.0,
+        "timestamp": 1793667211701
     }
 }
