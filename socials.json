@@ -2271,5 +2271,16 @@
         "persona": "hype_caster",
         "judge_score": 33.0,
         "timestamp": 1793667211701
+    },
+    "data/social/spec_popularity_vs_performance_2026-11.png": {
+        "title": "Spec Popularity vs Performance",
+        "post_type": "spec_popularity_vs_performance",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Arcane Mage sits atop the played list like a king on a cardboard throne. Most-played DPS spec, yet the numbers whisper it's the most overplayed for its results. The meta loves a flashy parse more than a timed key. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "Plotting popularity against performance, Subtlety Rogue is the biggest overperformer, punching above its play rate.\n\nArcane Mage, meanwhile, is more popular than its performance would predict.",
+        "post": "Arcane Mage sits atop the played list like a king on a cardboard throne. Most-played DPS spec, yet the numbers whisper it's the most overplayed for its results. The meta loves a flashy parse more than a timed key. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "snarky_analyst",
+        "judge_score": 36.0,
+        "timestamp": 1793747428237
     }
 }
