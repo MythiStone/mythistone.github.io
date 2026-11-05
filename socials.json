@@ -2293,5 +2293,16 @@
         "persona": "lore_nerd",
         "judge_score": 34.0,
         "timestamp": 1793835257535
+    },
+    "data/social/dungeon_overview_399_2026-11.png": {
+        "title": "Ruby Life Pools Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/ruby-life-pools",
+        "social": "You know that Ruby Life Pools key feeling when the pug suddenly goes silent. We time 87% of them, just shy of the 89% average. Close enough to blame the healer anyway. #WoW #MythicPlus https://mythistone.com/dungeons/ruby-life-pools",
+        "blog": "This overview of Ruby Life Pools draws on 2.4 M tracked Mythic+ runs.\n\nThe most common group through it is Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. Most players follow the keystone.guru/ydrCxuc route.",
+        "post": "You know that Ruby Life Pools key feeling when the pug suddenly goes silent. We time 87% of them, just shy of the 89% average. Close enough to blame the healer anyway. #WoW #MythicPlus https://mythistone.com/dungeons/ruby-life-pools",
+        "persona": "pug_veteran",
+        "judge_score": 37.0,
+        "timestamp": 1793921697662
     }
 }
