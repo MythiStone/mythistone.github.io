@@ -2304,5 +2304,16 @@
         "persona": "pug_veteran",
         "judge_score": 37.0,
         "timestamp": 1793921697662
+    },
+    "data/social/dungeon_tierlist_2026-11.png": {
+        "title": "Dungeon Tier List",
+        "post_type": "dungeon_tierlist",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Exhibit A: Den of Nalorakk gets timed 88% of the time. Exhibit B: Altar of Fangs gets 86%. That small gap is a personality test the meta keeps failing. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "Den of Nalorakk leads the dungeon tier list this season and Altar of Fangs anchors the bottom, across 7.6 M tracked runs.\n\nMurder Row follows near the top, and Voidscar Arena is not far off the bottom. Tiers reflect how cleanly groups are timing each dungeon at higher keys.",
+        "post": "Exhibit A: Den of Nalorakk gets timed 88% of the time. Exhibit B: Altar of Fangs gets 86%. That small gap is a personality test the meta keeps failing. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "snarky_analyst",
+        "judge_score": 34.0,
+        "timestamp": 1794005979965
     }
 }
