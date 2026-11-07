@@ -2315,5 +2315,16 @@
         "persona": "snarky_analyst",
         "judge_score": 34.0,
         "timestamp": 1794005979965
+    },
+    "data/social/dungeon_overview_584_2026-11.png": {
+        "title": "The Blinding Vale Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/the-blinding-vale",
+        "social": "You stare at the Blinding Vale listing, think 'maybe this time', but the queue vanishes faster than a key you timed. 2.3 M runs, 88% timed, yet the dungeon barely gets a sigh. The veteran knows the pain. #WoW #MythicPlus https://mythistone.com/dungeons/the-blinding-vale",
+        "blog": "The Blinding Vale has 2.3 M Mythic+ runs tracked this season.\n\nGroups most often bring Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. Most players follow the keystone.guru/qZWRyuy route.",
+        "post": "You stare at the Blinding Vale listing, think 'maybe this time', but the queue vanishes faster than a key you timed. 2.3 M runs, 88% timed, yet the dungeon barely gets a sigh. The veteran knows the pain. #WoW #MythicPlus https://mythistone.com/dungeons/the-blinding-vale",
+        "persona": "pug_veteran",
+        "judge_score": 33.0,
+        "timestamp": 1794087888961
     }
 }
