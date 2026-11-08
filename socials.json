@@ -2326,5 +2326,16 @@
         "persona": "pug_veteran",
         "judge_score": 33.0,
         "timestamp": 1794087888961
+    },
+    "data/social/spec_overview_255_2026-11.png": {
+        "title": "Survival Hunter Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Dps/Survival_Hunter",
+        "social": "Survival Hunter brought a spear to a ranged fight and the tier list sent it to D tier. The raptor is still loyal but the meta has moved on. #WoW #MythicPlus https://mythistone.com/classes/Dps/Survival_Hunter",
+        "blog": "This season MythiStone has logged 174.4 K Survival Hunter runs. The Sentinel hero tree leads at 89% of builds, with Pack Leader (11%) trailing.\n\nGroups time keys with the spec 89% of the time and three-chest 8% of them. The stat priority skews toward Mastery > Crit > Haste > Versatility. The best key so far: +23 Murder Row in 30:25.833.",
+        "post": "Survival Hunter brought a spear to a ranged fight and the tier list sent it to D tier. The raptor is still loyal but the meta has moved on. #WoW #MythicPlus https://mythistone.com/classes/Dps/Survival_Hunter",
+        "persona": "lore_nerd",
+        "judge_score": 36.0,
+        "timestamp": 1794175106715
     }
 }
