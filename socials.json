@@ -2337,5 +2337,16 @@
         "persona": "lore_nerd",
         "judge_score": 36.0,
         "timestamp": 1794175106715
+    },
+    "data/social/weekly_mover_spec_257_2026-11-10.png": {
+        "title": "Weekly Mover: Holy Priest",
+        "post_type": "weekly_mover",
+        "link": "https://mythistone.com/classes/Healer/Holy_Priest",
+        "social": "Notes for tonight: Holy Priest dropped to D tier. Was C. Healer lead is thrilled. Pull in ten. #WoW #MythicPlus https://mythistone.com/classes/Healer/Holy_Priest",
+        "blog": "Nothing moved more over the last seven days than Holy Priest: tier from C to D.\n\nMost of the ladder barely shifts week to week this deep into a season, so a jump like this stands out.",
+        "post": "Notes for tonight: Holy Priest dropped to D tier. Was C. Healer lead is thrilled. Pull in ten. #WoW #MythicPlus https://mythistone.com/classes/Healer/Holy_Priest",
+        "persona": "deadpan_raid_leader",
+        "judge_score": 32.0,
+        "timestamp": 1794274292794
     }
 }
