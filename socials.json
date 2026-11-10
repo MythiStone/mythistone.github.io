@@ -2348,5 +2348,16 @@
         "persona": "deadpan_raid_leader",
         "judge_score": 32.0,
         "timestamp": 1794274292794
+    },
+    "data/social/dungeon_popularity_across_keylevels_2026-11.png": {
+        "title": "Dungeon Popularity Across Key Levels",
+        "post_type": "dungeon_popularity_by_level",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Murder Row owns the queue. Every key. Every spec. The new dungeon is the ONLY dungeon right now. Blinding Vale sitting empty like a ghost town. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "Murder Row draws the most runs across 24 key levels; The Blinding Vale draws the fewest.\n\nDungeon popularity tracks route length, difficulty and how punishing the bosses get at high keys.",
+        "post": "Murder Row owns the queue. Every key. Every spec. The new dungeon is the ONLY dungeon right now. Blinding Vale sitting empty like a ghost town. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "hype_caster",
+        "judge_score": 32.0,
+        "timestamp": 1794352222665
     }
 }
