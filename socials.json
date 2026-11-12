@@ -2359,5 +2359,16 @@
         "persona": "hype_caster",
         "judge_score": 32.0,
         "timestamp": 1794352222665
+    },
+    "data/social/dungeon_overview_586_2026-11.png": {
+        "title": "Den of Nalorakk Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/den-of-nalorakk",
+        "social": "Everybody's skipping the bear this season. Den of Nalorakk is only the 7th most-run dungeon out of 8, and Nalorakk is just sitting there wondering what he did wrong. #WoW #MythicPlus https://mythistone.com/dungeons/den-of-nalorakk",
+        "blog": "Den of Nalorakk has 2.5 M Mythic+ runs tracked this season.\n\nGroups most often bring Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. The most-used route right now is keystone.guru/ewGot48.",
+        "post": "Everybody's skipping the bear this season. Den of Nalorakk is only the 7th most-run dungeon out of 8, and Nalorakk is just sitting there wondering what he did wrong. #WoW #MythicPlus https://mythistone.com/dungeons/den-of-nalorakk",
+        "persona": "lore_nerd",
+        "judge_score": 33.0,
+        "timestamp": 1794443330945
     }
 }
