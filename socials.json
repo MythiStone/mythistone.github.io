@@ -2381,5 +2381,16 @@
         "persona": "deadpan_raid_leader",
         "judge_score": 32.0,
         "timestamp": 1794526264995
+    },
+    "data/social/dungeon_overview_249_2026-11.png": {
+        "title": "Kings' Rest Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/kings-rest",
+        "social": "Kings' Rest is filed under B tier, a rating clearly assigned by someone who has never set foot in one. Groups time 91% of the keys there. The clipboard is unavailable for comment. #WoW #MythicPlus https://mythistone.com/dungeons/kings-rest",
+        "blog": "Kings' Rest has 2.5 M Mythic+ runs tracked this season.\n\nThe most common group through it is Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. Most players follow the keystone.guru/AJ7wkfR route.",
+        "post": "Kings' Rest is filed under B tier, a rating clearly assigned by someone who has never set foot in one. Groups time 91% of the keys there. The clipboard is unavailable for comment. #WoW #MythicPlus https://mythistone.com/dungeons/kings-rest",
+        "persona": "snarky_analyst",
+        "judge_score": 33.0,
+        "timestamp": 1794613750528
     }
 }
