@@ -2392,5 +2392,16 @@
         "persona": "snarky_analyst",
         "judge_score": 33.0,
         "timestamp": 1794613750528
+    },
+    "data/social/comp_overview_18_2026-11.png": {
+        "title": "Global Top Comps",
+        "post_type": "comp_overview",
+        "link": "https://mythistone.com/pages/comps",
+        "social": "Top two comps out there are identical except one slot. Arms on one, Demonology on the other. That's the whole gap between first and second place. Somebody is flipping a coin over this right now. Pull in ten. #WoW #MythicPlus https://mythistone.com/pages/comps",
+        "blog": "Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman is the most-run Mythic+ composition across 7.9 M tracked runs.\n\nThe runner-up is Blood Death Knight, Holy Paladin, Arcane Mage, Elemental Shaman, Demonology Warlock.",
+        "post": "Top two comps out there are identical except one slot. Arms on one, Demonology on the other. That's the whole gap between first and second place. Somebody is flipping a coin over this right now. Pull in ten. #WoW #MythicPlus https://mythistone.com/pages/comps",
+        "persona": "deadpan_raid_leader",
+        "judge_score": 35.0,
+        "timestamp": 1794694738673
     }
 }
