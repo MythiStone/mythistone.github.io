@@ -2414,5 +2414,16 @@
         "persona": "lore_nerd",
         "judge_score": 35.0,
         "timestamp": 1794783220597
+    },
+    "data/social/spec_overview_259_2026-11.png": {
+        "title": "Assassination Rogue Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Dps/Assassination_Rogue",
+        "social": "56% Fatebound 44% Deathstalker and every rogue in my keys swears the other tree is griefing #WoW #MythicPlus https://mythistone.com/classes/Dps/Assassination_Rogue",
+        "blog": "Assassination Rogue has 768 K Mythic+ runs tracked this season. The Deathstalker hero tree leads at 63% of builds, with Fatebound (37%) trailing.\n\n90% of tracked runs beat the timer, and 7% earn all three chests. The stat priority skews toward Crit > Mastery > Haste > Versatility. Its top run this season is +24 The Blinding Vale in 26:54.337.",
+        "post": "56% Fatebound 44% Deathstalker and every rogue in my keys swears the other tree is griefing #WoW #MythicPlus https://mythistone.com/classes/Dps/Assassination_Rogue",
+        "persona": "pug_veteran",
+        "judge_score": null,
+        "timestamp": 1794881602154
     }
 }
