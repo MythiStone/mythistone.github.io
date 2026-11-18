@@ -6814,6 +6814,38 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 ON DUPLICATE KEY UPDATE n = n + VALUES(n)
 """
 
+UPSERT_WCL_PLAYER_CD_RELATION_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_player_cd_relation_daily
+  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, enemy_spell_id, enemy_npc_id, `bin`, n)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE n = n + VALUES(n)
+"""
+
+UPSERT_WCL_PLAYER_CD_USAGE_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_player_cd_usage_daily
+  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, players_casting, casts_sum, possible_sum, first_use_s_sum)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE
+  players_casting = players_casting + VALUES(players_casting),
+  casts_sum = casts_sum + VALUES(casts_sum),
+  possible_sum = possible_sum + VALUES(possible_sum),
+  first_use_s_sum = first_use_s_sum + VALUES(first_use_s_sum)
+"""
+
+UPSERT_WCL_PLAYER_CD_TARGET_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_player_cd_target_daily
+  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, target_npc_id, n)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE n = n + VALUES(n)
+"""
+
+UPSERT_WCL_ENEMY_SPELL_INTERRUPT_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_enemy_spell_interrupt_daily
+  (bucket_date, dungeon_id, encounter_id, npc_id, spell_id, interrupts)
+VALUES (%s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE interrupts = interrupts + VALUES(interrupts)
+"""
+
 UPSERT_WCL_LUST_DAILY_SQL = """
 INSERT INTO Mythistone.wcl_lust_daily
   (bucket_date, dungeon_id, pull_key, time_bin, hp_bin, prev_spell_id, prev_npc_id, n)
@@ -6831,13 +6863,14 @@ ON DUPLICATE KEY UPDATE deaths = deaths + VALUES(deaths)
 UPSERT_WCL_EXAMPLE_LOG_SQL = """
 INSERT INTO Mythistone.wcl_example_logs
   (dungeon_id, pull_key, spec_id, spell_id, report_code, fight_id,
-   pull_start_ms, pull_end_ms, keystone_level, run_start_ms)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+   pull_start_ms, pull_end_ms, keystone_level, run_start_ms, wcl_pull_id)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON DUPLICATE KEY UPDATE
   pull_start_ms = VALUES(pull_start_ms),
   pull_end_ms = VALUES(pull_end_ms),
   keystone_level = VALUES(keystone_level),
-  run_start_ms = VALUES(run_start_ms)
+  run_start_ms = VALUES(run_start_ms),
+  wcl_pull_id = VALUES(wcl_pull_id)
 """
 
 # The window function keeps the derived table materialized, so it may read the table the
@@ -6959,6 +6992,28 @@ def upsert_wcl_player_cd_trigger_daily(cursor, rows):
     _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_TRIGGER_DAILY_SQL, rows)
 
 
+def upsert_wcl_player_cd_relation_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, enemy_spell_id, enemy_npc_id, bin, n).
+    bin: seconds from the enemy cast to the player cast, an even number from -10 to 10."""
+    _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_RELATION_DAILY_SQL, rows)
+
+
+def upsert_wcl_player_cd_usage_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, players_casting, casts_sum,
+    possible_sum, first_use_s_sum). first_use_s_sum: whole seconds, never negative."""
+    _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_USAGE_DAILY_SQL, rows)
+
+
+def upsert_wcl_player_cd_target_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, target_npc_id, n)."""
+    _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_TARGET_DAILY_SQL, rows)
+
+
+def upsert_wcl_enemy_spell_interrupt_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, encounter_id, npc_id, spell_id, interrupts)."""
+    _executemany_in_txn(cursor, UPSERT_WCL_ENEMY_SPELL_INTERRUPT_DAILY_SQL, rows)
+
+
 def upsert_wcl_lust_daily(cursor, rows):
     """rows: (bucket_date, dungeon_id, pull_key, time_bin, hp_bin, prev_spell_id, prev_npc_id, n)."""
     _executemany_in_txn(cursor, UPSERT_WCL_LUST_DAILY_SQL, rows)
@@ -6971,8 +7026,9 @@ def upsert_wcl_player_death_daily(cursor, rows):
 
 def upsert_wcl_example_logs(cursor, rows):
     """rows: (dungeon_id, pull_key, spec_id, spell_id, report_code, fight_id, pull_start_ms,
-    pull_end_ms, keystone_level, run_start_ms). Then keeps the 3 highest keys of every
-    (dungeon_id, pull_key, spec_id, spell_id) the rows touched."""
+    pull_end_ms, keystone_level, run_start_ms, wcl_pull_id). wcl_pull_id is None when no WCL pull
+    matched. Then keeps the 3 highest keys of every (dungeon_id, pull_key, spec_id, spell_id) the
+    rows touched."""
     _executemany_in_txn(cursor, UPSERT_WCL_EXAMPLE_LOG_SQL, rows)
     groups = sorted({tuple(r[:4]) for r in rows})
     _executemany_in_txn(cursor, TRIM_WCL_EXAMPLE_LOGS_SQL, [g + g for g in groups])
@@ -7088,7 +7144,7 @@ ORDER BY npc_id
 """
 
 FETCH_WCL_DUNGEON_EXAMPLES_SQL = """
-SELECT family_key, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level
+SELECT family_key, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level, wcl_pull_id
 FROM Mythistone.aggregated_wcl_example_log
 WHERE dungeon_id = %s AND spec_id = 0
 ORDER BY family_key, spell_id
@@ -7123,10 +7179,47 @@ ORDER BY dungeon_id, family_key
 """
 
 FETCH_WCL_SPEC_EXAMPLES_SQL = """
-SELECT dungeon_id, family_key, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level
+SELECT dungeon_id, family_key, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level,
+       wcl_pull_id
 FROM Mythistone.aggregated_wcl_example_log
 WHERE spec_id = %s
 ORDER BY dungeon_id, family_key, spell_id
+"""
+
+FETCH_WCL_DUNGEON_INTERRUPTS_SQL = """
+SELECT encounter_id, npc_id, spell_id, interrupts
+FROM Mythistone.aggregated_wcl_enemy_spell_interrupt
+WHERE dungeon_id = %s
+ORDER BY encounter_id, npc_id, spell_id
+"""
+
+# Same window start as sp_agg_wcl_pulls, so the count matches the aggregates it divides.
+FETCH_WCL_DUNGEON_LOGGED_RUNS_SQL = """
+SELECT COUNT(*) AS logged_runs
+FROM Mythistone.wcl_processed_runs
+WHERE dungeon_id = %s AND status = 'done'
+  AND run_start_ms >= TIMESTAMPDIFF(SECOND, '1970-01-01 00:00:00', UTC_DATE() - INTERVAL 13 DAY) * 1000
+"""
+
+FETCH_WCL_SPEC_RELATIONS_SQL = """
+SELECT dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, `bin`, n
+FROM Mythistone.aggregated_wcl_spec_cd_relation
+WHERE spec_id = %s
+ORDER BY dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, `bin`
+"""
+
+FETCH_WCL_SPEC_USAGE_SQL = """
+SELECT dungeon_id, family_key, spell_id, players_casting, casts_sum, possible_sum, first_use_s_sum
+FROM Mythistone.aggregated_wcl_spec_cd_usage
+WHERE spec_id = %s
+ORDER BY dungeon_id, family_key, spell_id
+"""
+
+FETCH_WCL_SPEC_TARGETS_SQL = """
+SELECT dungeon_id, family_key, spell_id, target_npc_id, n
+FROM Mythistone.aggregated_wcl_spec_cd_target
+WHERE spec_id = %s
+ORDER BY dungeon_id, family_key, spell_id, target_npc_id
 """
 
 FETCH_WCL_OBSERVED_ENEMY_SPELL_IDS_SQL = """
@@ -7137,6 +7230,10 @@ UNION
 SELECT prev_spell_id FROM Mythistone.aggregated_wcl_lust WHERE prev_spell_id > 0
 UNION
 SELECT enemy_spell_id FROM Mythistone.aggregated_wcl_spec_cd_trigger WHERE enemy_spell_id > 0
+UNION
+SELECT enemy_spell_id FROM Mythistone.aggregated_wcl_spec_cd_relation WHERE enemy_spell_id > 0
+UNION
+SELECT spell_id FROM Mythistone.aggregated_wcl_enemy_spell_interrupt WHERE spell_id > 0
 ORDER BY 1
 """
 
@@ -7176,8 +7273,36 @@ def fetch_wcl_dungeon_npcs(connection, cursor, dungeon_id):
 
 def fetch_wcl_dungeon_examples(connection, cursor, dungeon_id):
     """The spec-less example logs: [(family_key, spell_id, report_code, fight_id, pull_start_ms,
-    pull_end_ms, keystone_level)]. spell_id 0 is the pull itself, otherwise the lust spell."""
+    pull_end_ms, keystone_level, wcl_pull_id)]. spell_id 0 is the pull itself, otherwise the lust
+    spell. wcl_pull_id None means a row collected before the id was stored."""
     return fetch_with_retry(connection, cursor, FETCH_WCL_DUNGEON_EXAMPLES_SQL, (dungeon_id,))
+
+
+def fetch_wcl_dungeon_interrupts(connection, cursor, dungeon_id):
+    """[(encounter_id, npc_id, spell_id, interrupts)]. encounter_id 0 is trash."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_DUNGEON_INTERRUPTS_SQL, (dungeon_id,))
+
+
+def fetch_wcl_dungeon_logged_runs(connection, cursor, dungeon_id):
+    """[(logged_runs,)], always one row: the dungeon's fully processed runs of the 14 day window,
+    the denominator of average deaths per run."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_DUNGEON_LOGGED_RUNS_SQL, (dungeon_id,))
+
+
+def fetch_wcl_spec_relations(connection, cursor, spec_id):
+    """[(dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, bin, n)]. bin: seconds from
+    the enemy cast to the player cast, an even number from -10 to 10."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_RELATIONS_SQL, (spec_id,))
+
+
+def fetch_wcl_spec_usage(connection, cursor, spec_id):
+    """[(dungeon_id, family_key, spell_id, players_casting, casts_sum, possible_sum, first_use_s_sum)]."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_USAGE_SQL, (spec_id,))
+
+
+def fetch_wcl_spec_targets(connection, cursor, spec_id):
+    """[(dungeon_id, family_key, spell_id, target_npc_id, n)]."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_TARGETS_SQL, (spec_id,))
 
 
 def fetch_wcl_spec_cooldowns(connection, cursor, spec_id):
@@ -7203,7 +7328,7 @@ def fetch_wcl_spec_pulls(connection, cursor, spec_id):
 
 def fetch_wcl_spec_examples(connection, cursor, spec_id):
     """[(dungeon_id, family_key, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms,
-    keystone_level)]."""
+    keystone_level, wcl_pull_id)]. wcl_pull_id None means a row collected before the id was stored."""
     return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_EXAMPLES_SQL, (spec_id,))
 
 

@@ -1415,6 +1415,66 @@ CREATE TABLE `wcl_player_cd_trigger_daily` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.wcl_player_cd_relation_daily definition
+
+-- bin: seconds from the enemy cast to the player cast, in 2 s bins from -10 to 10.
+CREATE TABLE `wcl_player_cd_relation_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `spec_id` int NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `enemy_spell_id` int unsigned NOT NULL,
+  `enemy_npc_id` int unsigned NOT NULL,
+  `bin` smallint NOT NULL,
+  `n` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`spec_id`,`pull_key`,`spell_id`,`enemy_spell_id`,`enemy_npc_id`,`bin`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_player_cd_usage_daily definition
+
+CREATE TABLE `wcl_player_cd_usage_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `spec_id` int NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `players_casting` int unsigned NOT NULL DEFAULT '0',
+  `casts_sum` int unsigned NOT NULL DEFAULT '0',
+  `possible_sum` int unsigned NOT NULL DEFAULT '0',
+  `first_use_s_sum` bigint unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`spec_id`,`pull_key`,`spell_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_player_cd_target_daily definition
+
+CREATE TABLE `wcl_player_cd_target_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `spec_id` int NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `target_npc_id` int unsigned NOT NULL,
+  `n` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`spec_id`,`pull_key`,`spell_id`,`target_npc_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_enemy_spell_interrupt_daily definition
+
+CREATE TABLE `wcl_enemy_spell_interrupt_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `encounter_id` int unsigned NOT NULL,
+  `npc_id` int unsigned NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `interrupts` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`encounter_id`,`npc_id`,`spell_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.wcl_lust_daily definition
 
 CREATE TABLE `wcl_lust_daily` (
@@ -1456,6 +1516,7 @@ CREATE TABLE `wcl_example_logs` (
   `pull_end_ms` bigint unsigned NOT NULL,
   `keystone_level` smallint unsigned NOT NULL,
   `run_start_ms` bigint unsigned NOT NULL,
+  `wcl_pull_id` int unsigned DEFAULT NULL,
   PRIMARY KEY (`dungeon_id`,`pull_key`,`spec_id`,`spell_id`,`report_code`,`fight_id`),
   KEY `wcl_example_logs_run_start` (`run_start_ms`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -1588,6 +1649,18 @@ CREATE TABLE `aggregated_wcl_enemy_spell_timing` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.aggregated_wcl_enemy_spell_interrupt definition
+
+CREATE TABLE `aggregated_wcl_enemy_spell_interrupt` (
+  `dungeon_id` varchar(100) NOT NULL,
+  `encounter_id` int unsigned NOT NULL,
+  `npc_id` int unsigned NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `interrupts` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`dungeon_id`,`encounter_id`,`npc_id`,`spell_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.aggregated_wcl_spec_pull definition
 
 CREATE TABLE `aggregated_wcl_spec_pull` (
@@ -1639,6 +1712,49 @@ CREATE TABLE `aggregated_wcl_spec_cd_trigger` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- Mythistone.aggregated_wcl_spec_cd_relation definition
+
+CREATE TABLE `aggregated_wcl_spec_cd_relation` (
+  `spec_id` int NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `family_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `enemy_spell_id` int unsigned NOT NULL,
+  `enemy_npc_id` int unsigned NOT NULL,
+  `bin` smallint NOT NULL,
+  `n` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`spec_id`,`dungeon_id`,`family_key`,`spell_id`,`enemy_spell_id`,`enemy_npc_id`,`bin`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.aggregated_wcl_spec_cd_usage definition
+
+CREATE TABLE `aggregated_wcl_spec_cd_usage` (
+  `spec_id` int NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `family_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `players_casting` int unsigned NOT NULL DEFAULT '0',
+  `casts_sum` int unsigned NOT NULL DEFAULT '0',
+  `possible_sum` int unsigned NOT NULL DEFAULT '0',
+  `first_use_s_sum` bigint unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`spec_id`,`dungeon_id`,`family_key`,`spell_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.aggregated_wcl_spec_cd_target definition
+
+CREATE TABLE `aggregated_wcl_spec_cd_target` (
+  `spec_id` int NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `family_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `target_npc_id` int unsigned NOT NULL,
+  `n` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`spec_id`,`dungeon_id`,`family_key`,`spell_id`,`target_npc_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- Mythistone.aggregated_wcl_example_log definition
 
 CREATE TABLE `aggregated_wcl_example_log` (
@@ -1651,6 +1767,7 @@ CREATE TABLE `aggregated_wcl_example_log` (
   `pull_start_ms` bigint unsigned NOT NULL,
   `pull_end_ms` bigint unsigned NOT NULL,
   `keystone_level` smallint unsigned NOT NULL,
+  `wcl_pull_id` int unsigned DEFAULT NULL,
   PRIMARY KEY (`dungeon_id`,`family_key`,`spec_id`,`spell_id`),
   KEY `aggregated_wcl_example_log_spec` (`spec_id`,`dungeon_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -3771,12 +3888,14 @@ BEGIN
   DROP TABLE IF EXISTS Mythistone.aggregated_wcl_npc_new, Mythistone.aggregated_wcl_npc_old;
   DROP TABLE IF EXISTS Mythistone.aggregated_wcl_enemy_spell_new, Mythistone.aggregated_wcl_enemy_spell_old;
   DROP TABLE IF EXISTS Mythistone.aggregated_wcl_enemy_spell_timing_new, Mythistone.aggregated_wcl_enemy_spell_timing_old;
+  DROP TABLE IF EXISTS Mythistone.aggregated_wcl_enemy_spell_interrupt_new, Mythistone.aggregated_wcl_enemy_spell_interrupt_old;
   CREATE TABLE Mythistone.aggregated_wcl_pull_new LIKE Mythistone.aggregated_wcl_pull;
   CREATE TABLE Mythistone.aggregated_wcl_pull_death_new LIKE Mythistone.aggregated_wcl_pull_death;
   CREATE TABLE Mythistone.aggregated_wcl_lust_new LIKE Mythistone.aggregated_wcl_lust;
   CREATE TABLE Mythistone.aggregated_wcl_npc_new LIKE Mythistone.aggregated_wcl_npc;
   CREATE TABLE Mythistone.aggregated_wcl_enemy_spell_new LIKE Mythistone.aggregated_wcl_enemy_spell;
   CREATE TABLE Mythistone.aggregated_wcl_enemy_spell_timing_new LIKE Mythistone.aggregated_wcl_enemy_spell_timing;
+  CREATE TABLE Mythistone.aggregated_wcl_enemy_spell_interrupt_new LIKE Mythistone.aggregated_wcl_enemy_spell_interrupt;
 
   INSERT INTO Mythistone.aggregated_wcl_pull_new
     (dungeon_id, pull_key, family_key, encounter_id, pulls, duration_ms_sum, pulls_with_death, deaths, lusts)
@@ -3839,6 +3958,13 @@ BEGIN
   WHERE bucket_date >= v_from
   GROUP BY dungeon_id, encounter_id, npc_id, spell_id, kind, bin;
 
+  INSERT INTO Mythistone.aggregated_wcl_enemy_spell_interrupt_new
+    (dungeon_id, encounter_id, npc_id, spell_id, interrupts)
+  SELECT dungeon_id, encounter_id, npc_id, spell_id, SUM(interrupts)
+  FROM Mythistone.wcl_enemy_spell_interrupt_daily
+  WHERE bucket_date >= v_from
+  GROUP BY dungeon_id, encounter_id, npc_id, spell_id;
+
   DROP TEMPORARY TABLE IF EXISTS tmp_wcl_family;
 
   CALL sp_swap_public_table('aggregated_wcl_pull');
@@ -3847,6 +3973,7 @@ BEGIN
   CALL sp_swap_public_table('aggregated_wcl_npc');
   CALL sp_swap_public_table('aggregated_wcl_enemy_spell');
   CALL sp_swap_public_table('aggregated_wcl_enemy_spell_timing');
+  CALL sp_swap_public_table('aggregated_wcl_enemy_spell_interrupt');
 END;
 
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_wcl_cooldowns`()
@@ -3865,11 +3992,17 @@ BEGIN
   DROP TABLE IF EXISTS Mythistone.aggregated_wcl_spec_cd_new, Mythistone.aggregated_wcl_spec_cd_old;
   DROP TABLE IF EXISTS Mythistone.aggregated_wcl_spec_cd_timing_new, Mythistone.aggregated_wcl_spec_cd_timing_old;
   DROP TABLE IF EXISTS Mythistone.aggregated_wcl_spec_cd_trigger_new, Mythistone.aggregated_wcl_spec_cd_trigger_old;
+  DROP TABLE IF EXISTS Mythistone.aggregated_wcl_spec_cd_relation_new, Mythistone.aggregated_wcl_spec_cd_relation_old;
+  DROP TABLE IF EXISTS Mythistone.aggregated_wcl_spec_cd_usage_new, Mythistone.aggregated_wcl_spec_cd_usage_old;
+  DROP TABLE IF EXISTS Mythistone.aggregated_wcl_spec_cd_target_new, Mythistone.aggregated_wcl_spec_cd_target_old;
   DROP TABLE IF EXISTS Mythistone.aggregated_wcl_example_log_new, Mythistone.aggregated_wcl_example_log_old;
   CREATE TABLE Mythistone.aggregated_wcl_spec_pull_new LIKE Mythistone.aggregated_wcl_spec_pull;
   CREATE TABLE Mythistone.aggregated_wcl_spec_cd_new LIKE Mythistone.aggregated_wcl_spec_cd;
   CREATE TABLE Mythistone.aggregated_wcl_spec_cd_timing_new LIKE Mythistone.aggregated_wcl_spec_cd_timing;
   CREATE TABLE Mythistone.aggregated_wcl_spec_cd_trigger_new LIKE Mythistone.aggregated_wcl_spec_cd_trigger;
+  CREATE TABLE Mythistone.aggregated_wcl_spec_cd_relation_new LIKE Mythistone.aggregated_wcl_spec_cd_relation;
+  CREATE TABLE Mythistone.aggregated_wcl_spec_cd_usage_new LIKE Mythistone.aggregated_wcl_spec_cd_usage;
+  CREATE TABLE Mythistone.aggregated_wcl_spec_cd_target_new LIKE Mythistone.aggregated_wcl_spec_cd_target;
   CREATE TABLE Mythistone.aggregated_wcl_example_log_new LIKE Mythistone.aggregated_wcl_example_log;
 
   INSERT INTO Mythistone.aggregated_wcl_spec_pull_new (spec_id, dungeon_id, family_key, player_pulls)
@@ -3903,12 +4036,37 @@ BEGIN
   WHERE t.bucket_date >= v_from
   GROUP BY t.spec_id, t.dungeon_id, f.family_key, t.spell_id, t.enemy_spell_id, t.enemy_npc_id;
 
+  INSERT INTO Mythistone.aggregated_wcl_spec_cd_relation_new
+    (spec_id, dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, bin, n)
+  SELECT r.spec_id, r.dungeon_id, f.family_key, r.spell_id, r.enemy_spell_id, r.enemy_npc_id, r.bin, SUM(r.n)
+  FROM Mythistone.wcl_player_cd_relation_daily r
+  JOIN tmp_wcl_family f ON f.dungeon_id = r.dungeon_id AND f.pull_key = r.pull_key
+  WHERE r.bucket_date >= v_from
+  GROUP BY r.spec_id, r.dungeon_id, f.family_key, r.spell_id, r.enemy_spell_id, r.enemy_npc_id, r.bin;
+
+  INSERT INTO Mythistone.aggregated_wcl_spec_cd_usage_new
+    (spec_id, dungeon_id, family_key, spell_id, players_casting, casts_sum, possible_sum, first_use_s_sum)
+  SELECT u.spec_id, u.dungeon_id, f.family_key, u.spell_id, SUM(u.players_casting), SUM(u.casts_sum),
+         SUM(u.possible_sum), SUM(u.first_use_s_sum)
+  FROM Mythistone.wcl_player_cd_usage_daily u
+  JOIN tmp_wcl_family f ON f.dungeon_id = u.dungeon_id AND f.pull_key = u.pull_key
+  WHERE u.bucket_date >= v_from
+  GROUP BY u.spec_id, u.dungeon_id, f.family_key, u.spell_id;
+
+  INSERT INTO Mythistone.aggregated_wcl_spec_cd_target_new
+    (spec_id, dungeon_id, family_key, spell_id, target_npc_id, n)
+  SELECT t.spec_id, t.dungeon_id, f.family_key, t.spell_id, t.target_npc_id, SUM(t.n)
+  FROM Mythistone.wcl_player_cd_target_daily t
+  JOIN tmp_wcl_family f ON f.dungeon_id = t.dungeon_id AND f.pull_key = t.pull_key
+  WHERE t.bucket_date >= v_from
+  GROUP BY t.spec_id, t.dungeon_id, f.family_key, t.spell_id, t.target_npc_id;
+
   INSERT INTO Mythistone.aggregated_wcl_example_log_new
-    (dungeon_id, family_key, spec_id, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level)
-  SELECT dungeon_id, family_key, spec_id, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level
+    (dungeon_id, family_key, spec_id, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level, wcl_pull_id)
+  SELECT dungeon_id, family_key, spec_id, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level, wcl_pull_id
   FROM (
     SELECT e.dungeon_id, f.family_key, e.spec_id, e.spell_id, e.report_code, e.fight_id,
-           e.pull_start_ms, e.pull_end_ms, e.keystone_level,
+           e.pull_start_ms, e.pull_end_ms, e.keystone_level, e.wcl_pull_id,
            ROW_NUMBER() OVER (PARTITION BY e.dungeon_id, f.family_key, e.spec_id, e.spell_id
                               ORDER BY e.keystone_level DESC, e.run_start_ms DESC,
                                        e.report_code, e.fight_id, e.pull_start_ms) AS rn
@@ -3924,6 +4082,9 @@ BEGIN
   CALL sp_swap_public_table('aggregated_wcl_spec_cd');
   CALL sp_swap_public_table('aggregated_wcl_spec_cd_timing');
   CALL sp_swap_public_table('aggregated_wcl_spec_cd_trigger');
+  CALL sp_swap_public_table('aggregated_wcl_spec_cd_relation');
+  CALL sp_swap_public_table('aggregated_wcl_spec_cd_usage');
+  CALL sp_swap_public_table('aggregated_wcl_spec_cd_target');
   CALL sp_swap_public_table('aggregated_wcl_example_log');
 END;
 
@@ -4090,9 +4251,13 @@ BEGIN
   CALL `Mythistone`.`sp_truncate_with_retry`('wcl_npc_daily');
   CALL `Mythistone`.`sp_truncate_with_retry`('wcl_enemy_spell_daily');
   CALL `Mythistone`.`sp_truncate_with_retry`('wcl_enemy_spell_timing_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_enemy_spell_interrupt_daily');
   CALL `Mythistone`.`sp_truncate_with_retry`('wcl_player_cd_daily');
   CALL `Mythistone`.`sp_truncate_with_retry`('wcl_player_cd_timing_daily');
   CALL `Mythistone`.`sp_truncate_with_retry`('wcl_player_cd_trigger_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_player_cd_relation_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_player_cd_usage_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_player_cd_target_daily');
   CALL `Mythistone`.`sp_truncate_with_retry`('wcl_lust_daily');
   CALL `Mythistone`.`sp_truncate_with_retry`('wcl_player_death_daily');
   CALL `Mythistone`.`sp_truncate_with_retry`('wcl_example_logs');
@@ -4403,9 +4568,13 @@ DO purge_block: BEGIN
   CALL Mythistone.sp_purge_wcl_rows('wcl_npc_daily', v_old_bucket);
   CALL Mythistone.sp_purge_wcl_rows('wcl_enemy_spell_daily', v_old_bucket);
   CALL Mythistone.sp_purge_wcl_rows('wcl_enemy_spell_timing_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_enemy_spell_interrupt_daily', v_old_bucket);
   CALL Mythistone.sp_purge_wcl_rows('wcl_player_cd_daily', v_old_bucket);
   CALL Mythistone.sp_purge_wcl_rows('wcl_player_cd_timing_daily', v_old_bucket);
   CALL Mythistone.sp_purge_wcl_rows('wcl_player_cd_trigger_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_player_cd_relation_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_player_cd_usage_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_player_cd_target_daily', v_old_bucket);
   CALL Mythistone.sp_purge_wcl_rows('wcl_lust_daily', v_old_bucket);
   CALL Mythistone.sp_purge_wcl_rows('wcl_player_death_daily', v_old_bucket);
   CALL Mythistone.sp_purge_wcl_rows('wcl_example_logs', v_old_run);

@@ -257,6 +257,7 @@ def run_queries(actors, fight, static, friendly_sightings=True):
                  | static["lust"])
     return {**SIGHTING_QUERIES, **(FRIENDLY_DAMAGE if friendly_sightings else {}),
             "friendlyDeaths": "dataType: Deaths, hostilityType: Friendlies",
+            "friendlyInterrupts": "dataType: Interrupts, hostilityType: Friendlies",
             "friendlyCasts": f'dataType: Casts, hostilityType: Friendlies, '
                              f'filterExpression: "ability.id IN ({",".join(map(str, ids))})"'}
 
@@ -272,7 +273,8 @@ def build(fight, actors, events, static, enc_ids=None):
         friendly_casts=[e for e in events["friendlyCasts"] if e.get("type") == "cast"],
         friendly_deaths=events["friendlyDeaths"], lust_ids=static["lust"],
         boss_npc_ids=set(static["dungeons"][cm]["boss_npc_ids"]), npc_slots=Counter(c["npc_id"] for c in clones),
-        main_boss_npcs=set(static["mapping"][cm]["boss_npcs"]), clones=clones)
+        main_boss_npcs=set(static["mapping"][cm]["boss_npcs"]), clones=clones,
+        interrupts=[e for e in events["friendlyInterrupts"] if e.get("type") == "interrupt"])
     return cm, specs, run
 
 
@@ -310,12 +312,19 @@ def delta_rows(d, day, cm):
                                          for k in cd_keys]),
         (db.upsert_wcl_player_cd_timing_daily, [(day, cm, *k, n) for k, n in d["player_cd_timing"].items()]),
         (db.upsert_wcl_player_cd_trigger_daily, [(day, cm, *k, n) for k, n in d["player_cd_trigger"].items()]),
+        (db.upsert_wcl_player_cd_relation_daily, [(day, cm, *k, n) for k, n in d["player_cd_relation"].items()]),
+        (db.upsert_wcl_player_cd_usage_daily, [(day, cm, *k, n, d["player_cd_usage_casts"][k],
+                                                d["player_cd_usage_possible"][k], d["player_cd_usage_first_s"][k])
+                                               for k, n in d["player_cd_usage_players"].items()]),
+        (db.upsert_wcl_player_cd_target_daily, [(day, cm, *k, n) for k, n in d["player_cd_target"].items()]),
+        (db.upsert_wcl_enemy_spell_interrupt_daily, [(day, cm, k[0] or 0, *k[1:], n)
+                                                     for k, n in d["enemy_spell_interrupts"].items()]),
         (db.upsert_wcl_lust_daily, [(day, cm, *k, n) for k, n in d["lust"].items()]),
         (db.upsert_wcl_player_death_daily, [(day, cm, *k, n) for k, n in d["player_death"].items()]),
     ]
 
 
-def example_rows(run, specs, cm, code, fight_id, keystone_level, run_start_ms):
+def example_rows(run, specs, cm, code, fight_id, keystone_level, run_start_ms, dungeon_pulls):
     """One wcl_example_logs row per (pull key, spec, spell) of this run, at its first pull: the pull
     itself (spec 0, spell 0), lust (spec 0, the lust spell) and each spec's cooldown casts."""
     pulls = {p.index: p for p in run["pulls"]}
@@ -328,7 +337,8 @@ def example_rows(run, specs, cm, code, fight_id, keystone_level, run_start_ms):
     for c in run["player_cds"]:
         if specs.get(c["player"]) is not None:
             first.setdefault((pulls[c["pull"]].key(), specs[c["player"]], c["spell"]), pulls[c["pull"]])
-    return [(cm, key, spec, spell, code, fight_id, p.start, p.end or run["fight_end"], keystone_level, run_start_ms)
+    return [(cm, key, spec, spell, code, fight_id, p.start, p.end or run["fight_end"], keystone_level, run_start_ms,
+             pb.wcl_pull_id(p, dungeon_pulls, run["fight_end"]))
             for (key, spec, spell), p in first.items()]
 
 
@@ -447,8 +457,8 @@ async def process_run(client, static, queued, write_gate, enc_ids=None):
     events = await fetch_events(client, code, fight, actors, static)
     cm, specs, run = await asyncio.to_thread(build, fight, actors, events, static, enc_ids)
     day = datetime.fromtimestamp(run_start_ms / 1000, timezone.utc).date()
-    writes = delta_rows(pb.run_deltas(run, specs), day, cm)
-    examples = example_rows(run, specs, cm, code, fight_id, keystone_level, run_start_ms)
+    writes = delta_rows(pb.run_deltas(run, specs, static["cooldowns"]), day, cm)
+    examples = example_rows(run, specs, cm, code, fight_id, keystone_level, run_start_ms, fight.get("dungeonPulls") or [])
     async with write_gate:
         await asyncio.to_thread(_write_run, code, fight_id, fingerprint, cm, run_start_ms, "done", writes, examples)
     return "done", sum(len(rows) for _, rows in writes) + len(examples)
@@ -597,7 +607,7 @@ async def dry_run(args):
     print(f"engaged, not credited (no death, or no free slot at death): {sorted(uncredited.items())}")
     for lust_row in run["lusts"]:
         print(f"\nlust {lust_row}")
-    print_deltas(pb.run_deltas(run, specs))
+    print_deltas(pb.run_deltas(run, specs, static["cooldowns"]))
     if args.write_local:
         init_local_pool()
         queued = (args.code, args.fight, cm, int(time.time() * 1000), fight["keystoneLevel"], 0)

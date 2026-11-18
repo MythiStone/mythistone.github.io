@@ -982,6 +982,52 @@ ORDER BY rd.dungeon_id, s.pull_sig
 """
 
 
+def _seed_wcl_page_cases(d, days, enemy_spells, boss_encounters):
+    """Gives a few Ruby Life Pools spells the exact shapes the dungeon page labels, and interrupts
+    some enemy spells of every dungeon. Draws no random numbers, so later seeders are unaffected."""
+    rlp = "399"
+    kyrakka, erkhart, burnout_npc, cinderbolt_npc = 190484, 190485, 190034, 190207
+    # npc, spell, mobs, casts, {kind: {bin: n}} of one day
+    cases = [
+        # Roaring Firebreath drifts over the fight while its first cast and recast stay clean.
+        (kyrakka, 381525, 10, 108, {"first": {2: 8, 3: 2}, "recast": {15: 20, 16: 60, 17: 18},
+                                    "fight": {b: 3 for b in range(0, 180, 5)}}),
+        # Stormslam is cast on pull.
+        (erkhart, 381512, 10, 40, {"first": {0: 10}, "recast": {19: 10, 20: 20},
+                                   "fight": {0: 10, 20: 10, 40: 10, 60: 10}}),
+        # Burnout has the production shape: late, never recast, 5 to 6 s before the caster dies.
+        (burnout_npc, 373614, 31, 31, {"first": {b: 2 if 60 <= b <= 78 else 1 for b in range(50, 91, 2)},
+                                       "fight": {50: 3, 55: 3, 60: 4, 65: 4, 70: 5, 75: 4, 80: 3, 85: 3, 90: 2}}),
+        # Cinderbolt is the interrupted trash cast.
+        (cinderbolt_npc, 384194, 12, 36, {"first": {4: 6, 5: 6}, "recast": {8: 24},
+                                          "fight": {5: 12, 15: 12, 25: 12}}),
+    ]
+    if rlp not in enemy_spells:
+        cases = []
+    missing = [c[:2] for c in cases if c[:2] not in enemy_spells[rlp]]
+    if missing:
+        raise RuntimeError(f"seed_wcl page cases are missing from dungeon_details.json: {missing}")
+    scripted = {(rlp, npc, spell) for npc, spell, *_ in cases}
+    d["spell"] = [r for r in d["spell"] if (r[1], r[3], r[4]) not in scripted]
+    d["timing"] = [r for r in d["timing"] if (r[1], r[3], r[4]) not in scripted]
+    for day in days:
+        for npc, spell, mobs, casts, shapes in cases:
+            encounter = boss_encounters[rlp].get(npc, 0)
+            d["spell"].append((day, rlp, encounter, npc, spell, casts, mobs))
+            d["timing"] += [(day, rlp, encounter, npc, spell, kind, b, n)
+                            for kind, bins in shapes.items() for b, n in bins.items()]
+    if cases:
+        # 14 day totals of Burnout's death bins: bin 5 holds 28 and bin 6 holds 8.
+        d["timing"] += [(day, rlp, 0, burnout_npc, 373614, "death", 5, 2) for day in days]
+        d["timing"] += [(day, rlp, 0, burnout_npc, 373614, "death", 6, 1) for day in days[:8]]
+
+    interrupted = {(cmid, n, s) for cmid, spells in enemy_spells.items()
+                   for n, s in sorted(spells)[:3] if n not in boss_encounters.get(cmid, {})}
+    interrupted |= {(rlp, cinderbolt_npc, 384194), (rlp, erkhart, 381516)}
+    d["interrupt"] = [(r[0], r[1], r[2], r[3], r[4], max(1, r[5] * 65 // 100))
+                      for r in d["spell"] if (r[1], r[3], r[4]) in interrupted and r[5] > 0]
+
+
 def seed_wcl(conn, cursor, static, rng):
     """wcl_* aggregates over the last 14 UTC days, written through the collector's own
     wrappers. Enemy npcs and spells come from dungeon_details.json, player cooldowns from
@@ -1006,7 +1052,7 @@ def seed_wcl(conn, cursor, static, rng):
     days = [today - datetime.timedelta(days=i) for i in range(14)]
     now_ms = _now_ms()
     d = {k: [] for k in ("pull", "spec_pull", "npc", "spell", "timing", "cd", "cd_timing",
-                         "trigger", "lust", "death", "example")}
+                         "trigger", "lust", "death", "example", "relation", "usage", "target", "interrupt")}
 
     def split(total, bins):
         """{bin: n} of ``total`` spread over ``bins``, every n at least 1 while total allows."""
@@ -1107,6 +1153,27 @@ def seed_wcl(conn, cursor, static, rng):
                                  start, start + rng.randint(20000, 90000), rng.randint(8, 20),
                                  now_ms - rng.randint(0, 13 * _DAY_MS)))
 
+    # (share of possible casts, average first use in seconds, {relation bin: weight}) by the spell's
+    # place in a spec's kit: on cooldown and just before an enemy spell, saved and just after one,
+    # on both sides of one, and unrelated to any.
+    cd_roles = ((0.9, 6, {-4: 0.2, -2: 0.6, 0: 0.2}), (0.4, 45, {2: 0.6, 4: 0.3, 6: 0.1}),
+                (0.65, 20, {-2: 0.5, 2: 0.5}), (0.65, 20, {}))
+
+    def cd_context_rows(day, cmid, spec, sig, cd, role, casts, players):
+        """The relation, usage and target rows of one cooldown on one featured pull."""
+        share, first_use, shape = cd_roles[role]
+        d["usage"].append((day, cmid, spec, sig, cd, players, casts, round(casts / share), players * first_use))
+        npcs = [int(tok.split(":")[0]) for tok in sig.split(",")]
+        near = sorted((n, s) for n, s in enemy_spells.get(cmid, []) if n in npcs)
+        is_boss = any(n in boss_encounters.get(cmid, {}) for n in npcs)
+        # A second boss spell mirrors the first, so one cooldown shows both before and after.
+        for (npc, spell), side in zip(near, (1, -1) if is_boss else (1,)):
+            for b, weight in shape.items():
+                d["relation"].append((day, cmid, spec, sig, cd, spell, npc, b * side, max(1, round(casts * weight))))
+        if not is_boss and shape:
+            for npc, weight in zip(npcs, (0.6, 0.3, 0.1)):
+                d["target"].append((day, cmid, spec, sig, cd, npc, max(1, round(casts * weight))))
+
     # Per (spec, dungeon) so the same spells add up across the featured pulls and days.
     for cmid in sigs_by_dungeon:
         spells = enemy_spells.get(cmid) or [(0, 0)]
@@ -1115,9 +1182,11 @@ def seed_wcl(conn, cursor, static, rng):
             for sig in (s for c, s in sorted(featured) if c == cmid):
                 for day in rng.sample(days, 2):
                     d["spec_pull"].append((day, cmid, spec, sig, rng.randint(30, 60)))
-                    for cd in kit:
+                    for role, cd in enumerate(kit):
                         casts = rng.randint(20, 40)
-                        d["cd"].append((day, cmid, spec, sig, cd, casts, rng.randint(casts // 2, casts)))
+                        players = rng.randint(casts // 2, casts)
+                        d["cd"].append((day, cmid, spec, sig, cd, casts, players))
+                        cd_context_rows(day, cmid, spec, sig, cd, role, casts, players)
                         bins = [-5] + [b * 5 for b in rng.sample(range(0, 24), 3)] + [600]
                         for b, n in split(casts, bins).items():
                             d["cd_timing"].append((day, cmid, spec, sig, cd, b, n))
@@ -1131,6 +1200,10 @@ def seed_wcl(conn, cursor, static, rng):
                                          start, start + rng.randint(20000, 90000), rng.randint(8, 20),
                                          now_ms - rng.randint(0, 13 * _DAY_MS)))
 
+    # Every fifth example has no pull id, like a row collected before the id was stored.
+    d["example"] = [row + (None if i % 5 == 0 else 7000 + i,) for i, row in enumerate(d["example"])]
+    _seed_wcl_page_cases(d, days, enemy_spells, boss_encounters)
+
     def work(cur):
         db.upsert_wcl_pull_daily(cur, d["pull"])
         db.upsert_wcl_spec_pull_daily(cur, d["spec_pull"])
@@ -1140,6 +1213,10 @@ def seed_wcl(conn, cursor, static, rng):
         db.upsert_wcl_player_cd_daily(cur, d["cd"])
         db.upsert_wcl_player_cd_timing_daily(cur, d["cd_timing"])
         db.upsert_wcl_player_cd_trigger_daily(cur, d["trigger"])
+        db.upsert_wcl_player_cd_relation_daily(cur, d["relation"])
+        db.upsert_wcl_player_cd_usage_daily(cur, d["usage"])
+        db.upsert_wcl_player_cd_target_daily(cur, d["target"])
+        db.upsert_wcl_enemy_spell_interrupt_daily(cur, d["interrupt"])
         db.upsert_wcl_lust_daily(cur, d["lust"])
         db.upsert_wcl_player_death_daily(cur, d["death"])
         db.upsert_wcl_example_logs(cur, d["example"])
