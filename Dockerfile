@@ -68,9 +68,12 @@ COPY data/static/talents/ ${APP_DIR}/data/static/talents/
 # content go-live (read via os.path.join, so listed in REQUIRED_STATIC_EXTRA).
 COPY data/static/patches.json ${APP_DIR}/data/static/patches.json
 COPY data/static/periods.json ${APP_DIR}/data/static/periods.json
-# The WCL task (wclCollector.py) reads the MDT clones, the cooldown list and the lust spells.
+# The WCL task (wclCollector.py) reads the MDT clones, the cooldown list and categories, the
+# enemy spells' AoE flags and the lust spells.
 COPY data/static/dungeon_mapping.json ${APP_DIR}/data/static/dungeon_mapping.json
 COPY data/static/player_cooldowns.json ${APP_DIR}/data/static/player_cooldowns.json
+COPY data/static/player_cooldown_categories.json ${APP_DIR}/data/static/player_cooldown_categories.json
+COPY data/static/dungeon_spells.json ${APP_DIR}/data/static/dungeon_spells.json
 COPY data/static/spells.json ${APP_DIR}/data/static/spells.json
 
 # entrypoint and executable

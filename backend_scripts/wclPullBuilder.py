@@ -55,9 +55,6 @@ PACK_SEARCH_NODES = 30000
 # dry-run that shows the npc alive to the end of its pull, and note the run it was observed in.
 DEFEATED_HP = {}
 LUST_CONTEXT_MS = 10000
-# A cooldown answers an enemy cast within this: the longest common enemy cast time (~3 s) plus a
-# player's reaction (~1-2 s). Longer windows mostly pick up unrelated casts in busy pulls.
-CD_TRIGGER_MS = 5000
 # Deaths sort this much later than their time, so a mob killed in the second it engaged engages first.
 DEATH_SHIFT_MS = 1000
 # A placed mob whose last HP is at or below this, with no death after it, was removed by a script.
@@ -72,9 +69,12 @@ LIFE_ENDS = {"death", "killing_blow", "vanished"}
 # A cast this soon after its instance number's death is the dead unit's death throes, a later one is
 # the next unit's that reuses the number.
 DEATH_THROES_MS = 1000
-# A player cooldown relates to enemy casts this close on either side, in signed bins of this width.
+# A player cooldown relates to enemy casts this close on either side.
 CD_RELATION_MS = 10000
-CD_RELATION_BIN_S = 2
+# The values of player_cooldown_categories.json, as pageGeneration.WCL_COOLDOWN_CATEGORIES.
+COOLDOWN_CATEGORIES = ("defensive", "offensive", "utility", "healing", "other")
+# Cooldowns that are a spec's interrupt, whatever category their name has.
+INTERRUPT_NAMES = frozenset({"Disrupting Shout", "Grimoire: Fel Ravager", "Sigil of Silence", "Silence", "Solar Beam"})
 MELEE_SPELL_ID = 1
 # The interrupted spell on a WCL interrupt event (abilityGameID is the player's kick).
 INTERRUPTED_SPELL_FIELD = "extraAbilityGameID"
@@ -84,7 +84,6 @@ INTERRUPTED_SPELL_FIELD = "extraAbilityGameID"
 FIRST_RECAST_BIN = (1, 120)
 FIGHT_BIN = (5, 600)
 DEATH_BIN = (1, 30)
-PLAYER_CD_BIN = (5, 600)
 LUST_TIME_BIN = (5, 600)
 LUST_HP_BIN = 10
 
@@ -206,6 +205,12 @@ class Pull:
         """The dungeon page's pull signature (databaseConnector.FETCH_DUNGEON_LUST_TIMELINE_SQL
         pull_sig): "npc:count" of the credited npcs, by npc id, comma separated."""
         return ",".join(f"{npc}:{n}" for npc, n in self.npc_counts())
+
+    def family_key(self):
+        """The family sp_wcl_family_map gives this pull: its encounter, else its npcs without counts."""
+        if self.encounter_id:
+            return f"b:{self.encounter_id}"
+        return ",".join(str(npc) for npc, _ in self.npc_counts())
 
     def pack_ids(self):
         """The MDT packs the pull's mobs resolved to (diagnostics only)."""
@@ -677,7 +682,8 @@ def _trimmed_fit(pairs, mirrored):
 
 def build_run(packs, actors, enemy_events, enemy_deaths, enemy_summons, boss_windows,
               fight_start, fight_end, friendly_casts=(), friendly_deaths=(), lust_ids=frozenset(),
-              boss_npc_ids=frozenset(), npc_slots=None, main_boss_npcs=None, clones=None, interrupts=()):
+              boss_npc_ids=frozenset(), npc_slots=None, main_boss_npcs=None, clones=None, interrupts=(),
+              aoe_spells=frozenset()):
     """Rebuilds the pulls of one run and attributes enemy casts, player cooldowns, lust and player
     deaths to them. packs: mdt_packs() of the dungeon, which assign_packs gives the mobs (pull keys);
     empty leaves every mob unresolved (the pulls do not depend on it). npc_slots: {npc: MDT clone count} of the whole dungeon, defaulting to
@@ -685,7 +691,7 @@ def build_run(packs, actors, enemy_events, enemy_deaths, enemy_summons, boss_win
     MDT's isBoss npcs, defaulting to boss_npc_ids. clones: the dungeon's MDT clones, which enable
     the range test of credit_kills. enemy_events: enemy casts (cast and begincast) and damage
     events with resources. boss_windows: [(encounter_id, start, end)]. interrupts: the players'
-    interrupt events.
+    interrupt events. aoe_spells: the enemy spell ids dungeon_spells.json flags as AoE.
 
     Kills are first credited by MDT clone count alone; the pulls and packs this gives yield the
     run's geometry, and where it is trusted the kills are credited again with the range test and
@@ -727,12 +733,6 @@ def build_run(packs, actors, enemy_events, enemy_deaths, enemy_summons, boss_win
     for mob in mobs.values():
         if mob.engage is not None and not mob.credited:
             mob.pull = pull_at(mob.engage)      # for its spell timings only
-    pull_casts = defaultdict(list)          # pull -> [(t, spell, npc, target)] of its mobs' casts
-    for uid, rows in casts.items():
-        if mobs[uid].pull is not None:
-            pull_casts[mobs[uid].pull] += [(t, spell, mobs[uid].npc, target) for t, spell, _, target in rows]
-    for rows in pull_casts.values():
-        rows.sort()
 
     def lost_attempt(pull, t):
         """Whether t lies in a boss attempt that was wiped, or on a boss pull before its winning attempt."""
@@ -740,14 +740,15 @@ def build_run(packs, actors, enemy_events, enemy_deaths, enemy_summons, boss_win
         return (bool(earlier) and min(earlier) <= t < pull.window[1]) or any(
             w[1] <= t <= w[2] and any(v[0] == w[0] and v[1] > w[2] for v in boss_windows) for w in boss_windows)
 
-    relation_casts = defaultdict(list)      # pull -> sorted [(t, spell, npc)] a cooldown can relate to
+    relation_casts = defaultdict(list)      # pull -> [(t, spell, npc, target)] by time, a cooldown can relate to
     for uid, rows in casts.items():
         pull = mobs[uid].pull
         if pull is not None:
-            relation_casts[pull] += [(t, spell, mobs[uid].npc) for spell, times in timed_casts(rows).items()
-                                     if spell and spell != MELEE_SPELL_ID for t in times if not lost_attempt(pull, t)]
+            relation_casts[pull] += [(t, spell, mobs[uid].npc, target) for spell, timed in timed_cast_targets(rows).items()
+                                     if spell and spell != MELEE_SPELL_ID for t, target in timed
+                                     if not lost_attempt(pull, t)]
     for rows in relation_casts.values():
-        rows.sort()
+        rows.sort(key=lambda r: r[0])
     lusts, player_cds = [], []
     for e in sorted(friendly_casts, key=lambda e: e["timestamp"]):
         t, spell = e["timestamp"], e.get("abilityGameID")
@@ -767,10 +768,8 @@ def build_run(packs, actors, enemy_events, enemy_deaths, enemy_summons, boss_win
         elif pull and not lost_attempt(pull, t):
             player = e.get("sourceID")
             player = (actors.get(player) or {}).get("petOwner") or player
-            trigger = cooldown_trigger(pull_casts[pull], t, player, actors)
             player_cds.append({"pull": pull, "player": player, "spell": spell, "t": t, "offset_ms": t - pull.ref_start,
-                               "trigger_spell": trigger[0], "trigger_npc": trigger[1],
-                               "relations": cooldown_relations(relation_casts[pull], t),
+                               "relations": cooldown_relations(relation_casts[pull], t, player, actors, aoe_spells, bosses),
                                "target_npc": enemy_npc(e.get("targetID"), actors)})
     player_deaths = [{"pull": pull_at(e["timestamp"]), "player": e.get("targetID"),
                       "spell": e.get("killingAbilityGameID") or 0,
@@ -793,29 +792,45 @@ def build_run(packs, actors, enemy_events, enemy_deaths, enemy_summons, boss_win
             "fight_start": fight_start, "fight_end": fight_end}
 
 
-def cooldown_trigger(casts, t, player, actors):
-    """(enemy spell, npc) that most plausibly made a player press a cooldown at t: the latest cast or
-    begincast of the pull's mobs in the CD_TRIGGER_MS before it, one aimed at that player first,
-    else one aimed at no player (untargeted or area casts). Casts at other players are left out.
-    (0, 0) when there is none."""
-    recent = [c for c in casts if t - CD_TRIGGER_MS <= c[0] <= t]
-    at_player = [c for c in recent if c[3] == player]
-    open_casts = [c for c in recent if not is_friendly(c[3], actors)]
-    pick = (at_player or open_casts or [None])[-1]
-    return (pick[1], pick[2]) if pick else (0, 0)
+def cooldown_relations(casts, t, player, actors, aoe_spells, boss_npcs):
+    """The enemy casts within CD_RELATION_MS of a cooldown `player` pressed at t, from casts (by time,
+    [(t, spell, npc, target)]), with the facts recorded_relations needs once the spec is known.
+    offset_ms: from the enemy cast to the press, negative when the press came first."""
+    near = casts[bisect_left(casts, (t - CD_RELATION_MS,)):bisect_left(casts, (t + CD_RELATION_MS + 1,))]
+    return [{"spell": spell, "npc": npc, "offset_ms": t - c, "aoe": spell in aoe_spells, "at_presser": target == player,
+             "at_group": (actors.get(target) or {}).get("type") == "Player", "by_boss": npc in boss_npcs}
+            for c, spell, npc, target in near]
 
 
-def cooldown_relations(casts, t):
-    """[(enemy spell, npc, bin)] of a player cooldown pressed at t: the nearest of each (spell, npc) in
-    casts (sorted [(t, spell, npc)]) within CD_RELATION_MS. bin: signed seconds from the enemy cast to
-    the press, negative when the press came first."""
+def cooldown_category(name, spec_id, categories):
+    """A cooldown's category for one spec, None when unlisted. Same rule as
+    pageGeneration.wcl_cooldown_category, which the collector image does not ship."""
+    value = categories.get(name)
+    if isinstance(value, dict):
+        value = value.get(str(spec_id), value.get("default"))
+    return value if value in COOLDOWN_CATEGORIES else None
+
+
+def relation_applies(candidate, category, boss_pull):
+    """Whether a cooldown of this category answers the enemy cast of a cooldown_relations candidate."""
+    if category == "defensive":
+        return candidate["aoe"] or candidate["at_presser"]
+    if category in ("healing", "utility"):
+        return candidate["aoe"] or candidate["at_group"]
+    if category == "offensive":
+        return boss_pull and candidate["by_boss"]
+    return False
+
+
+def recorded_relations(candidates, category, boss_pull):
+    """The nearest applying candidate of each (enemy spell, npc), the earlier cast on a tie."""
     nearest = {}
-    for c, spell, npc in casts[bisect_left(casts, (t - CD_RELATION_MS,)):bisect_left(casts, (t + CD_RELATION_MS + 1,))]:
-        best = nearest.get((spell, npc))
-        if best is None or (abs(t - c), c - t) < (abs(t - best), best - t):
-            nearest[(spell, npc)] = c
-    return [(spell, npc, math.floor((t - c) / 1000 / CD_RELATION_BIN_S + 0.5) * CD_RELATION_BIN_S)
-            for (spell, npc), c in nearest.items()]
+    for c in candidates:
+        if relation_applies(c, category, boss_pull):
+            best = nearest.get((c["spell"], c["npc"]))
+            if best is None or (abs(c["offset_ms"]), -c["offset_ms"]) < (abs(best["offset_ms"]), -best["offset_ms"]):
+                nearest[(c["spell"], c["npc"])] = c
+    return list(nearest.values())
 
 
 def enemy_npc(actor_id, actors):
@@ -849,12 +864,26 @@ def main_boss(mobs, main_boss_npcs, needs_engage=True):
     return min(bosses, key=lambda m: (-m.max_hp, m.engage or 0), default=None)
 
 
+def timed_cast_targets(rows):
+    """{spell: [(time, target)]} of one unit's casts (in log order): begincasts when the spell has any
+    on that unit, else casts. A begincast often lacks the final target, so the cast completing it
+    gives the target. One that never completed keeps its own."""
+    begun, completed, open_casts = defaultdict(list), defaultdict(list), {}
+    for t, spell, kind, target in rows:
+        if kind == "begincast":
+            open_casts[spell] = [t, target]
+            begun[spell].append(open_casts[spell])
+        else:
+            completed[spell].append((t, target))
+            if spell in open_casts:
+                open_casts.pop(spell)[1] = target
+    return {spell: [tuple(c) for c in begun[spell]] if spell in begun else completed[spell]
+            for spell in begun.keys() | completed.keys()}
+
+
 def timed_casts(rows):
-    """{spell: [times]} of one unit's casts: begincasts when the spell has any on that unit, else casts."""
-    by_spell = defaultdict(lambda: defaultdict(list))
-    for t, spell, kind, _ in rows:
-        by_spell[spell][kind].append(t)
-    return {spell: kinds["begincast"] or kinds["cast"] for spell, kinds in by_spell.items()}
+    """{spell: [times]} of one unit's casts, as timed_cast_targets picks them."""
+    return {spell: [t for t, _ in timed] for spell, timed in timed_cast_targets(rows).items()}
 
 
 def spell_timings(mobs, casts):
@@ -891,17 +920,19 @@ def bin_of(seconds, width_cap, low=0):
     return int(min(max(seconds, low), cap) // width * width)
 
 
-def run_deltas(run, player_specs, cooldowns):
+def run_deltas(run, player_specs, cooldowns, categories):
     """The additive aggregates one run contributes, keyed like the wcl_* tables (minus day and
-    dungeon). player_specs: {player actor id: spec id}. cooldowns: player_cooldowns.json."""
+    dungeon), with the readable family key where those hold family_id. player_specs: {player actor
+    id: spec id}. cooldowns: player_cooldowns.json. categories: player_cooldown_categories.json."""
     pulls = {p.index: p for p in run["pulls"]}
     d = defaultdict(Counter)
     for p in run["pulls"]:
         key = p.key()
         d["pull"][(key, p.encounter_id)] += 1
         d["pull_duration_ms"][key] += (p.end or run["fight_end"]) - p.start
+        d["family"][p.family_key()] += 1
         for spec in set(player_specs.values()):
-            d["spec_pull"][(spec, key)] += sum(1 for s in player_specs.values() if s == spec)
+            d["spec_pull"][(spec, p.family_key())] += sum(1 for s in player_specs.values() if s == spec)
     for m in run["mobs"].values():
         if m.engage is not None:
             d["npc_engaged"][m.npc] += 1
@@ -921,28 +952,31 @@ def run_deltas(run, player_specs, cooldowns):
             d["enemy_spell_mobs"][(enc, s["npc"], s["spell"])] += 1
     for i in run["interrupts"]:
         d["enemy_spell_interrupts"][(pulls[i["pull"]].encounter_id, i["npc"], i["spell"])] += 1
-    casting = defaultdict(set)
     offsets = defaultdict(list)             # (pull, player, spell) -> offsets of the player's casts
     for c in run["player_cds"]:
         spec = player_specs.get(c["player"])
         if spec is None:
             continue
-        key = (spec, pulls[c["pull"]].key(), c["spell"])
+        pull = pulls[c["pull"]]
+        key = (spec, pull.family_key(), c["spell"])
         d["player_cd_casts"][key] += 1
-        d["player_cd_timing"][(*key, bin_of(c["offset_ms"] / 1000, PLAYER_CD_BIN, -PLAYER_CD_BIN[1]))] += 1
-        d["player_cd_trigger"][(*key, c["trigger_spell"], c["trigger_npc"])] += 1
-        casting[key].add(c["player"])
         offsets[(c["pull"], c["player"], c["spell"])].append(c["offset_ms"])
-        for enemy_spell, enemy_npc_id, relation_bin in c["relations"]:
-            d["player_cd_relation"][(*key, enemy_spell, enemy_npc_id, relation_bin)] += 1
+        name = cooldowns[str(c["spell"])]["name"]
+        category = None if name in INTERRUPT_NAMES else cooldown_category(name, spec, categories)
+        for r in recorded_relations(c["relations"], category, bool(pull.encounter_id)):
+            relation = (*key, r["spell"], r["npc"])
+            offset_s = round(r["offset_ms"] / 1000)
+            d["player_cd_relation"][relation] += 1
+            d["player_cd_relation_offset_s"][relation] += offset_s
+            d["player_cd_relation_abs_offset_s"][relation] += abs(offset_s)
         if c["target_npc"]:
             d["player_cd_target"][(*key, c["target_npc"])] += 1
-    for key, players in casting.items():
-        d["player_cd_players"][key] += len(players)
     for (index, player, spell), times in offsets.items():
         p = pulls[index]
-        key = (player_specs[player], p.key(), spell)
+        key = (player_specs[player], p.family_key(), spell)
         duration_s = max((p.end or run["fight_end"]) - p.ref_start, 0) / 1000
+        # Per pull, like player_pulls, as a family spans several pulls of one run.
+        d["player_cd_players"][key] += 1
         d["player_cd_usage_players"][key] += 1
         d["player_cd_usage_casts"][key] += len(times)
         d["player_cd_usage_possible"][key] += 1 + int(duration_s // cooldowns[str(spell)]["cooldown_s"])

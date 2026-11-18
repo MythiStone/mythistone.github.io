@@ -23,9 +23,11 @@ them server-side (only the client analyzer does), and the spec-page talent trees
 by the seeded class/spec/hero_talents aggregates, not by that string.
 """
 
+import hashlib
 import json
 import os
 import random
+import re
 
 import databaseConnector as db
 from commonUtils import bonus_set_hash, load_json, load_season_gear_rules, talent_set_hash
@@ -1051,8 +1053,18 @@ def seed_wcl(conn, cursor, static, rng):
     today = datetime.datetime.now(datetime.timezone.utc).date()
     days = [today - datetime.timedelta(days=i) for i in range(14)]
     now_ms = _now_ms()
-    d = {k: [] for k in ("pull", "spec_pull", "npc", "spell", "timing", "cd", "cd_timing",
-                         "trigger", "lust", "death", "example", "relation", "usage", "target", "interrupt")}
+    d = {k: [] for k in ("pull", "spec_pull", "npc", "spell", "timing", "cd", "lust", "death", "example",
+                         "relation", "usage", "target", "interrupt")}
+    families = set()
+
+    def family_id(cmid, sig):
+        """The family_id of a pull signature, sp_wcl_family_map's family_key registered on the way."""
+        bosses = boss_encounters.get(cmid, {})
+        encounter = next((bosses[int(tok.split(":")[0])] for tok in sig.split(",")
+                          if int(tok.split(":")[0]) in bosses), 0)
+        key = f"b:{encounter}" if encounter else re.sub(r":[0-9]+", "", sig)
+        families.add((db.wcl_family_id(key), key))
+        return db.wcl_family_id(key)
 
     def split(total, bins):
         """{bin: n} of ``total`` spread over ``bins``, every n at least 1 while total allows."""
@@ -1141,59 +1153,55 @@ def seed_wcl(conn, cursor, static, rng):
                                      rng.randint(1, 40), start, start + rng.randint(20000, 90000),
                                      rng.randint(8, 20), now_ms - rng.randint(0, 13 * _DAY_MS)))
             for spec in rng.sample(specs, min(3, len(specs))):
-                d["spec_pull"].append((day, cmid, spec, sig, pulls * rng.randint(1, 2)))
+                d["spec_pull"].append((day, cmid, spec, family_id(cmid, sig), pulls * rng.randint(1, 2)))
                 for cd in rng.sample(cds_by_spec[spec], min(2, len(cds_by_spec[spec]))):
                     casts = rng.randint(1, pulls)
-                    d["cd"].append((day, cmid, spec, sig, cd, casts, rng.randint(1, casts)))
-                    d["cd_timing"].append((day, cmid, spec, sig, cd, rng.randint(0, 12) * 5, casts))
-                    d["trigger"].append((day, cmid, spec, sig, cd, spell, npc, rng.randint(1, casts)))
+                    d["cd"].append((day, cmid, spec, family_id(cmid, sig), cd, casts, rng.randint(1, casts)))
         for i in range(5):
             start = rng.randint(0, 1500000)
             d["example"].append((cmid, sig, 0, 0, f"seedReport{i:06d}", rng.randint(1, 40),
                                  start, start + rng.randint(20000, 90000), rng.randint(8, 20),
                                  now_ms - rng.randint(0, 13 * _DAY_MS)))
 
-    # (share of possible casts, average first use in seconds, {relation bin: weight}) by the spell's
-    # place in a spec's kit: on cooldown and just before an enemy spell, saved and just after one,
-    # on both sides of one, and unrelated to any.
+    # (share of possible casts, average first use in seconds, {seconds from the enemy cast: weight})
+    # by the spell's place in a spec's kit: on cooldown and just before an enemy spell, saved and just
+    # after one, on both sides of one, and unrelated to any.
     cd_roles = ((0.9, 6, {-4: 0.2, -2: 0.6, 0: 0.2}), (0.4, 45, {2: 0.6, 4: 0.3, 6: 0.1}),
                 (0.65, 20, {-2: 0.5, 2: 0.5}), (0.65, 20, {}))
 
     def cd_context_rows(day, cmid, spec, sig, cd, role, casts, players):
         """The relation, usage and target rows of one cooldown on one featured pull."""
         share, first_use, shape = cd_roles[role]
-        d["usage"].append((day, cmid, spec, sig, cd, players, casts, round(casts / share), players * first_use))
+        family = family_id(cmid, sig)
+        d["usage"].append((day, cmid, spec, family, cd, players, casts, round(casts / share), players * first_use))
         npcs = [int(tok.split(":")[0]) for tok in sig.split(",")]
         near = sorted((n, s) for n, s in enemy_spells.get(cmid, []) if n in npcs)
         is_boss = any(n in boss_encounters.get(cmid, {}) for n in npcs)
-        # A second boss spell mirrors the first, so one cooldown shows both before and after.
-        for (npc, spell), side in zip(near, (1, -1) if is_boss else (1,)):
-            for b, weight in shape.items():
-                d["relation"].append((day, cmid, spec, sig, cd, spell, npc, b * side, max(1, round(casts * weight))))
+        # On a boss the saved cooldown favors the second spell and the others the first, so each favored
+        # spell's lift clears the page's 1.25. The minor spell mirrors the offset.
+        ranked = near[:2][::-1] if is_boss and role == 1 else near[:2]
+        if shape:
+            offset, spread = sum(b * w for b, w in shape.items()), sum(abs(b) * w for b, w in shape.items())
+            for (npc, spell), (side, weight) in zip(ranked, ((1, 0.8), (-1, 0.1)) if is_boss else ((1, 1.0),)):
+                n = max(1, round(casts * weight))
+                d["relation"].append((day, cmid, spec, family, cd, spell, npc, n, round(n * offset * side),
+                                      round(n * spread)))
         if not is_boss and shape:
             for npc, weight in zip(npcs, (0.6, 0.3, 0.1)):
-                d["target"].append((day, cmid, spec, sig, cd, npc, max(1, round(casts * weight))))
+                d["target"].append((day, cmid, spec, family, cd, npc, max(1, round(casts * weight))))
 
     # Per (spec, dungeon) so the same spells add up across the featured pulls and days.
     for cmid in sigs_by_dungeon:
-        spells = enemy_spells.get(cmid) or [(0, 0)]
         for spec in specs:
             kit = rng.sample(cds_by_spec[spec], min(3, len(cds_by_spec[spec]))) + [rng.choice(racials)]
             for sig in (s for c, s in sorted(featured) if c == cmid):
                 for day in rng.sample(days, 2):
-                    d["spec_pull"].append((day, cmid, spec, sig, rng.randint(30, 60)))
+                    d["spec_pull"].append((day, cmid, spec, family_id(cmid, sig), rng.randint(30, 60)))
                     for role, cd in enumerate(kit):
                         casts = rng.randint(20, 40)
                         players = rng.randint(casts // 2, casts)
-                        d["cd"].append((day, cmid, spec, sig, cd, casts, players))
+                        d["cd"].append((day, cmid, spec, family_id(cmid, sig), cd, casts, players))
                         cd_context_rows(day, cmid, spec, sig, cd, role, casts, players)
-                        bins = [-5] + [b * 5 for b in rng.sample(range(0, 24), 3)] + [600]
-                        for b, n in split(casts, bins).items():
-                            d["cd_timing"].append((day, cmid, spec, sig, cd, b, n))
-                        npc, spell = rng.choice(spells)
-                        near = rng.randint(8, casts // 2)
-                        d["trigger"].append((day, cmid, spec, sig, cd, spell, npc, near))
-                        d["trigger"].append((day, cmid, spec, sig, cd, 0, 0, casts - near))
                 for cd in kit:
                     start = rng.randint(0, 1500000)
                     d["example"].append((cmid, sig, spec, cd, f"seedCd{rng.randint(0, 9999):06d}", rng.randint(1, 40),
@@ -1204,15 +1212,19 @@ def seed_wcl(conn, cursor, static, rng):
     d["example"] = [row + (None if i % 5 == 0 else 7000 + i,) for i, row in enumerate(d["example"])]
     _seed_wcl_page_cases(d, days, enemy_spells, boss_encounters)
 
+    # Evenly spread over the window, the deaths per run denominator counts only the 'done' ones.
+    processed = [(f"seedRun{cmid}", i + 1, hashlib.sha1(f"{cmid}:{i}".encode()).digest(), cmid,
+                  now_ms - i * 13 * _DAY_MS // 48, "done" if i % 8 else "skipped")
+                 for cmid in sigs_by_dungeon for i in range(48)]
+
     def work(cur):
+        db.upsert_wcl_pull_families(cur, families)
         db.upsert_wcl_pull_daily(cur, d["pull"])
         db.upsert_wcl_spec_pull_daily(cur, d["spec_pull"])
         db.upsert_wcl_npc_daily(cur, d["npc"])
         db.upsert_wcl_enemy_spell_daily(cur, d["spell"])
         db.upsert_wcl_enemy_spell_timing_daily(cur, d["timing"])
         db.upsert_wcl_player_cd_daily(cur, d["cd"])
-        db.upsert_wcl_player_cd_timing_daily(cur, d["cd_timing"])
-        db.upsert_wcl_player_cd_trigger_daily(cur, d["trigger"])
         db.upsert_wcl_player_cd_relation_daily(cur, d["relation"])
         db.upsert_wcl_player_cd_usage_daily(cur, d["usage"])
         db.upsert_wcl_player_cd_target_daily(cur, d["target"])
@@ -1220,6 +1232,8 @@ def seed_wcl(conn, cursor, static, rng):
         db.upsert_wcl_lust_daily(cur, d["lust"])
         db.upsert_wcl_player_death_daily(cur, d["death"])
         db.upsert_wcl_example_logs(cur, d["example"])
+        for row in processed:
+            db.insert_wcl_processed_run(cur, *row)
 
     db.run_in_transaction(conn, work)
 

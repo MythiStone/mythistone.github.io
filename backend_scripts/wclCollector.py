@@ -231,6 +231,8 @@ def load_static():
     spec_rows, specs_by_name = wcl_specs()
     return {"dungeons": dungeons, "mapping": mapping, "lust": lust_ids(),
             "cooldowns": load_json(STATIC_DIR / "player_cooldowns.json"),
+            "cooldown_categories": load_json(STATIC_DIR / "player_cooldown_categories.json"),
+            "aoe_spells": {int(k) for k, v in load_json(STATIC_DIR / "dungeon_spells.json").items() if v.get("aoe")},
             "spec_rows": spec_rows, "specs_by_name": specs_by_name}
 
 
@@ -274,7 +276,8 @@ def build(fight, actors, events, static, enc_ids=None):
         friendly_deaths=events["friendlyDeaths"], lust_ids=static["lust"],
         boss_npc_ids=set(static["dungeons"][cm]["boss_npc_ids"]), npc_slots=Counter(c["npc_id"] for c in clones),
         main_boss_npcs=set(static["mapping"][cm]["boss_npcs"]), clones=clones,
-        interrupts=[e for e in events["friendlyInterrupts"] if e.get("type") == "interrupt"])
+        interrupts=[e for e in events["friendlyInterrupts"] if e.get("type") == "interrupt"],
+        aoe_spells=static["aoe_spells"])
     return cm, specs, run
 
 
@@ -292,7 +295,11 @@ def marker_fingerprint(status, code, fight_id):
 
 
 def delta_rows(d, day, cm):
-    """[(upsert function, rows)] of run_deltas output for one run, prefixed with bucket day and dungeon."""
+    """[(upsert function, rows)] of run_deltas output for one run, prefixed with bucket day and dungeon.
+    Family-keyed deltas become family_id here, next to the dictionary rows sp_agg_wcl_cooldowns joins."""
+    def fam(k):
+        return (k[0], db.wcl_family_id(k[1]), *k[2:])
+
     pulls = defaultdict(lambda: [0, 0])
     for (key, enc), n in d["pull"].items():
         pulls[key][0] = max(pulls[key][0], enc or 0)
@@ -300,23 +307,24 @@ def delta_rows(d, day, cm):
     spell_keys = set(d["enemy_spell_casts"]) | set(d["enemy_spell_mobs"])
     cd_keys = set(d["player_cd_casts"]) | set(d["player_cd_players"])
     return [
+        (db.upsert_wcl_pull_families, [(db.wcl_family_id(k), k) for k in d["family"]]),
         (db.upsert_wcl_pull_daily, [(day, cm, key, enc, n, d["pull_duration_ms"][key], d["pulls_with_death"][key])
                                     for key, (enc, n) in pulls.items()]),
-        (db.upsert_wcl_spec_pull_daily, [(day, cm, *k, n) for k, n in d["spec_pull"].items()]),
+        (db.upsert_wcl_spec_pull_daily, [(day, cm, *fam(k), n) for k, n in d["spec_pull"].items()]),
         (db.upsert_wcl_npc_daily, [(day, cm, npc, n, d["npc_alive_ms"][npc]) for npc, n in d["npc_engaged"].items()]),
         (db.upsert_wcl_enemy_spell_daily, [(day, cm, enc or 0, npc, spell, d["enemy_spell_casts"][(enc, npc, spell)],
                                             d["enemy_spell_mobs"][(enc, npc, spell)]) for enc, npc, spell in spell_keys]),
         (db.upsert_wcl_enemy_spell_timing_daily, [(day, cm, k[0] or 0, *k[1:], n)
                                                   for k, n in d["enemy_spell_timing"].items()]),
-        (db.upsert_wcl_player_cd_daily, [(day, cm, *k, d["player_cd_casts"][k], d["player_cd_players"][k])
+        (db.upsert_wcl_player_cd_daily, [(day, cm, *fam(k), d["player_cd_casts"][k], d["player_cd_players"][k])
                                          for k in cd_keys]),
-        (db.upsert_wcl_player_cd_timing_daily, [(day, cm, *k, n) for k, n in d["player_cd_timing"].items()]),
-        (db.upsert_wcl_player_cd_trigger_daily, [(day, cm, *k, n) for k, n in d["player_cd_trigger"].items()]),
-        (db.upsert_wcl_player_cd_relation_daily, [(day, cm, *k, n) for k, n in d["player_cd_relation"].items()]),
-        (db.upsert_wcl_player_cd_usage_daily, [(day, cm, *k, n, d["player_cd_usage_casts"][k],
+        (db.upsert_wcl_player_cd_relation_daily, [(day, cm, *fam(k), n, d["player_cd_relation_offset_s"][k],
+                                                   d["player_cd_relation_abs_offset_s"][k])
+                                                  for k, n in d["player_cd_relation"].items()]),
+        (db.upsert_wcl_player_cd_usage_daily, [(day, cm, *fam(k), n, d["player_cd_usage_casts"][k],
                                                 d["player_cd_usage_possible"][k], d["player_cd_usage_first_s"][k])
                                                for k, n in d["player_cd_usage_players"].items()]),
-        (db.upsert_wcl_player_cd_target_daily, [(day, cm, *k, n) for k, n in d["player_cd_target"].items()]),
+        (db.upsert_wcl_player_cd_target_daily, [(day, cm, *fam(k), n) for k, n in d["player_cd_target"].items()]),
         (db.upsert_wcl_enemy_spell_interrupt_daily, [(day, cm, k[0] or 0, *k[1:], n)
                                                      for k, n in d["enemy_spell_interrupts"].items()]),
         (db.upsert_wcl_lust_daily, [(day, cm, *k, n) for k, n in d["lust"].items()]),
@@ -457,7 +465,7 @@ async def process_run(client, static, queued, write_gate, enc_ids=None):
     events = await fetch_events(client, code, fight, actors, static)
     cm, specs, run = await asyncio.to_thread(build, fight, actors, events, static, enc_ids)
     day = datetime.fromtimestamp(run_start_ms / 1000, timezone.utc).date()
-    writes = delta_rows(pb.run_deltas(run, specs, static["cooldowns"]), day, cm)
+    writes = delta_rows(pb.run_deltas(run, specs, static["cooldowns"], static["cooldown_categories"]), day, cm)
     examples = example_rows(run, specs, cm, code, fight_id, keystone_level, run_start_ms, fight.get("dungeonPulls") or [])
     async with write_gate:
         await asyncio.to_thread(_write_run, code, fight_id, fingerprint, cm, run_start_ms, "done", writes, examples)
@@ -607,7 +615,7 @@ async def dry_run(args):
     print(f"engaged, not credited (no death, or no free slot at death): {sorted(uncredited.items())}")
     for lust_row in run["lusts"]:
         print(f"\nlust {lust_row}")
-    print_deltas(pb.run_deltas(run, specs, static["cooldowns"]))
+    print_deltas(pb.run_deltas(run, specs, static["cooldowns"], static["cooldown_categories"]))
     if args.write_local:
         init_local_pool()
         queued = (args.code, args.fight, cm, int(time.time() * 1000), fight["keystoneLevel"], 0)

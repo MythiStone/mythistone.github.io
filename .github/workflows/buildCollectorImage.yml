@@ -38,6 +38,8 @@ on:
       - 'data/static/missives.json'
       - 'data/static/dungeon_mapping.json'
       - 'data/static/player_cooldowns.json'
+      - 'data/static/player_cooldown_categories.json'
+      - 'data/static/dungeon_spells.json'
       - 'data/static/spells.json'
       - 'data/static/talents/**'
       - 'Dockerfile'

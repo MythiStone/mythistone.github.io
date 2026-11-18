@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 from decimal import Decimal, ROUND_HALF_UP
@@ -6750,6 +6751,11 @@ def fetch_bot_news_channels(connection, cursor):
 # whole unit on a deadlock or lock wait. The *_with_retry helpers would retry one statement
 # after rolling back the rest of the run.
 
+UPSERT_WCL_PULL_FAMILIES_SQL = """
+INSERT IGNORE INTO Mythistone.wcl_pull_families (family_id, family_key)
+VALUES (%s, %s)
+"""
+
 UPSERT_WCL_PULL_DAILY_SQL = """
 INSERT INTO Mythistone.wcl_pull_daily
   (bucket_date, dungeon_id, pull_key, encounter_id, pulls, duration_ms_sum, pulls_with_death)
@@ -6762,7 +6768,7 @@ ON DUPLICATE KEY UPDATE
 """
 
 UPSERT_WCL_SPEC_PULL_DAILY_SQL = """
-INSERT INTO Mythistone.wcl_spec_pull_daily (bucket_date, dungeon_id, spec_id, pull_key, player_pulls)
+INSERT INTO Mythistone.wcl_spec_pull_daily (bucket_date, dungeon_id, spec_id, family_id, player_pulls)
 VALUES (%s, %s, %s, %s, %s)
 ON DUPLICATE KEY UPDATE player_pulls = player_pulls + VALUES(player_pulls)
 """
@@ -6793,37 +6799,27 @@ ON DUPLICATE KEY UPDATE n = n + VALUES(n)
 
 UPSERT_WCL_PLAYER_CD_DAILY_SQL = """
 INSERT INTO Mythistone.wcl_player_cd_daily
-  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, casts, players_casting)
+  (bucket_date, dungeon_id, spec_id, family_id, spell_id, casts, players_casting)
 VALUES (%s, %s, %s, %s, %s, %s, %s)
 ON DUPLICATE KEY UPDATE
   casts = casts + VALUES(casts),
   players_casting = players_casting + VALUES(players_casting)
 """
 
-UPSERT_WCL_PLAYER_CD_TIMING_DAILY_SQL = """
-INSERT INTO Mythistone.wcl_player_cd_timing_daily
-  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, bin, n)
-VALUES (%s, %s, %s, %s, %s, %s, %s)
-ON DUPLICATE KEY UPDATE n = n + VALUES(n)
-"""
-
-UPSERT_WCL_PLAYER_CD_TRIGGER_DAILY_SQL = """
-INSERT INTO Mythistone.wcl_player_cd_trigger_daily
-  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, enemy_spell_id, enemy_npc_id, n)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-ON DUPLICATE KEY UPDATE n = n + VALUES(n)
-"""
-
 UPSERT_WCL_PLAYER_CD_RELATION_DAILY_SQL = """
 INSERT INTO Mythistone.wcl_player_cd_relation_daily
-  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, enemy_spell_id, enemy_npc_id, `bin`, n)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-ON DUPLICATE KEY UPDATE n = n + VALUES(n)
+  (bucket_date, dungeon_id, spec_id, family_id, spell_id, enemy_spell_id, enemy_npc_id, n, offset_s_sum,
+   abs_offset_s_sum)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE
+  n = n + VALUES(n),
+  offset_s_sum = offset_s_sum + VALUES(offset_s_sum),
+  abs_offset_s_sum = abs_offset_s_sum + VALUES(abs_offset_s_sum)
 """
 
 UPSERT_WCL_PLAYER_CD_USAGE_DAILY_SQL = """
 INSERT INTO Mythistone.wcl_player_cd_usage_daily
-  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, players_casting, casts_sum, possible_sum, first_use_s_sum)
+  (bucket_date, dungeon_id, spec_id, family_id, spell_id, players_casting, casts_sum, possible_sum, first_use_s_sum)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON DUPLICATE KEY UPDATE
   players_casting = players_casting + VALUES(players_casting),
@@ -6834,7 +6830,7 @@ ON DUPLICATE KEY UPDATE
 
 UPSERT_WCL_PLAYER_CD_TARGET_DAILY_SQL = """
 INSERT INTO Mythistone.wcl_player_cd_target_daily
-  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, target_npc_id, n)
+  (bucket_date, dungeon_id, spec_id, family_id, spell_id, target_npc_id, n)
 VALUES (%s, %s, %s, %s, %s, %s, %s)
 ON DUPLICATE KEY UPDATE n = n + VALUES(n)
 """
@@ -6951,13 +6947,23 @@ def _executemany_in_txn(cursor, sql, rows):
         cursor.executemany(sql, rows)
 
 
+def wcl_family_id(family_key):
+    """The 8-byte wcl_pull_families id of a family_key, equal to UNHEX(LEFT(MD5(family_key), 16))."""
+    return hashlib.md5(family_key.encode("ascii")).digest()[:8]
+
+
+def upsert_wcl_pull_families(cursor, rows):
+    """rows: (family_id, family_key). Sorted so concurrent writers take the rows in primary-key order."""
+    _executemany_in_txn(cursor, UPSERT_WCL_PULL_FAMILIES_SQL, sorted(set(rows)))
+
+
 def upsert_wcl_pull_daily(cursor, rows):
     """rows: (bucket_date, dungeon_id, pull_key, encounter_id, pulls, duration_ms_sum, pulls_with_death)."""
     _executemany_in_txn(cursor, UPSERT_WCL_PULL_DAILY_SQL, rows)
 
 
 def upsert_wcl_spec_pull_daily(cursor, rows):
-    """rows: (bucket_date, dungeon_id, spec_id, pull_key, player_pulls)."""
+    """rows: (bucket_date, dungeon_id, spec_id, family_id, player_pulls)."""
     _executemany_in_txn(cursor, UPSERT_WCL_SPEC_PULL_DAILY_SQL, rows)
 
 
@@ -6978,34 +6984,25 @@ def upsert_wcl_enemy_spell_timing_daily(cursor, rows):
 
 
 def upsert_wcl_player_cd_daily(cursor, rows):
-    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, casts, players_casting)."""
+    """rows: (bucket_date, dungeon_id, spec_id, family_id, spell_id, casts, players_casting)."""
     _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_DAILY_SQL, rows)
 
 
-def upsert_wcl_player_cd_timing_daily(cursor, rows):
-    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, bin, n)."""
-    _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_TIMING_DAILY_SQL, rows)
-
-
-def upsert_wcl_player_cd_trigger_daily(cursor, rows):
-    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, enemy_spell_id, enemy_npc_id, n)."""
-    _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_TRIGGER_DAILY_SQL, rows)
-
-
 def upsert_wcl_player_cd_relation_daily(cursor, rows):
-    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, enemy_spell_id, enemy_npc_id, bin, n).
-    bin: seconds from the enemy cast to the player cast, an even number from -10 to 10."""
+    """rows: (bucket_date, dungeon_id, spec_id, family_id, spell_id, enemy_spell_id, enemy_npc_id, n,
+    offset_s_sum, abs_offset_s_sum). offset_s_sum: seconds from the enemy cast to the press, negative
+    when the press came first."""
     _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_RELATION_DAILY_SQL, rows)
 
 
 def upsert_wcl_player_cd_usage_daily(cursor, rows):
-    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, players_casting, casts_sum,
+    """rows: (bucket_date, dungeon_id, spec_id, family_id, spell_id, players_casting, casts_sum,
     possible_sum, first_use_s_sum). first_use_s_sum: whole seconds, never negative."""
     _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_USAGE_DAILY_SQL, rows)
 
 
 def upsert_wcl_player_cd_target_daily(cursor, rows):
-    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, target_npc_id, n)."""
+    """rows: (bucket_date, dungeon_id, spec_id, family_id, spell_id, target_npc_id, n)."""
     _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_TARGET_DAILY_SQL, rows)
 
 
@@ -7157,20 +7154,6 @@ WHERE spec_id = %s
 ORDER BY dungeon_id, family_key, spell_id
 """
 
-FETCH_WCL_SPEC_TIMINGS_SQL = """
-SELECT dungeon_id, family_key, spell_id, `bin`, n
-FROM Mythistone.aggregated_wcl_spec_cd_timing
-WHERE spec_id = %s
-ORDER BY dungeon_id, family_key, spell_id, `bin`
-"""
-
-FETCH_WCL_SPEC_TRIGGERS_SQL = """
-SELECT dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, n
-FROM Mythistone.aggregated_wcl_spec_cd_trigger
-WHERE spec_id = %s
-ORDER BY dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id
-"""
-
 FETCH_WCL_SPEC_PULLS_SQL = """
 SELECT dungeon_id, family_key, player_pulls
 FROM Mythistone.aggregated_wcl_spec_pull
@@ -7202,10 +7185,10 @@ WHERE dungeon_id = %s AND status = 'done'
 """
 
 FETCH_WCL_SPEC_RELATIONS_SQL = """
-SELECT dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, `bin`, n
+SELECT dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, n, offset_s_sum, abs_offset_s_sum
 FROM Mythistone.aggregated_wcl_spec_cd_relation
 WHERE spec_id = %s
-ORDER BY dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, `bin`
+ORDER BY dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id
 """
 
 FETCH_WCL_SPEC_USAGE_SQL = """
@@ -7228,8 +7211,6 @@ UNION
 SELECT killing_spell_id FROM Mythistone.aggregated_wcl_pull_death WHERE killing_spell_id > 0
 UNION
 SELECT prev_spell_id FROM Mythistone.aggregated_wcl_lust WHERE prev_spell_id > 0
-UNION
-SELECT enemy_spell_id FROM Mythistone.aggregated_wcl_spec_cd_trigger WHERE enemy_spell_id > 0
 UNION
 SELECT enemy_spell_id FROM Mythistone.aggregated_wcl_spec_cd_relation WHERE enemy_spell_id > 0
 UNION
@@ -7290,8 +7271,9 @@ def fetch_wcl_dungeon_logged_runs(connection, cursor, dungeon_id):
 
 
 def fetch_wcl_spec_relations(connection, cursor, spec_id):
-    """[(dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, bin, n)]. bin: seconds from
-    the enemy cast to the player cast, an even number from -10 to 10."""
+    """[(dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, n, offset_s_sum,
+    abs_offset_s_sum)]. offset_s_sum: seconds from the enemy cast to the press, negative when the
+    press came first."""
     return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_RELATIONS_SQL, (spec_id,))
 
 
@@ -7308,17 +7290,6 @@ def fetch_wcl_spec_targets(connection, cursor, spec_id):
 def fetch_wcl_spec_cooldowns(connection, cursor, spec_id):
     """[(dungeon_id, family_key, spell_id, casts, players_casting)]."""
     return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_COOLDOWNS_SQL, (spec_id,))
-
-
-def fetch_wcl_spec_timings(connection, cursor, spec_id):
-    """[(dungeon_id, family_key, spell_id, bin, n)]."""
-    return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_TIMINGS_SQL, (spec_id,))
-
-
-def fetch_wcl_spec_triggers(connection, cursor, spec_id):
-    """[(dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, n)]. 0 enemy ids mean no
-    enemy cast came just before."""
-    return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_TRIGGERS_SQL, (spec_id,))
 
 
 def fetch_wcl_spec_pulls(connection, cursor, spec_id):
