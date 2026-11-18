@@ -64,11 +64,15 @@ VANISHED_HP = 1.0
 # A death (or a sign of life) of an instance number this long after its last death is a new unit:
 # one unit's killing blow and WCL death come within ~50 ms, a reused number dies again >300 ms later.
 REUSED_INSTANCE_MS = 100
+# Mob.killed_by values that mark the moment a unit really died. The others (encounter_end, vanished,
+# run_end, defeated_hp) are when the log stopped following it.
+REAL_DEATHS = {"death", "killing_blow"}
 
 
 # Delta bins: (bin width s, cap s)
 FIRST_RECAST_BIN = (1, 120)
 FIGHT_BIN = (5, 600)
+DEATH_BIN = (1, 30)
 PLAYER_CD_BIN = (5, 600)
 LUST_TIME_BIN = (5, 600)
 LUST_HP_BIN = 10
@@ -757,8 +761,10 @@ def main_boss(mobs, main_boss_npcs, needs_engage=True):
 
 def spell_timings(mobs, casts):
     """Per engaged mob and spell: begincasts when the spell has any on that mob, else casts, from
-    its first combat sign on (an opening cast at a player comes before the mob loses HP).
-    Returns [{pull, npc, spell, kind (first|recast|fight), seconds}]."""
+    its first combat sign on (an opening cast at a player comes before the mob loses HP). Kind death
+    is the time from each of those casts to the unit's real death, 0 for a cast after it, and also
+    counts casts outside that window, as a spell can fire only as its caster dies.
+    Returns [{pull, npc, spell, kind (first|recast|fight|death), seconds}]."""
     out = []
     for key, rows in casts.items():
         mob = mobs[key]
@@ -769,11 +775,14 @@ def spell_timings(mobs, casts):
             by_spell[spell].append((t, kind))
         for spell, hits in by_spell.items():
             use = "begincast" if any(k == "begincast" for _, k in hits) else "cast"
+            base = {"pull": mob.pull.index, "npc": mob.npc, "spell": spell}
+            if mob.killed_by in REAL_DEATHS:
+                out += [{**base, "kind": "death", "seconds": max(mob.death - t, 0) / 1000}
+                        for t, k in hits if k == use]
             start = min(mob.combat or mob.engage, mob.engage)
             times = sorted(t for t, k in hits if k == use and t >= start and (mob.death is None or t <= mob.death))
             if not times:
                 continue
-            base = {"pull": mob.pull.index, "npc": mob.npc, "spell": spell}
             out.append({**base, "kind": "first", "seconds": (times[0] - start) / 1000})
             out += [{**base, "kind": "recast", "seconds": (b - a) / 1000} for a, b in zip(times, times[1:])]
             out += [{**base, "kind": "fight", "seconds": (t - mob.pull.ref_start) / 1000} for t in times]
@@ -802,7 +811,7 @@ def run_deltas(run, player_specs):
             d["npc_alive_ms"][m.npc] += m.death - m.engage
     for s in run["spell_timings"]:
         enc = pulls[s["pull"]].encounter_id
-        width = FIGHT_BIN if s["kind"] == "fight" else FIRST_RECAST_BIN
+        width = {"fight": FIGHT_BIN, "death": DEATH_BIN}.get(s["kind"], FIRST_RECAST_BIN)
         # Negative: cast before the encounter start of a boss pull that trash or a mini-boss opened.
         d["enemy_spell_timing"][(enc, s["npc"], s["spell"], s["kind"], bin_of(s["seconds"], width, -width[1]))] += 1
         if s["kind"] == "fight":

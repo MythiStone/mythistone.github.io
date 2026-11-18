@@ -980,3 +980,107 @@ def generateSpecNav(spec_lookup, class_lookup):
         lst.sort(key=lambda x: x["name"])
 
     return spec_nav
+
+
+# Warcraft Logs aggregates (aggregated_wcl_*), shared by the dungeon and spec pages.
+# Bin widths and caps mirror wclPullBuilder.py. A capped top bin holds everything past the cap.
+WCL_BIN_WIDTH = {"first": 1, "recast": 1, "fight": 5, "lust": 5}
+WCL_BIN_CAP = {"first": 120, "recast": 120, "fight": 600, "lust": 600}
+WCL_DEADLY_PRIOR_PULLS = 25
+WCL_FIRST_CAST_MIN_SAMPLES = 20
+WCL_RECAST_MIN_SAMPLES = 30
+WCL_RECAST_MAX_CAPPED_SHARE = 0.4
+WCL_RECAST_MODE_WINDOW_S = 2
+WCL_RECAST_MODE_MIN_SHARE = 0.25
+WCL_SINGLE_CAST_RECAST_SHARE = 0.2
+WCL_STRIP_CUT_PERCENTILE = 0.9
+
+
+def wcl_log_url(report_code, fight_id, pull_start_ms, pull_end_ms):
+    """Warcraft Logs report link opened on the exact pull window."""
+    return (f"https://www.warcraftlogs.com/reports/{report_code}#fight={fight_id}"
+            f"&type=summary&start={pull_start_ms}&end={pull_end_ms}")
+
+
+def wcl_pull_npcs(pull_key):
+    """[(npc id str, count)] of a 'npc_id:count,...' pull signature."""
+    return [(tok.split(":")[0], int(tok.split(":")[1])) for tok in str(pull_key or "").split(",") if ":" in tok]
+
+
+def wcl_deadly_score(deaths, pulls, mean_deaths_per_pull):
+    """Deaths per pull shrunk toward the dungeon mean, so a rarely logged pull cannot top a ranking."""
+    return (deaths + WCL_DEADLY_PRIOR_PULLS * mean_deaths_per_pull) / (pulls + WCL_DEADLY_PRIOR_PULLS)
+
+
+def wcl_clock(seconds):
+    """m:ss of a non-negative number of seconds."""
+    whole = int(round(seconds))
+    return f"{whole // 60}:{whole % 60:02d}"
+
+
+def wcl_estimate_bins(bins, kind):
+    """{bin: n} usable for an estimate: no negative bins and no capped top bin."""
+    return {b: n for b, n in bins.items() if 0 <= b < WCL_BIN_CAP[kind] and n > 0}
+
+
+def wcl_percentile(bins, q):
+    """The lowest bin holding the q share of the weight of {bin: n}, None when empty."""
+    total = sum(bins.values())
+    seen = 0
+    for b in sorted(bins):
+        seen += bins[b]
+        if total and seen >= q * total:
+            return b
+    return None
+
+
+def wcl_first_cast(bins):
+    """{p25, p50, p75, n} seconds of a spell's first cast, None under the sample floor."""
+    usable = wcl_estimate_bins(bins, "first")
+    n = sum(usable.values())
+    if n < WCL_FIRST_CAST_MIN_SAMPLES:
+        return None
+    half = WCL_BIN_WIDTH["first"] / 2
+    return {"p25": wcl_percentile(usable, 0.25) + half, "p50": wcl_percentile(usable, 0.5) + half,
+            "p75": wcl_percentile(usable, 0.75) + half, "n": n}
+
+
+def wcl_recast(bins, mobs_casting):
+    """How a spell repeats: {state: 'regular', seconds}, {state: 'irregular'} or {state: 'once'}
+    (the caster usually dies first). None under the sample floor."""
+    samples = sum(n for b, n in bins.items() if b >= 0)
+    if mobs_casting and samples < WCL_SINGLE_CAST_RECAST_SHARE * mobs_casting:
+        return {"state": "once"}
+    if samples < WCL_RECAST_MIN_SAMPLES:
+        return None
+    usable = wcl_estimate_bins(bins, "recast")
+    if not usable or bins.get(WCL_BIN_CAP["recast"], 0) / samples > WCL_RECAST_MAX_CAPPED_SHARE:
+        return {"state": "irregular"}
+    smooth = {b: sum(usable.get(x, 0) for x in (b - 1, b, b + 1))
+              for b in range(min(usable), max(usable) + 1)}
+    mode = max(sorted(smooth), key=smooth.get)
+    near = sum(n for b, n in usable.items() if abs(b - mode) <= WCL_RECAST_MODE_WINDOW_S)
+    if near / sum(usable.values()) < WCL_RECAST_MODE_MIN_SHARE:
+        return {"state": "irregular"}
+    return {"state": "regular", "seconds": mode + WCL_BIN_WIDTH["recast"] / 2}
+
+
+def wcl_strip_cut(fight_bins):
+    """Shared time axis end (seconds) of several spells' {bin: n} fight bins, at their pooled p90."""
+    pooled = {}
+    for bins in fight_bins:
+        for b, n in wcl_estimate_bins(bins, "fight").items():
+            pooled[b] = pooled.get(b, 0) + n
+    cut = wcl_percentile(pooled, WCL_STRIP_CUT_PERCENTILE)
+    return None if cut is None else cut + WCL_BIN_WIDTH["fight"]
+
+
+def wcl_fight_strip(bins, cut):
+    """Positioned cells of a CSS bar strip over 0..cut seconds: {left, width, alpha}, sparse."""
+    usable = {b: n for b, n in wcl_estimate_bins(bins, "fight").items() if b < cut}
+    if not usable:
+        return []
+    peak = max(usable.values())
+    width = WCL_BIN_WIDTH["fight"] / cut * 100
+    return [{"left": round(b / cut * 100, 2), "width": round(width, 2), "alpha": round(0.3 + 0.7 * n / peak, 2)}
+            for b, n in sorted(usable.items())]

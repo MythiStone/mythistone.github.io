@@ -710,6 +710,27 @@ class DiscordReporter:
             ),
             inline=False,
         )
+        embed.add_field(
+            name="📜 Warcraft Logs",
+            value=(
+                f"Now: **{self.stats.get_status('wcl_state', 'starting')}**\n"
+                + (_kv_block([
+                    ("Runs Processed", window_counts.get("wcl_runs_done", 0)),
+                    ("Duplicates", window_counts.get("wcl_runs_skipped", 0)),
+                    ("Retried", window_counts.get("wcl_runs_retried", 0)),
+                    ("Failed", window_counts.get("wcl_runs_failed", 0)),
+                    ("Task Errors", window_counts.get("wcl_task_errors", 0)),
+                    ("Pairs Swept", window_counts.get("wcl_pairs_swept", 0)),
+                    ("Ranked Runs", window_counts.get("wcl_runs_ranked", 0)),
+                    ("Newly Queued", window_counts.get("wcl_runs_queued", 0)),
+                    ("Queue Pending", self.stats.get_status("wcl_pending", None)),
+                    ("Pairs Covered", self.stats.get_status("wcl_coverage", None)),
+                    ("API Points/h", self.stats.get_status("wcl_points", None)),
+                    ("DB Points/h", self.stats.get_status("wcl_db_points", None)),
+                ]) or "")
+            ),
+            inline=False,
+        )
         add_section(embed, "📥 Queues", [
             ("Simple", queue_sizes.get("simple_queue", 0)),
             ("Advanced", queue_sizes.get("advanced_queue", 0)),
@@ -772,6 +793,16 @@ class DiscordReporter:
         add_section(totals_embed, "SimulationCraft", [
             ("Profilesets", totals.get("simc_profilesets_run", 0)),
             ("Specs Done", totals.get("simc_specs_completed", 0)),
+        ])
+        add_section(totals_embed, "📜 Warcraft Logs", [
+            ("Runs Processed", totals.get("wcl_runs_done", 0)),
+            ("Duplicates", totals.get("wcl_runs_skipped", 0)),
+            ("Retried", totals.get("wcl_runs_retried", 0)),
+            ("Failed", totals.get("wcl_runs_failed", 0)),
+            ("Task Errors", totals.get("wcl_task_errors", 0)),
+            ("Pairs Swept", totals.get("wcl_pairs_swept", 0)),
+            ("Ranked Runs", totals.get("wcl_runs_ranked", 0)),
+            ("Newly Queued", totals.get("wcl_runs_queued", 0)),
         ])
 
         # -------------------------

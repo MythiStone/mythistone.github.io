@@ -103,10 +103,14 @@ def player_specs(actors, fight, by_name):
     return out
 
 
-def dungeon_id(fight, dungeons):
-    hits = [cm for cm, d in dungeons.items() if norm(d["name"]["en_US"]) == norm(fight["name"])]
+def dungeon_id(fight, dungeons, enc_ids=None):
+    """The fight's cm id. enc_ids ({cm: WCL encounter id}) is authoritative: WCL can title a complete
+    run after its bosses. Without it (debug CLI) the fight name decides."""
+    hits = ([cm for cm, enc in enc_ids.items() if enc == fight["encounterID"]] if enc_ids else
+            [cm for cm, d in dungeons.items() if norm(d["name"]["en_US"]) == norm(fight["name"])])
     if len(hits) != 1:
-        raise RuntimeError(f"Fight '{fight['name']}' matches {len(hits)} current dungeons")
+        raise RuntimeError(f"Fight '{fight['name']}' (encounter {fight['encounterID']}) matches "
+                           f"{len(hits)} current dungeons")
     return hits[0]
 
 
@@ -257,9 +261,9 @@ def run_queries(actors, fight, static, friendly_sightings=True):
                              f'filterExpression: "ability.id IN ({",".join(map(str, ids))})"'}
 
 
-def build(fight, actors, events, static):
+def build(fight, actors, events, static, enc_ids=None):
     """(cm id, {player: spec id}, run) of one fetched run. CPU heavy: the collector runs it in a thread."""
-    cm = dungeon_id(fight, static["dungeons"])
+    cm = dungeon_id(fight, static["dungeons"], enc_ids)
     clones = static["mapping"][cm]["clones"]
     specs = player_specs(actors, fight, static["specs_by_name"])
     run = pb.build_run(
@@ -394,7 +398,16 @@ def next_pair(static, enc_ids, crawl_state):
                key=lambda p: swept.get((p[0], p[1][2])) or datetime.min)
 
 
-async def run_sweeper(client, static, enc_ids, write_gate, log):
+def _publish_rate(client, stats):
+    """The API budget as the status embed shows it. client.rate is None right after an hourly reset."""
+    if client.rate:
+        r = client.rate
+        stats.set_status("wcl_points", f"{r['pointsSpentThisHour']:.0f}/{r['limitPerHour']}")
+        stats.set_status("wcl_db_points", f"{r['databasePointsSpentThisHour']:.0f}/{r['databaseLimitPerHour']}")
+
+
+async def run_sweeper(client, static, enc_ids, write_gate, log, stats):
+    pairs = {(str(cm), row[2]) for cm in enc_ids for row in static["spec_rows"]}
     while True:
         await write_gate.pause_point()
         state = await asyncio.to_thread(_db, db.fetch_wcl_crawl_state)
@@ -404,11 +417,17 @@ async def run_sweeper(client, static, enc_ids, write_gate, log):
             fresh = await asyncio.to_thread(_db, lambda c, cur: _queue_fresh(c, cur, fights, cm, spec_row[2]))
         log(f"[wcl] swept {static['dungeons'][cm]['name']['en_US']} {spec_row[1]} {spec_row[0]}: "
             f"{len(fights)} ranked runs, {len(fresh)} queued")
+        await stats.increment("wcl_pairs_swept")
+        await stats.increment("wcl_runs_ranked", len(fights))
+        await stats.increment("wcl_runs_queued", len(fresh))
+        swept = {(str(d), int(s)) for d, s, _, _ in state} | {(str(cm), spec_row[2])}
+        stats.set_status("wcl_coverage", f"{len(swept & pairs)}/{len(pairs)}")
+        _publish_rate(client, stats)
 
 
 # Worker.
 
-async def process_run(client, static, queued, write_gate):
+async def process_run(client, static, queued, write_gate, enc_ids=None):
     """Turns one queued run into its wcl_* rows. Returns (status, rows written)."""
     code, fight_id, cm, run_start_ms, keystone_level, _ = queued
     if await asyncio.to_thread(_db, lambda c, cur: db.fetch_wcl_processed_runs(c, cur, [(code, fight_id)])):
@@ -417,7 +436,7 @@ async def process_run(client, static, queued, write_gate):
         return "already processed", 0
     fight, actor_list = await client.fight(code, fight_id)
     actors = {a["id"]: a for a in actor_list}
-    if dungeon_id(fight, static["dungeons"]) != str(cm):
+    if dungeon_id(fight, static["dungeons"], enc_ids) != str(cm):
         raise RuntimeError(f"Fight '{fight['name']}' is not queued dungeon {cm}")
     fingerprint = run_fingerprint(str(cm), fight, actors)
     if await asyncio.to_thread(_db, lambda c, cur: db.fetch_wcl_processed_fingerprints(c, cur, [fingerprint])):
@@ -426,7 +445,7 @@ async def process_run(client, static, queued, write_gate):
                                     cm, run_start_ms, "skipped")
         return "skipped", 0
     events = await fetch_events(client, code, fight, actors, static)
-    cm, specs, run = await asyncio.to_thread(build, fight, actors, events, static)
+    cm, specs, run = await asyncio.to_thread(build, fight, actors, events, static, enc_ids)
     day = datetime.fromtimestamp(run_start_ms / 1000, timezone.utc).date()
     writes = delta_rows(pb.run_deltas(run, specs), day, cm)
     examples = example_rows(run, specs, cm, code, fight_id, keystone_level, run_start_ms)
@@ -435,10 +454,12 @@ async def process_run(client, static, queued, write_gate):
     return "done", sum(len(rows) for _, rows in writes) + len(examples)
 
 
-async def run_worker(client, static, write_gate, log):
+async def run_worker(client, static, enc_ids, write_gate, log, stats):
     while True:
         await write_gate.pause_point()
-        batch = await asyncio.to_thread(_db, lambda c, cur: db.pop_wcl_fight_queue(c, cur, WORKER_BATCH))
+        batch, pending = await asyncio.to_thread(_db, lambda c, cur: (db.pop_wcl_fight_queue(c, cur, WORKER_BATCH),
+                                                                      db.count_wcl_fight_queue(c, cur)))
+        stats.set_status("wcl_pending", f"{pending:,}")
         if not batch:
             await asyncio.sleep(WORKER_IDLE_S)
             continue
@@ -446,8 +467,10 @@ async def run_worker(client, static, write_gate, log):
             await write_gate.pause_point()
             code, fight_id, cm, run_start_ms, _, attempts = queued
             try:
-                status, n = await process_run(client, static, queued, write_gate)
+                status, n = await process_run(client, static, queued, write_gate, enc_ids)
                 log(f"[wcl] {code}#{fight_id} {status}, {n} rows")
+                await stats.increment("wcl_runs_done" if status == "done" else "wcl_runs_skipped")
+                _publish_rate(client, stats)
             except asyncio.CancelledError:
                 raise
             except Exception as e:
@@ -455,6 +478,7 @@ async def run_worker(client, static, write_gate, log):
                 final = attempts + 1 >= MAX_ATTEMPTS
                 log(f"[wcl] {code}#{fight_id} attempt {attempts + 1}/{MAX_ATTEMPTS} failed"
                     f"{', marked failed' if final else ''}: {error}")
+                await stats.increment("wcl_runs_failed" if final else "wcl_runs_retried")
                 async with write_gate:
                     await asyncio.to_thread(_record_failure, code, fight_id, error, final, cm, run_start_ms)
 
@@ -476,6 +500,7 @@ async def _supervised(name, start, reporter, log):
         if time.monotonic() - began > ERROR_BACKOFF_S[1]:
             delay = ERROR_BACKOFF_S[0]
         log(f"[wcl] {name} failed, retrying in {delay}s:\n{detail}")
+        await reporter.stats.increment("wcl_task_errors")
         await reporter.send_alert(f"WCL {name} failed", f"Retrying in {delay}s.\n```{detail[-1500:]}```",
                                   throttle_key=f"wcl-{name}", throttle_seconds=3600)
         await asyncio.sleep(delay)
@@ -490,6 +515,7 @@ async def wait_for_zone(client, dungeons, reporter, log):
             return await zone_dungeons(client, dungeons)
         except NoMplusZone as e:
             log(f"[wcl] {e}, checking again in {NO_ZONE_RECHECK_S}s")
+            reporter.stats.set_status("wcl_state", "no active M+ zone")
             if not alerted:
                 await reporter.send_alert("WCL: no active Mythic+ zone",
                                           f"{e}. The WCL collector checks again every hour.", level="warning")
@@ -505,9 +531,11 @@ async def run_wcl(reporter, write_gate, log=print):
         enc_ids = await _supervised("zone lookup", lambda: wait_for_zone(client, static["dungeons"], reporter, log),
                                     reporter, log)
         log(f"[wcl] M+ zone resolved, {len(enc_ids)} dungeons, sweeper and worker starting")
+        stats = reporter.stats
+        stats.set_status("wcl_state", "running")
         await asyncio.gather(
-            _supervised("sweeper", lambda: run_sweeper(client, static, enc_ids, write_gate, log), reporter, log),
-            _supervised("worker", lambda: run_worker(client, static, write_gate, log), reporter, log))
+            _supervised("sweeper", lambda: run_sweeper(client, static, enc_ids, write_gate, log, stats), reporter, log),
+            _supervised("worker", lambda: run_worker(client, static, enc_ids, write_gate, log, stats), reporter, log))
 
 
 # Debug CLI.

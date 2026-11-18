@@ -6886,6 +6886,10 @@ ORDER BY run_start_ms DESC
 LIMIT %s
 """
 
+COUNT_WCL_FIGHT_QUEUE_SQL = """
+SELECT COUNT(*) FROM Mythistone.wcl_fight_queue WHERE attempts < 3
+"""
+
 RECORD_WCL_FIGHT_ATTEMPT_SQL = """
 UPDATE Mythistone.wcl_fight_queue
 SET attempts = attempts + 1, last_error = %s
@@ -6936,7 +6940,7 @@ def upsert_wcl_enemy_spell_daily(cursor, rows):
 
 def upsert_wcl_enemy_spell_timing_daily(cursor, rows):
     """rows: (bucket_date, dungeon_id, encounter_id, npc_id, spell_id, kind, bin, n), kind one of
-    'first', 'recast', 'fight'."""
+    'first', 'recast', 'fight', 'death'."""
     _executemany_in_txn(cursor, UPSERT_WCL_ENEMY_SPELL_TIMING_DAILY_SQL, rows)
 
 
@@ -7017,6 +7021,11 @@ def pop_wcl_fight_queue(connection, cursor, limit):
     return fetch_with_retry(connection, cursor, POP_WCL_FIGHT_QUEUE_SQL, (limit,))
 
 
+def count_wcl_fight_queue(connection, cursor):
+    """How many queued fights the worker can still pick up."""
+    return fetch_with_retry(connection, cursor, COUNT_WCL_FIGHT_QUEUE_SQL)[0][0]
+
+
 def record_wcl_fight_attempt(connection, cursor, report_code, fight_id, error=None):
     """Counts a failed attempt and keeps its error, cut to the column width. Does not commit."""
     execute_with_retry(connection, cursor, RECORD_WCL_FIGHT_ATTEMPT_SQL,
@@ -7032,3 +7041,172 @@ def fetch_wcl_crawl_state(connection, cursor):
 def update_wcl_crawl_state(connection, cursor, dungeon_id, spec_id, fresh_rows):
     """Stamps a sweep of (dungeon_id, spec_id) at the current UTC time. Does not commit."""
     execute_with_retry(connection, cursor, UPSERT_WCL_CRAWL_STATE_SQL, (dungeon_id, spec_id, fresh_rows))
+
+
+# Page reads of the nightly aggregated_wcl_* tables (sp_agg_wcl_pulls, sp_agg_wcl_cooldowns).
+
+FETCH_WCL_DUNGEON_PULLS_SQL = """
+SELECT pull_key, family_key, encounter_id, pulls, duration_ms_sum, pulls_with_death, deaths, lusts
+FROM Mythistone.aggregated_wcl_pull
+WHERE dungeon_id = %s
+ORDER BY pulls DESC, pull_key
+"""
+
+FETCH_WCL_DUNGEON_DEATHS_SQL = """
+SELECT family_key, killing_spell_id, killer_npc_id, deaths
+FROM Mythistone.aggregated_wcl_pull_death
+WHERE dungeon_id = %s
+ORDER BY deaths DESC, family_key, killing_spell_id, killer_npc_id
+"""
+
+FETCH_WCL_DUNGEON_LUST_SQL = """
+SELECT family_key, time_bin, hp_bin, prev_spell_id, prev_npc_id, n
+FROM Mythistone.aggregated_wcl_lust
+WHERE dungeon_id = %s
+ORDER BY family_key, time_bin, hp_bin, prev_spell_id, prev_npc_id
+"""
+
+FETCH_WCL_DUNGEON_ENEMY_SPELLS_SQL = """
+SELECT encounter_id, npc_id, spell_id, casts, mobs_casting
+FROM Mythistone.aggregated_wcl_enemy_spell
+WHERE dungeon_id = %s
+ORDER BY encounter_id, npc_id, spell_id
+"""
+
+FETCH_WCL_DUNGEON_ENEMY_TIMINGS_SQL = """
+SELECT encounter_id, npc_id, spell_id, kind, `bin`, n
+FROM Mythistone.aggregated_wcl_enemy_spell_timing
+WHERE dungeon_id = %s
+ORDER BY encounter_id, npc_id, spell_id, kind, `bin`
+"""
+
+FETCH_WCL_DUNGEON_NPCS_SQL = """
+SELECT npc_id, mobs_engaged, alive_ms_sum
+FROM Mythistone.aggregated_wcl_npc
+WHERE dungeon_id = %s
+ORDER BY npc_id
+"""
+
+FETCH_WCL_DUNGEON_EXAMPLES_SQL = """
+SELECT family_key, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level
+FROM Mythistone.aggregated_wcl_example_log
+WHERE dungeon_id = %s AND spec_id = 0
+ORDER BY family_key, spell_id
+"""
+
+FETCH_WCL_SPEC_COOLDOWNS_SQL = """
+SELECT dungeon_id, family_key, spell_id, casts, players_casting
+FROM Mythistone.aggregated_wcl_spec_cd
+WHERE spec_id = %s
+ORDER BY dungeon_id, family_key, spell_id
+"""
+
+FETCH_WCL_SPEC_TIMINGS_SQL = """
+SELECT dungeon_id, family_key, spell_id, `bin`, n
+FROM Mythistone.aggregated_wcl_spec_cd_timing
+WHERE spec_id = %s
+ORDER BY dungeon_id, family_key, spell_id, `bin`
+"""
+
+FETCH_WCL_SPEC_TRIGGERS_SQL = """
+SELECT dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, n
+FROM Mythistone.aggregated_wcl_spec_cd_trigger
+WHERE spec_id = %s
+ORDER BY dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id
+"""
+
+FETCH_WCL_SPEC_PULLS_SQL = """
+SELECT dungeon_id, family_key, player_pulls
+FROM Mythistone.aggregated_wcl_spec_pull
+WHERE spec_id = %s
+ORDER BY dungeon_id, family_key
+"""
+
+FETCH_WCL_SPEC_EXAMPLES_SQL = """
+SELECT dungeon_id, family_key, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level
+FROM Mythistone.aggregated_wcl_example_log
+WHERE spec_id = %s
+ORDER BY dungeon_id, family_key, spell_id
+"""
+
+FETCH_WCL_OBSERVED_ENEMY_SPELL_IDS_SQL = """
+SELECT spell_id FROM Mythistone.aggregated_wcl_enemy_spell WHERE spell_id > 0
+UNION
+SELECT killing_spell_id FROM Mythistone.aggregated_wcl_pull_death WHERE killing_spell_id > 0
+UNION
+SELECT prev_spell_id FROM Mythistone.aggregated_wcl_lust WHERE prev_spell_id > 0
+UNION
+SELECT enemy_spell_id FROM Mythistone.aggregated_wcl_spec_cd_trigger WHERE enemy_spell_id > 0
+ORDER BY 1
+"""
+
+
+def fetch_wcl_dungeon_pulls(connection, cursor, dungeon_id):
+    """[(pull_key, family_key, encounter_id, pulls, duration_ms_sum, pulls_with_death, deaths,
+    lusts)], most pulled first. pull_key joins the route pull_sig."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_DUNGEON_PULLS_SQL, (dungeon_id,))
+
+
+def fetch_wcl_dungeon_deaths(connection, cursor, dungeon_id):
+    """[(family_key, killing_spell_id, killer_npc_id, deaths)], most deaths first. 0 ids mean the
+    log named no killer."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_DUNGEON_DEATHS_SQL, (dungeon_id,))
+
+
+def fetch_wcl_dungeon_lust(connection, cursor, dungeon_id):
+    """[(family_key, time_bin, hp_bin, prev_spell_id, prev_npc_id, n)]."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_DUNGEON_LUST_SQL, (dungeon_id,))
+
+
+def fetch_wcl_dungeon_enemy_spells(connection, cursor, dungeon_id):
+    """[(encounter_id, npc_id, spell_id, casts, mobs_casting)]. encounter_id 0 is trash."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_DUNGEON_ENEMY_SPELLS_SQL, (dungeon_id,))
+
+
+def fetch_wcl_dungeon_enemy_timings(connection, cursor, dungeon_id):
+    """[(encounter_id, npc_id, spell_id, kind, bin, n)], kind one of 'first', 'recast', 'fight',
+    'death' (whole seconds from the cast to the caster's death, 30 meaning 30 or more)."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_DUNGEON_ENEMY_TIMINGS_SQL, (dungeon_id,))
+
+
+def fetch_wcl_dungeon_npcs(connection, cursor, dungeon_id):
+    """[(npc_id, mobs_engaged, alive_ms_sum)]."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_DUNGEON_NPCS_SQL, (dungeon_id,))
+
+
+def fetch_wcl_dungeon_examples(connection, cursor, dungeon_id):
+    """The spec-less example logs: [(family_key, spell_id, report_code, fight_id, pull_start_ms,
+    pull_end_ms, keystone_level)]. spell_id 0 is the pull itself, otherwise the lust spell."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_DUNGEON_EXAMPLES_SQL, (dungeon_id,))
+
+
+def fetch_wcl_spec_cooldowns(connection, cursor, spec_id):
+    """[(dungeon_id, family_key, spell_id, casts, players_casting)]."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_COOLDOWNS_SQL, (spec_id,))
+
+
+def fetch_wcl_spec_timings(connection, cursor, spec_id):
+    """[(dungeon_id, family_key, spell_id, bin, n)]."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_TIMINGS_SQL, (spec_id,))
+
+
+def fetch_wcl_spec_triggers(connection, cursor, spec_id):
+    """[(dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, n)]. 0 enemy ids mean no
+    enemy cast came just before."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_TRIGGERS_SQL, (spec_id,))
+
+
+def fetch_wcl_spec_pulls(connection, cursor, spec_id):
+    """[(dungeon_id, family_key, player_pulls)]."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_PULLS_SQL, (spec_id,))
+
+
+def fetch_wcl_spec_examples(connection, cursor, spec_id):
+    """[(dungeon_id, family_key, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms,
+    keystone_level)]."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_SPEC_EXAMPLES_SQL, (spec_id,))
+
+
+def fetch_wcl_observed_enemy_spell_ids(connection, cursor):
+    """Sorted ids of every enemy spell the aggregated logs can name on a page."""
+    return [row[0] for row in fetch_with_retry(connection, cursor, FETCH_WCL_OBSERVED_ENEMY_SPELL_IDS_SQL)]

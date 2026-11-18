@@ -121,6 +121,12 @@ jobs:
           python backend_scripts/fetchDungeonData.py
 
       - name: Fetch dungeon spells
+        env:
+          DATABASE_HOST: ${{secrets.DATABASE_HOST}}
+          DATABASE_USER: ${{secrets.DATABASE_USER}}
+          DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORT}}
+          DATABASE_NAME: ${{secrets.DATABASE_NAME}}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
         run: |
           python backend_scripts/fetchDungeonSpells.py
 
@@ -199,7 +205,10 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git config pull.rebase true   # rebase
-          git add data/
+          # Reviewed by hand: only the cooldown-category-pr job below may propose changes to these.
+          git add data/ \
+            ':(exclude)data/static/player_cooldown_categories.json' \
+            ':(exclude)data/static/player_cooldown_category_signals.json'
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
@@ -219,4 +228,67 @@ jobs:
               echo "Error during git push" >&2
               exit 1
             fi
+          fi
+
+  cooldown-category-pr:
+    needs: gather-data
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      PR_BRANCH: automation/cooldown-categories
+      BOT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+      CATEGORY_FILES: data/static/player_cooldown_categories.json data/static/player_cooldown_category_signals.json
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -c constraints.txt requests mysql-connector-python
+
+      - name: Suggest cooldown categories
+        run: |
+          python backend_scripts/suggestCooldownCategories.py --pr-body "$RUNNER_TEMP/cooldown_categories_pr.md"
+
+      - name: Detect changes
+        id: changes
+        run: |
+          git add -- $CATEGORY_FILES
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No new or changed cooldown categories"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update the pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr=$(gh pr list --head "$PR_BRANCH" --base main --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then
+            git fetch --depth=1 origin "$PR_BRANCH"
+            # A force push would discard the values someone edited in the open pull request.
+            if [ "$(git log -1 --format=%ae FETCH_HEAD)" != "$BOT_EMAIL" ]; then
+              echo "::notice::Pull request #$pr has manual edits, leaving it as it is"
+              exit 0
+            fi
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "$BOT_EMAIL"
+          git commit -m "Suggest player cooldown categories"
+          git push --force origin "HEAD:refs/heads/$PR_BRANCH"
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --body-file "$RUNNER_TEMP/cooldown_categories_pr.md"
+          else
+            gh pr create --base main --head "$PR_BRANCH" --title "Review player cooldown categories" \
+              --body-file "$RUNNER_TEMP/cooldown_categories_pr.md"
           fi

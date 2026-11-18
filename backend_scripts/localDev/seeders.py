@@ -985,41 +985,97 @@ ORDER BY rd.dungeon_id, s.pull_sig
 def seed_wcl(conn, cursor, static, rng):
     """wcl_* aggregates over the last 14 UTC days, written through the collector's own
     wrappers. Enemy npcs and spells come from dungeon_details.json, player cooldowns from
-    player_cooldowns.json, boss encounter ids match the seeded route_encounters."""
+    player_cooldowns.json, boss encounter ids match the seeded route_encounters. Featured pulls
+    of every dungeon clear the spec page's display thresholds for every spec."""
     import datetime
     print("  seeding wcl_* tables...")
     details = load_json(os.path.join(static.dir, "dungeon_details.json"))
     cds_by_spec = {}
+    racials = []
     for spell_id, cd in load_json(os.path.join(static.dir, "player_cooldowns.json")).items():
+        if cd.get("racial"):
+            racials.append(int(spell_id))
         for spec in cd["specs"]:
             cds_by_spec.setdefault(int(spec), []).append(int(spell_id))
     specs = [int(s) for s in static.specs if int(s) in cds_by_spec]
+    cursor.execute("SELECT spell_id FROM bloodlust_spells ORDER BY spell_id")
+    lust_spells = [row[0] for row in cursor.fetchall()]
+    if not racials or not lust_spells:
+        raise RuntimeError("seed_wcl needs racial cooldowns and seeded bloodlust_spells")
     today = datetime.datetime.now(datetime.timezone.utc).date()
     days = [today - datetime.timedelta(days=i) for i in range(14)]
     now_ms = _now_ms()
     d = {k: [] for k in ("pull", "spec_pull", "npc", "spell", "timing", "cd", "cd_timing",
                          "trigger", "lust", "death", "example")}
 
+    def split(total, bins):
+        """{bin: n} of ``total`` spread over ``bins``, every n at least 1 while total allows."""
+        bins = bins[:max(1, total)]
+        counts = dict.fromkeys(bins, 1)
+        for _ in range(total - len(bins)):
+            counts[rng.choice(bins)] += 1
+        return counts
+
+    def enemy_rows(day, cmid, encounter, npc, spell, mobs, casts):
+        """One enemy spell's day row and its timing bins, the capped top bins and, on a boss
+        pull, casts before the encounter start included."""
+        d["spell"].append((day, cmid, encounter, npc, spell, casts, mobs))
+        early = [-10, -5] if encounter else []
+        shapes = (("first", mobs, rng.sample(range(0, 20), 3) + [120]),
+                  ("recast", max(casts - mobs, 0), rng.sample(range(6, 40), 4) + [120]),
+                  ("fight", casts, early + [b * 5 for b in rng.sample(range(0, 40), 5)] + [600]))
+        for kind, total, bins in shapes:
+            if total:
+                for b, n in split(total, bins).items():
+                    d["timing"].append((day, cmid, encounter, npc, spell, kind, b, n))
+        died = max(1, casts * rng.randint(6, 10) // 10)
+        if (npc, spell) in cast_at_death[cmid]:
+            tail = died // 20
+            death_bins = split(died - tail, [0, 1])
+            if tail:
+                death_bins.update(split(tail, rng.sample(range(2, 30), 2)))
+        else:
+            death_bins = split(died, rng.sample(range(0, 30), 6) + [30])
+        for b, n in death_bins.items():
+            d["timing"].append((day, cmid, encounter, npc, spell, "death", b, n))
+
     enemy_spells = {}
+    boss_encounters = {}
+    cast_at_death = {}
     for cmid in (str(x["challenge_mode_id"]) for x in static.dungeons):
         enemies = details.get(cmid, {}).get("enemies", {})
         enemy_spells[cmid] = [(int(n), int(s)) for n, e in enemies.items() for s in e.get("spells", {})]
+        boss_encounters[cmid] = {npc: 3100 + ordinal for ordinal, boss in enumerate(static.bosses.get(cmid, []))
+                                 for npc in boss["npc_ids"]}
+        boss_spells = [(n, s) for n, s in enemy_spells[cmid] if n in boss_encounters[cmid]]
+        trash_spells = [(n, s) for n, s in enemy_spells[cmid] if n not in boss_encounters[cmid]]
+        cast_at_death[cmid] = set(rng.sample(trash_spells, min(3, len(trash_spells))))
+        for npc, spell in sorted(cast_at_death[cmid]):
+            for day in rng.sample(days, 3):
+                mobs = rng.randint(12, 20)
+                enemy_rows(day, cmid, 0, npc, spell, mobs, mobs * 2)
         for day in days:
             for npc in rng.sample(sorted(enemies), min(12, len(enemies))):
                 engaged = rng.randint(2, 40)
                 d["npc"].append((day, cmid, int(npc), engaged, engaged * rng.randint(8000, 60000)))
             for npc, spell in rng.sample(enemy_spells[cmid], min(15, len(enemy_spells[cmid]))):
                 mobs = rng.randint(1, 20)
-                d["spell"].append((day, cmid, 0, npc, spell, mobs * rng.randint(1, 4), mobs))
-                d["timing"].append((day, cmid, 0, npc, spell, "first", rng.randint(0, 20), mobs))
-                d["timing"].append((day, cmid, 0, npc, spell, "recast", rng.randint(8, 30), mobs))
-                d["timing"].append((day, cmid, 0, npc, spell, "fight", rng.randint(0, 12) * 5, mobs))
+                enemy_rows(day, cmid, 0, npc, spell, mobs, mobs * rng.randint(1, 4))
+            for npc, spell in boss_spells:
+                mobs = rng.randint(2, 6)
+                enemy_rows(day, cmid, boss_encounters[cmid][npc], npc, spell, mobs, mobs * rng.randint(3, 8))
 
     cursor.execute(_SEEDED_PULL_SIGS_SQL)
-    for cmid, sig in cursor.fetchall():
+    sigs = cursor.fetchall()
+    sigs_by_dungeon = {}
+    for cmid, sig in sigs:
+        is_boss = any(int(tok.split(":")[0]) in boss_encounters.get(cmid, {}) for tok in sig.split(","))
+        sigs_by_dungeon.setdefault(cmid, {True: [], False: []})[is_boss].append(sig)
+    featured = {(cmid, sig) for cmid, kinds in sigs_by_dungeon.items() for sig in kinds[True][:2] + kinds[False][:2]}
+
+    for cmid, sig in sigs:
         npcs = [int(tok.split(":")[0]) for tok in sig.split(",")]
-        bosses = {npc: 3100 + ordinal
-                  for ordinal, boss in enumerate(static.bosses.get(cmid, [])) for npc in boss["npc_ids"]}
+        bosses = boss_encounters.get(cmid, {})
         encounter = next((bosses[n] for n in npcs if n in bosses), 0)
         spells = enemy_spells.get(cmid) or [(0, 0)]
         for day in rng.sample(days, 4):
@@ -1028,9 +1084,16 @@ def seed_wcl(conn, cursor, static, rng):
                               rng.randint(0, pulls // 3)))
             npc, spell = rng.choice(spells)
             d["death"].append((day, cmid, sig, spell, npc, rng.randint(1, 4)))
-            if rng.random() < 0.3:
+            if rng.random() < 0.25:
+                d["death"].append((day, cmid, sig, 0, 0, rng.randint(1, 2)))
+            if (cmid, sig) in featured or rng.random() < 0.3:
+                prev_spell, prev_npc = (0, 0) if rng.random() < 0.2 else (spell, npc)
                 d["lust"].append((day, cmid, sig, rng.randint(-2, 12) * 5, rng.randint(0, 10) * 10,
-                                  spell, npc, rng.randint(1, 3)))
+                                  prev_spell, prev_npc, rng.randint(1, 3)))
+                start = rng.randint(0, 1500000)
+                d["example"].append((cmid, sig, 0, rng.choice(lust_spells), f"seedLust{rng.randint(0, 9999):06d}",
+                                     rng.randint(1, 40), start, start + rng.randint(20000, 90000),
+                                     rng.randint(8, 20), now_ms - rng.randint(0, 13 * _DAY_MS)))
             for spec in rng.sample(specs, min(3, len(specs))):
                 d["spec_pull"].append((day, cmid, spec, sig, pulls * rng.randint(1, 2)))
                 for cd in rng.sample(cds_by_spec[spec], min(2, len(cds_by_spec[spec]))):
@@ -1043,6 +1106,30 @@ def seed_wcl(conn, cursor, static, rng):
             d["example"].append((cmid, sig, 0, 0, f"seedReport{i:06d}", rng.randint(1, 40),
                                  start, start + rng.randint(20000, 90000), rng.randint(8, 20),
                                  now_ms - rng.randint(0, 13 * _DAY_MS)))
+
+    # Per (spec, dungeon) so the same spells add up across the featured pulls and days.
+    for cmid in sigs_by_dungeon:
+        spells = enemy_spells.get(cmid) or [(0, 0)]
+        for spec in specs:
+            kit = rng.sample(cds_by_spec[spec], min(3, len(cds_by_spec[spec]))) + [rng.choice(racials)]
+            for sig in (s for c, s in sorted(featured) if c == cmid):
+                for day in rng.sample(days, 2):
+                    d["spec_pull"].append((day, cmid, spec, sig, rng.randint(30, 60)))
+                    for cd in kit:
+                        casts = rng.randint(20, 40)
+                        d["cd"].append((day, cmid, spec, sig, cd, casts, rng.randint(casts // 2, casts)))
+                        bins = [-5] + [b * 5 for b in rng.sample(range(0, 24), 3)] + [600]
+                        for b, n in split(casts, bins).items():
+                            d["cd_timing"].append((day, cmid, spec, sig, cd, b, n))
+                        npc, spell = rng.choice(spells)
+                        near = rng.randint(8, casts // 2)
+                        d["trigger"].append((day, cmid, spec, sig, cd, spell, npc, near))
+                        d["trigger"].append((day, cmid, spec, sig, cd, 0, 0, casts - near))
+                for cd in kit:
+                    start = rng.randint(0, 1500000)
+                    d["example"].append((cmid, sig, spec, cd, f"seedCd{rng.randint(0, 9999):06d}", rng.randint(1, 40),
+                                         start, start + rng.randint(20000, 90000), rng.randint(8, 20),
+                                         now_ms - rng.randint(0, 13 * _DAY_MS)))
 
     def work(cur):
         db.upsert_wcl_pull_daily(cur, d["pull"])

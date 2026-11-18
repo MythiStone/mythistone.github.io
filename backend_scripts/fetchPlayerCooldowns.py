@@ -15,7 +15,7 @@ import json
 import os
 from collections import defaultdict
 
-from fetchDungeonSpells import WAGO_CSV, csv_rows, live_build
+from fetchDungeonSpells import WAGO_CSV, csv_rows, download_icon, icon_names, live_build
 
 OUT_PATH = os.path.join("data", "static", "player_cooldowns.json")
 
@@ -188,7 +188,21 @@ def player_cooldowns(t):
     out = {str(spell_id): row for _, spell_id, row in best.values()}
     if len({row["name"] for row in racials.values()}) < MIN_RACIALS:
         raise RuntimeError(f"Only {len(racials)} racial cooldowns, the racial skill lines may have changed")
-    return {**racials, **out}
+    return with_icons({**racials, **out}, t)
+
+
+def with_icons(entries, t):
+    """Adds each spell's icon name and downloads missing icon files, raising when one has none."""
+    file_ids = {number(row["SpellID"]): row["SpellIconFileDataID"] for row in t["SpellMisc"]
+                if row["DifficultyID"] == "0" and str(number(row["SpellID"])) in entries}
+    icons = icon_names(file_ids)
+    missing = sorted(int(spell_id) for spell_id in entries if not icons.get(int(spell_id)))
+    if missing:
+        raise RuntimeError(f"{len(missing)} player cooldowns have no icon: {missing}")
+    failed = sorted(icon for icon in set(icons[int(spell_id)] for spell_id in entries) if not download_icon(icon))
+    if failed:
+        raise RuntimeError(f"{len(failed)} player cooldown icons could not be downloaded: {failed}")
+    return {spell_id: {**row, "icon": icons[int(spell_id)]} for spell_id, row in entries.items()}
 
 
 def main():

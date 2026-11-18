@@ -1,6 +1,7 @@
 """Name, icon, damage and description of every spell the dungeon page's detail modals show (the
-MDT enemy spells and journal abilities in dungeon_details.json), built from the game client's DB2
-tables as exported by wago.tools. The Blizzard spell API serves no creature spells.
+MDT enemy spells and journal abilities in dungeon_details.json) and of the enemy spells the
+aggregated Warcraft Logs tables name, built from the game client's DB2 tables as exported by
+wago.tools. The Blizzard spell API serves no creature spells.
 
 Damage follows the client's creature formula for the current M+ season, so the numbers match the
 in-game tooltip at Mythic 0: effect base points times the max-level ExpectedStat
@@ -19,9 +20,12 @@ import math
 import os
 import re
 from collections import defaultdict
+from contextlib import closing
 from decimal import Decimal, ROUND_HALF_UP
 
 import requests
+
+import databaseConnector
 
 STATIC_DIR = os.path.join("data", "static")
 ICON_DIR = os.path.join("data", "icons")
@@ -40,6 +44,7 @@ MPLUS_CONTENT_TUNING_ID = 1279
 MPLUS_DIFFICULTY = 8
 # Rows to prefer when a spell has several: Mythic Keystone, Mythic, Heroic, Normal, any.
 DIFFICULTY_ORDER = (MPLUS_DIFFICULTY, 23, 2, 1, 0)
+MAX_UNRESOLVED_LOGGED_SHARE = 0.5
 SCHOOL_DAMAGE = 2
 PERIODIC_DAMAGE_AURAS = {3, 53}
 SCHOOL_ABSORB_AURA = 69
@@ -135,7 +140,7 @@ def safe_eval(expr):
 
 
 class SpellData:
-    def __init__(self, build, ids, level, expansion):
+    def __init__(self, build, ids, logged_ids, level, expansion):
         names, descs = {}, {}
         for r in csv_rows(WAGO_CSV.format(table="spellname", build=build)):
             names[int(r["ID"])] = r["Name_lang"]
@@ -144,10 +149,17 @@ class SpellData:
         missing = ids - names.keys()
         if len(missing) > len(ids) // 10:
             raise RuntimeError(f"{len(missing)} of {len(ids)} dungeon spells are not in build {build}")
+        # Logs can hold server-side ids the client tables never get, so a few are expected.
+        unresolved = sorted(logged_ids - names.keys())
+        if len(unresolved) > len(logged_ids) * MAX_UNRESOLVED_LOGGED_SHARE:
+            raise RuntimeError(f"{len(unresolved)} of {len(logged_ids)} logged enemy spells are not in "
+                               f"build {build}: {unresolved}")
+        print(f"  {len(unresolved)} of {len(logged_ids)} logged enemy spells are not in SpellName "
+              f"and stay unnamed: {unresolved}")
         self.names, self.descs = names, descs
 
         # The spells the descriptions reference ($123s1, $@spelldesc123) need their effects too.
-        need, todo = set(), ids & names.keys()
+        need, todo = set(), (ids | logged_ids) & names.keys()
         while todo:
             sid = todo.pop()
             need.add(sid)
@@ -367,17 +379,15 @@ def duration_text(ms):
     return f"{number(ms / 1000)} sec"
 
 
-def icon_names(build, spells):
-    """Icon file name (as data/icons and Raidbots name them) per spell, via the community listfile."""
-    file_ids = {}
-    for sid in spells.names.keys() & spells.misc.keys():
-        if spells.misc[sid]:
-            file_ids[sid] = spells.misc[sid]["SpellIconFileDataID"]
+def icon_names(file_ids):
+    """{spell id: SpellIconFileDataID} to the icon file name (as data/icons and Raidbots name them)
+    per spell, via the community listfile."""
     wanted, names = set(file_ids.values()), {}
     for line in stream_lines(LISTFILE_URL):
         file_id, _, path = line.rstrip("\r\n").partition(";")
         if file_id in wanted:
-            names[file_id] = os.path.splitext(os.path.basename(path))[0].lower()
+            # The listfile spells a few icons with spaces, the icon CDNs with underscores.
+            names[file_id] = os.path.splitext(os.path.basename(path))[0].lower().replace(" ", "_")
     return {sid: names.get(fid) for sid, fid in file_ids.items()}
 
 
@@ -394,16 +404,36 @@ def download_icon(icon):
     return True
 
 
+def logged_enemy_spell_ids():
+    databaseConnector.init_connection_pool(
+        os.environ["DATABASE_HOST"],
+        os.environ["DATABASE_USER"],
+        os.environ["DATABASE_PASSWORD"],
+        os.environ["DATABASE_NAME"],
+        os.environ["DATABASE_PORT"],
+        1,
+    )
+    with closing(databaseConnector.get_connection()) as conn:
+        cursor = conn.cursor()
+        databaseConnector.configure_read_session(conn, cursor)
+        return set(databaseConnector.fetch_wcl_observed_enemy_spell_ids(conn, cursor))
+
+
 def main():
     with open(DETAILS_PATH, encoding="utf-8") as f:
-        ids = dungeon_spell_ids(json.load(f))
+        game_ids = dungeon_spell_ids(json.load(f))
     with open(SEASON_INFO_PATH, encoding="utf-8") as f:
         season_info = json.load(f)
+    logged_ids = logged_enemy_spell_ids()
+    ids = game_ids | logged_ids
     build = live_build()
-    print(f"Building {len(ids)} dungeon spells from wago.tools build {build}")
-    spells = SpellData(build, ids, int(season_info["max_character_level"]), int(season_info["expansion_id"]))
+    print(f"Building {len(ids)} dungeon spells ({len(logged_ids - game_ids)} only in logs) "
+          f"from wago.tools build {build}")
+    spells = SpellData(build, game_ids, logged_ids, int(season_info["max_character_level"]),
+                       int(season_info["expansion_id"]))
     print(f"  damage per point {spells.damage_mult:.2f}, absorb per point {spells.absorb_mult:.2f}")
-    icons = icon_names(build, spells)
+    icons = icon_names({sid: misc["SpellIconFileDataID"] for sid, misc in spells.misc.items()
+                        if misc and sid in spells.names})
 
     os.makedirs(ICON_DIR, exist_ok=True)
     out, dropped = {}, []
