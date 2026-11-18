@@ -24,6 +24,9 @@ COPY backend_scripts/commonUtils.py ${APP_DIR}/commonUtils.py
 # collector's revalidation guard and the pages' SIM freshness gate never disagree.
 COPY backend_scripts/computeBuildPhase.py ${APP_DIR}/computeBuildPhase.py
 COPY backend_scripts/talentBuilds.py ${APP_DIR}/talentBuilds.py
+COPY backend_scripts/wclClient.py ${APP_DIR}/wclClient.py
+COPY backend_scripts/wclPullBuilder.py ${APP_DIR}/wclPullBuilder.py
+COPY backend_scripts/wclCollector.py ${APP_DIR}/wclCollector.py
 
 RUN mkdir -p ${APP_DIR}/data/static
 COPY data/static/dungeons.json ${APP_DIR}/data/static/dungeons.json
@@ -65,6 +68,10 @@ COPY data/static/talents/ ${APP_DIR}/data/static/talents/
 # content go-live (read via os.path.join, so listed in REQUIRED_STATIC_EXTRA).
 COPY data/static/patches.json ${APP_DIR}/data/static/patches.json
 COPY data/static/periods.json ${APP_DIR}/data/static/periods.json
+# The WCL task (wclCollector.py) reads the MDT clones, the cooldown list and the lust spells.
+COPY data/static/dungeon_mapping.json ${APP_DIR}/data/static/dungeon_mapping.json
+COPY data/static/player_cooldowns.json ${APP_DIR}/data/static/player_cooldowns.json
+COPY data/static/spells.json ${APP_DIR}/data/static/spells.json
 
 # entrypoint and executable
 COPY entrypoint.sh /entrypoint.sh

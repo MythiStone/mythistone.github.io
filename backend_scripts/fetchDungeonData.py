@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import json
 import time
 import requests
@@ -9,14 +10,14 @@ from contextlib import closing
 from aggregateData import get_current_season_id, get_access_token, fetch_json
 
 # config
-CLIENT_ID = os.environ["BLIZ_CLIENT_ID"]
-CLIENT_SECRET = os.environ["BLIZ_CLIENT_SECRET"]
-RAIDERIO_API_KEY = os.environ["RAIDERIO_API_KEY"]
 NAMESPACE = "dynamic-us"
 API_BASE = "https://us.api.blizzard.com"
 ICON_DIR = "data/icons"
 MDT_REPO = "Nnoggie/MythicDungeonTools"
 MDT_RAW = f"https://raw.githubusercontent.com/{MDT_REPO}/master/"
+MAPPING_PATH = "data/static/dungeon_mapping.json"
+# npc ids MDT lists that are never part of a route
+IGNORED_NPC_IDS = {98362}
 
 
 def get_with_retry(url, **kwargs):
@@ -44,8 +45,8 @@ def mdt_dungeon_files():
     return files
 
 
-def mdt_enemy_blocks(dungeon_id, english_name, mdt_files):
-    """One text block per enemy of the MythicDungeonTools file whose mapID is this challenge mode id."""
+def mdt_dungeon_lua(dungeon_id, english_name, mdt_files):
+    """The MythicDungeonTools file whose mapID is this challenge mode id."""
     hits = []
     for path in mdt_files.get(_norm(english_name), []):
         lua = get_with_retry(MDT_RAW + path).text
@@ -54,7 +55,51 @@ def mdt_enemy_blocks(dungeon_id, english_name, mdt_files):
     if len(hits) != 1:
         raise RuntimeError(f"Expected one MythicDungeonTools file with mapID {dungeon_id} "
                            f"('{english_name}'), found {len(hits)}")
-    return re.split(r"\n  \[\d+\] = \{", hits[0].split("MDT.dungeonEnemies", 1)[1])
+    return hits[0]
+
+
+def mdt_enemy_blocks(lua):
+    """One text block per enemy of a MythicDungeonTools dungeon file."""
+    return re.split(r"\n  \[\d+\] = \{", lua.split("MDT.dungeonEnemies", 1)[1])
+
+
+def mdt_clones(dungeon_id, blocks):
+    """Every non-teeming MDT clone in MDT map coordinates. Only the clone's own fields count, the
+    nested patrol waypoints sit one indent deeper."""
+    clones = []
+    for block in blocks:
+        npc_id = re.search(r'\["id"\]\s*=\s*(\d+)', block)
+        if not npc_id or int(npc_id.group(1)) in IGNORED_NPC_IDS:
+            continue
+        body = re.search(r'\n    \["clones"\] = \{(.*?)\n    \}', block, re.S)
+        if not body:
+            raise RuntimeError(f"Dungeon {dungeon_id}: MDT enemy {npc_id.group(1)} has no clones")
+        for index, clone in re.findall(r"\n      \[(\d+)\] = \{(.*?)\n      \}", body.group(1), re.S):
+            fields = dict(re.findall(r'^ {8}\["(\w+)"\] = (.+?),$', clone, re.M))
+            if fields.get("teeming") == "true":
+                continue
+            if not {"x", "y", "sublevel"} <= fields.keys():
+                raise RuntimeError(f"Dungeon {dungeon_id}: MDT clone {npc_id.group(1)}.{index} "
+                                   f"has no x, y or sublevel")
+            clones.append({"npc_id": int(npc_id.group(1)), "clone_index": int(index),
+                           "sublevel": int(fields["sublevel"]), "g": int(fields.get("g", -1)),
+                           "mdt_x": float(fields["x"]), "mdt_y": float(fields["y"])})
+    if not clones:
+        raise RuntimeError(f"MythicDungeonTools lists no clone for dungeon {dungeon_id}")
+    return clones
+
+
+def write_dungeon_mapping(luas):
+    """dungeon_mapping.json: the MDT clones and isBoss npcs of each current dungeon, for
+    wclPullBuilder (MDT slots, pack assignment, a run-fitted MDT-to-world geometry)."""
+    out = {}
+    for dungeon_id, lua in luas.items():
+        blocks = mdt_enemy_blocks(lua)
+        out[str(dungeon_id)] = {"clones": mdt_clones(dungeon_id, blocks),
+                                "boss_npcs": sorted(npc for npc, _, _ in mdt_boss_npcs(dungeon_id, blocks))}
+        print(f"  mapping {dungeon_id}: {len(out[str(dungeon_id)]['clones'])} clones")
+    with open(MAPPING_PATH, "w", encoding="utf-8") as f:
+        json.dump(out, f, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
 def mdt_boss_npcs(dungeon_id, blocks):
@@ -152,6 +197,18 @@ def group_bosses(dungeon_id, mdt_npcs, journal):
 
 
 
+if sys.argv[1:] == ["--mapping-only"]:
+    # Rebuilds only dungeon_mapping.json for the dungeons already in dungeons.json, needs no keys.
+    with open("data/static/dungeons.json", encoding="utf-8") as f:
+        current = json.load(f)
+    files = mdt_dungeon_files()
+    write_dungeon_mapping({cm: mdt_dungeon_lua(cm, d["name"]["en_US"], files) for cm, d in current.items()})
+    sys.exit(0)
+
+CLIENT_ID = os.environ["BLIZ_CLIENT_ID"]
+CLIENT_SECRET = os.environ["BLIZ_CLIENT_SECRET"]
+RAIDERIO_API_KEY = os.environ["RAIDERIO_API_KEY"]
+
 databaseConnector.init_connection_pool(
     os.environ.get("DATABASE_HOST"),
     os.environ.get("DATABASE_USER"),
@@ -212,6 +269,7 @@ out = {}
 # Journal text and MDT enemies for the dungeon page's detail modals, kept out of dungeons.json
 # because the route and VOD finders inline that whole file.
 details = {}
+mdt_luas = {}
 headers = {"Authorization": f"Bearer {token}"}
 for dungeon_id in short_name_map:
     print(f"Fetching data for dungeon {dungeon_id}...")
@@ -247,7 +305,8 @@ for dungeon_id in short_name_map:
         print(f"Warning: Failed to fetch media for journal instance {journal_id}: {e}")
         media = {"assets": []}
 
-    mdt_blocks = mdt_enemy_blocks(dungeon_id, data["name"]["en_US"], mdt_files)
+    mdt_luas[dungeon_id] = mdt_dungeon_lua(dungeon_id, data["name"]["en_US"], mdt_files)
+    mdt_blocks = mdt_enemy_blocks(mdt_luas[dungeon_id])
     journal = journal_bosses(journal_id, headers)
     bosses = group_bosses(dungeon_id, mdt_boss_npcs(dungeon_id, mdt_blocks), journal)
     print(f"  bosses: {bosses}")
@@ -306,4 +365,5 @@ if len(out) != 0:
         json.dump(out, f, indent=2)
     with open("data/static/dungeon_details.json", "w", encoding="utf-8") as f:
         json.dump(details, f, indent=2, ensure_ascii=False)
+    write_dungeon_mapping(mdt_luas)
     print("Json files written")

@@ -1298,6 +1298,211 @@ CREATE TABLE `run_members` (
   CONSTRAINT `run_members_runs_FK` FOREIGN KEY (`run_id`) REFERENCES `runs` (`run_id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) /*!50100 TABLESPACE `ts_run_members` */ ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+
+-- Warcraft Logs pull intelligence (wcl_*). Written by the collector's WCL task as additive
+-- per-UTC-day deltas of the run start; ev_purge_wcl_window keeps the last 14 days.
+-- pull_key is the dungeon page's pull signature (npc_id:count,... sorted by npc id, as
+-- pull_sig in FETCH_DUNGEON_LUST_TIMELINE_SQL). Digits, ':' and ',' only, so ascii keeps the
+-- widest primary key under InnoDB's 3072-byte limit at about 40 npc types of headroom.
+
+-- Mythistone.wcl_pull_daily definition
+
+CREATE TABLE `wcl_pull_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `encounter_id` int unsigned NOT NULL DEFAULT '0',
+  `pulls` int unsigned NOT NULL DEFAULT '0',
+  `duration_ms_sum` bigint unsigned NOT NULL DEFAULT '0',
+  `pulls_with_death` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`pull_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_spec_pull_daily definition
+
+CREATE TABLE `wcl_spec_pull_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `spec_id` int NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `player_pulls` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`spec_id`,`pull_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_npc_daily definition
+
+CREATE TABLE `wcl_npc_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `npc_id` int unsigned NOT NULL,
+  `mobs_engaged` int unsigned NOT NULL DEFAULT '0',
+  `alive_ms_sum` bigint unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`npc_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_enemy_spell_daily definition
+
+CREATE TABLE `wcl_enemy_spell_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `encounter_id` int unsigned NOT NULL,
+  `npc_id` int unsigned NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `casts` int unsigned NOT NULL DEFAULT '0',
+  `mobs_casting` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`encounter_id`,`npc_id`,`spell_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_enemy_spell_timing_daily definition
+
+CREATE TABLE `wcl_enemy_spell_timing_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `encounter_id` int unsigned NOT NULL,
+  `npc_id` int unsigned NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `kind` enum('first','recast','fight') NOT NULL,
+  `bin` smallint NOT NULL,
+  `n` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`encounter_id`,`npc_id`,`spell_id`,`kind`,`bin`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_player_cd_daily definition
+
+CREATE TABLE `wcl_player_cd_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `spec_id` int NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `casts` int unsigned NOT NULL DEFAULT '0',
+  `players_casting` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`spec_id`,`pull_key`,`spell_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_player_cd_timing_daily definition
+
+CREATE TABLE `wcl_player_cd_timing_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `spec_id` int NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `bin` smallint NOT NULL,
+  `n` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`spec_id`,`pull_key`,`spell_id`,`bin`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_player_cd_trigger_daily definition
+
+CREATE TABLE `wcl_player_cd_trigger_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `spec_id` int NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `enemy_spell_id` int unsigned NOT NULL,
+  `enemy_npc_id` int unsigned NOT NULL,
+  `n` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`spec_id`,`pull_key`,`spell_id`,`enemy_spell_id`,`enemy_npc_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_lust_daily definition
+
+CREATE TABLE `wcl_lust_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `time_bin` smallint NOT NULL,
+  `hp_bin` tinyint unsigned NOT NULL,
+  `prev_spell_id` int unsigned NOT NULL,
+  `prev_npc_id` int unsigned NOT NULL,
+  `n` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`pull_key`,`time_bin`,`hp_bin`,`prev_spell_id`,`prev_npc_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_player_death_daily definition
+
+CREATE TABLE `wcl_player_death_daily` (
+  `bucket_date` date NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `killing_spell_id` int unsigned NOT NULL,
+  `killer_npc_id` int unsigned NOT NULL,
+  `deaths` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`bucket_date`,`dungeon_id`,`pull_key`,`killing_spell_id`,`killer_npc_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_example_logs definition
+
+CREATE TABLE `wcl_example_logs` (
+  `dungeon_id` varchar(100) NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `spec_id` int NOT NULL,
+  `spell_id` int unsigned NOT NULL,
+  `report_code` varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `fight_id` int unsigned NOT NULL,
+  `pull_start_ms` bigint unsigned NOT NULL,
+  `pull_end_ms` bigint unsigned NOT NULL,
+  `keystone_level` smallint unsigned NOT NULL,
+  `run_start_ms` bigint unsigned NOT NULL,
+  PRIMARY KEY (`dungeon_id`,`pull_key`,`spec_id`,`spell_id`,`report_code`,`fight_id`),
+  KEY `wcl_example_logs_run_start` (`run_start_ms`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_crawl_state definition
+
+CREATE TABLE `wcl_crawl_state` (
+  `dungeon_id` varchar(100) NOT NULL,
+  `spec_id` int NOT NULL,
+  `last_swept_at` datetime NOT NULL,
+  `fresh_rows` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`dungeon_id`,`spec_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_fight_queue definition
+
+CREATE TABLE `wcl_fight_queue` (
+  `report_code` varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `fight_id` int unsigned NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `run_start_ms` bigint unsigned NOT NULL,
+  `keystone_level` smallint unsigned NOT NULL,
+  `queued_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `attempts` tinyint unsigned NOT NULL DEFAULT '0',
+  `last_error` varchar(512) DEFAULT NULL,
+  PRIMARY KEY (`report_code`,`fight_id`),
+  KEY `wcl_fight_queue_run_start` (`run_start_ms`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- Mythistone.wcl_processed_runs definition
+
+CREATE TABLE `wcl_processed_runs` (
+  `report_code` varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `fight_id` int unsigned NOT NULL,
+  `run_fingerprint` binary(20) NOT NULL,
+  `dungeon_id` varchar(100) NOT NULL,
+  `run_start_ms` bigint unsigned NOT NULL,
+  `status` enum('done','skipped','failed') NOT NULL,
+  `processed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`report_code`,`fight_id`),
+  UNIQUE KEY `wcl_processed_runs_fingerprint` (`run_fingerprint`),
+  KEY `wcl_processed_runs_run_start` (`run_start_ms`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_bonus_lists`()
 BEGIN
   -- Full rebuild of the trailing 14 days into a shadow table, then swap, in
@@ -3530,6 +3735,21 @@ BEGIN
   -- trend bar snapshots are period-keyed and season-specific; last season's
   -- weeks are meaningless once the raw data is gone, so clear them too.
   CALL `Mythistone`.`sp_truncate_with_retry`('trend_snapshot');
+  -- Warcraft Logs aggregates and crawl state (collector-written, outside the prefixes)
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_pull_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_spec_pull_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_npc_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_enemy_spell_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_enemy_spell_timing_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_player_cd_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_player_cd_timing_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_player_cd_trigger_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_lust_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_player_death_daily');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_example_logs');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_crawl_state');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_fight_queue');
+  CALL `Mythistone`.`sp_truncate_with_retry`('wcl_processed_runs');
 
   -- derived tables (by prefix)
   OPEN cur;
@@ -3663,6 +3883,21 @@ BEGIN
   END IF;
 END;
 
+CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_purge_wcl_rows`(IN p_table VARCHAR(64), IN p_where VARCHAR(255))
+BEGIN
+  -- Deletes matching rows in small autocommitted chunks so the collector's WCL writes
+  -- never wait long, and stops as soon as the pipeline or the season wipe takes agg_pipeline.
+  DECLARE v_rows INT DEFAULT 1;
+
+  SET @wcl_purge_sql = CONCAT('DELETE FROM `Mythistone`.`', p_table, '` WHERE ', p_where, ' LIMIT 5000');
+  PREPARE wcl_purge_stmt FROM @wcl_purge_sql;
+  WHILE v_rows > 0 AND IS_USED_LOCK('agg_pipeline') IS NULL DO
+    EXECUTE wcl_purge_stmt;
+    SET v_rows = ROW_COUNT();
+  END WHILE;
+  DEALLOCATE PREPARE wcl_purge_stmt;
+END;
+
 CREATE EVENT ev_nightly_agg_pipeline
 ON SCHEDULE EVERY 1 DAY
 STARTS '2026-07-11 20:00:00.000'
@@ -3794,6 +4029,39 @@ DO purge_block: BEGIN
   UPDATE Mythistone.summary_meta
   SET last_run_id = v_process_up_to
   WHERE name = 'purge_routes_pointer';
+END purge_block;
+
+CREATE EVENT ev_purge_wcl_window
+ON SCHEDULE EVERY 1 DAY
+STARTS '2026-11-18 01:30:00.000'
+ON COMPLETION PRESERVE
+ENABLE
+COMMENT 'Chunked purge of wcl_* day buckets older than 14 days and of wcl_* run rows whose run started over 15 days ago'
+DO purge_block: BEGIN
+  DECLARE v_old_bucket VARCHAR(64) DEFAULT 'bucket_date < UTC_DATE() - INTERVAL 14 DAY';
+  DECLARE v_old_run    VARCHAR(64) DEFAULT 'run_start_ms < (UNIX_TIMESTAMP() - 15 * 86400) * 1000';
+
+  IF IS_USED_LOCK('agg_pipeline') IS NOT NULL THEN
+    LEAVE purge_block;
+  END IF;
+
+  SET SESSION innodb_lock_wait_timeout = 15;  -- yield to the collector
+  SET SESSION lock_wait_timeout = 60;
+  SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;  -- no gap locks next to the collector's inserts
+
+  CALL Mythistone.sp_purge_wcl_rows('wcl_pull_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_spec_pull_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_npc_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_enemy_spell_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_enemy_spell_timing_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_player_cd_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_player_cd_timing_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_player_cd_trigger_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_lust_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_player_death_daily', v_old_bucket);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_example_logs', v_old_run);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_fight_queue', v_old_run);
+  CALL Mythistone.sp_purge_wcl_rows('wcl_processed_runs', v_old_run);
 END purge_block;
 
 CREATE EVENT ev_purge_old_run_details_incremental

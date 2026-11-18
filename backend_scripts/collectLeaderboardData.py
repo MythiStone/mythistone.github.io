@@ -28,6 +28,7 @@ from dotenv import load_dotenv
 import stats
 import discordHandler
 import simcBis
+import wclCollector
 from urllib.parse import quote_plus
 
 # Load environment variables first as we need it for some of the configs
@@ -174,8 +175,8 @@ databaseConnector.init_connection_pool(
     getenv_clean("DATABASE_NAME"),
     getenv_clean("DATABASE_PORT"),
     # +route_db_worker +run_raiderio_top_loadouts +simworker +wipe_watch
-    # +route_poller_task's one-off read_aura_run_ids at startup
-    DATABASE_WORKERS + 5,
+    # +route_poller_task's one-off read_aura_run_ids at startup +wcl sweeper +wcl worker
+    DATABASE_WORKERS + 7,
 )
 
 if args.region:
@@ -3074,6 +3075,17 @@ async def main():
             watch_task(
                 asyncio.create_task(run_raiderio_top_loadouts(session)),
                 "raiderio_top_loadouts",
+                reporter,
+            )
+        )
+        # Warcraft Logs pull intelligence. It handles its own API errors (log, alert,
+        # back off), so WCL trouble never takes the rest of the collector down.
+        tasks.append(
+            watch_task(
+                asyncio.create_task(
+                    wclCollector.run_wcl(reporter, WRITE_GATE, GLOBAL_STATS.console_log)
+                ),
+                "wcl",
                 reporter,
             )
         )

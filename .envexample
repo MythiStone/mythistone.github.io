@@ -12,6 +12,9 @@ RAIDERIO_API_KEY=
 # keystone.guru account credentials (used to fetch route data)
 KEYSTONE_GURU_USER=
 KEYSTONE_GURU_PW=
+# Warcraft Logs API client (client credentials) from https://www.warcraftlogs.com/api/clients
+WCL_CLIENT_ID=
+WCL_CLIENT_SECRET=
 # create a discord webhook for notifications
 WEBHOOK_CHANNEL=
 WEBHOOK_TOKEN=

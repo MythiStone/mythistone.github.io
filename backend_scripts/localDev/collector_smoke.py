@@ -78,6 +78,7 @@ FORWARD_ENV = [
     "DATABASE_HOST", "DATABASE_PORT", "DATABASE_USER", "DATABASE_PASSWORD", "DATABASE_NAME",
     # Entrypoint-required API creds / webhook.
     "WEBHOOK_URL", "RAIDERIO_API_KEY", "KEYSTONE_GURU_USER", "KEYSTONE_GURU_PW",
+    "WCL_CLIENT_ID", "WCL_CLIENT_SECRET",
     # Region selection + poll cadence.
     "REGIONS", "CHECK_INTERVAL",
     # SimulationCraft: enable it and point it at the shared io dir, tuned by the

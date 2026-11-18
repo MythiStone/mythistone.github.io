@@ -84,6 +84,17 @@ STANDALONE_TABLES = {
     "video_channels",
     "streamer_channels",
     "pov_character_profiles",
+    "wcl_pull_daily",
+    "wcl_spec_pull_daily",
+    "wcl_npc_daily",
+    "wcl_enemy_spell_daily",
+    "wcl_enemy_spell_timing_daily",
+    "wcl_player_cd_daily",
+    "wcl_player_cd_timing_daily",
+    "wcl_player_cd_trigger_daily",
+    "wcl_lust_daily",
+    "wcl_player_death_daily",
+    "wcl_example_logs",
 }
 
 CONTROL_TABLES = {
@@ -97,6 +108,10 @@ IGNORE_TABLES = {
     "agg_lock_diag",
     "bot_command_usage",
     "bot_news_channels",
+    # the collector's WCL crawl work state, correct empty on a fresh DB
+    "wcl_crawl_state",
+    "wcl_fight_queue",
+    "wcl_processed_runs",
 }
 
 

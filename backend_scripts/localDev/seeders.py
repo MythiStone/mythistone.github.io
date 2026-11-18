@@ -971,6 +971,95 @@ def seed_routes(conn, cursor, static, rng, cfg, ref):
         "VALUES (%s,%s,%s,%s,%s,%s,1) ON DUPLICATE KEY UPDATE times_seen = times_seen + 1", interesting_aura)
 
 
+# Pull keys are the seeded routes' pull signatures, so wcl_* rows join the route pulls the
+# dungeon page shows. Run after seed_routes.
+_SEEDED_PULL_SIGS_SQL = """
+SELECT DISTINCT rd.dungeon_id, s.pull_sig FROM (
+  SELECT route_key, GROUP_CONCAT(CONCAT(npc_id, ':', `count`) ORDER BY npc_id ASC SEPARATOR ',') AS pull_sig
+  FROM pull_enemies GROUP BY route_key, pull_id
+) s JOIN route_data rd ON rd.route_key = s.route_key
+ORDER BY rd.dungeon_id, s.pull_sig
+"""
+
+
+def seed_wcl(conn, cursor, static, rng):
+    """wcl_* aggregates over the last 14 UTC days, written through the collector's own
+    wrappers. Enemy npcs and spells come from dungeon_details.json, player cooldowns from
+    player_cooldowns.json, boss encounter ids match the seeded route_encounters."""
+    import datetime
+    print("  seeding wcl_* tables...")
+    details = load_json(os.path.join(static.dir, "dungeon_details.json"))
+    cds_by_spec = {}
+    for spell_id, cd in load_json(os.path.join(static.dir, "player_cooldowns.json")).items():
+        for spec in cd["specs"]:
+            cds_by_spec.setdefault(int(spec), []).append(int(spell_id))
+    specs = [int(s) for s in static.specs if int(s) in cds_by_spec]
+    today = datetime.datetime.now(datetime.timezone.utc).date()
+    days = [today - datetime.timedelta(days=i) for i in range(14)]
+    now_ms = _now_ms()
+    d = {k: [] for k in ("pull", "spec_pull", "npc", "spell", "timing", "cd", "cd_timing",
+                         "trigger", "lust", "death", "example")}
+
+    enemy_spells = {}
+    for cmid in (str(x["challenge_mode_id"]) for x in static.dungeons):
+        enemies = details.get(cmid, {}).get("enemies", {})
+        enemy_spells[cmid] = [(int(n), int(s)) for n, e in enemies.items() for s in e.get("spells", {})]
+        for day in days:
+            for npc in rng.sample(sorted(enemies), min(12, len(enemies))):
+                engaged = rng.randint(2, 40)
+                d["npc"].append((day, cmid, int(npc), engaged, engaged * rng.randint(8000, 60000)))
+            for npc, spell in rng.sample(enemy_spells[cmid], min(15, len(enemy_spells[cmid]))):
+                mobs = rng.randint(1, 20)
+                d["spell"].append((day, cmid, 0, npc, spell, mobs * rng.randint(1, 4), mobs))
+                d["timing"].append((day, cmid, 0, npc, spell, "first", rng.randint(0, 20), mobs))
+                d["timing"].append((day, cmid, 0, npc, spell, "recast", rng.randint(8, 30), mobs))
+                d["timing"].append((day, cmid, 0, npc, spell, "fight", rng.randint(0, 12) * 5, mobs))
+
+    cursor.execute(_SEEDED_PULL_SIGS_SQL)
+    for cmid, sig in cursor.fetchall():
+        npcs = [int(tok.split(":")[0]) for tok in sig.split(",")]
+        bosses = {npc: 3100 + ordinal
+                  for ordinal, boss in enumerate(static.bosses.get(cmid, [])) for npc in boss["npc_ids"]}
+        encounter = next((bosses[n] for n in npcs if n in bosses), 0)
+        spells = enemy_spells.get(cmid) or [(0, 0)]
+        for day in rng.sample(days, 4):
+            pulls = rng.randint(2, 20)
+            d["pull"].append((day, cmid, sig, encounter, pulls, pulls * rng.randint(20000, 90000),
+                              rng.randint(0, pulls // 3)))
+            npc, spell = rng.choice(spells)
+            d["death"].append((day, cmid, sig, spell, npc, rng.randint(1, 4)))
+            if rng.random() < 0.3:
+                d["lust"].append((day, cmid, sig, rng.randint(-2, 12) * 5, rng.randint(0, 10) * 10,
+                                  spell, npc, rng.randint(1, 3)))
+            for spec in rng.sample(specs, min(3, len(specs))):
+                d["spec_pull"].append((day, cmid, spec, sig, pulls * rng.randint(1, 2)))
+                for cd in rng.sample(cds_by_spec[spec], min(2, len(cds_by_spec[spec]))):
+                    casts = rng.randint(1, pulls)
+                    d["cd"].append((day, cmid, spec, sig, cd, casts, rng.randint(1, casts)))
+                    d["cd_timing"].append((day, cmid, spec, sig, cd, rng.randint(0, 12) * 5, casts))
+                    d["trigger"].append((day, cmid, spec, sig, cd, spell, npc, rng.randint(1, casts)))
+        for i in range(5):
+            start = rng.randint(0, 1500000)
+            d["example"].append((cmid, sig, 0, 0, f"seedReport{i:06d}", rng.randint(1, 40),
+                                 start, start + rng.randint(20000, 90000), rng.randint(8, 20),
+                                 now_ms - rng.randint(0, 13 * _DAY_MS)))
+
+    def work(cur):
+        db.upsert_wcl_pull_daily(cur, d["pull"])
+        db.upsert_wcl_spec_pull_daily(cur, d["spec_pull"])
+        db.upsert_wcl_npc_daily(cur, d["npc"])
+        db.upsert_wcl_enemy_spell_daily(cur, d["spell"])
+        db.upsert_wcl_enemy_spell_timing_daily(cur, d["timing"])
+        db.upsert_wcl_player_cd_daily(cur, d["cd"])
+        db.upsert_wcl_player_cd_timing_daily(cur, d["cd_timing"])
+        db.upsert_wcl_player_cd_trigger_daily(cur, d["trigger"])
+        db.upsert_wcl_lust_daily(cur, d["lust"])
+        db.upsert_wcl_player_death_daily(cur, d["death"])
+        db.upsert_wcl_example_logs(cur, d["example"])
+
+    db.run_in_transaction(conn, work)
+
+
 # POV players the route seed draws from, so several reach commonUtils.MIN_STREAMER_VODS
 # and get a streamer page: one with an alt, one without a persona (character-key
 # fallback), one with no cached channel (name falls back to the character).

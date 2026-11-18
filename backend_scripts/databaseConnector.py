@@ -6740,3 +6740,295 @@ def fetch_bot_news_channels(connection, cursor):
         cursor,
         "SELECT guild_id, channel_id FROM Mythistone.bot_news_channels ORDER BY guild_id",
     )
+
+
+# ---------------------------------------------------------------------------
+# Warcraft Logs pull intelligence (wcl_* tables)
+# ---------------------------------------------------------------------------
+# The per-run writes (aggregate deltas, example logs, processed mark, queue delete) take
+# only a cursor and never commit: call them inside run_in_transaction, which re-runs the
+# whole unit on a deadlock or lock wait. The *_with_retry helpers would retry one statement
+# after rolling back the rest of the run.
+
+UPSERT_WCL_PULL_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_pull_daily
+  (bucket_date, dungeon_id, pull_key, encounter_id, pulls, duration_ms_sum, pulls_with_death)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE
+  encounter_id = VALUES(encounter_id),
+  pulls = pulls + VALUES(pulls),
+  duration_ms_sum = duration_ms_sum + VALUES(duration_ms_sum),
+  pulls_with_death = pulls_with_death + VALUES(pulls_with_death)
+"""
+
+UPSERT_WCL_SPEC_PULL_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_spec_pull_daily (bucket_date, dungeon_id, spec_id, pull_key, player_pulls)
+VALUES (%s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE player_pulls = player_pulls + VALUES(player_pulls)
+"""
+
+UPSERT_WCL_NPC_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_npc_daily (bucket_date, dungeon_id, npc_id, mobs_engaged, alive_ms_sum)
+VALUES (%s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE
+  mobs_engaged = mobs_engaged + VALUES(mobs_engaged),
+  alive_ms_sum = alive_ms_sum + VALUES(alive_ms_sum)
+"""
+
+UPSERT_WCL_ENEMY_SPELL_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_enemy_spell_daily
+  (bucket_date, dungeon_id, encounter_id, npc_id, spell_id, casts, mobs_casting)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE
+  casts = casts + VALUES(casts),
+  mobs_casting = mobs_casting + VALUES(mobs_casting)
+"""
+
+UPSERT_WCL_ENEMY_SPELL_TIMING_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_enemy_spell_timing_daily
+  (bucket_date, dungeon_id, encounter_id, npc_id, spell_id, kind, bin, n)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE n = n + VALUES(n)
+"""
+
+UPSERT_WCL_PLAYER_CD_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_player_cd_daily
+  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, casts, players_casting)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE
+  casts = casts + VALUES(casts),
+  players_casting = players_casting + VALUES(players_casting)
+"""
+
+UPSERT_WCL_PLAYER_CD_TIMING_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_player_cd_timing_daily
+  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, bin, n)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE n = n + VALUES(n)
+"""
+
+UPSERT_WCL_PLAYER_CD_TRIGGER_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_player_cd_trigger_daily
+  (bucket_date, dungeon_id, spec_id, pull_key, spell_id, enemy_spell_id, enemy_npc_id, n)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE n = n + VALUES(n)
+"""
+
+UPSERT_WCL_LUST_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_lust_daily
+  (bucket_date, dungeon_id, pull_key, time_bin, hp_bin, prev_spell_id, prev_npc_id, n)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE n = n + VALUES(n)
+"""
+
+UPSERT_WCL_PLAYER_DEATH_DAILY_SQL = """
+INSERT INTO Mythistone.wcl_player_death_daily
+  (bucket_date, dungeon_id, pull_key, killing_spell_id, killer_npc_id, deaths)
+VALUES (%s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE deaths = deaths + VALUES(deaths)
+"""
+
+UPSERT_WCL_EXAMPLE_LOG_SQL = """
+INSERT INTO Mythistone.wcl_example_logs
+  (dungeon_id, pull_key, spec_id, spell_id, report_code, fight_id,
+   pull_start_ms, pull_end_ms, keystone_level, run_start_ms)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE
+  pull_start_ms = VALUES(pull_start_ms),
+  pull_end_ms = VALUES(pull_end_ms),
+  keystone_level = VALUES(keystone_level),
+  run_start_ms = VALUES(run_start_ms)
+"""
+
+# The window function keeps the derived table materialized, so it may read the table the
+# DELETE writes (no error 1093).
+TRIM_WCL_EXAMPLE_LOGS_SQL = """
+DELETE e FROM Mythistone.wcl_example_logs e
+JOIN (
+  SELECT report_code, fight_id,
+         ROW_NUMBER() OVER (ORDER BY keystone_level DESC, run_start_ms DESC,
+                                     report_code, fight_id) AS rn
+  FROM Mythistone.wcl_example_logs
+  WHERE dungeon_id = %s AND pull_key = %s AND spec_id = %s AND spell_id = %s
+) ranked ON ranked.report_code = e.report_code AND ranked.fight_id = e.fight_id
+WHERE e.dungeon_id = %s AND e.pull_key = %s AND e.spec_id = %s AND e.spell_id = %s
+  AND ranked.rn > 3
+"""
+
+INSERT_WCL_PROCESSED_RUN_SQL = """
+INSERT INTO Mythistone.wcl_processed_runs
+  (report_code, fight_id, run_fingerprint, dungeon_id, run_start_ms, status)
+VALUES (%s, %s, %s, %s, %s, %s)
+"""
+
+FETCH_WCL_PROCESSED_RUNS_SQL = """
+SELECT report_code, fight_id FROM Mythistone.wcl_processed_runs
+WHERE (report_code, fight_id) IN ({placeholders})
+"""
+
+FETCH_WCL_PROCESSED_FINGERPRINTS_SQL = """
+SELECT run_fingerprint FROM Mythistone.wcl_processed_runs
+WHERE run_fingerprint IN ({placeholders})
+"""
+
+# A run found again keeps its attempts and last error.
+UPSERT_WCL_FIGHT_QUEUE_SQL = """
+INSERT INTO Mythistone.wcl_fight_queue (report_code, fight_id, dungeon_id, run_start_ms, keystone_level)
+VALUES (%s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE report_code = report_code
+"""
+
+POP_WCL_FIGHT_QUEUE_SQL = """
+SELECT report_code, fight_id, dungeon_id, run_start_ms, keystone_level, attempts
+FROM Mythistone.wcl_fight_queue
+WHERE attempts < 3
+ORDER BY run_start_ms DESC
+LIMIT %s
+"""
+
+RECORD_WCL_FIGHT_ATTEMPT_SQL = """
+UPDATE Mythistone.wcl_fight_queue
+SET attempts = attempts + 1, last_error = %s
+WHERE report_code = %s AND fight_id = %s
+"""
+
+DELETE_WCL_FIGHT_QUEUE_SQL = """
+DELETE FROM Mythistone.wcl_fight_queue WHERE report_code = %s AND fight_id = %s
+"""
+
+FETCH_WCL_CRAWL_STATE_SQL = """
+SELECT dungeon_id, spec_id, last_swept_at, fresh_rows
+FROM Mythistone.wcl_crawl_state
+ORDER BY last_swept_at ASC, dungeon_id, spec_id
+"""
+
+UPSERT_WCL_CRAWL_STATE_SQL = """
+INSERT INTO Mythistone.wcl_crawl_state (dungeon_id, spec_id, last_swept_at, fresh_rows)
+VALUES (%s, %s, UTC_TIMESTAMP(), %s)
+ON DUPLICATE KEY UPDATE last_swept_at = VALUES(last_swept_at), fresh_rows = VALUES(fresh_rows)
+"""
+
+
+def _executemany_in_txn(cursor, sql, rows):
+    if rows:
+        cursor.executemany(sql, rows)
+
+
+def upsert_wcl_pull_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, pull_key, encounter_id, pulls, duration_ms_sum, pulls_with_death)."""
+    _executemany_in_txn(cursor, UPSERT_WCL_PULL_DAILY_SQL, rows)
+
+
+def upsert_wcl_spec_pull_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, spec_id, pull_key, player_pulls)."""
+    _executemany_in_txn(cursor, UPSERT_WCL_SPEC_PULL_DAILY_SQL, rows)
+
+
+def upsert_wcl_npc_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, npc_id, mobs_engaged, alive_ms_sum)."""
+    _executemany_in_txn(cursor, UPSERT_WCL_NPC_DAILY_SQL, rows)
+
+
+def upsert_wcl_enemy_spell_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, encounter_id, npc_id, spell_id, casts, mobs_casting)."""
+    _executemany_in_txn(cursor, UPSERT_WCL_ENEMY_SPELL_DAILY_SQL, rows)
+
+
+def upsert_wcl_enemy_spell_timing_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, encounter_id, npc_id, spell_id, kind, bin, n), kind one of
+    'first', 'recast', 'fight'."""
+    _executemany_in_txn(cursor, UPSERT_WCL_ENEMY_SPELL_TIMING_DAILY_SQL, rows)
+
+
+def upsert_wcl_player_cd_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, casts, players_casting)."""
+    _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_DAILY_SQL, rows)
+
+
+def upsert_wcl_player_cd_timing_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, bin, n)."""
+    _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_TIMING_DAILY_SQL, rows)
+
+
+def upsert_wcl_player_cd_trigger_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, spec_id, pull_key, spell_id, enemy_spell_id, enemy_npc_id, n)."""
+    _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_CD_TRIGGER_DAILY_SQL, rows)
+
+
+def upsert_wcl_lust_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, pull_key, time_bin, hp_bin, prev_spell_id, prev_npc_id, n)."""
+    _executemany_in_txn(cursor, UPSERT_WCL_LUST_DAILY_SQL, rows)
+
+
+def upsert_wcl_player_death_daily(cursor, rows):
+    """rows: (bucket_date, dungeon_id, pull_key, killing_spell_id, killer_npc_id, deaths)."""
+    _executemany_in_txn(cursor, UPSERT_WCL_PLAYER_DEATH_DAILY_SQL, rows)
+
+
+def upsert_wcl_example_logs(cursor, rows):
+    """rows: (dungeon_id, pull_key, spec_id, spell_id, report_code, fight_id, pull_start_ms,
+    pull_end_ms, keystone_level, run_start_ms). Then keeps the 3 highest keys of every
+    (dungeon_id, pull_key, spec_id, spell_id) the rows touched."""
+    _executemany_in_txn(cursor, UPSERT_WCL_EXAMPLE_LOG_SQL, rows)
+    groups = sorted({tuple(r[:4]) for r in rows})
+    _executemany_in_txn(cursor, TRIM_WCL_EXAMPLE_LOGS_SQL, [g + g for g in groups])
+
+
+def insert_wcl_processed_run(cursor, report_code, fight_id, run_fingerprint, dungeon_id,
+                             run_start_ms, status):
+    """status: 'done', 'skipped' or 'failed'. run_fingerprint: the 20-byte sha1 digest."""
+    cursor.execute(INSERT_WCL_PROCESSED_RUN_SQL,
+                   (report_code, fight_id, run_fingerprint, dungeon_id, run_start_ms, status))
+
+
+def delete_wcl_fight_queue(cursor, report_code, fight_id):
+    cursor.execute(DELETE_WCL_FIGHT_QUEUE_SQL, (report_code, fight_id))
+
+
+def fetch_wcl_processed_runs(connection, cursor, keys):
+    """The (report_code, fight_id) pairs of ``keys`` that are already processed, as a set."""
+    keys = list(keys)
+    if not keys:
+        return set()
+    sql = FETCH_WCL_PROCESSED_RUNS_SQL.format(placeholders=", ".join(["(%s, %s)"] * len(keys)))
+    rows = fetch_with_retry(connection, cursor, sql, [v for k in keys for v in k])
+    return {(code, int(fight)) for code, fight in rows}
+
+
+def fetch_wcl_processed_fingerprints(connection, cursor, fingerprints):
+    """The 20-byte fingerprints of ``fingerprints`` that are already processed, as a set of bytes."""
+    fingerprints = list(fingerprints)
+    if not fingerprints:
+        return set()
+    sql = FETCH_WCL_PROCESSED_FINGERPRINTS_SQL.format(placeholders=", ".join(["%s"] * len(fingerprints)))
+    return {bytes(r[0]) for r in fetch_with_retry(connection, cursor, sql, fingerprints)}
+
+
+def upsert_wcl_fight_queue(connection, cursor, rows):
+    """rows: (report_code, fight_id, dungeon_id, run_start_ms, keystone_level). Does not commit."""
+    if rows:
+        executemany_with_retry(connection, cursor, UPSERT_WCL_FIGHT_QUEUE_SQL, rows)
+
+
+def pop_wcl_fight_queue(connection, cursor, limit):
+    """Up to ``limit`` queued fights with fewer than 3 attempts, newest run first:
+    [(report_code, fight_id, dungeon_id, run_start_ms, keystone_level, attempts)]. They stay
+    queued until delete_wcl_fight_queue runs in the run's transaction."""
+    return fetch_with_retry(connection, cursor, POP_WCL_FIGHT_QUEUE_SQL, (limit,))
+
+
+def record_wcl_fight_attempt(connection, cursor, report_code, fight_id, error=None):
+    """Counts a failed attempt and keeps its error, cut to the column width. Does not commit."""
+    execute_with_retry(connection, cursor, RECORD_WCL_FIGHT_ATTEMPT_SQL,
+                       (error[:512] if error else None, report_code, fight_id))
+
+
+def fetch_wcl_crawl_state(connection, cursor):
+    """[(dungeon_id, spec_id, last_swept_at, fresh_rows)], least recently swept first. A
+    (dungeon, spec) never swept has no row."""
+    return fetch_with_retry(connection, cursor, FETCH_WCL_CRAWL_STATE_SQL)
+
+
+def update_wcl_crawl_state(connection, cursor, dungeon_id, spec_id, fresh_rows):
+    """Stamps a sweep of (dungeon_id, spec_id) at the current UTC time. Does not commit."""
+    execute_with_retry(connection, cursor, UPSERT_WCL_CRAWL_STATE_SQL, (dungeon_id, spec_id, fresh_rows))
