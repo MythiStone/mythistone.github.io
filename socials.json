@@ -2425,5 +2425,16 @@
         "persona": "pug_veteran",
         "judge_score": null,
         "timestamp": 1794881602154
+    },
+    "data/social/weekly_mover_dungeon_586_2026-11-18.png": {
+        "title": "Weekly Mover: Den of Nalorakk",
+        "post_type": "weekly_mover",
+        "link": "https://mythistone.com/dungeons/den-of-nalorakk",
+        "social": "Den of Nalorakk climbed from +24 to +25 this week. No drama, just the key finally pulling its weight. #WoW #MythicPlus https://mythistone.com/dungeons/den-of-nalorakk",
+        "blog": "Nothing moved more over the last seven days than Den of Nalorakk: highest timed key from +24 to +25.\n\nMost of the ladder barely shifts week to week this deep into a season, so a jump like this stands out.",
+        "post": "Den of Nalorakk climbed from +24 to +25 this week. No drama, just the key finally pulling its weight. #WoW #MythicPlus https://mythistone.com/dungeons/den-of-nalorakk",
+        "persona": "deadpan_raid_leader",
+        "judge_score": 33.0,
+        "timestamp": 1794963246196
     }
 }
