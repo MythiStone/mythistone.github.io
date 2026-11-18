@@ -8,6 +8,7 @@ import compArchetypes
 import aggregateData
 import commonUtils
 import talentBuilds
+import generateSpecCooldowns
 from collections import Counter, defaultdict
 from datetime import datetime, timezone, timedelta
 from contextlib import closing
@@ -2462,6 +2463,18 @@ def convert_slots(
                                     break
 
 
+def report_skipped_sections(spec_id, dungeon_lookup, sections):
+    """Build log of the page sections left out for a spec. sections: {label: dungeon ids with data}."""
+    stamp = datetime.now(timezone.utc).isoformat()
+    for label, found in sections.items():
+        found = {str(d) for d in found}
+        missing = sorted(d['name']['en_US'] for key, d in dungeon_lookup.items() if str(key) not in found)
+        if len(missing) == len(dungeon_lookup):
+            print(f"[{stamp}] Spec {spec_id}: skipped {label}, no dungeon has data")
+        elif missing:
+            print(f"[{stamp}] Spec {spec_id}: {label} skipped for {', '.join(missing)}")
+
+
 def main(template_path, output_dir, debug=False, spec=None):
     # local import: keeps PIL/matplotlib out of the import path for the many
     # modules that only need this file's helpers
@@ -2710,6 +2723,8 @@ def main(template_path, output_dir, debug=False, spec=None):
 
     # POV videos per route, fetched once and reused across specs (all routes).
     route_videos_map = None
+    cooldown_lookups = generateSpecCooldowns.load_lookups()
+    cooldown_contexts = generateSpecCooldowns.build_dungeon_contexts(dungeon_lookup, cooldown_lookups)
     # Iterate over each spec folder
     for spec_id in spec_keys:
         print(
@@ -3025,7 +3040,6 @@ def main(template_path, output_dir, debug=False, spec=None):
                     crafted_item_ids=crafted_item_id_set,
                     hero_node_subtree=hero_node_subtree,
                 )
-                print(f"[{datetime.now(timezone.utc).isoformat()}] BIS summary from top loadouts: {bis_summary}")
 
                 # Annotate the general combo lists with the top-50 ("TOP") signal:
                 # a comp gets is_bis/bis_pct when the top-50 players run the same
@@ -3968,10 +3982,18 @@ def main(template_path, output_dir, debug=False, spec=None):
             os.makedirs(spec_meta_dir, exist_ok=True)
             with open(os.path.join(spec_meta_dir, f"{spec_id}.json"), "w", encoding="utf-8") as f:
                 json.dump(spec_meta, f, separators=(",", ":"))
+            spec_cooldown_dungeons = generateSpecCooldowns.write_spec_cooldowns(
+                spec_id, cooldown_contexts, cooldown_lookups)
+            report_skipped_sections(spec_id, dungeon_lookup, {
+                "Routes": top_routes,
+                "VODs": top_vods,
+                "Cooldown Usage": [d['id'] for d in spec_cooldown_dungeons or []],
+            })
 
             output_html = template.render(
                 generated_at=datetime.now(timezone.utc).timestamp(),
                 spec_id=spec_id,
+                spec_cooldown_dungeons=spec_cooldown_dungeons,
                 priority_reasons=season_gear_rules["priority_item_ids"],
                 pin_priority=commonUtils.pin_priority(),
                 current_tier_item_ids=season_gear_rules["current_tier_item_ids"],
@@ -4120,6 +4142,7 @@ def main(template_path, output_dir, debug=False, spec=None):
             traceback.print_exc()
             raise e
 
+    generateSpecCooldowns.report_cooldown_gaps(cooldown_lookups)
     report_unknown_ids()
 
 

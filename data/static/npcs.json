@@ -210,7 +210,8 @@
     "269811": "Kula the Butcher",
     "270306": "Ritual Chieftain",
     "270502": "Half-Finished Mummy",
-    "271453": "Blade of the Altar"
+    "271453": "Blade of the Altar",
+    "238414": "Infernal"
   },
   "fr_FR": {
     "133384": "Merekpha",
@@ -423,7 +424,8 @@
     "269811": "Kula la Bouchère",
     "270306": "Chef du rituel",
     "270502": "Momie à moitié terminée",
-    "271453": "Lame de l'autel"
+    "271453": "Lame de l'autel",
+    "238414": "Infernal"
   },
   "de_DE": {
     "133384": "Merektha",
@@ -636,7 +638,8 @@
     "269811": "Kula die Schlächterin",
     "270306": "Ritualhäuptling",
     "270502": "Halbfertige Mumie",
-    "271453": "Klinge des Altars"
+    "271453": "Klinge des Altars",
+    "238414": "Höllenbestie"
   },
   "es_ES": {
     "133384": "Merektha",
@@ -849,7 +852,8 @@
     "269811": "Kula la Carnicera",
     "270306": "Jefe del ritual",
     "270502": "Momia a medio acabar",
-    "271453": "Hoja del altar"
+    "271453": "Hoja del altar",
+    "238414": "Infernal"
   },
   "pt_BR": {
     "133384": "Merektha",
@@ -1062,7 +1066,8 @@
     "269811": "Kula, a Açougueira",
     "270306": "Chefe do Ritual",
     "270502": "Múmia Pela Metade",
-    "271453": "Lâmina do Altar"
+    "271453": "Lâmina do Altar",
+    "238414": "Infernal"
   },
   "ru_RU": {
     "133384": "Меректа",
@@ -1275,7 +1280,8 @@
     "269811": "Кула Живодерка",
     "270306": "Ритуальный вождь",
     "270502": "Недоделанная мумия",
-    "271453": "Алтарный клинок"
+    "271453": "Алтарный клинок",
+    "238414": "Инфернал"
   },
   "it_IT": {
     "133384": "Merektha",
@@ -1488,7 +1494,8 @@
     "269811": "Kula la Macellaia",
     "270306": "Capotribù Rituale",
     "270502": "Mummia Mezza Imbalsamata",
-    "271453": "Lama dell'Altare"
+    "271453": "Lama dell'Altare",
+    "238414": "Infernale"
   },
   "zh_CN": {
     "133384": "米利克萨",
@@ -1701,7 +1708,8 @@
     "269811": "屠夫库拉",
     "270306": "仪式首领",
     "270502": "未完成的木乃伊",
-    "271453": "祭坛利刃"
+    "271453": "祭坛利刃",
+    "238414": "地狱火"
   },
   "ko_KR": {
     "133384": "메레크타",
@@ -1914,7 +1922,8 @@
     "269811": "도살자 쿨라",
     "270306": "의식의 족장",
     "270502": "반쯤 완성된 미라",
-    "271453": "제단의 칼날"
+    "271453": "제단의 칼날",
+    "238414": "지옥불정령"
   },
   "zh_TW": {
     "133384": "莫芮克莎",
@@ -2127,7 +2136,8 @@
     "269811": "『屠殺者』庫拉",
     "270306": "儀式酋長",
     "270502": "半成品木乃伊",
-    "271453": "祭壇之刃"
+    "271453": "祭壇之刃",
+    "238414": "煉獄火"
   },
   "es_MX": {
     "133384": "Merektha",
@@ -2340,6 +2350,7 @@
     "269811": "Kula, la Carnicera",
     "270306": "Jefe del ritual",
     "270502": "Momia a medio acabar",
-    "271453": "Espada del altar"
+    "271453": "Espada del altar",
+    "238414": "Infernal"
   }
 }

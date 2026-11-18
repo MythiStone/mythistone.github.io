@@ -10,15 +10,33 @@
 }
 
 /* Boss Pacing & Deaths card */
+/* The Minimum key menu opens over the card headers below, which share z-index-2. */
+#dungeon-boss-pacing > .card-header { z-index: 3 !important; }
+.pacing-header { row-gap: 0.5rem; }
+.pacing-header-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.25rem; margin-left: auto; padding-inline: 1rem 2.75rem; }
+.pacing-header-stats { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.8rem; white-space: nowrap; }
+.pacing-header-stats b { font-size: 0.95rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pacing-filter { flex: 0 0 10.5rem; }
+.pacing-filter .form-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+@media (max-width: 767.98px) {
+  .pacing-header-tools { order: 3; flex: 1 1 100%; margin-left: 0; padding-inline: 1rem; justify-content: space-between; }
+}
 .pacing-stat {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.3rem 0.75rem;
-  border-radius: 999px;
-  background: var(--mythi-chip-bg);
-  border: 1px solid var(--mythi-border-subtle);
-  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--bs-border-radius);
+  background: var(--mythi-surface-raised);
+  font-size: 0.78rem;
   color: var(--mythi-text-muted);
 }
 .pacing-stat b { color: var(--bs-emphasis-color); }
@@ -83,7 +101,6 @@
   padding-right: 0.25rem;
   background: var(--bs-card-bg);
 }
-.pacing-table td { padding-top: 0.6rem; padding-bottom: 0.6rem; }
 .pacing-deaths { min-width: 6.5rem; }
 .pacing-lust {
   width: 1rem;
@@ -167,6 +184,8 @@ summary.detail-row-head:hover { background: var(--mythi-hover-bg); }
   color: var(--bs-emphasis-color);
 }
 .detail-row-name > .text-truncate { max-width: 100%; margin-right: 0.15rem; }
+.detail-spell-link, .detail-spell-link:hover { color: inherit; }
+.detail-spell-link:hover { text-decoration: underline; }
 .detail-row-dmg { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; white-space: nowrap; }
 .detail-row-dmg b { font-size: 0.85rem; color: var(--mythi-text-danger); }
 .detail-row-dmg small { font-size: 0.65rem; color: var(--mythi-text-muted); }
@@ -201,3 +220,89 @@ details[open] > summary .detail-row-chevron { transform: rotate(180deg); }
 .detail-flag-enrage { color: var(--mythi-text-danger); border-color: currentColor; }
 .detail-bullet { position: relative; padding-left: 0.9rem; }
 .detail-bullet::before { content: "•"; position: absolute; left: 0.2rem; }
+
+/* Warcraft Logs rows: Boss Pacing sections, boss Timeline tab, timing chips */
+.detail-flag-time { color: var(--mythi-text-info); }
+.trash-list { border: 1px solid var(--mythi-border-subtle); border-radius: var(--bs-border-radius-lg); overflow: hidden; }
+.trash-row { border-top: 1px solid var(--mythi-border-subtle); }
+.trash-row-boss { background: var(--mythi-surface-raised); }
+.trash-row-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 1.25rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  list-style: none;
+}
+.trash-row-head::-webkit-details-marker { display: none; }
+summary.trash-row-head, .trash-row-head[data-modal] { cursor: pointer; }
+summary.trash-row-head:hover, .trash-row-head[data-modal]:hover { background: var(--mythi-hover-bg); }
+.trash-list-head { background: var(--mythi-surface-raised); }
+.trash-name { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.trash-name .min-width-0 { min-width: 0; }
+.trash-icon { font-size: 1.1rem; color: var(--mythi-text-muted); }
+.trash-cells { display: grid; grid-template-columns: 4.5rem 4.5rem 5.5rem 9rem; align-items: center; gap: 0.5rem; }
+.trash-row-body { border-top: 1px solid var(--mythi-border-subtle); background: var(--mythi-surface-sunken); }
+.ability-log { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 1rem; }
+.ability-log-stats { display: flex; flex-wrap: wrap; gap: 0.2rem 0.85rem; font-size: 0.72rem; color: var(--mythi-text-muted); }
+.ability-log-stats b { color: var(--bs-emphasis-color); }
+.wcl-death-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.45rem 0.75rem; }
+.npc-deaths {
+  max-height: 28rem;
+  overflow-y: auto;
+  border: 1px solid var(--mythi-border-subtle);
+  border-radius: var(--bs-border-radius-lg);
+}
+/* height: 0 keeps the list from setting the row's height, so it fills what Trash Sections leaves. */
+@media (min-width: 992px) {
+  #dungeon-deadliest-npcs .card-body { display: flex; flex-direction: column; min-height: 0; }
+  .npc-deaths { flex: 1 1 0; height: 0; min-height: 24rem; max-height: none; }
+}
+.npc-deaths-head, .npc-death-row, .npc-death-spell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.5rem 1.25rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding-inline: 0.75rem;
+}
+.npc-deaths-head { position: sticky; top: 0; z-index: 1; padding-block: 0.55rem; background: var(--mythi-surface-raised); }
+.npc-death { border-top: 1px solid var(--mythi-border-subtle); }
+.npc-death-row { padding-block: 0.45rem; list-style: none; cursor: pointer; }
+.npc-death-row::-webkit-details-marker { display: none; }
+.npc-death-row:hover { background: var(--mythi-hover-bg); }
+.npc-death-row .wcl-npc { font-size: 0.85rem; font-weight: 600; min-width: 0; color: var(--bs-emphasis-color); }
+.npc-death-spells { padding-block: 0.35rem; border-top: 1px solid var(--mythi-border-subtle); background: var(--mythi-surface-sunken); }
+.npc-death-spell { padding-block: 0.15rem; padding-left: calc(0.75rem + 26px + 0.3rem); }
+.npc-death-row > .text-xs, .npc-death-spell > .text-xs { font-variant-numeric: tabular-nums; }
+/* Trash Sections can sit beside another card, so its layout follows the card's width. */
+.wcl-card-body { container: wcl-card / inline-size; }
+@container wcl-card (max-width: 759.98px) {
+  .wcl-table thead { display: none; }
+  .wcl-table, .wcl-table tbody { display: block; width: 100%; }
+  .wcl-table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem 0.75rem;
+    padding: 0.6rem 0.75rem;
+  }
+  .wcl-table tr + tr { border-top: 1px solid var(--mythi-border-subtle); }
+  .wcl-table td { display: block; padding: 0 !important; border: 0; min-width: 0; }
+  .wcl-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--mythi-text-muted);
+  }
+  .wcl-table .wcl-cell-wide { grid-column: 1 / -1; }
+  .trash-cells { grid-template-columns: 5.5rem 8rem; }
+  .trash-cells > .d-lg-block { display: none !important; }
+}
+@container wcl-card (max-width: 479.98px) {
+  .trash-cells { grid-template-columns: 7rem; }
+  .trash-cells > .d-sm-block { display: none !important; }
+  .trash-name .pacing-panel.d-sm-none:not(.d-none) { display: block !important; }
+  .trash-row-head { gap: 0.5rem; padding-inline: 0.5rem; }
+}

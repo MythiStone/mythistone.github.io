@@ -20,6 +20,21 @@ from pageGeneration import (
     ROLE_FOLDERS,
     build_trends,
     trend_feeds_for_dungeon,
+    WCL_BIN_CAP,
+    WCL_BIN_WIDTH,
+    wcl_example_url,
+    wcl_pull_npcs,
+    wcl_deadly_score,
+    wcl_percentile,
+    wcl_first_cast,
+    wcl_recast,
+    wcl_cast_on_death,
+    WCL_BOSS_MIN_PULLS,
+    WCL_ENEMY_SPELL_MIN_CASTS,
+    wcl_ability_chart,
+    wcl_boss_encounters,
+    wcl_boss_spells,
+    wcl_spell_view,
 )
 from generateSpecPages import format_duration, format_utc_timestamp, format_iso_timestamp, load_json, load_season_info, upgrade_info
 from generateItemPages import slot_for_item
@@ -38,6 +53,24 @@ LUST_ICON_MIN_PCT = 65
 # Trash detail modal: enemies pulled in at least this share of the routes reaching a section.
 TRASH_NPC_MIN_PCT = 25
 TRASH_NPC_MAX = 8
+
+# Warcraft Logs rows on the Boss Pacing card, boss Timeline tabs, timing chips and lust modals.
+WCL_TRASH_FAMILY_MIN_PULLS = 20
+WCL_SECTION_TOP_PULLS = 4
+WCL_KILLER_MIN_DEATHS = 3
+WCL_KILLER_MIN_FAMILY_SHARE = 0.05
+WCL_TOP_NPCS = 10
+WCL_LUST_MIN_SAMPLES = 5
+WCL_LUST_HP_BIN = 10
+# A pull no stored route has joins the section holding most of its enemies, when that is clear.
+WCL_OVERLAP_MIN_SCORE = 0.5
+WCL_OVERLAP_MIN_LEAD = 1.5
+# An enemy spell shows its interrupted share from this many logged casts.
+WCL_INTERRUPT_MIN_CASTS = 30
+# Blizzard's placeholder for scripted encounter triggers, listed by MDT and the logs like a real spell.
+GENERIC_SPELL_NAME = "encounter event"
+GENERIC_SPELL_DESCRIPTION = "an encounter event has occurred."
+SPELL_DAMAGE_KEYS = ('damage', 'periodic_damage', 'tick_damage')
 
 def parse_run_rows(rows):
     if not rows:
@@ -263,14 +296,11 @@ def build_boss_pacing(encounter_rows, death_rows, pull_rows, dungeon_bosses, tim
 
         total_deaths = sum(deaths.values())
         boss_deaths = sum(c for (kind, _o), c in deaths.items() if kind == 'boss')
-        max_per_run = max([b["trash_deaths"]["per_run"] for b in bosses]
-                          + [after["deaths"]["per_run"]]) or 1
         return {
             "key": key,
             "routes": n,
             "deaths_per_run": total_deaths / n,
             "boss_death_pct": boss_deaths / total_deaths * 100 if total_deaths else None,
-            "max_per_run": max_per_run,
             "bosses": bosses,
             "after": after,
         }
@@ -309,8 +339,37 @@ def spell_row(spell_id, dungeon_spells, flags=(), name=None):
 
 
 def hardest_first(rows):
-    return sorted(rows, key=lambda s: sum(s.get(k) or 0 for k in ('damage', 'periodic_damage', 'tick_damage')),
-                  reverse=True)
+    return sorted(rows, key=lambda s: sum(s.get(k) or 0 for k in SPELL_DAMAGE_KEYS), reverse=True)
+
+
+def is_generic_spell(spell):
+    return ((spell.get('name') or '').strip().casefold() == GENERIC_SPELL_NAME
+            or (spell.get('description') or '').strip().casefold() == GENERIC_SPELL_DESCRIPTION)
+
+
+def spell_name_key(name):
+    return re.sub(r'[^a-z0-9]', '', (name or '').casefold())
+
+
+def rows_by_name(abilities):
+    """{normalized name: row} of a boss's ability rows and the rows nested in them, first row wins."""
+    found = {}
+    for ability in abilities:
+        for row in (ability, *ability['subs']):
+            if spell_name_key(row['name']):
+                found.setdefault(spell_name_key(row['name']), row)
+    return found
+
+
+def merge_spell_into(row, spell_id, dungeon_spells, flags):
+    """The journal, MDT and the logs can name one ability with different spell ids. The listed row
+    stays and takes the flags and damage numbers only the other id has."""
+    other = spell_row(spell_id, dungeon_spells, flags)
+    if not row['id']:
+        row.update({k: v for k, v in other.items() if k not in ('name', 'flags')})
+    row['flags'] = list(dict.fromkeys([*row['flags'], *other['flags']]))
+    for key in SPELL_DAMAGE_KEYS:
+        row[key] = row.get(key) or other.get(key)
 
 
 def boss_journal(sections, dungeon_spells, mdt_flags):
@@ -341,13 +400,354 @@ def boss_journal(sections, dungeon_spells, mdt_flags):
     return intro, [{"role": r[1], "lines": roles[r]} for r in JOURNAL_ROLES if r in roles], abilities
 
 
-def npc_detail(enemy, dungeon_spells):
+def npc_detail(enemy, dungeon_spells, enemy_kind):
     """MDT health and type of an enemy with its spells, hardest hitting first. None for an enemy
-    MDT does not list, which the modal shows by name only."""
+    MDT does not list, which the modal shows by name only. enemy_kind (boss or trash) picks the
+    keystone affix its numbers scale with."""
     if enemy is None:
         return None
-    spells = [spell_row(sid, dungeon_spells, flags) for sid, flags in enemy['spells'].items() if sid in dungeon_spells]
-    return {"health": enemy['health'], "type": enemy['type'], "spells": hardest_first(spells)}
+    spells = [dict(spell_row(sid, dungeon_spells, flags), enemy_kind=enemy_kind)
+              for sid, flags in enemy['spells'].items() if sid in dungeon_spells]
+    return {"health": enemy['health'], "type": enemy['type'], "enemy_kind": enemy_kind, "spells": hardest_first(spells)}
+
+
+def wcl_killers(rows, dungeon_spells, skipped):
+    """Named killing spells of death rows, most deaths first: {spell, deaths}."""
+    by_spell = Counter()
+    for r in rows:
+        if r['killing_spell_id']:
+            by_spell[r['killing_spell_id']] += int(r['deaths'])
+    killers = []
+    for spell_id, deaths in by_spell.most_common():
+        spell = wcl_spell_view(spell_id, dungeon_spells, skipped)
+        if spell:
+            killers.append({"spell": spell, "deaths": deaths})
+    return killers
+
+
+def wcl_deadliest_npcs(rows, logged_runs, dungeon_bosses, dungeon_spells, npc_names, skipped):
+    """The npcs that killed the most players per logged run, each with its named killing spells. A
+    boss's adds count as the boss. A total counts every death, also those by spells too rare to list."""
+    owner_of = {str(n): str(b['npc_ids'][0]) for b in dungeon_bosses for n in b['npc_ids']}
+    boss_names = {str(b['npc_ids'][0]): b['name'] for b in dungeon_bosses if b['npc_ids']}
+    by_npc = defaultdict(Counter)
+    for r in rows:
+        npc = owner_of.get(str(r['killer_npc_id']), str(r['killer_npc_id']))
+        if r['killing_spell_id'] and (npc in boss_names or npc in npc_names):
+            by_npc[npc][r['killing_spell_id']] += int(r['deaths'])
+    npcs = []
+    for npc, spells in by_npc.items():
+        # A boss and its adds can log one ability under several spell ids.
+        merged = {}
+        for spell_id, deaths in spells.most_common():
+            view = wcl_spell_view(spell_id, dungeon_spells, skipped)
+            if view:
+                merged.setdefault(view['name'], {"spell": view, "deaths": 0})['deaths'] += deaths
+        listed = [{"spell": m['spell'], "per_run": m['deaths'] / logged_runs}
+                  for m in sorted(merged.values(), key=lambda m: m['deaths'], reverse=True)
+                  if m['deaths'] >= WCL_KILLER_MIN_DEATHS]
+        if listed:
+            npcs.append({"id": npc, "name": boss_names.get(npc) or npc_names[npc], "boss": npc in boss_names,
+                         "per_run": sum(spells.values()) / logged_runs, "spells": listed})
+    return sorted(npcs, key=lambda n: n['per_run'], reverse=True)[:WCL_TOP_NPCS]
+
+
+def wcl_route_sections(route_pull_rows, dungeon_bosses):
+    """(section votes per trash npc set, section counts per npc) over the stored timed routes. A
+    section is the pacing card's trash key: the next boss's journal index, or 'end'."""
+    boss_of = {npc: b['name'] for b in dungeon_bosses for npc in b['npc_ids']}
+    names = {b['name'] for b in dungeon_bosses}
+    index = {b['name']: str(i) for i, b in enumerate(dungeon_bosses)}
+    routes = defaultdict(list)
+    for r in route_pull_rows or []:
+        routes[r['route_key']].append({int(n) for n in str(r['npc_ids'] or '').split(',') if n.strip()})
+    votes, npc_sections = defaultdict(Counter), defaultdict(Counter)
+    for pulls in routes.values():
+        sections = route_sections([{boss_of[n] for n in p if n in boss_of} for p in pulls], names)
+        for (_kind, name), span in sections.items():
+            key = 'end' if name is None else index[name]
+            for i in span:
+                if pulls[i] and not pulls[i] & boss_of.keys():
+                    votes[frozenset(pulls[i])][key] += 1
+                    for npc in pulls[i]:
+                        npc_sections[npc][key] += 1
+    return votes, npc_sections
+
+
+def wcl_family_section(npc_set, votes, npc_sections):
+    """(section, how it was found) of a trash pull's npc set, (None, 'ambiguous') when unclear."""
+    if npc_set in votes:
+        return votes[npc_set].most_common(1)[0][0], 'route'
+    scores = Counter()
+    for npc in npc_set:
+        total = sum(npc_sections[npc].values()) if npc in npc_sections else 0
+        if total:
+            for key, n in npc_sections[npc].items():
+                scores[key] += n / total / len(npc_set)
+    ranked = scores.most_common(2)
+    if ranked and ranked[0][1] >= WCL_OVERLAP_MIN_SCORE and (
+            len(ranked) == 1 or ranked[0][1] >= WCL_OVERLAP_MIN_LEAD * ranked[1][1]):
+        return ranked[0][0], 'overlap'
+    return None, 'ambiguous'
+
+
+def wcl_lust_summary(rows, dungeon_spells, skipped):
+    """Typical lust moment of one pull family, None under the sample floor."""
+    n = sum(int(r['n']) for r in rows)
+    if n < WCL_LUST_MIN_SAMPLES:
+        return None
+    times, hps, prev = Counter(), Counter(), Counter()
+    for r in rows:
+        if r['time_bin'] < WCL_BIN_CAP['lust']:
+            times[int(r['time_bin'])] += int(r['n'])
+        hps[int(r['hp_bin'])] += int(r['n'])
+        if r['prev_spell_id']:
+            prev[r['prev_spell_id']] += int(r['n'])
+    seconds = wcl_percentile(times, 0.5)
+    summary = {"n": n, "health": min(100, wcl_percentile(hps, 0.5) + WCL_LUST_HP_BIN // 2), "prev": None,
+               "seconds": None if seconds is None else seconds + WCL_BIN_WIDTH['lust'] / 2}
+    for spell_id, count in prev.most_common():
+        spell = wcl_spell_view(spell_id, dungeon_spells, skipped)
+        if spell:
+            summary["prev"] = {"spell": spell, "pct": count / n * 100}
+            break
+    return summary
+
+
+def wcl_interrupted_pct(casts, interrupts):
+    """Whole percent of logged casts that were interrupted, None under the sample floor or at 0%."""
+    if casts < WCL_INTERRUPT_MIN_CASTS:
+        return None
+    return min(100, round(interrupts / casts * 100)) or None
+
+
+def wcl_timing_chips(spell_rows, timing_rows, interrupt_rows):
+    """{(npc id, spell id): {on_death or first and recast, interrupted}} estimates over all of an
+    npc's logged pulls."""
+    casts, bins, interrupts = Counter(), defaultdict(lambda: defaultdict(Counter)), Counter()
+    for r in spell_rows:
+        casts[(str(r['npc_id']), str(r['spell_id']))] += int(r['casts'])
+    for r in timing_rows:
+        bins[(str(r['npc_id']), str(r['spell_id']))][r['kind']][int(r['bin'])] += int(r['n'])
+    for r in interrupt_rows:
+        interrupts[(str(r['npc_id']), str(r['spell_id']))] += int(r['interrupts'])
+    chips = {}
+    for key, n in casts.items():
+        chip = {"interrupted": wcl_interrupted_pct(n, interrupts[key])}
+        if wcl_cast_on_death(bins[key]):
+            chip["on_death"] = True
+        elif n >= WCL_ENEMY_SPELL_MIN_CASTS:
+            chip.update(first=wcl_first_cast(bins[key]['first']), recast=wcl_recast(bins[key]['recast']))
+        if any(chip.values()):
+            chips[key] = chip
+    return chips
+
+
+def wcl_boss_timeline(family, boss_npc_ids, data, killers, example_url, dungeon_spells, skipped):
+    """Logged timing per ability of one boss, None when nothing qualifies. Only the encounter's boss
+    npcs count: trash pulled into the fight logs under the same encounter id."""
+    spells = wcl_boss_spells(family['encounter'], boss_npc_ids, data['spells'], data['timings'], dungeon_spells, skipped)
+    casts, timing, on_death, logged = spells['casts'], spells['timing'], spells['on_death'], spells['logged']
+    if not logged and not killers:
+        return None
+    npc_ids = {int(n) for n in boss_npc_ids}
+    interrupts = Counter()
+    for r in data['interrupts']:
+        if int(r['encounter_id']) == family['encounter'] and int(r['npc_id']) in npc_ids:
+            interrupts[str(r['spell_id'])] += int(r['interrupts'])
+    abilities = {sid: dict({"on_death": True} if sid in on_death else
+                           {"first": wcl_first_cast(timing[sid]['first']), "recast": wcl_recast(timing[sid]['recast'])},
+                           per_pull=casts[sid] / family['pulls'],
+                           interrupted=wcl_interrupted_pct(casts[sid], interrupts[sid])) for sid in logged}
+    chart = wcl_ability_chart({sid: timing[sid]['fight'] for sid in logged if sid not in on_death},
+                              family['pulls'], dungeon_spells, skipped, cadence=abilities)
+    return {"pulls": family['pulls'], "abilities": abilities, "chart": chart, "deaths": killers, "example_url": example_url}
+
+
+def attach_boss_log(boss, timeline, dungeon_spells):
+    """Puts the logged timing on the boss's ability rows, by spell id and then by name. A logged boss
+    spell the journal and MDT do not list joins the end of the list."""
+    boss['timeline'] = timeline
+    if not timeline:
+        return
+    logs, listed = timeline['abilities'], set()
+    for ability in boss['abilities']:
+        for row in (ability, *ability['subs']):
+            row['log'] = logs.get(row['id'])
+            listed.add(row['id'])
+    by_name, unlisted = rows_by_name(boss['abilities']), []
+    for sid in logs:
+        if sid in listed:
+            continue
+        flags = boss['mdt_flags'].get(sid, ())
+        row = by_name.get(spell_name_key(dungeon_spells[sid]['name']))
+        if row is None:
+            row = dict(spell_row(sid, dungeon_spells, flags), notes=[], subs=[], log=logs[sid])
+            by_name[spell_name_key(row['name'])] = row
+            unlisted.append(row)
+        else:
+            merge_spell_into(row, sid, dungeon_spells, flags)
+            if not row.get('log') or logs[sid]['per_pull'] > row['log']['per_pull']:
+                row['log'] = logs[sid]
+    boss['abilities'] += hardest_first(unlisted)
+
+
+def build_trash_list(boss_pacing, trash_sections):
+    """Trash Sections card: the whole dungeon in order, trash and boss rows alternating. Every row
+    carries its route numbers once per Minimum key bucket, and its logged pulls once."""
+    buckets = boss_pacing['buckets']
+    if not buckets:
+        return []
+
+    def boss_cells(name, trash):
+        cells = {}
+        for b in buckets:
+            pos = next((i for i, x in enumerate(b['bosses']) if x['name'] == name), None)
+            if pos is None:
+                cells[b['key']] = None
+                continue
+            x = b['bosses'][pos]
+            if trash:
+                cells[b['key']] = {"start": b['bosses'][pos - 1]['end'] if pos else 0, "end": x['start'],
+                                   "length": x['trash_length'], "deaths": x['trash_deaths'],
+                                   "lust": x['trash_lust']}
+            else:
+                cells[b['key']] = {"start": x['start'], "end": x['end'], "length": x['length'],
+                                   "deaths": x['boss_deaths'], "lust": x['boss_lust']}
+        return cells
+
+    def trash_row(key, title, cells):
+        return {"kind": "trash", "key": key, "title": title, "cells": cells, "logged": trash_sections.get(key),
+                "enemies_modal": f"trash-{key}" if key in boss_pacing['trash'] else None}
+
+    rows = []
+    bosses = buckets[0]['bosses']
+    for pos, boss in enumerate(bosses):
+        before = bosses[pos - 1]['name'] if pos else 'Key start'
+        key = str(boss['index']) if boss['index'] is not None else None
+        rows.append(trash_row(key, f"{before} to {boss['name']}", boss_cells(boss['name'], True)))
+        rows.append({"kind": "boss", "title": boss['name'], "index": boss['index'],
+                     "cells": boss_cells(boss['name'], False)})
+
+    def after_cell(b):
+        return {"start": b['bosses'][-1]['end'], "end": b['after']['end'], "length": b['after']['length'],
+                "deaths": b['after']['deaths'], "lust": b['after']['lust']} if b['bosses'] else None
+
+    def has_after(b):
+        lust = b['after']['lust']
+        return b['bosses'] and (b['after']['length'] >= 1000 or b['after']['deaths']['per_run']
+                                or (lust and lust['pct'] >= LUST_ICON_MIN_PCT))
+
+    if bosses and ('end' in trash_sections or any(has_after(b) for b in buckets)):
+        rows.append(trash_row('end', f"{bosses[-1]['name']} to the end", {b['key']: after_cell(b) for b in buckets}))
+    return rows
+
+
+def build_wcl_dungeon(data, dungeon_bosses, route_pull_rows, boss_pacing, dungeon_spells, npc_names, lust_timeline):
+    """Everything the dungeon page shows from the aggregated Warcraft Logs tables. Each part is
+    empty when nothing qualifies, so the template hides it."""
+    skipped = set()
+    examples, deaths_by_family, lust_by_family = defaultdict(list), defaultdict(list), defaultdict(list)
+    for r in data['examples']:
+        examples[r['family_key']].append(r)
+    for r in data['deaths']:
+        deaths_by_family[r['family_key']].append(r)
+    for r in data['lust']:
+        lust_by_family[r['family_key']].append(r)
+
+    def example_url(family, lust=False):
+        rows = [r for r in examples.get(family, ()) if bool(r['spell_id']) == lust]
+        if not rows:
+            return None
+        return wcl_example_url(family, max(rows, key=lambda x: x['keystone_level']))
+
+    def family_killers(family):
+        rows = deaths_by_family.get(family, [])
+        total = sum(int(r['deaths']) for r in rows)
+        return [dict(k, share=k['deaths'] / total * 100) for k in wcl_killers(rows, dungeon_spells, skipped)
+                if k['deaths'] >= WCL_KILLER_MIN_DEATHS and k['deaths'] >= WCL_KILLER_MIN_FAMILY_SHARE * total]
+
+    # Most pulled first, so a family shows its most pulled exact composition.
+    families = {}
+    for r in data['pulls']:
+        f = families.setdefault(r['family_key'], {
+            "family": r['family_key'], "encounter": int(r['encounter_id']), "sig": r['pull_key'],
+            "pulls": 0, "deaths": 0, "with_death": 0, "lusts": 0})
+        f['pulls'] += int(r['pulls'])
+        f['deaths'] += int(r['deaths'])
+        f['with_death'] += int(r['pulls_with_death'])
+        f['lusts'] += int(r['lusts'])
+
+    def pull_row(f, modal):
+        killers = family_killers(f['family'])
+        return {"npcs": [{"id": n, "count": c} for n, c in wcl_pull_npcs(f['sig'])], "pulls": f['pulls'],
+                "deaths_per_pull": f['deaths'] / f['pulls'], "death_pct": f['with_death'] / f['pulls'] * 100,
+                "lust_pct": min(100.0, f['lusts'] / f['pulls'] * 100), "killer": killers[0] if killers else None,
+                "example_url": example_url(f['family']), "modal": modal}
+
+    # Encounter to journal boss, by the boss npcs in the encounter's pull signatures.
+    boss_index_of = {str(n): i for i, b in enumerate(dungeon_bosses) for n in b['npc_ids']}
+    boss_family = {idx: families[f"b:{e['encounter']}"] for idx, e in wcl_boss_encounters(data['pulls'], dungeon_bosses).items()
+                   if f"b:{e['encounter']}" in families}
+
+    # Trash compositions per section, deadliest first.
+    trash = [f for f in families.values() if not f['encounter']]
+    trash_pulls = sum(f['pulls'] for f in trash)
+    mean_deaths = sum(f['deaths'] for f in trash) / trash_pulls if trash_pulls else 0
+    votes, npc_sections = wcl_route_sections(route_pull_rows, dungeon_bosses)
+    by_section, mapping = defaultdict(list), Counter()
+    for f in trash:
+        npc_set = frozenset(int(n) for n, _count in wcl_pull_npcs(f['sig']))
+        section, found = wcl_family_section(npc_set, votes, npc_sections)
+        mapping[found] += f['pulls']
+        if section is not None and f['pulls'] >= WCL_TRASH_FAMILY_MIN_PULLS:
+            by_section[section].append(f)
+
+    buckets = boss_pacing['buckets']
+    listed_keys = {str(b['index']) for b in buckets[0]['bosses'] if b['index'] is not None} | {'end'} if buckets else set()
+    trash_sections, coverage = {}, Counter()
+    for key in listed_keys & by_section.keys():
+        ranked = sorted(by_section[key], reverse=True,
+                        key=lambda f: wcl_deadly_score(f['deaths'], f['pulls'], mean_deaths))
+        coverage['listed'] += sum(f['pulls'] for f in ranked)
+        coverage['shown'] += sum(f['pulls'] for f in ranked[:WCL_SECTION_TOP_PULLS])
+        trash_sections[key] = {"total": sum(f['pulls'] for f in ranked),
+                               "rows": [pull_row(f, f"logged-pull-{key}-{i}")
+                                        for i, f in enumerate(ranked[:WCL_SECTION_TOP_PULLS])]}
+
+    logged_runs = data['logged_runs']
+    deadliest_npcs = wcl_deadliest_npcs(data['deaths'], logged_runs, dungeon_bosses, dungeon_spells, npc_names,
+                                        skipped) if logged_runs else []
+
+    timelines = {}
+    for idx, family in boss_family.items():
+        if family['pulls'] >= WCL_BOSS_MIN_PULLS:
+            timeline = wcl_boss_timeline(family, dungeon_bosses[idx]['npc_ids'], data, family_killers(family['family']),
+                                         example_url(family['family']), dungeon_spells, skipped)
+            if timeline:
+                timelines[idx] = timeline
+
+    # Lusted-pull modals, keyed by the lust timeline's pull signature.
+    family_of_sig = {r['pull_key']: r['family_key'] for r in data['pulls']}
+    lust = {}
+    for pull in lust_timeline:
+        sig = pull.get('top_npcs')
+        if sig:
+            ids = [n for n, _count in wcl_pull_npcs(sig)]
+            boss = boss_family.get(next((boss_index_of[n] for n in ids if n in boss_index_of), None))
+            family = family_of_sig.get(sig) or (boss['family'] if boss else ",".join(ids))
+            summary = wcl_lust_summary(lust_by_family.get(family, []), dungeon_spells, skipped)
+            if summary:
+                lust[sig] = dict(summary, example_url=example_url(family, lust=True))
+
+    return {"trash_sections": trash_sections, "deadliest_npcs": deadliest_npcs, "timelines": timelines, "lust": lust,
+            "chips": wcl_timing_chips(data['spells'], data['timings'], data['interrupts']),
+            "modal_npcs": {n['id'] for s in trash_sections.values() for row in s['rows'] for n in row['npcs']},
+            "skipped_spells": skipped, "mapping": dict(mapping), "trash_pulls": trash_pulls,
+            "listed_pct": coverage['listed'] / trash_pulls * 100 if trash_pulls else 0,
+            "shown_pct": coverage['shown'] / trash_pulls * 100 if trash_pulls else 0,
+            "min_family_pulls": WCL_TRASH_FAMILY_MIN_PULLS, "section_top": WCL_SECTION_TOP_PULLS,
+            "has_data": bool(data['pulls'] or data['spells'])}
 
 
 DUNGEON_INTRO_CLOSING = ("It is a snapshot of what is working right now, not a fixed guide, "
@@ -435,7 +835,9 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
     # Journal text and MDT enemies (fetchDungeonData.py) and their spells (fetchDungeonSpells.py)
     # for the boss, trash and pull detail modals.
     dungeon_details = load_json(os.path.join(LOOKUP_DIR, "dungeon_details.json"))
-    dungeon_spells = load_json(os.path.join(LOOKUP_DIR, "dungeon_spells.json"))
+    dungeon_spells = {sid: spell for sid, spell in load_json(os.path.join(LOOKUP_DIR, "dungeon_spells.json")).items()
+                      if not is_generic_spell(spell)}
+    key_scaling = load_json(os.path.join(LOOKUP_DIR, "keystone_scaling.json"))
     # NPC model thumbnails downloaded by fetchNpcIcons.py -> data/icons/npc_<id>.png.
     # Set of npc_id strings that actually have an icon file, so the template only
     # renders <img> for npcs we have art for; the rest fall back to text.
@@ -755,10 +1157,11 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                 lust_timeline = databaseConnector.fetch_dungeon_lust_timeline(conn, cursor, dungeon_id)
                 skip_rates = databaseConnector.fetch_dungeon_skip_rates(conn, cursor, dungeon_id, current_season)
                 dungeon_bosses = set(dungeon_data['boss_npc_ids'])
+                route_pull_rows = databaseConnector.fetch_dungeon_route_pull_lust(conn, cursor, dungeon_id)
                 boss_pacing = build_boss_pacing(
                     databaseConnector.fetch_dungeon_route_encounters(conn, cursor, dungeon_id),
                     databaseConnector.fetch_dungeon_route_deaths(conn, cursor, dungeon_id),
-                    databaseConnector.fetch_dungeon_route_pull_lust(conn, cursor, dungeon_id),
+                    route_pull_rows,
                     dungeon_data['bosses'],
                     dungeon_data["keystone_upgrades"]["1"]["qualifying_duration"])
 
@@ -824,18 +1227,51 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                     intro, roles, abilities = boss_journal(journal['sections'], dungeon_spells, mdt_flags)
                     in_journal = {a['id'] for a in abilities} | {s['id'] for a in abilities for s in a['subs']}
                     # Casts MDT knows that the journal does not describe (melee swings, minor spells).
-                    abilities += [dict(r, notes=[], subs=[]) for r in hardest_first(
-                        spell_row(sid, dungeon_spells, flags) for sid, flags in (enemy or {}).get('spells', {}).items()
-                        if sid in dungeon_spells and sid not in in_journal)]
+                    # The journal can list the same ability under another spell id.
+                    journal_names, mdt_rows = rows_by_name(abilities), []
+                    for sid, flags in (enemy or {}).get('spells', {}).items():
+                        if sid in dungeon_spells and sid not in in_journal:
+                            same_name = journal_names.get(spell_name_key(dungeon_spells[sid]['name']))
+                            if same_name:
+                                merge_spell_into(same_name, sid, dungeon_spells, flags)
+                            else:
+                                mdt_rows.append(dict(spell_row(sid, dungeon_spells, flags), notes=[], subs=[]))
+                    abilities += hardest_first(mdt_rows)
                     boss_details.append({
                         "index": i, "name": b['name'], "description": journal['description'],
                         "npc_id": npc_id, "enemy": enemy, "intro": intro, "roles": roles, "abilities": abilities,
+                        "mdt_flags": mdt_flags,
                         "loot": sorted(boss_loot, key=lambda x: x['runs'], reverse=True),
                     })
-                modal_npc_ids = lust_npc_ids | {b['npc_id'] for b in boss_details}
+                wcl = build_wcl_dungeon({
+                    "pulls": databaseConnector.fetch_wcl_dungeon_pulls(conn, cursor, str(dungeon_id)),
+                    "deaths": databaseConnector.fetch_wcl_dungeon_deaths(conn, cursor, str(dungeon_id)),
+                    "lust": databaseConnector.fetch_wcl_dungeon_lust(conn, cursor, str(dungeon_id)),
+                    "spells": databaseConnector.fetch_wcl_dungeon_enemy_spells(conn, cursor, str(dungeon_id)),
+                    "timings": databaseConnector.fetch_wcl_dungeon_enemy_timings(conn, cursor, str(dungeon_id)),
+                    "examples": databaseConnector.fetch_wcl_dungeon_examples(conn, cursor, str(dungeon_id)),
+                    "interrupts": databaseConnector.fetch_wcl_dungeon_interrupts(conn, cursor, str(dungeon_id)),
+                    "logged_runs": int(databaseConnector.fetch_wcl_dungeon_logged_runs(conn, cursor, str(dungeon_id))[0]['logged_runs']),
+                }, dungeon_data['bosses'], route_pull_rows, boss_pacing, dungeon_spells, npc_names, lust_timeline)
+                print(f"[{datetime.now(timezone.utc).isoformat()}] Warcraft Logs: {wcl['shown_pct']:.1f}% of "
+                      f"{wcl['trash_pulls']} trash pulls shown, {wcl['listed_pct']:.1f}% above the pull floor, trash pulls by section match {wcl['mapping']}, "
+                      f"{len(wcl['skipped_spells'])} spell id(s) missing from dungeon_spells.json")
+                for b in boss_details:
+                    attach_boss_log(b, wcl['timelines'].get(b['index']), dungeon_spells)
+                    for ability in b['abilities']:
+                        for row in (ability, *ability['subs']):
+                            row['enemy_kind'] = 'boss'
+                trash_list = build_trash_list(boss_pacing, wcl['trash_sections'])
+                modal_npc_ids = lust_npc_ids | {b['npc_id'] for b in boss_details} | wcl['modal_npcs']
                 modal_npc_ids |= {n['npc_id'] for t in boss_pacing['trash'].values() for n in t['npcs']}
-                npc_details = {n: npc_detail(details['enemies'].get(n), dungeon_spells) for n in modal_npc_ids}
+                boss_npc_ids = {str(n) for n in dungeon_bosses}
+                npc_details = {n: npc_detail(details['enemies'].get(n), dungeon_spells, 'boss' if n in boss_npc_ids else 'trash')
+                               for n in modal_npc_ids}
+                for n, info in npc_details.items():
+                    for s in (info or {}).get('spells', []):
+                        s['timing'] = wcl['chips'].get((n, s['id']))
                 referenced_npc_ids |= modal_npc_ids
+                referenced_npc_ids |= {n['id'] for n in wcl['deadliest_npcs']}
 
                 missing_name_ids = {n for n in referenced_npc_ids if n not in npc_names}
                 if missing_name_ids:
@@ -903,8 +1339,11 @@ def main(template_path, output_dir, debug=False, target_dungeon=None, skip_previ
                     skip_rates=skip_rates,
                     boss_pacing=boss_pacing,
                     boss_details=boss_details,
+                    wcl=wcl,
+                    trash_list=trash_list,
                     npc_details=npc_details,
                     dungeon_spells=dungeon_spells,
+                    key_scaling=key_scaling,
                     lust_min_pct=LUST_ICON_MIN_PCT,
                     bloodlust_icon=bloodlust_icon,
                     npcs=npcs_lookup,

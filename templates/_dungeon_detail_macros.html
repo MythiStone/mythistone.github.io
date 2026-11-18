@@ -37,11 +37,26 @@
 {%- if s.aoe %}<span class="detail-flag" title="Hits every player in an area">AoE</span>{% endif %}
 {%- endmacro %}
 
+{#- A Mythic 0 damage or health number that dungeon-page.js rescales with the Minimum key filter. #}
+{% macro scaled(stat, value, enemy_kind) %}<span data-scale="{{ stat }}" data-scale-base="{{ value | int }}" data-scale-enemy="{{ enemy_kind }}"{% if stat == 'health' %} title="Health from MythicDungeonTools, following the Minimum key filter"{% endif %}>{{ value | humanize }}</span>{% endmacro %}
+
 {#- The biggest number first, what it is in small print: a hit plus its DoT, a DoT total, or one tick. #}
 {% macro damage(s) %}
-{% if s.damage %}<b>{{ s.damage | humanize }}</b>{% if s.periodic_damage %}<small>+{{ s.periodic_damage | humanize }} DoT</small>{% endif %}
-{%- elif s.periodic_damage %}<b>{{ s.periodic_damage | humanize }}</b><small>over time</small>
-{%- elif s.tick_damage %}<b>{{ s.tick_damage | humanize }}</b><small>per tick</small>{% endif %}
+{% if s.damage %}<b>{{ scaled('damage', s.damage, s.enemy_kind) }}</b>{% if s.periodic_damage %}<small>+{{ scaled('damage', s.periodic_damage, s.enemy_kind) }} DoT</small>{% endif %}
+{%- elif s.periodic_damage %}<b>{{ scaled('damage', s.periodic_damage, s.enemy_kind) }}</b><small>over time</small>
+{%- elif s.tick_damage %}<b>{{ scaled('damage', s.tick_damage, s.enemy_kind) }}</b><small>per tick</small>{% endif %}
+{%- endmacro %}
+
+{% macro interrupted_chip(pct) %}{% if pct %}<span class="detail-flag detail-flag-time" title="Share of this spell's casts that were interrupted in top ranked logged runs">Interrupted {{ pct }}%</span>{% endif %}{% endmacro %}
+
+{#- Estimates over every logged pull of this enemy, so they never describe one specific pull. #}
+{% macro timing_chips(t) %}
+{% if t %}
+{%- if t.on_death %}<span class="detail-flag detail-flag-time" title="Logged casts of this spell land as the caster dies">Cast on death</span>{% endif %}
+{%- if t.first %}<span class="detail-flag detail-flag-time" title="Typical first cast after this enemy engages, usually {{ t.first.p25 }} to {{ t.first.p75 }} seconds, across its logged pulls in top ranked logged runs">{% if t.first.on_pull %}On pull{% else %}First ~{{ t.first.p50 }}s{% endif %}</span>{% endif %}
+{%- if t.recast %}<span class="detail-flag detail-flag-time" title="Typical time between casts across this enemy's logged pulls in top ranked logged runs">Recast ~{{ t.recast }}s</span>{% endif %}
+{{- interrupted_chip(t.interrupted) }}
+{%- endif %}
 {%- endmacro %}
 
 {% macro row_head(s, more) %}
@@ -49,9 +64,10 @@
 <a href="https://www.wowhead.com/spell={{ s.id }}" target="_blank" data-wowhead="spell={{ s.id }}" class="detail-row-icon">
     <img src="/data/icons/{{ s.icon or 'inv_misc_questionmark' }}.png" alt=""></a>
 {% else %}<span class="detail-row-icon"></span>{% endif %}
-<span class="detail-row-name"><span class="text-truncate">{{ s.name }}</span>{{ flags(s) }}</span>
+<span class="detail-row-name">{% if s.id %}<a href="https://www.wowhead.com/spell={{ s.id }}" target="_blank" data-wowhead="spell={{ s.id }}" class="text-truncate detail-spell-link">{{ s.name }}</a>{% else %}<span class="text-truncate">{{ s.name }}</span>{% endif %}{{ flags(s) }}{{ timing_chips(s.timing) }}</span>
 <span class="detail-row-dmg">{{ damage(s) }}</span>
 <span class="material-symbols-rounded detail-row-chevron">{{ 'expand_more' if more }}</span>
+{{ ability_log(s.log) }}
 {% endmacro %}
 
 {#- One spell or journal ability. Its description, journal text and nested abilities fold out on click. #}
@@ -90,7 +106,7 @@
             <div class="me-auto">
                 <a href="https://www.wowhead.com/npc={{ npc_id }}" target="_blank" data-wowhead="npc={{ npc_id }}"
                     class="font-weight-bolder text-body-emphasis">{{ npcs.en_US[npc_id] }}</a>
-                {% if info %}<div class="text-xxs text-secondary" title="Health before keystone scaling, from MythicDungeonTools">{{ info.type }} · {{ info.health | humanize }} health</div>{% endif %}
+                {% if info %}<div class="text-xxs text-secondary">{{ info.type }} · {{ scaled('health', info.health, info.enemy_kind) }} health</div>{% endif %}
             </div>
             {% if note %}<span class="detail-note">{{ note }}</span>{% endif %}
         </div>
@@ -121,4 +137,145 @@
         {{ caller() if caller }}
     </div>
 </div>
+{% endmacro %}
+
+{#- Average deaths per run: the bar is full at one death per run. #}
+{% macro death_bar(per_run) %}
+<div class="progress pacing-death-bar">
+    <div class="progress-bar bg-gradient-danger" role="progressbar" style="width: {{ ([per_run, 1.0] | min * 100) | round(1) }}%;"></div>
+</div>
+{% endmacro %}
+
+{% macro wcl_credit() %}<a href="https://www.warcraftlogs.com" target="_blank" rel="noopener nofollow" class="text-decoration-underline">Warcraft Logs</a>{% endmacro %}
+
+{% macro wcl_example(url) %}
+{% if url %}<a href="{{ url }}" target="_blank" rel="noopener nofollow" class="text-body-emphasis text-xs font-weight-bold text-nowrap"><i class="bi bi-box-arrow-up-right me-1"></i>View Example Log</a>{% endif %}
+{% endmacro %}
+
+{% macro wcl_spell(s) %}
+<span class="wcl-spell">
+    {% if s.id %}<a href="https://www.wowhead.com/spell={{ s.id }}" target="_blank" data-wowhead="spell={{ s.id }}" class="detail-row-icon"><img src="/data/icons/{{ s.icon or 'inv_misc_questionmark' }}.png" alt=""></a>
+    {% else %}<span class="material-symbols-rounded wcl-melee" aria-hidden="true">swords</span>{% endif %}
+    {% if s.id %}<a href="https://www.wowhead.com/spell={{ s.id }}" target="_blank" data-wowhead="spell={{ s.id }}" class="wcl-spell-name">{{ s.name }}</a>
+    {% else %}<span class="wcl-spell-name">{{ s.name }}</span>{% endif %}
+</span>
+{% endmacro %}
+
+{#- The logged pulls of one Boss Pacing section. On phones each row stacks into labelled cells. #}
+{% macro wcl_pull_table(section) %}
+<table class="table align-items-center mb-0 wcl-table">
+    <thead>
+        <tr>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Composition</th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Logged pulls</th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Deaths per pull</th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Pulls with a death</th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Lust rate</th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Top killing spell</th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 pe-2">Details</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in section.rows %}
+        <tr>
+            <td class="ps-2 wcl-cell-wide" data-label="Composition">
+                <div class="wcl-comp">
+                    {% for n in row.npcs %}
+                    <span class="wcl-npc">{% if n.id in npc_icons %}<img src="/data/icons/npc_{{ n.id }}.png" alt="">{% endif %}<span>{% if n.count > 1 %}<b>{{ n.count }}x</b> {% endif %}{{ npcs.en_US[n.id] }}</span></span>
+                    {% endfor %}
+                </div>
+            </td>
+            <td class="text-sm" data-label="Logged pulls">{{ row.pulls }}</td>
+            <td class="text-sm font-weight-bold" data-label="Deaths per pull">{{ "%.2f"|format(row.deaths_per_pull) }}</td>
+            <td class="text-sm" data-label="Pulls with a death">{{ "%.0f"|format(row.death_pct) }}%</td>
+            <td class="text-sm" data-label="Lust rate">{{ "%.0f"|format(row.lust_pct) }}%</td>
+            <td class="text-sm wcl-cell-wide" data-label="Top killing spell">
+                {% if row.killer %}{{ wcl_spell(row.killer.spell) }}<span class="text-xxs text-secondary d-block">{{ row.killer.deaths }} deaths</span>{% else %}<span class="text-secondary">-</span>{% endif %}
+            </td>
+            <td class="pe-2 wcl-cell-wide" data-label="Details">
+                <div class="d-flex flex-column gap-1 align-items-start">
+                    {{ modal_link(row.modal, 'View Abilities', 'text-xs font-weight-bold') }}
+                    {{ wcl_example(row.example_url) }}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}
+
+{#- Logged timing of one boss ability, shown on its row in the Abilities tab. #}
+{% macro ability_log(l) %}
+{% if l %}
+<div class="ability-log">
+    <div class="ability-log-stats">
+        {% if l.on_death %}<span class="detail-flag detail-flag-time" title="Logged casts of this spell land as the caster dies">Cast on death</span>{% endif %}
+        {% if l.first %}<span title="Usually {{ l.first.p25 }}s to {{ l.first.p75 }}s after the encounter starts">{% if l.first.on_pull %}<b>On pull</b>{% else %}First cast <b>{{ l.first.p50 }}s</b>{% endif %}</span>{% endif %}
+        {% if l.recast %}<span>Recast <b>~{{ l.recast }}s</b></span>{% endif %}
+        {{ interrupted_chip(l.interrupted) }}
+        <span><b>{{ "%.1f"|format(l.per_pull) }}</b> casts per pull</span>
+    </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro timeline_axis(chart) %}
+<div class="tl-row tl-axis">
+    <div class="tl-name"></div>
+    <div class="tl-lane">{% for t in chart.ticks %}<span class="tl-tick{% if t.minute %} tl-tick-minute{% endif %}" style="left: {{ t.left }}%;">{{ t.label }}</span>{% endfor %}</div>
+</div>
+{% endmacro %}
+
+{#- Boss abilities over the fight: an icon at each typical cast on top of its usual range. #}
+{% macro ability_timeline(chart) %}
+<div class="ability-timeline-slot">
+    <div class="tl-scroll custom-scrollbar" tabindex="0" role="group" aria-label="Typical boss ability casts over the fight">
+        <div class="tl-chart" style="--tl-seconds: {{ chart.seconds }}; --tl-tick: {{ chart.tick_s }};">
+            {{ timeline_axis(chart) }}
+            {% for row in chart.rows %}
+            <div class="tl-row">
+                <div class="tl-name">
+                    {% if row.spell.id %}<a href="https://www.wowhead.com/spell={{ row.spell.id }}" target="_blank" data-wowhead="spell={{ row.spell.id }}" class="tl-name-link"><img src="/data/icons/{{ row.spell.icon or 'inv_misc_questionmark' }}.png" alt=""><span>{{ row.spell.name }}</span></a>
+                    {% else %}<span>{{ row.spell.name }}</span>{% endif %}
+                </div>
+                <div class="tl-lane">
+                    {% for c in row.casts %}<span class="tl-spread" style="left: {{ c.bar_left }}%; width: {{ c.bar_width }}%;" data-bs-toggle="tooltip" title="{{ c.tip }}"></span>{% endfor %}
+                    {% for c in row.casts %}
+                    <button type="button" class="tl-cast" style="left: {{ c.left }}%; opacity: {{ c.alpha }};" data-bs-toggle="tooltip" title="{{ c.tip }}" aria-label="{{ c.tip }}"><img src="/data/icons/{{ row.spell.icon or 'inv_misc_questionmark' }}.png" alt=""></button>
+                    {% else %}
+                    <button type="button" class="tl-band" data-bs-toggle="tooltip" title="{{ row.band_tip }}" aria-label="{{ row.band_tip }}"><span class="tl-band-text">{{ row.band_text }}</span></button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            {{ timeline_axis(chart) }}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{#- Below the boss's ability list: what killed players in this fight, and an example log. #}
+{% macro boss_log_footer(t) %}
+{% if t.deaths %}
+<h6 class="text-sm mt-3 mb-2">Deaths by spell</h6>
+<div class="detail-card">
+    {% for d in t.deaths %}
+    <div class="detail-row wcl-death-row">{{ wcl_spell(d.spell) }}<span class="text-xs text-secondary text-end">{{ d.deaths }} deaths, {{ "%.0f"|format(d.share) }}% of deaths here</span></div>
+    {% endfor %}
+</div>
+{% endif %}
+<div class="d-flex flex-wrap justify-content-between gap-2 text-xxs text-secondary mt-3">
+    <span>Data from {{ wcl_credit() }}</span>{{ wcl_example(t.example_url) }}
+</div>
+{% endmacro %}
+
+{#- Lusted-pull modal: when logged groups press Bloodlust on this pull. #}
+{% macro lust_log(w) %}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+    {% if w.seconds is not none %}<span class="pacing-stat"><span class="material-symbols-rounded">schedule</span>Typical lust <b>{% if w.seconds < 0 %}{{ (0 - w.seconds) | round | int }}s before the pull{% else %}{{ w.seconds | round | int }}s into the pull{% endif %}</b></span>{% endif %}
+    <span class="pacing-stat"><span class="material-symbols-rounded">favorite</span>Enemy health <b>~{{ w.health }}%</b></span>
+    {% if w.prev %}<span class="pacing-stat wcl-stat-spell">Enemy cast just before {{ wcl_spell(w.prev.spell) }}<b>{{ "%.0f"|format(w.prev.pct) }}%</b></span>{% endif %}
+    {{ wcl_example(w.example_url) }}
+</div>
+<p class="text-xxs text-secondary mb-3">From {{ w.n }} lusts in top ranked logged runs on {{ wcl_credit() }}.</p>
 {% endmacro %}

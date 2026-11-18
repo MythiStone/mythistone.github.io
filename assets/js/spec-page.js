@@ -886,3 +886,223 @@ const SPEC = JSON.parse(document.getElementById('spec-page-data').textContent);
       });
     })();
 
+// --- Cooldown Usage modal: assets/json/spec_cooldowns/<spec>.json loads when the modal first opens ---
+(function () {
+  const modal = document.getElementById('cooldownModal');
+  if (!modal) return;
+  const errorBox = document.getElementById('cooldownError');
+  const CATEGORIES = [['defensive', 'Defensive'], ['offensive', 'Offensive'], ['utility', 'Utility'],
+    ['healing', 'Healing'], ['other', 'Other']];
+  let loading = null;
+  let data = null;
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function wowheadLink(kind, id, className) {
+    const link = el('a', className);
+    link.href = 'https://www.wowhead.com/' + kind + '=' + id;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.dataset.wowhead = kind + '=' + id;
+    return link;
+  }
+
+  function image(src) {
+    const img = el('img');
+    img.src = src;
+    img.alt = '';
+    img.loading = 'lazy';
+    return img;
+  }
+
+  function spellLink(id, name, icon) {
+    const link = wowheadLink('spell', id, 'cu-spell-link');
+    link.appendChild(image('/data/icons/' + (icon || 'inv_misc_questionmark') + '.png'));
+    link.appendChild(el('span', '', name));
+    return link;
+  }
+
+  function enemySpell(id) {
+    const spell = data.spells[id];
+    return spellLink(id, spell[0], spell[1]);
+  }
+
+  function npcLink(id, count) {
+    const npc = data.npcs[id];
+    const link = wowheadLink('npc', id, 'cu-npc');
+    if (npc[1]) link.appendChild(image('/data/icons/npc_' + id + '.png'));
+    link.appendChild(el('span', '', (count > 1 ? count + 'x ' : '') + npc[0]));
+    return link;
+  }
+
+  function logLink(url) {
+    const link = el('a', 'cu-log', 'Example log');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener nofollow';
+    return link;
+  }
+
+  function bossRow(row) {
+    const line = el('div', 'cu-row cu-boss-row');
+    line.dataset.finding = row.k;
+    line.appendChild(el('span', 'cu-boss', row.boss));
+    const finding = el('span', 'cu-finding');
+    finding.appendChild(el('span', '', row.t));
+    if (row.s) finding.appendChild(enemySpell(row.s));
+    line.appendChild(finding);
+    if (row.log) line.appendChild(logLink(row.log));
+    return line;
+  }
+
+  function trashRow(row) {
+    const line = el('div', 'cu-row cu-trash-row');
+    const comp = el('div', 'cu-comp');
+    row.npcs.forEach(function (npc) { comp.appendChild(npcLink(npc[0], npc[1])); });
+    line.appendChild(comp);
+    const rate = el('span', 'cu-rate');
+    rate.appendChild(el('b', '', row.rate.toFixed(2)));
+    rate.appendChild(el('span', '', ' casts per player per pull'));
+    line.appendChild(rate);
+    if (row.target) {
+      const target = el('span', 'cu-finding');
+      target.appendChild(el('span', '', row.target[2]));
+      target.appendChild(npcLink(row.target[0], 1));
+      target.appendChild(el('span', 'cu-share', ', ' + row.target[1] + '%'));
+      line.appendChild(target);
+    }
+    (row.near || []).forEach(function (near) {
+      const finding = el('span', 'cu-finding');
+      finding.appendChild(el('span', '', 'Often within ' + near[1] + 's of'));
+      finding.appendChild(enemySpell(near[0]));
+      line.appendChild(finding);
+    });
+    if (row.log) line.appendChild(logLink(row.log));
+    return line;
+  }
+
+  function rowGroup(title, rows, build) {
+    const group = el('div', 'cu-group');
+    group.appendChild(el('h6', 'cu-group-title', title));
+    rows.forEach(function (row) { group.appendChild(build(row)); });
+    return group;
+  }
+
+  function refreshTooltips() {
+    if (window.$WowheadPower && typeof window.$WowheadPower.refreshLinks === 'function') {
+      try { window.$WowheadPower.refreshLinks(); } catch (e) { /* tooltips optional */ }
+    }
+  }
+
+  function spellRow(ability) {
+    const row = el('details', 'cu-ability');
+    const head = el('summary', 'cu-ability-head');
+    head.appendChild(spellLink(ability.id, ability.name, ability.icon));
+    head.appendChild(el('span', 'material-symbols-rounded cu-chevron', 'expand_more'));
+    row.appendChild(head);
+    row.addEventListener('toggle', function () {
+      if (!row.open || row.childNodes.length > 1) return;
+      const inner = el('div', 'cu-ability-body');
+      if (ability.boss.length) inner.appendChild(rowGroup('Boss fights', ability.boss, bossRow));
+      if (ability.trash.length) inner.appendChild(rowGroup('Trash pulls', ability.trash, trashRow));
+      row.appendChild(inner);
+      refreshTooltips();
+    });
+    return row;
+  }
+
+  function spellList(abilities) {
+    const list = el('div', 'cu-list');
+    const regular = abilities.filter(function (a) { return !a.freq; });
+    const frequent = abilities.filter(function (a) { return a.freq; });
+    regular.forEach(function (a) { list.appendChild(spellRow(a)); });
+    if (!frequent.length) return list;
+    const hidden = el('div', 'cu-list d-none');
+    frequent.forEach(function (a) { hidden.appendChild(spellRow(a)); });
+    const showText = 'Show short cooldowns (' + frequent.length + ')';
+    const toggle = el('button', 'cu-toggle', showText);
+    toggle.type = 'button';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', function () {
+      const open = hidden.classList.toggle('d-none') === false;
+      toggle.textContent = open ? 'Hide short cooldowns' : showText;
+      toggle.setAttribute('aria-expanded', String(open));
+    });
+    list.appendChild(toggle);
+    list.appendChild(hidden);
+    return list;
+  }
+
+  function renderDungeon(body, abilities) {
+    const shown = CATEGORIES.filter(function (entry) {
+      return entry[0] !== 'other' || abilities.some(function (a) { return a.cat === 'other'; });
+    });
+    const pills = el('div', 'cu-pills');
+    pills.setAttribute('role', 'group');
+    pills.setAttribute('aria-label', 'Cooldown category');
+    const list = el('div');
+
+    function select(category) {
+      pills.querySelectorAll('.cu-pill').forEach(function (pill) {
+        const active = pill.dataset.category === category;
+        pill.classList.toggle('active', active);
+        pill.setAttribute('aria-pressed', String(active));
+      });
+      list.replaceChildren(spellList(abilities.filter(function (a) { return a.cat === category; })));
+      refreshTooltips();
+    }
+
+    shown.forEach(function (entry) {
+      const count = abilities.filter(function (a) { return a.cat === entry[0]; }).length;
+      const pill = el('button', 'cu-pill', entry[1] + ' (' + count + ')');
+      pill.type = 'button';
+      pill.dataset.category = entry[0];
+      pill.disabled = !count;
+      pill.addEventListener('click', function () { select(entry[0]); });
+      pills.appendChild(pill);
+    });
+    body.replaceChildren(pills, list);
+    select(shown.find(function (entry) {
+      return abilities.some(function (a) { return a.cat === entry[0]; });
+    })[0]);
+  }
+
+  function load() {
+    if (loading) return loading;
+    errorBox.classList.add('d-none');
+    loading = fetch('/assets/json/spec_cooldowns/' + modal.dataset.specId + '.json?v=' + modal.dataset.version)
+      .then(function (response) {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return response.json();
+      })
+      .then(function (json) { data = json; })
+      .catch(function (error) {
+        console.error('Cooldown usage data failed to load', error);
+        errorBox.classList.remove('d-none');
+        loading = null;
+        throw error;
+      });
+    return loading;
+  }
+
+  modal.addEventListener('show.bs.modal', function () {
+    load().catch(function () { /* the error box is already showing */ });
+  });
+
+  modal.addEventListener('shown.bs.collapse', function (event) {
+    const panel = event.target;
+    if (panel.dataset.rendered) return;
+    const body = panel.querySelector('.cu-body');
+    load().then(function () {
+      panel.dataset.rendered = '1';
+      renderDungeon(body, data.dungeons[panel.dataset.dungeonId]);
+    }).catch(function () {
+      body.replaceChildren(el('p', 'cu-message', 'Cooldown data could not be loaded.'));
+    });
+  });
+})();

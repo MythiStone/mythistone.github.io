@@ -1045,6 +1045,14 @@
               </button>
             </div>
             {% endif %}
+            {% if spec_cooldown_dungeons %}
+            <div class="col-12 col-md-auto d-flex justify-content-center mb-2 mb-md-0">
+              <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
+                data-bs-target="#cooldownModal">
+                Cooldown Usage
+              </button>
+            </div>
+            {% endif %}
             {# Export Talent String and Talents per Dungeon sit by the talent tree above. #}
 
             <!-- Gear Overview -->
@@ -2773,6 +2781,53 @@
             <i class="material-symbols-rounded align-middle text-sm ms-1">arrow_forward</i>
           </a>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if spec_cooldown_dungeons %}
+  <div class="modal fade" id="cooldownModal" tabindex="-1" aria-labelledby="cooldownModalLabel" aria-hidden="true"
+    data-spec-id="{{ spec_id }}" data-version="{{ generated_at | int }}">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl modal-dialog-centered modal-fullscreen-sm-down">
+      <div class="modal-content card">
+        <div class="modal-header">
+          <h5 class="modal-title" id="cooldownModalLabel">
+            Cooldown Usage for <span class="class-{{ class_info.name | default('Unknown') | replace(' ', '') }}-text">{{
+              spec.name }} {{ class_info.name }}</span>
+          </h5>
+        </div>
+        <div class="modal-body">
+          <p id="cooldownError" class="cu-message d-none" role="alert">Cooldown data could not be loaded.</p>
+          <div class="accordion" id="cooldownDungeonAccordion">
+            {% for d in spec_cooldown_dungeons %}
+            <div class="accordion-item mb-2">
+              <h2 class="accordion-header" id="cooldown-heading-{{ d.id }}">
+                <button class="accordion-button collapsed p-0" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#cooldown-collapse-{{ d.id }}" aria-expanded="false" aria-controls="cooldown-collapse-{{ d.id }}"
+                  style="background-image: url('/data/icons/{{ dungeon_lookup[d.id].icon }}'); background-size: cover; background-position: center; background-repeat: no-repeat; background-blend-mode: overlay;">
+                  <span class="w-100 d-flex align-items-center py-3 px-4">
+                    <span class="rt-pill text-white">{{ d.name }}</span>
+                  </span>
+                </button>
+              </h2>
+              <div id="cooldown-collapse-{{ d.id }}" class="accordion-collapse collapse" data-dungeon-id="{{ d.id }}"
+                aria-labelledby="cooldown-heading-{{ d.id }}" data-bs-parent="#cooldownDungeonAccordion">
+                <div class="accordion-body cu-body"><p class="cu-message">Loading cooldown data</p></div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="modal-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <p class="text-xs text-secondary mb-0 cu-footnote">
+            Observed in top ranked logged runs on <a href="https://www.warcraftlogs.com" target="_blank" rel="noopener nofollow" class="text-decoration-underline">Warcraft Logs</a>.
+            Possible casts ignore cooldown reduction, so the share of possible casts is an estimate.
+          </p>
+          <button type="button" class="btn btn-secondary mb-0" data-bs-dismiss="modal">
             Close
           </button>
         </div>

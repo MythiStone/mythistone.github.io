@@ -182,10 +182,10 @@
 {% endmacro %}
 
 {#- Minimum keystone level ("gte" clause on the item's level). -#}
-{% macro min_key_filter(levels, col='col-12 col-md-4') %}
+{% macro min_key_filter(levels, col='col-12 col-md-4', style='btn-outline-primary') %}
 <div class="{{ col }}">
   <label class="form-label" for="minKeySelect">Minimum key</label>
-  <select id="minKeySelect" class="selectpicker form-control" data-style="btn-outline-primary">
+  <select id="minKeySelect" class="selectpicker form-control" data-style="{{ style }}">
     <option value="" selected>Any key</option>
     {% for lvl in levels %}
     <option value="{{ lvl }}">+{{ lvl }} or higher</option>

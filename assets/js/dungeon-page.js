@@ -64,6 +64,42 @@ document.addEventListener('DOMContentLoaded', layoutPacingLabels);
 window.addEventListener('load', layoutPacingLabels);
 window.addEventListener('resize', layoutPacingLabels);
 
+// --- Keystone scaling: damage and health numbers carry their Mythic 0 value ---
+// Mirrors commonUtils.humanize_number, the humanize filter that renders them.
+function humanizeNumber(value) {
+    var n = Math.trunc(value);
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + ' M';
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + ' K';
+    return String(n);
+}
+
+// Below the affix level only one affix is active, depending on the week, so none is applied.
+function keyMultiplier(stat, enemyKind, level) {
+    var scaling = DUNGEON.keyScaling;
+    var multiplier = scaling.level_bands.reduce(function (total, band) {
+        var last = band.to === null ? level : Math.min(level, band.to);
+        return total * Math.pow(band[stat], Math.max(0, last - band.from + 1));
+    }, 1);
+    return level >= scaling.affix_from_level ? multiplier * scaling.affixes[enemyKind][stat] : multiplier;
+}
+
+function damageNote(level) {
+    if (!level) return 'Damage at Mythic 0, before keystone scaling.';
+    return level >= DUNGEON.keyScaling.affix_from_level
+        ? 'Damage at +' + level + '.'
+        : 'Damage at +' + level + ', before the weekly affix.';
+}
+
+function applyKeyScaling(level) {
+    document.querySelectorAll('[data-scale]').forEach(function (node) {
+        var factor = level ? keyMultiplier(node.dataset.scale, node.dataset.scaleEnemy, level) : 1;
+        node.textContent = humanizeNumber(Number(node.dataset.scaleBase) * factor);
+    });
+    document.querySelectorAll('[data-damage-note]').forEach(function (note) {
+        note.textContent = damageNote(level);
+    });
+}
+
 // --- Boss Pacing minimum-key filter (bootstrap-select fires change via jQuery) ---
 // The boss detail modals carry their own pacing panels, so they follow it too.
 $('#dungeon-boss-pacing #minKeySelect').on('change', function () {
@@ -72,6 +108,16 @@ $('#dungeon-boss-pacing #minKeySelect').on('change', function () {
         p.classList.toggle('d-none', p.dataset.pacing !== key);
     });
     layoutPacingLabels();
+    applyKeyScaling(Number(key));
+});
+
+// --- A spell name in a fold-out row opens the row. Its icon, or a modified click, goes to Wowhead ---
+document.addEventListener('click', function (e) {
+    var link = e.target.closest('summary .detail-spell-link');
+    if (!link || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault();
+    var row = link.closest('details');
+    row.open = !row.open;
 });
 
 // --- Boss Pacing bars open their boss modal (a bar's tooltip rules out data-bs-toggle="modal") ---
@@ -81,6 +127,14 @@ document.addEventListener('click', function (e) {
     var tip = bootstrap.Tooltip.getInstance(bar);
     if (tip) tip.hide();
     bootstrap.Modal.getOrCreateInstance(document.getElementById(bar.dataset.modal)).show();
+});
+
+// The boss rows of the Trash Sections card open the same modal from the keyboard.
+document.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.trash-row-head[data-modal]')) {
+        e.preventDefault();
+        e.target.click();
+    }
 });
 
 // --- Route embeds (Klaro-gated) ---

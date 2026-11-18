@@ -2,6 +2,7 @@ import html
 import json
 import os
 import re
+from collections import Counter, defaultdict
 
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
@@ -984,22 +985,45 @@ def generateSpecNav(spec_lookup, class_lookup):
 
 # Warcraft Logs aggregates (aggregated_wcl_*), shared by the dungeon and spec pages.
 # Bin widths and caps mirror wclPullBuilder.py. A capped top bin holds everything past the cap.
-WCL_BIN_WIDTH = {"first": 1, "recast": 1, "fight": 5, "lust": 5}
-WCL_BIN_CAP = {"first": 120, "recast": 120, "fight": 600, "lust": 600}
+WCL_BIN_WIDTH = {"first": 1, "recast": 1, "fight": 5, "lust": 5, "death": 1}
+WCL_BIN_CAP = {"first": 120, "recast": 120, "fight": 600, "lust": 600, "death": 30}
 WCL_DEADLY_PRIOR_PULLS = 25
 WCL_FIRST_CAST_MIN_SAMPLES = 20
 WCL_RECAST_MIN_SAMPLES = 30
 WCL_RECAST_MAX_CAPPED_SHARE = 0.4
 WCL_RECAST_MODE_WINDOW_S = 2
 WCL_RECAST_MODE_MIN_SHARE = 0.25
-WCL_SINGLE_CAST_RECAST_SHARE = 0.2
 WCL_STRIP_CUT_PERCENTILE = 0.9
+WCL_ON_DEATH_MIN_SAMPLES = 20
+WCL_ON_DEATH_WINDOW_S = 2
+WCL_ON_DEATH_WINDOW_MAX_END_S = 10
+WCL_ON_DEATH_MIN_SHARE = 0.8
+WCL_ON_DEATH_MAX_RECAST_SHARE = 0.05
+WCL_ON_PULL_MAX_S = 1
+# Boss timeline: two peaks stay separate casts when the dip between them falls to this share of the lower one.
+WCL_CAST_VALLEY_RATIO = 0.5
+WCL_CAST_MIN_SAMPLES = 10
+WCL_CAST_MIN_REACH = 0.25
+WCL_CAST_MAX_SPREAD_S = 30
+WCL_CAST_MIN_KEPT_SHARE = 0.5
+WCL_CAST_NOISY_MIN_WINDOWS = 3
 
 
-def wcl_log_url(report_code, fight_id, pull_start_ms, pull_end_ms):
-    """Warcraft Logs report link opened on the exact pull window."""
-    return (f"https://www.warcraftlogs.com/reports/{report_code}#fight={fight_id}"
+def wcl_log_url(report_code, fight_id, pull_start_ms, pull_end_ms, wcl_pull_id=None):
+    """Warcraft Logs report link opened on the pull, by its WCL pull id when the row has one (rows
+    collected before the id was stored fall back to the pull window)."""
+    if wcl_pull_id is not None:
+        return (f"https://www.warcraftlogs.com/reports/{report_code}?fight={fight_id}"
+                f"&type=summary&pull={wcl_pull_id}")
+    return (f"https://www.warcraftlogs.com/reports/{report_code}?fight={fight_id}"
             f"&type=summary&start={pull_start_ms}&end={pull_end_ms}")
+
+
+def wcl_example_url(family_key, row):
+    """Link of an aggregated_wcl_example_log row. Only boss pulls match a WCL pull one to one: WCL
+    merges chained trash pulls, so a trash example opens the time window of our own pull."""
+    pull_id = row['wcl_pull_id'] if family_key.startswith('b:') else None
+    return wcl_log_url(row['report_code'], row['fight_id'], row['pull_start_ms'], row['pull_end_ms'], pull_id)
 
 
 def wcl_pull_npcs(pull_key):
@@ -1035,34 +1059,91 @@ def wcl_percentile(bins, q):
 
 
 def wcl_first_cast(bins):
-    """{p25, p50, p75, n} seconds of a spell's first cast, None under the sample floor."""
+    """{p25, p50, p75, n, on_pull} of a spell's first cast in whole seconds, None under the sample floor."""
     usable = wcl_estimate_bins(bins, "first")
     n = sum(usable.values())
     if n < WCL_FIRST_CAST_MIN_SAMPLES:
         return None
-    half = WCL_BIN_WIDTH["first"] / 2
-    return {"p25": wcl_percentile(usable, 0.25) + half, "p50": wcl_percentile(usable, 0.5) + half,
-            "p75": wcl_percentile(usable, 0.75) + half, "n": n}
+    p50 = wcl_percentile(usable, 0.5)
+    return {"p25": wcl_percentile(usable, 0.25), "p50": p50, "p75": wcl_percentile(usable, 0.75), "n": n,
+            "on_pull": p50 < WCL_ON_PULL_MAX_S}
 
 
-def wcl_recast(bins, mobs_casting):
-    """How a spell repeats: {state: 'regular', seconds}, {state: 'irregular'} or {state: 'once'}
-    (the caster usually dies first). None under the sample floor."""
+def wcl_recast(bins):
+    """Seconds between casts when the logs show a reliable cooldown, otherwise None."""
     samples = sum(n for b, n in bins.items() if b >= 0)
-    if mobs_casting and samples < WCL_SINGLE_CAST_RECAST_SHARE * mobs_casting:
-        return {"state": "once"}
-    if samples < WCL_RECAST_MIN_SAMPLES:
-        return None
     usable = wcl_estimate_bins(bins, "recast")
-    if not usable or bins.get(WCL_BIN_CAP["recast"], 0) / samples > WCL_RECAST_MAX_CAPPED_SHARE:
-        return {"state": "irregular"}
+    if samples < WCL_RECAST_MIN_SAMPLES or not usable:
+        return None
+    if bins.get(WCL_BIN_CAP["recast"], 0) / samples > WCL_RECAST_MAX_CAPPED_SHARE:
+        return None
     smooth = {b: sum(usable.get(x, 0) for x in (b - 1, b, b + 1))
               for b in range(min(usable), max(usable) + 1)}
     mode = max(sorted(smooth), key=smooth.get)
     near = sum(n for b, n in usable.items() if abs(b - mode) <= WCL_RECAST_MODE_WINDOW_S)
     if near / sum(usable.values()) < WCL_RECAST_MODE_MIN_SHARE:
-        return {"state": "irregular"}
-    return {"state": "regular", "seconds": mode + WCL_BIN_WIDTH["recast"] / 2}
+        return None
+    return mode
+
+
+def wcl_cast_on_death(timing):
+    """True when a spell of {kind: {bin: n}} is cast once, at a steady moment before its caster dies.
+    Death bins count seconds before death. A spell cast only after death has death bin 0 and no first
+    samples, so an absent recast always passes."""
+    deaths = {b: n for b, n in timing.get("death", {}).items() if b >= 0}
+    samples = sum(deaths.values())
+    if samples < WCL_ON_DEATH_MIN_SAMPLES:
+        return False
+    densest = max(sum(deaths.get(b + i, 0) for i in range(WCL_ON_DEATH_WINDOW_S))
+                  for b in range(WCL_ON_DEATH_WINDOW_MAX_END_S + 1))
+    recasts = sum(timing.get("recast", {}).values())
+    return (densest / samples >= WCL_ON_DEATH_MIN_SHARE
+            and (not recasts or recasts < WCL_ON_DEATH_MAX_RECAST_SHARE * sum(timing.get("first", {}).values())))
+
+
+def _wcl_cast_windows(usable):
+    """Splits {bin: n} fight bins into one {bin: n} window per clear peak of the smoothed counts."""
+    width = WCL_BIN_WIDTH["fight"]
+    grid = range(min(usable), max(usable) + width, width)
+    smooth = {b: (usable.get(b - width, 0) + 2 * usable.get(b, 0) + usable.get(b + width, 0)) / 4 for b in grid}
+    peaks = []
+    for b in grid:
+        if smooth[b] > smooth.get(b - width, 0) and smooth[b] >= smooth.get(b + width, 0):
+            if peaks:
+                dip = min(smooth[x] for x in range(peaks[-1], b + width, width))
+                if dip > WCL_CAST_VALLEY_RATIO * min(smooth[peaks[-1]], smooth[b]):
+                    peaks[-1] = max(peaks[-1], b, key=smooth.get)
+                    continue
+            peaks.append(b)
+    edges = [min(range(a, b + width, width), key=smooth.get) for a, b in zip(peaks, peaks[1:])]
+    windows = [{} for _ in peaks]
+    for b, n in usable.items():
+        windows[sum(b > edge for edge in edges)][b] = n
+    return windows
+
+
+def wcl_cast_occurrences(bins, pulls):
+    """The scripted casts of one spell from its fight bins: {casts, varies}. Each cast has its typical
+    time, usual range (low, high), samples and reach (share of pulls getting there). varies means the
+    timing has no clear peaks, so no single casts should be drawn."""
+    usable = wcl_estimate_bins(bins, "fight")
+    total = sum(usable.values())
+    if total < WCL_CAST_MIN_SAMPLES or not pulls:
+        return {"casts": [], "varies": False}
+    width = WCL_BIN_WIDTH["fight"]
+    found = []
+    for window in _wcl_cast_windows(usable):
+        samples = sum(window.values())
+        found.append({"time": sum((b + width / 2) * n for b, n in window.items()) / samples,
+                      "low": wcl_percentile(window, 0.25), "high": wcl_percentile(window, 0.75) + width,
+                      "samples": samples, "reach": min(1.0, samples / pulls)})
+    casts = [c for c in found if c["reach"] >= WCL_CAST_MIN_REACH]
+    too_wide = any(c["high"] - c["low"] > WCL_CAST_MAX_SPREAD_S for c in casts)
+    scattered = (len(found) >= WCL_CAST_NOISY_MIN_WINDOWS
+                 and sum(c["samples"] for c in casts) / total < WCL_CAST_MIN_KEPT_SHARE)
+    if too_wide or scattered:
+        return {"casts": [], "varies": True}
+    return {"casts": casts, "varies": False}
 
 
 def wcl_strip_cut(fight_bins):
@@ -1075,12 +1156,118 @@ def wcl_strip_cut(fight_bins):
     return None if cut is None else cut + WCL_BIN_WIDTH["fight"]
 
 
-def wcl_fight_strip(bins, cut):
-    """Positioned cells of a CSS bar strip over 0..cut seconds: {left, width, alpha}, sparse."""
-    usable = {b: n for b, n in wcl_estimate_bins(bins, "fight").items() if b < cut}
-    if not usable:
-        return []
-    peak = max(usable.values())
-    width = WCL_BIN_WIDTH["fight"] / cut * 100
-    return [{"left": round(b / cut * 100, 2), "width": round(width, 2), "alpha": round(0.3 + 0.7 * n / peak, 2)}
-            for b, n in sorted(usable.items())]
+WCL_MELEE_SPELL_ID = 1
+WCL_BOSS_MIN_PULLS = 10
+WCL_ENEMY_SPELL_MIN_CASTS = 30
+WCL_CHART_TICK_S = 30
+# Icon opacity of a cast almost no pull reaches. It rises to 1 for a cast every pull reaches.
+WCL_CAST_MIN_ALPHA = 0.45
+WCL_COOLDOWN_CATEGORIES = ("defensive", "offensive", "utility", "healing", "other")
+
+
+def wcl_cooldown_category(name, spec_id, categories):
+    """A player cooldown's category for one spec, None when player_cooldown_categories.json does not
+    list it. A value is a category, or {"default": category, "<spec_id>": category}."""
+    value = categories.get(name)
+    if isinstance(value, dict):
+        value = value.get(str(spec_id), value.get("default"))
+    return value if value in WCL_COOLDOWN_CATEGORIES else None
+
+
+def wcl_spell_view(spell_id, dungeon_spells, skipped):
+    """A logged spell as the page shows it, None for one it cannot name (added to skipped)."""
+    if int(spell_id) == WCL_MELEE_SPELL_ID:
+        return {"id": None, "name": "Melee", "icon": None}
+    spell = dungeon_spells.get(str(spell_id))
+    if not spell:
+        skipped.add(int(spell_id))
+        return None
+    return {"id": str(spell_id), "name": spell.get("name"), "icon": spell.get("icon")}
+
+
+def wcl_boss_encounters(pull_rows, dungeon_bosses):
+    """{journal boss index: {encounter, pulls}} from the boss npcs in each encounter's pull signatures."""
+    boss_index_of = {str(n): i for i, b in enumerate(dungeon_bosses) for n in b["npc_ids"]}
+    votes, pulls = {}, {}
+    for r in pull_rows:
+        encounter = int(r["encounter_id"])
+        if encounter:
+            pulls[encounter] = pulls.get(encounter, 0) + int(r["pulls"])
+            for npc, _count in wcl_pull_npcs(r["pull_key"]):
+                if npc in boss_index_of:
+                    tally = votes.setdefault(encounter, {})
+                    tally[boss_index_of[npc]] = tally.get(boss_index_of[npc], 0) + int(r["pulls"])
+    found = {}
+    for encounter, tally in votes.items():
+        idx = max(sorted(tally), key=tally.get)
+        if idx not in found or pulls[encounter] > found[idx]["pulls"]:
+            found[idx] = {"encounter": encounter, "pulls": pulls[encounter]}
+    return found
+
+
+def wcl_boss_spells(encounter, boss_npc_ids, spell_rows, timing_rows, dungeon_spells, skipped):
+    """Logged casts and timing bins of one boss's own spells. Only the boss npcs count: trash pulled
+    into the fight logs under the same encounter id."""
+    npc_ids = {int(n) for n in boss_npc_ids}
+
+    def is_boss_spell(r):
+        return (int(r["encounter_id"]) == encounter and int(r["npc_id"]) in npc_ids
+                and int(r["spell_id"]) != WCL_MELEE_SPELL_ID)
+
+    casts, timing = Counter(), defaultdict(lambda: defaultdict(Counter))
+    for r in filter(is_boss_spell, spell_rows):
+        casts[str(r["spell_id"])] += int(r["casts"])
+    for r in filter(is_boss_spell, timing_rows):
+        timing[str(r["spell_id"])][r["kind"]][int(r["bin"])] += int(r["n"])
+    on_death = {sid for sid in casts if wcl_cast_on_death(timing[sid])}
+    logged = [sid for sid, n in casts.items() if (n >= WCL_ENEMY_SPELL_MIN_CASTS or sid in on_death)
+              and wcl_spell_view(sid, dungeon_spells, skipped)]
+    return {"casts": casts, "timing": timing, "on_death": on_death, "logged": logged}
+
+
+def wcl_cadence_text(first, recast):
+    """The usual rhythm of a spell whose casts drift too far apart to place on the fight timeline."""
+    opening = None
+    if first:
+        opening = "cast on pull" if first["on_pull"] else f"first cast at {first['p50']}s"
+    if opening and recast:
+        return f"Usually {opening}, then about every {recast}s"
+    if opening:
+        return f"Usually {opening}"
+    if recast:
+        return f"Usually cast about every {recast}s"
+    return "Cast timing shifts between logged pulls"
+
+
+def wcl_ability_chart(fight_bins, pulls, dungeon_spells, skipped, cadence=None):
+    """Boss timeline chart from {spell id: fight bins}: one row per ability, ordered by its first
+    typical cast. A spell without clear peaks gets a band stating its rhythm from cadence, {spell id:
+    {first, recast}}, and rows follow the clear ones."""
+    cut = wcl_strip_cut(fight_bins.values())
+    if not cut:
+        return None
+
+    def pct(seconds):
+        return round(min(seconds, cut) / cut * 100, 2)
+
+    rows = []
+    for sid, bins in fight_bins.items():
+        spell = wcl_spell_view(sid, dungeon_spells, skipped)
+        found = wcl_cast_occurrences(bins, pulls)
+        casts = [c for c in found["casts"] if c["time"] < cut]
+        if spell and (casts or found["varies"]):
+            known = (cadence or {}).get(sid, {})
+            band_text = wcl_cadence_text(known.get("first"), known.get("recast"))
+            rows.append({"spell": spell, "first": casts[0]["time"] if casts else None, "casts": [{
+                "left": pct(c["time"]), "bar_left": pct(c["low"]), "bar_width": round(pct(c["high"]) - pct(c["low"]), 2),
+                "alpha": round(WCL_CAST_MIN_ALPHA + (1 - WCL_CAST_MIN_ALPHA) * c["reach"], 2),
+                "tip": f"{spell['name']}: typically at {wcl_clock(c['time'])}, usually {wcl_clock(c['low'])} to "
+                       f"{wcl_clock(c['high'])}, reached in {round(c['reach'] * pulls)} of {pulls} logged pulls",
+            } for c in casts], "band_text": band_text,
+                "band_tip": f"{spell['name']}: {band_text[0].lower()}{band_text[1:]}"})
+    if not rows:
+        return None
+    rows.sort(key=lambda r: (r["first"] is None, r["first"] or 0, r["spell"]["name"] or ""))
+    ticks = [{"left": pct(t), "label": wcl_clock(t), "minute": t % 60 == 0}
+             for t in range(0, int(cut) + 1, WCL_CHART_TICK_S)]
+    return {"seconds": cut, "tick_s": WCL_CHART_TICK_S, "ticks": ticks, "rows": rows}

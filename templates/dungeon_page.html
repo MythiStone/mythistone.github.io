@@ -18,6 +18,7 @@
 <head>
     {% include "header_imports.html" %}
     <link rel="stylesheet" href="/assets/css/stat-colors.css" />
+    <link rel="stylesheet" href="/assets/css/ability-timeline.css">
     <link rel="stylesheet" href="/assets/css/dungeon-page.css">
     <!-- Primary SEO -->
     <title>{{ dungeon.name.en_US }} in {{ season_info.name }} | MythiStone</title>
@@ -546,55 +547,48 @@
             {% if boss_pacing.buckets %}
             {% import "_finder_macros.html" as fm %}
             {% macro mmss(ms) %}{{ (ms | int | duration)[:-4] if ms is not none else '-' }}{% endmacro %}
-            {% macro death_cell(d, max_per_run) %}
+            {% macro death_cell(d) %}
             <div class="pacing-deaths">
                 <div class="d-flex justify-content-between text-xs">
                     <span class="font-weight-bold">{{ "%.2f"|format(d.per_run) }}</span>
                     <span class="text-secondary" data-bs-toggle="tooltip" title="Share of runs with at least one death here.">{{ "%.0f"|format(d.run_pct) }}% of runs</span>
                 </div>
-                <div class="progress pacing-death-bar">
-                    <div class="progress-bar bg-gradient-danger" role="progressbar"
-                        style="width: {{ (d.per_run / max_per_run * 100) | round(1) }}%;"></div>
-                </div>
+                {{ dm.death_bar(d.per_run) }}
             </div>
             {% endmacro %}
             {% macro lust_badge(lust, left=none, tip=true) %}{% if lust and lust.pct >= lust_min_pct %}<img src="/data/icons/{{ bloodlust_icon }}" class="pacing-lust{% if left is not none %} pacing-lust-track{% endif %}"{% if left is not none %} style="left: {{ left | round(2) }}%;"{% endif %} alt="Bloodlust"{% if tip %} data-bs-toggle="tooltip" title="Bloodlust in {{ lust.pct | round | int }}% of {{ lust.routes }} timed runs here"{% endif %}>{% endif %}{% endmacro %}
             {% macro boss_name(boss) %}{% if boss.index is not none %}{{ dm.modal_link('boss-' ~ boss.index, boss.name, 'font-weight-bolder text-warning') }}{% else %}<span class="font-weight-bolder text-warning">{{ boss.name }}</span>{% endif %}{% endmacro %}
-            {% macro trash_name(key) %}{% if key in boss_pacing.trash %}<button type="button" class="detail-link" data-bs-toggle="modal" data-bs-target="#trash-{{ key }}">{{ caller() }}</button>{% else %}{{ caller() }}{% endif %}{% endmacro %}
             <div class="row mb-4">
                 <!-- Boss Pacing & Deaths -->
                 <div class="col-12 mb-4">
                     <div class="card h-100" id="dungeon-boss-pacing" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                             <div data-share-anchor
-                                class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                                class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex flex-wrap justify-content-between align-items-center pacing-header">
                                 <h6 class="text-white text-capitalize ps-3 mb-0" data-bs-toggle="tooltip"
                                     data-bs-placement="top"
                                     title="When timed runs reach and kill each boss, and where groups die along the way.">
                                     Boss Pacing &amp; Deaths</h6>
+                                <div class="pacing-header-tools">
+                                    {% for b in boss_pacing.buckets %}
+                                    <div class="pacing-header-stats pacing-panel{% if not loop.first %} d-none{% endif %}" data-pacing="{{ b.key }}">
+                                        <span><b>{{ "%.1f"|format(b.deaths_per_run) }}</b> deaths per run</span>
+                                        {% if b.boss_death_pct is not none %}<span><b>{{ "%.0f"|format(b.boss_death_pct) }}%</b> of deaths on bosses</span>{% endif %}
+                                    </div>
+                                    {% endfor %}
+                                    {{ fm.min_key_filter(boss_pacing.levels, col='pacing-filter', style='btn-outline-light btn-sm mb-0') }}
+                                </div>
                             </div>
                         </div>
                         <div class="card-body pb-2">
-                            <div class="row align-items-end g-3 mb-3">
-                                {{ fm.min_key_filter(boss_pacing.levels, col='col-12 col-md-4 col-lg-3') }}
-                                <div class="col-12 col-md-8 col-lg-9">
-                                    <p class="text-sm text-secondary mb-0">
-                                        Built from timed runs only, so the pull and kill times work as a pace to beat.
-                                        Deaths are placed on the boss fight they happened in, or on the trash leading
-                                        up to that boss. The Bloodlust icon marks sections where at least
-                                        {{ lust_min_pct }}% of these runs use Bloodlust.
-                                    </p>
-                                </div>
-                            </div>
+                            <p class="text-xs text-secondary mb-3">
+                                Built from timed runs only, so the pull and kill times work as a pace to beat.
+                                Deaths are placed on the boss fight they happened in, or on the trash leading
+                                up to that boss. The Bloodlust icon marks sections where at least
+                                {{ lust_min_pct }}% of these runs use Bloodlust.
+                            </p>
                             {% for b in boss_pacing.buckets %}
                             <div class="pacing-panel{% if not loop.first %} d-none{% endif %}" data-pacing="{{ b.key }}">
-                                <div class="d-flex flex-wrap gap-2 mb-3">
-                                    <span class="pacing-stat"><span class="material-symbols-rounded">timer</span><b>{{ b.routes }}</b> timed runs</span>
-                                    <span class="pacing-stat"><span class="material-symbols-rounded">skull</span><b>{{ "%.1f"|format(b.deaths_per_run) }}</b> deaths per run</span>
-                                    {% if b.boss_death_pct is not none %}
-                                    <span class="pacing-stat"><span class="material-symbols-rounded">swords</span><b>{{ "%.0f"|format(b.boss_death_pct) }}%</b> of deaths on bosses</span>
-                                    {% endif %}
-                                </div>
                                 <div class="d-flex justify-content-between text-xxs text-secondary mb-1">
                                     <span>00:00</span><span>Timer {{ mmss(boss_pacing.timer) }}</span>
                                 </div>
@@ -639,50 +633,6 @@
                                     </li>
                                     {% endfor %}
                                 </ul>
-                                <div class="table-responsive">
-                                    <table class="table align-items-center mb-0 w-100 pacing-table">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Trash Section</th>
-                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center d-none d-lg-table-cell"
-                                                    data-bs-toggle="tooltip" title="Median kill time of the boss before it, or the key start.">From</th>
-                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center d-none d-lg-table-cell"
-                                                    data-bs-toggle="tooltip" title="Median pull time of the next boss, or the end of the run.">To</th>
-                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center d-none d-sm-table-cell"
-                                                    data-bs-toggle="tooltip" title="Median time groups spend on this trash.">Time Spent</th>
-                                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 pe-2"
-                                                    data-bs-toggle="tooltip" title="Deaths per run on this trash.">Deaths</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for boss in b.bosses %}
-                                            {% set prev = b.bosses[loop.index0 - 1] if not loop.first else none %}
-                                            <tr>
-                                                <td class="ps-2 text-sm text-wrap">
-                                                    {% call trash_name(boss.index | string) %}{{ prev.name if prev else 'Key start' }} <span class="text-secondary">to</span> {{ boss.name }}{% endcall %}{{ lust_badge(boss.trash_lust) }}
-                                                    <span class="d-block d-sm-none text-xxs text-secondary">{{ mmss(boss.trash_length) }} spent</span>
-                                                </td>
-                                                <td class="text-sm text-center text-secondary d-none d-lg-table-cell">{{ mmss(prev.end) if prev else '00:00' }}</td>
-                                                <td class="text-sm text-center text-secondary d-none d-lg-table-cell">{{ mmss(boss.start) }}</td>
-                                                <td class="text-sm text-center d-none d-sm-table-cell">{{ mmss(boss.trash_length) }}</td>
-                                                <td class="pe-2">{{ death_cell(boss.trash_deaths, b.max_per_run) }}</td>
-                                            </tr>
-                                            {% endfor %}
-                                            {% if b.bosses and (b.after.length >= 1000 or b.after.deaths.per_run
-                                                or (b.after.lust and b.after.lust.pct >= lust_min_pct)) %}
-                                            {% set last = b.bosses[-1] %}
-                                            <tr>
-                                                <td class="ps-2 text-sm text-wrap">{% call trash_name('end') %}{{ last.name }} <span class="text-secondary">to the end</span>{% endcall %}{{ lust_badge(b.after.lust) }}
-                                                    <span class="d-block d-sm-none text-xxs text-secondary">{{ mmss(b.after.length) }} spent</span></td>
-                                                <td class="text-sm text-center text-secondary d-none d-lg-table-cell">{{ mmss(last.end) }}</td>
-                                                <td class="text-sm text-center text-secondary d-none d-lg-table-cell">{{ mmss(b.after.end) }}</td>
-                                                <td class="text-sm text-center d-none d-sm-table-cell">{{ mmss(b.after.length) }}</td>
-                                                <td class="pe-2">{{ death_cell(b.after.deaths, b.max_per_run) }}</td>
-                                            </tr>
-                                            {% endif %}
-                                        </tbody>
-                                    </table>
-                                </div>
                             </div>
                             {% endfor %}
                         </div>
@@ -699,6 +649,147 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            {% macro section_name(row) %}
+            <div class="trash-name">
+                <span class="material-symbols-rounded trash-icon" aria-hidden="true">{{ 'swords' if row.kind == 'boss' else 'groups' }}</span>
+                <div class="min-width-0">
+                    <div class="text-sm font-weight-bold{% if row.kind == 'boss' %} text-warning{% endif %}">{{ row.title }}{% for b in boss_pacing.buckets %}{% set c = row.cells[b.key] %}<span class="pacing-panel{% if not loop.first %} d-none{% endif %}" data-pacing="{{ b.key }}">{{ lust_badge(c.lust) if c }}</span>{% endfor %}</div>
+                    {% for b in boss_pacing.buckets %}{% set c = row.cells[b.key] %}
+                    <div class="pacing-panel d-sm-none text-xxs text-secondary{% if not loop.first %} d-none{% endif %}" data-pacing="{{ b.key }}">{% if c %}{{ mmss(c.length) }} {{ 'fight' if row.kind == 'boss' else 'spent' }}{% endif %}</div>
+                    {% endfor %}
+                    {% if row.logged %}<div class="text-xxs text-secondary">{{ row.logged.total }} logged pull{{ 's' if row.logged.total != 1 }}</div>{% endif %}
+                </div>
+            </div>
+            {% endmacro %}
+            {% macro section_cells(row) %}
+            {% for b in boss_pacing.buckets %}{% set c = row.cells[b.key] %}
+            <div class="trash-cells pacing-panel{% if not loop.first %} d-none{% endif %}" data-pacing="{{ b.key }}">
+                <div class="text-sm text-secondary text-center d-none d-lg-block">{{ mmss(c.start) if c else '-' }}</div>
+                <div class="text-sm text-secondary text-center d-none d-lg-block">{{ mmss(c.end) if c else '-' }}</div>
+                <div class="text-sm text-center d-none d-sm-block">{{ mmss(c.length) if c else '-' }}</div>
+                <div>{% if c %}{{ death_cell(c.deaths) }}{% else %}<span class="text-secondary">-</span>{% endif %}</div>
+            </div>
+            {% endfor %}
+            {% endmacro %}
+            {% endif %}
+
+            {% if boss_pacing.buckets or wcl.deadliest_npcs %}
+            <div class="row mb-4">
+                {% if boss_pacing.buckets %}
+                <!-- Trash Sections -->
+                <div class="{{ 'col-lg-6' if wcl.deadliest_npcs else 'col-12' }} mb-4">
+                    <div class="card h-100" id="dungeon-trash-sections" data-share>
+                        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                            <div data-share-anchor
+                                class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                                <h6 class="text-white text-capitalize ps-3 mb-0">Trash Sections</h6>
+                            </div>
+                        </div>
+                        <div class="card-body pb-2 wcl-card-body">
+                            <p class="text-xs text-secondary mb-3">
+                                From, To, Time Spent and Deaths follow the Minimum key filter above.
+                                {% if wcl.trash_sections %}Expand a section for its logged pulls, which come from top ranked logged runs and do not change with the filter.
+                                Each section lists up to {{ wcl.section_top }} compositions with at least {{ wcl.min_family_pulls }} logged pulls, deadliest first, covering {{ "%.0f"|format(wcl.shown_pct) }}% of logged trash pulls.{% endif %}
+                            </p>
+                            <div class="trash-list">
+                                <div class="trash-row-head trash-list-head text-uppercase text-secondary text-xxs font-weight-bolder">
+                                    <div>Section</div>
+                                    <div class="trash-cells">
+                                        <div class="text-center d-none d-lg-block" data-bs-toggle="tooltip" title="Median start of this section.">From</div>
+                                        <div class="text-center d-none d-lg-block" data-bs-toggle="tooltip" title="Median end of this section.">To</div>
+                                        <div class="text-center d-none d-sm-block" data-bs-toggle="tooltip" title="Median time groups spend here.">Time Spent</div>
+                                        <div data-bs-toggle="tooltip" title="Deaths per run here.">Deaths</div>
+                                    </div>
+                                    <div></div>
+                                </div>
+                                {% for row in trash_list %}
+                                {% if row.kind == 'boss' %}
+                                <div class="trash-row trash-row-boss">
+                                    <div class="trash-row-head"{% if row.index is not none %} data-modal="boss-{{ row.index }}" role="button" tabindex="0" aria-label="Open {{ row.title }} details"{% endif %}>
+                                        {{ section_name(row) }}{{ section_cells(row) }}
+                                        <span class="material-symbols-rounded detail-row-chevron" aria-hidden="true">{{ 'chevron_right' if row.index is not none }}</span>
+                                    </div>
+                                </div>
+                                {% elif row.logged or row.enemies_modal %}
+                                <details class="trash-row">
+                                    <summary class="trash-row-head">
+                                        {{ section_name(row) }}{{ section_cells(row) }}
+                                        <span class="material-symbols-rounded detail-row-chevron" aria-hidden="true">expand_more</span>
+                                    </summary>
+                                    <div class="trash-row-body">
+                                        {% if row.enemies_modal %}<div class="px-2 py-2">{{ dm.modal_link(row.enemies_modal, 'View common enemies', 'text-xs font-weight-bold') }}</div>{% endif %}
+                                        {% if row.logged %}{{ dm.wcl_pull_table(row.logged) }}{% endif %}
+                                    </div>
+                                </details>
+                                {% else %}
+                                <div class="trash-row">
+                                    <div class="trash-row-head">
+                                        {{ section_name(row) }}{{ section_cells(row) }}
+                                        <span></span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="card-footer pt-0 pb-3">
+                            <hr class="horizontal dark my-2">
+                            <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 text-xs text-secondary">
+                                <span>Data powered by</span>
+                                <a href="https://raider.io/" target="_blank" rel="noopener"
+                                    class="d-inline-flex align-items-center gap-1 text-secondary font-weight-bold" title="Raider.IO">
+                                    <img src="/assets/img/logos/RaiderIOLogo.png" alt="Raider.IO" width="18" height="18" class="rounded">
+                                    Raider.IO
+                                </a>
+                                {% if wcl.trash_sections %}<span>and</span> {{ dm.wcl_credit() }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if wcl.deadliest_npcs %}
+                <!-- Deadliest NPCs -->
+                <div class="{{ 'col-lg-6' if boss_pacing.buckets else 'col-12' }} mb-4">
+                    <div class="card h-100" id="dungeon-deadliest-npcs" data-share>
+                        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                            <div data-share-anchor
+                                class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3 d-flex justify-content-between align-items-center">
+                                <h6 class="text-white text-capitalize ps-3 mb-0">Deadliest NPCs</h6>
+                            </div>
+                        </div>
+                        <div class="card-body pb-2">
+                            <p class="text-xs text-secondary mb-3">The bosses and trash enemies that killed the most players in top ranked logged runs, and the spells they did it with.</p>
+                            <div class="npc-deaths">
+                                <div class="npc-deaths-head text-uppercase text-secondary text-xxs font-weight-bolder">
+                                    <div>NPC</div>
+                                    <div>Deaths per run</div>
+                                    <div></div>
+                                </div>
+                                {% for n in wcl.deadliest_npcs %}
+                                <details class="npc-death">
+                                    <summary class="npc-death-row">
+                                        <a href="https://www.wowhead.com/npc={{ n.id }}" target="_blank" data-wowhead="npc={{ n.id }}" class="wcl-npc detail-spell-link">{% if n.id in npc_icons %}<img src="/data/icons/npc_{{ n.id }}.png" alt="">{% endif %}<span{% if n.boss %} class="text-warning font-weight-bolder"{% endif %}>{{ n.name }}</span></a>
+                                        <span class="text-xs font-weight-bold">{{ "%.2f"|format(n.per_run) }}</span>
+                                        <span class="material-symbols-rounded detail-row-chevron" aria-hidden="true">expand_more</span>
+                                    </summary>
+                                    <div class="npc-death-spells">
+                                        {% for s in n.spells %}
+                                        <div class="npc-death-spell">{{ dm.wcl_spell(s.spell) }}<span class="text-xs text-secondary">{{ "%.2f"|format(s.per_run) }}</span></div>
+                                        {% endfor %}
+                                    </div>
+                                </details>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="card-footer pt-0 pb-3">
+                            <hr class="horizontal dark my-2">
+                            <div class="text-center text-xs text-secondary">Data from {{ dm.wcl_credit() }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
             {% endif %}
 
@@ -1075,6 +1166,13 @@
                         Boss pacing and deaths use the combat logs of the timed runs among them, which record when
                         each boss fight started and ended and when each player died.
                     </p>
+                    {% if wcl.has_data %}
+                    <p>
+                        Logged pulls, enemy cast timings, killing spells and typical Bloodlust moments come from top
+                        ranked logged runs on {{ dm.wcl_credit() }}. Enemy timings are estimates across all logged pulls
+                        of an enemy, and sections or rows without enough logged data stay hidden.
+                    </p>
+                    {% endif %}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -1082,11 +1180,11 @@
             </div>
         </div>
     </div>
-    {% set damage_note = "Damage at Mythic 0, before keystone scaling. Click an ability for its full text." %}
+    {% set damage_note = "Damage at Mythic 0, before keystone scaling." %}
     {% for boss in boss_details %}
     {% set id = 'boss-' ~ boss.index %}
     {% call dm.detail_modal(id, boss.name, ('/data/icons/npc_' ~ boss.npc_id ~ '.png') if boss.npc_id in npc_icons else none,
-        (boss.enemy.type ~ ' · ' ~ (boss.enemy.health | humanize) ~ ' health') if boss.enemy else '') %}
+        (boss.enemy.type ~ ' · ' ~ dm.scaled('health', boss.enemy.health, 'boss') ~ ' health') if boss.enemy else '') %}
     {% if boss.description %}<p class="text-sm mb-3">{{ boss.description }}</p>{% endif %}
     {% for bk in boss_pacing.buckets %}
     {% set bb = bk.bosses | selectattr('index', 'equalto', boss.index) | first %}
@@ -1105,7 +1203,7 @@
     {% endfor %}
     {% set tabs = [] %}
     {% if boss.intro or boss.roles %}{% set _ = tabs.append(('overview', 'Overview')) %}{% endif %}
-    {% if boss.abilities %}{% set _ = tabs.append(('abilities', 'Abilities')) %}{% endif %}
+    {% if boss.abilities or boss.timeline %}{% set _ = tabs.append(('abilities', 'Abilities')) %}{% endif %}
     {% if boss.loot %}{% set _ = tabs.append(('loot', 'Loot')) %}{% endif %}
     <ul class="nav nav-tabs mb-3" role="tablist">
         {% for key, label in tabs %}
@@ -1131,8 +1229,10 @@
                 {% endfor %}
             </div>
             {% elif key == 'abilities' %}
-            <p class="text-xxs text-secondary mb-2">{{ damage_note }}</p>
-            <div class="detail-card">{% for a in boss.abilities %}{{ dm.spell_line(a) }}{% endfor %}</div>
+            <p class="text-xxs text-secondary mb-2" data-damage-note>{{ damage_note }}</p>
+            {% if boss.timeline and boss.timeline.chart %}{{ dm.ability_timeline(boss.timeline.chart) }}{% endif %}
+            {% if boss.abilities %}<div class="detail-card">{% for a in boss.abilities %}{{ dm.spell_line(a) }}{% endfor %}</div>{% endif %}
+            {% if boss.timeline %}{{ dm.boss_log_footer(boss.timeline) }}{% endif %}
             {% else %}
             <div class="row row-cols-1 row-cols-md-2 g-2">
                 {% for l in boss.loot %}
@@ -1150,17 +1250,28 @@
     {% for key, t in boss_pacing.trash.items() %}
     {% call dm.detail_modal('trash-' ~ key, 'Trash after the last boss' if key == 'end' else 'Trash before ' ~ boss_details[key | int].name,
         subtitle='The enemies timed runs pull most often here, out of ' ~ t.routes ~ ' runs') %}
-    <p class="text-xxs text-secondary mb-2">{{ damage_note }}</p>
+    <p class="text-xxs text-secondary mb-2" data-damage-note>{{ damage_note }}</p>
     <div class="row row-cols-1 row-cols-lg-2 g-3">
         {% for n in t.npcs %}{{ dm.npc_card(n.npc_id, "%.0f%% of runs" | format(n.pct)) }}{% endfor %}
     </div>
     {% endcall %}
     {% endfor %}
+    {% for s in trash_list if s.logged %}
+    {% for row in s.logged.rows %}
+    {% call dm.detail_modal(row.modal, 'Logged pull', subtitle=s.title ~ ', ' ~ row.pulls ~ ' logged pulls in top ranked logged runs') %}
+    <p class="text-xxs text-secondary mb-2" data-damage-note>{{ damage_note }}</p>
+    <div class="row row-cols-1 row-cols-lg-2 g-3">
+        {% for n in row.npcs %}{{ dm.npc_card(n.id, (n.count ~ 'x') if n.count > 1 else '') }}{% endfor %}
+    </div>
+    {% endcall %}
+    {% endfor %}
+    {% endfor %}
     {% for pull in lust_timeline if pull.lust_percentage > 0 %}
     {% if pull.top_npcs %}
     {% call dm.detail_modal('pull-' ~ loop.index, 'Lusted pull',
         subtitle='Pulled together ' ~ pull.total_pulls_at_index ~ ' times in timed runs, lusted on ' ~ pull.lust_count ~ ' (' ~ ("%.1f"|format(pull.lust_percentage)) ~ '%)') %}
-    <p class="text-xxs text-secondary mb-2">{{ damage_note }}</p>
+    {% if pull.top_npcs in wcl.lust %}{{ dm.lust_log(wcl.lust[pull.top_npcs]) }}{% endif %}
+    <p class="text-xxs text-secondary mb-2" data-damage-note>{{ damage_note }}</p>
     <div class="row row-cols-1 row-cols-lg-2 g-3">
         {% for entry in pull.top_npcs.split(',') %}
         {% set parts = entry.split(':') %}
@@ -1181,7 +1292,8 @@
     <script type="text/plain" data-type="application/javascript" data-name="wowhead"
         data-src='https://wow.zamimg.com/widgets/power.js'></script>
   <!-- Per-dungeon data for dungeon-page.js -->
-  <script type="application/json" id="dungeon-page-data">{"levelStats": {{ level_stats | default([]) | tojson }}}</script>
+  <script type="application/json" id="dungeon-page-data">{"levelStats": {{ level_stats | default([]) | tojson }}, "keyScaling": {{ key_scaling | tojson }}}</script>
+  <script src="/assets/js/ability-timeline.js?v={{ generated_at | int }}"></script>
   <script src="/assets/js/dungeon-page.js?v={{ generated_at | int }}"></script>
 </body>
 

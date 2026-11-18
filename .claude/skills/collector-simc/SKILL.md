@@ -11,6 +11,7 @@ Before changing a file listed below, read its gotcha: `ref/<id>.md` in this skil
 
 | id | rule | files |
 |---|---|---|
+| `collector-image-crlf-entrypoint` | A collector image built from a Windows working copy gets a CRLF entrypoint.sh and exits 127 at start | `entrypoint.sh`, `Dockerfile`, `backend_scripts/localDev/collector_smoke.py` |
 | `collector-smoke-test` | The collector image is pushed only after a runtime smoke test passes, and that test must change together with the collector's runtime contract | `backend_scripts/collectLeaderboardData.py`, `entrypoint.sh`, `Dockerfile`, `backend_scripts/simcBis.py`, `.github/workflows/buildCollectorImage.yml` |
 | `keystone-route-api-limits` | The keystone.guru route API gives only npc_id (creature type) + enemyForces per pull, so per-run pack/position/route-consensus analytics are permanently impossible | `backend_scripts/collectLeaderboardData.py`, `backend_scripts/generateDungeonPages.py` |
 | `loadout-v2-encoder` | The talent loadout encoder in commonUtils is used only by the local seeder, and only SimulationCraft can prove its output valid | `backend_scripts/commonUtils.py`, `backend_scripts/localDev/*` |
@@ -18,3 +19,4 @@ Before changing a file listed below, read its gotcha: `ref/<id>.md` in this skil
 | `simc-baseline-vs-page-gear` | Why the simcBis baseline gear can legitimately differ from the spec page's displayed equipped items, and why not to "fix" it | `backend_scripts/simcBis.py` |
 | `simc-chunked-checkpoint` | A simc BiS run outlives the collector container, so its chunk timeout is tied to the container restart interval and to the single core docker-compose gives simc | `backend_scripts/simcBis.py`, `docker-compose.yml` |
 | `simc-resilient-build` | The one simc build (the GHCR image) walks back over commits instead of trusting raw HEAD, its gate must SIMULATE a real fight (not just init), and buildPages re-gates that image against our gearsets | `backend_scripts/simcWalkback.sh`, `backend_scripts/validateSimc.sh`, `backend_scripts/buildResilientSimcImage.sh`, `.github/workflows/buildSimcImage.yml`, `.github/workflows/buildPages.yml`, `Dockerfile.simc` |
+| `wcl-dungeon-pull-id` | Warcraft Logs boss example links use the dungeonPulls id, and trash examples open by time window because a trash pull has no reliable pull link | `backend_scripts/wclPullBuilder.py`, `backend_scripts/wclClient.py`, `backend_scripts/pageGeneration.py` |

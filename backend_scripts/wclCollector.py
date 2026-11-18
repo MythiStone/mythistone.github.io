@@ -44,7 +44,7 @@ EVENT_CACHE_DIR = os.path.join("tmp", "wcl_event_cache")
 # The lust spells are the spells.json entries whose tooltip is the party haste buff.
 LUST_TOOLTIP = "haste by 30%"
 SWEEP_DAYS = 14
-SWEEP_PAGES = 2
+SWEEP_PAGES = 1
 WORKER_BATCH = 20
 WORKER_IDLE_S = 300
 # Matches the queue pop, which skips fights with 3 attempts.
@@ -191,6 +191,25 @@ def print_run(run, fight, route):
         same = sum(1 for kind, _, _ in steps if kind == "same")
         print(f"\nACCEPTANCE: {same} of {len(route)} keystone.guru pulls reproduced exactly"
               f"{' - MATCH' if same == len(route) == len(ours) else ''}")
+
+
+def print_wcl_pull_links(run, fight, actors):
+    """Each rebuilt pull next to the WCL dungeon pull wcl_pull_id picks for it."""
+    start = fight["startTime"]
+    dungeon_pulls = fight.get("dungeonPulls") or []
+    by_id = {p["id"]: p for p in dungeon_pulls}
+    print("\nWCL dungeon pulls:")
+    for w in dungeon_pulls:
+        print(f"  WCL {w['id']:>3} {clock(w['startTime'], start)} - {clock(w['endTime'], start)}"
+              f" encounter {w.get('encounterID') or 0}")
+    print("\nOur pulls and the WCL pull each one links to:")
+    for p in run["pulls"]:
+        linked = by_id.get(pb.wcl_pull_id(p, dungeon_pulls, run["fight_end"]))
+        target = (f"WCL {linked['id']} {clock(linked['startTime'], start)} - {clock(linked['endTime'], start)}"
+                  if linked else "no WCL pull")
+        names = sorted({(actors.get(m.key[0]) or {}).get("name", str(m.npc)) for m in p.mobs})
+        print(f"  #{p.index:>2} {clock(p.start, start)} - {clock(p.end or run['fight_end'], start)} -> {target}: "
+              f"{', '.join(names)}")
 
 
 def print_pack_accuracy(run, truth):
@@ -605,6 +624,7 @@ async def dry_run(args):
     cm, specs, run = build(fight, actors, events, static)
     print(f"{static['dungeons'][cm]['name']['en_US']} +{fight.get('keystoneLevel')}")
     print_run(run, fight, route)
+    print_wcl_pull_links(run, fight, actors)
     if args.pack_truth:
         print_pack_accuracy(run, load_json(args.pack_truth))
     ignored = Counter(m.npc for m in run["mobs"].values() if m.ignored)

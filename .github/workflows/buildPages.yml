@@ -14,6 +14,7 @@ on:
     paths:
       - 'templates/**'
       - 'backend_scripts/generateSpecPages.py'
+      - 'backend_scripts/generateSpecCooldowns.py'
       - 'backend_scripts/generateCompPage.py'
       - 'backend_scripts/generateTierlistPage.py'
       - 'backend_scripts/generateSimcProfiles.py'

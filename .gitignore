@@ -31,6 +31,7 @@ discord_bot/__pycache__
 discord_bot/cogs/__pycache__
 backend_scripts/localDev/__pycache__
 assets/json/spec_meta
+assets/json/spec_cooldowns
 assets/json/gem_enchant_index.json
 assets/json/trends_live.json
 assets/json/talent_trees
