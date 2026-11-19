@@ -84,56 +84,40 @@
               </div>
             </div>
             <div class="card-body p-3">
-              <p class="text-sm mb-3">Select your current group to find the statistically best specs to fill the
-                remaining slots.</p>
-              <div class="row">
-                <div class="col-lg-6 col-md-12">
-                  <h6 class="text-uppercase text-body-emphasis text-xs font-weight-bolder">Tanks</h6>
-                  <div class="mb-3 spec-picker-grid">
-                    {% for s in specs_ui %}
-                    {% if s.role == 0 %}
-                    <img src="/data/icons/{{ s.icon }}.jpg" class="spec-icon" data-spec="{{ s.id }}"
-                      title="{{ s.name }} {{ s.className }}">
-                    {% endif %}
-                    {% endfor %}
+              <p class="text-sm mb-3 fit-intro">Click a slot to pick a spec. Open slots expect the role most groups like
+                yours bring, and the lists below rank the specs that fit best.</p>
+              <div class="fit-board-wrap">
+                <div id="fit-board" class="fit-board" aria-label="Your group"></div>
+                {#- Spec picker, opened from an empty slot. comps.js positions it and puts the
+                    slot's expected role first. -#}
+                <div id="fit-picker" class="fit-picker" role="dialog" aria-label="Pick a spec" hidden>
+                  <div class="fit-picker-head">
+                    <span class="text-xs font-weight-bolder text-uppercase">Pick a spec</span>
+                    <button type="button" class="fit-picker-close" data-fit-close aria-label="Close">
+                      <i class="material-symbols-rounded">close</i></button>
                   </div>
-                  <h6 class="text-uppercase text-body-emphasis text-xs font-weight-bolder">Healers</h6>
-                  <div class="mb-3 spec-picker-grid">
-                    {% for s in specs_ui %}
-                    {% if s.role == 1 %}
-                    <img src="/data/icons/{{ s.icon }}.jpg" class="spec-icon" data-spec="{{ s.id }}"
-                      title="{{ s.name }} {{ s.className }}">
-                    {% endif %}
-                    {% endfor %}
+                  {% for role, label, sym in [(0, 'Tank', 'shield'), (1, 'Healer', 'healing'), (2, 'DPS', 'swords')] %}
+                  <div class="fit-picker-role" data-role="{{ role }}">
+                    <div class="fit-role-h"><i class="material-symbols-rounded">{{ sym }}</i>{{ label }}</div>
+                    <div class="fit-pick-grid">
+                      {% for s in specs_ui if s.role == role %}
+                      <button type="button" class="fit-pick" data-spec="{{ s.id }}" title="{{ s.name }} {{ s.className }}">
+                        <img src="/data/icons/{{ s.icon }}.jpg" alt="{{ s.name }} {{ s.className }}" loading="lazy">
+                      </button>
+                      {% endfor %}
+                    </div>
                   </div>
-                  <h6 class="text-uppercase text-body-emphasis text-xs font-weight-bolder">DPS</h6>
-                  <div class="mb-3 spec-picker-grid">
-                    {% for s in specs_ui %}
-                    {% if s.role == 2 %}
-                    <img src="/data/icons/{{ s.icon }}.jpg" class="spec-icon" data-spec="{{ s.id }}"
-                      title="{{ s.name }} {{ s.className }}">
-                    {% endif %}
-                    {% endfor %}
-                  </div>
-                  {#- Selected comp as stepper chips (one per distinct spec). The
-                      -/xN/+ control sets duplicates; the icon grid selects/unselects. -#}
-                  <div id="selected-comp" class="spec-count-row"></div>
-                </div>
-
-                <div class="col-lg-6 col-md-12">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="text-uppercase text-body-emphasis text-xs font-weight-bolder mb-0">Group Buff &amp; Utility Coverage</h6>
-                  </div>
-                  <div id="buff-coverage" class="buff-coverage mt-2 mb-3">
-                    <p class="text-sm text-secondary mb-0">Select specs to see which raid buffs, Bloodlust and Battle Rez your group covers.</p>
-                  </div>
-                  <h6 class="text-uppercase text-body-emphasis text-xs font-weight-bolder">Suggested Additions</h6>
-                  <div id="suggestions-container" class="mt-3 custom-scrollbar"
-                    style="max-height: 375px; overflow-y: auto; overflow-x: hidden; margin-right: -1rem; padding-right: 1rem;">
-                    <p class="text-sm text-secondary">Select 1 to 4 specs to see suggestions.</p>
-                  </div>
+                  {% endfor %}
                 </div>
               </div>
+              <div class="fit-footer">
+                <div id="fit-util" class="fit-util"></div>
+                <div class="fit-footer-end">
+                  <div id="fit-stats" class="fit-stats"></div>
+                  <button type="button" class="btn btn-sm btn-outline-primary mb-0" onclick="clearSelection()">Start over</button>
+                </div>
+              </div>
+              <div id="fit-results" class="row g-4"></div>
             </div>
           </div>
         </div>
@@ -301,6 +285,9 @@
   }
   </script>
   <script src="/assets/js/comps.js?v={{ generated_at | int }}"></script>
+  <!-- Wowhead tooltips for the buff icons (Klaro consent-gated, same as spec/item pages) -->
+  <script type="text/plain" data-type="application/javascript" data-name="wowhead"
+    data-src='https://wow.zamimg.com/widgets/power.js'></script>
 </body>
 
 </html>

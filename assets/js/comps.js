@@ -6,6 +6,8 @@
 // The large comp datasets are still fetched from /assets/json/comps_index.json
 // and comp_archetypes.json inside this script.
 const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
+// Keep the buff links as authored: no Wowhead recolour, rename or extra icon.
+window.whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };
 
     // Prefetch comps JSON
     let compsData = [];
@@ -35,9 +37,11 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
     function selSortedKey() {
       return selected.slice().sort((a, b) => a - b);
     }
-    const specIcons = document.querySelectorAll('.spec-icon');
-    const suggestionsContainer = document.getElementById('suggestions-container');
-    const selectedCompRow = document.getElementById('selected-comp');
+    const fitBoard = document.getElementById('fit-board');
+    const fitPicker = document.getElementById('fit-picker');
+    const fitUtil = document.getElementById('fit-util');
+    const fitStats = document.getElementById('fit-stats');
+    const fitResults = document.getElementById('fit-results');
 
     // A broken game icon (e.g. an unresolved spec falling back to a missing
     // placeholder file) should quietly hide rather than show a broken box.
@@ -96,46 +100,22 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
       return gains;
     }
 
-    function buffChip(b, covered) {
-      const critical = CRITICAL_BUFF_IDS.has(b.id);
-      const cls = covered ? 'buff-chip buff-chip--on' : `buff-chip buff-chip--off${critical ? ' buff-chip--critical' : ''}`;
-      const status = covered ? 'covered' : 'missing';
-      return `<span class="${cls}" title="${b.name}: ${status}">
-        <img src="/data/icons/${b.icon.replace(/\.(jpg|png)$/i, '')}.${/\.png$/i.test(b.icon) ? 'png' : 'jpg'}" alt="${b.name}" loading="lazy">
-      </span>`;
+    function buffsProvidedBy(specId) {
+      const sid = Number(specId);
+      return GROUP_BUFFS.filter(b => buffProviders.get(b.id).has(sid));
     }
-
-    function renderBuffCoverage() {
-      const el = document.getElementById('buff-coverage');
-      if (!el) return;
-      if (selected.length === 0) {
-        el.innerHTML = '<p class="text-sm text-secondary mb-0">Select specs to see which raid buffs, Bloodlust and Battle Rez your group covers.</p>';
-        return;
-      }
-      const { covered, missing } = computeBuffCoverage(selected);
-      const criticalMissing = missing.filter(b => CRITICAL_BUFF_IDS.has(b.id));
-      const chips = GROUP_BUFFS
-        .map(b => buffChip(b, covered.includes(b)))
-        .join('');
-      let summary;
-      if (missing.length === 0) {
-        summary = '<span class="text-success"><i class="material-symbols-rounded align-middle text-sm me-1">check_circle</i>Full buff coverage</span>';
-      } else {
-        const parts = [];
-        if (criticalMissing.length) {
-          parts.push(`<span class="text-danger font-weight-bold">Missing ${criticalMissing.map(b => b.name).join(' &amp; ')}</span>`);
-        }
-        const otherMissing = missing.filter(b => !CRITICAL_BUFF_IDS.has(b.id));
-        if (otherMissing.length) {
-          parts.push(`<span class="text-warning">${otherMissing.length} raid buff${otherMissing.length > 1 ? 's' : ''} missing</span>`);
-        }
-        summary = parts.join(' &middot; ');
-      }
-      el.innerHTML = `
-        <div class="buff-chip-row">${chips}</div>
-        <div class="text-xs mt-2">${summary}</div>
-      `;
+    const buffIconSrc = b => `/data/icons/${b.icon}`;
+    // Buff ids are spell ids, so each buff links to its Wowhead tooltip. The link
+    // stops the click so a buff inside a clickable filler row does not add the spec.
+    function whBuffLink(b, inner, cls = '') {
+      return `<a href="https://www.wowhead.com/spell=${b.id}" data-wowhead="spell=${b.id}" target="_blank" rel="noopener" class="fit-wh${cls ? ' ' + cls : ''}" aria-label="${buffLabel(b)}" onclick="event.stopPropagation();">${inner}</a>`;
     }
+    function refreshWowheadLinks() {
+      if (window.$WowheadPower && typeof window.$WowheadPower.refreshLinks === 'function') {
+        try { window.$WowheadPower.refreshLinks(); } catch (e) { /* tooltips are best-effort */ }
+      }
+    }
+    const buffLabel = b => (b.id === 20484 ? 'Battle Rez' : b.name);
 
     // The "meta" comp (strongest in the highest keys) is highlighted everywhere.
     const META_COMP_KEY = PAGE.metaCompKey;
@@ -191,15 +171,11 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
       if (sParams) {
         sParams.split(',').forEach(sid => {
           const id = parseInt(sid);
-          if (!isNaN(id) && selected.length < 5) {
-            const icon = document.querySelector(`.spec-icon[data-spec="${id}"]`);
-            if (icon) {
-              selected.push(id);
-              changed = true;
-            }
+          if (!isNaN(id) && selected.length < 5 && specLookup[id]) {
+            selected.push(id);
+            changed = true;
           }
         });
-        renderSelectedComp();
       }
       return changed;
     }
@@ -231,300 +207,324 @@ const PAGE = JSON.parse(document.getElementById('comps-page-data').textContent);
     }
 
     compsLoaded.then(() => {
-      if (readUrlParams()) {
-        updateSuggestions();
-      }
+      readUrlParams();
+      updateFit();
     });
 
-    // Clicking a grid icon TOGGLES the spec (adds it, or removes all its copies).
-    // A second copy for a duplicate-spec comp is added with the chip stepper below.
-    specIcons.forEach(icon => {
-      icon.addEventListener('click', (e) => {
-        const specId = parseInt(e.currentTarget.dataset.spec);
-        if (selCount(specId) > 0) {
-          selected = selected.filter(s => s !== specId);
-        } else {
-          if (selected.length >= 5) return;
-          selected.push(specId);
+    // --- Perfect Fit: party board + best fits per open role ---
+    // Fillers with fewer runs than this are dimmed and tagged, since a 100%
+    // success rate over one or two runs says little.
+    const LOW_SAMPLE_RUNS = 20;
+    const ROLE_LABEL = { 0: 'Tank', 1: 'Healer', 2: 'DPS', '-1': 'Any' };
+    const ROLE_SYMBOL = { 0: 'shield', 1: 'healing', 2: 'swords', '-1': 'add' };
+    const STANDARD_ROLES = { 0: 1, 1: 1, 2: 3 };
+    const specRole = id => (specLookup[id] ? Number(specLookup[id].role) : 2);
+    const specInfoOf = id => specLookup[id] || { name: 'Unknown', icon: 'inv_misc_questionmark', specName: 'Unknown', className: 'Unknown', cleanClass: 'Unknown', roleName: 'Dps', role: 2 };
+    const fmtInt = n => Number(n).toLocaleString('en-US');
+    const pctClass = p => (p >= 70 ? 'text-success' : 'text-warning');
+
+    // Totals of one comp for the current dungeon context ('all' or a dungeon id).
+    function compNums(comp, dungeonId) {
+      if (dungeonId === 'all') return { w: comp.w, t: comp.t, d: comp.d, mk: comp.mk };
+      const x = comp.dungeons && comp.dungeons[parseInt(dungeonId)];
+      return x ? { w: x.w || 0, t: x.t || 0, d: x.d || 0, mk: x.mk || 0 } : { w: 0, t: 0, d: 0, mk: 0 };
+    }
+
+    // Comps containing the selection as a SUB-MULTISET (a spec picked twice needs
+    // two copies), with runs in the chosen dungeon, heaviest first.
+    function matchingComps(dungeonId) {
+      const selCounts = countMapOf(selected);
+      const out = compsData.filter(comp => {
+        const compCounts = countMapOf(comp.c);
+        for (const [s, c] of selCounts) if ((compCounts.get(s) || 0) < c) return false;
+        if (dungeonId === 'all') return true;
+        const n = compNums(comp, dungeonId);
+        return n.t + n.d > 0;
+      });
+      return out.sort((a, b) => compNums(b, dungeonId).w - compNums(a, dungeonId).w);
+    }
+
+    // Per-spec totals over every matching comp that still has room for that spec.
+    function aggregateFillers(matches, dungeonId) {
+      const stats = {};
+      matches.forEach(comp => {
+        const n = compNums(comp, dungeonId);
+        if (n.w <= 0) return;
+        for (const [s, cCount] of countMapOf(comp.c)) {
+          if (selCount(s) >= cCount) continue;
+          const o = stats[s] || (stats[s] = { t: 0, d: 0, w: 0, mk: 0 });
+          o.t += n.t; o.d += n.d; o.w += n.w;
+          if (n.mk > o.mk) o.mk = n.mk;
         }
-        renderSelectedComp();
-        writeUrlParams();
-        updateSuggestions();
       });
-    });
+      return Object.entries(stats)
+        .map(([id, o]) => {
+          const runs = o.t + o.d;
+          return { id: Number(id), runs, mk: o.mk, w: o.w, pct: runs > 0 ? Math.round((o.t / runs) * 100) : 0 };
+        })
+        .sort((a, b) => b.w - a.w);
+    }
 
-    // Render the picked comp as one stepper chip per distinct spec (same -/xN/+
-    // control as the routes/VOD finders); the icon grid handles select/unselect.
-    function renderSelectedComp() {
-      specIcons.forEach(icon => {
-        icon.classList.toggle('selected', selCount(icon.dataset.spec) > 0);
+    // Roles of the open slots: the heaviest role mix still missing among the
+    // matching comps, so an off-standard pick (two tanks) gets the roles groups
+    // like it really bring. Standard 1/1/3 is only the no-data fallback.
+    function expectedOpenRoles(matches, dungeonId) {
+      const open = 5 - selected.length;
+      if (open <= 0) return [];
+      const selCounts = countMapOf(selected);
+      const byMix = new Map();
+      matches.forEach(comp => {
+        const rest = countMapOf(comp.c);
+        for (const [s, c] of selCounts) rest.set(s, rest.get(s) - c);
+        const roles = [];
+        for (const [s, c] of rest) for (let k = 0; k < c; k++) roles.push(specRole(s));
+        const key = roles.sort().join(',');
+        byMix.set(key, (byMix.get(key) || 0) + compNums(comp, dungeonId).w);
       });
-      if (!selectedCompRow) return;
-      const distinct = [];
-      selected.forEach(s => { if (!distinct.includes(s)) distinct.push(s); });
-      if (distinct.length === 0) {
-        selectedCompRow.innerHTML = '';
+      if (byMix.size) {
+        const best = [...byMix.entries()].sort((a, b) => b[1] - a[1])[0][0];
+        const roles = best ? best.split(',').map(Number) : [];
+        if (roles.length === open) return roles;
+      }
+      const roles = [];
+      [0, 1, 2].forEach(r => {
+        const have = selected.filter(s => specRole(s) === r).length;
+        for (let k = have; k < STANDARD_ROLES[r]; k++) roles.push(r);
+      });
+      while (roles.length < open) roles.push(-1);
+      return roles.slice(0, open);
+    }
+
+    // Filled slots sorted by role, then the open slots with their expected role.
+    function boardSlots(openRoles) {
+      const filled = selected.map((s, i) => ({ s, i, role: specRole(s) })).sort((a, b) => a.role - b.role);
+      return [...filled, ...openRoles.map(role => ({ role }))];
+    }
+
+    function renderBoard(slots) {
+      const firstOpen = slots.findIndex(x => x.s == null);
+      fitBoard.innerHTML = slots.map((x, k) => {
+        if (x.s == null) {
+          return `<div class="fit-slot"><button type="button" class="fit-slot-btn fit-slot-open${k === firstOpen ? ' fit-slot-next' : ''}" data-fit-open="${k}" data-role="${x.role}" aria-label="Pick a ${ROLE_LABEL[x.role]} spec">
+              <span class="fit-slot-box"><i class="material-symbols-rounded">${ROLE_SYMBOL[x.role]}</i></span>
+              <span class="fit-slot-role">${ROLE_LABEL[x.role]}</span></button></div>`;
+        }
+        const s = specInfoOf(x.s);
+        const brings = buffsProvidedBy(x.s).map(b => whBuffLink(b, `<img src="${buffIconSrc(b)}" alt="" loading="lazy">`)).join('');
+        return `<div class="fit-slot"><button type="button" class="fit-slot-btn fit-slot-filled" data-fit-remove="${x.i}" style="--fit-ring: var(--class-${s.cleanClass}-raw, var(--class-${s.cleanClass}))" title="Remove ${s.name} ${s.className}" aria-label="Remove ${s.name} ${s.className}">
+            <span class="fit-slot-box"><img src="/data/icons/${s.icon}.jpg" alt=""><span class="fit-slot-x" aria-hidden="true">&times;</span></span>
+            <span class="fit-slot-name class-${s.cleanClass}-text">${s.name}</span></button>
+            <span class="fit-slot-brings">${brings}</span></div>`;
+      }).join('');
+    }
+
+    function renderUtility() {
+      if (selected.length === 0) {
+        fitUtil.innerHTML = '<span class="text-xs text-secondary">Bloodlust, Battle Rez and raid buffs show here once you pick a spec.</span>';
         return;
       }
-      const total = selected.length;
-      const frag = document.createDocumentFragment();
-      distinct.forEach(sid => {
-        const count = selCount(sid);
-        const info = specLookup[sid] || { icon: 'inv_misc_questionmark', name: 'Unknown' };
-        const chip = document.createElement('div');
-        chip.className = 'spec-count-chip';
-        chip.innerHTML =
-          `<img src="/data/icons/${info.icon}.jpg" alt="" class="spec-count-icon">` +
-          `<span class="spec-count-name">${info.name}</span>` +
-          `<span class="spec-count-steps">` +
-          `<button type="button" class="spec-count-step" data-dir="-1"${count <= 1 ? ' disabled' : ''} aria-label="One fewer">&minus;</button>` +
-          `<span class="spec-count-badge">&times;${count}</span>` +
-          `<button type="button" class="spec-count-step" data-dir="1"${total >= 5 ? ' disabled' : ''} aria-label="One more">+</button>` +
-          `</span>`;
-        chip.querySelectorAll('.spec-count-step').forEach(btn => {
-          btn.addEventListener('click', () => stepSelected(sid, Number(btn.getAttribute('data-dir'))));
-        });
-        frag.appendChild(chip);
-      });
-      selectedCompRow.innerHTML = '';
-      selectedCompRow.appendChild(frag);
+      const { covered } = computeBuffCoverage(selected);
+      const isOn = b => covered.includes(b);
+      const critical = GROUP_BUFFS.filter(b => CRITICAL_BUFF_IDS.has(b.id)).map(b => {
+        const on = isOn(b);
+        return whBuffLink(b, `<img src="${buffIconSrc(b)}" alt="">${buffLabel(b)}<i class="material-symbols-rounded" aria-label="${on ? 'covered' : 'missing'}">${on ? 'check' : 'close'}</i>`,
+          `fit-pill ${on ? 'fit-pill-on' : 'fit-pill-off'}`);
+      }).join('');
+      const raid = GROUP_BUFFS.filter(b => !CRITICAL_BUFF_IDS.has(b.id));
+      const rows = raid.map(b => whBuffLink(b, `<img src="${buffIconSrc(b)}" alt="">${b.name}
+          <i class="material-symbols-rounded">${isOn(b) ? 'check' : 'remove'}</i>`, `fit-buff-row${isOn(b) ? '' : ' fit-buff-off'}`)).join('');
+      fitUtil.innerHTML = critical + `<span class="fit-pill-wrap">
+          <button type="button" class="fit-pill fit-pill-raid" data-fit-raid aria-expanded="false">
+            <i class="material-symbols-rounded">groups</i>Raid buffs <b>${raid.filter(isOn).length}/${raid.length}</b></button>
+          <span class="fit-buff-pop">${rows}</span></span>`;
     }
 
-    // Stepper only adjusts multiplicity (1..5). Dropping the last copy is done by
-    // clicking the grid icon, so the minus button stops at 1.
-    function stepSelected(specId, dir) {
-      const s = Number(specId);
-      if (dir > 0) {
-        if (selected.length >= 5) return;
-        selected.push(s);
-      } else {
-        if (selCount(s) <= 1) return;
-        const idx = selected.lastIndexOf(s);
-        if (idx !== -1) selected.splice(idx, 1);
+    function renderStats(matches, dungeonId) {
+      let t = 0, d = 0, mk = 0;
+      if (selected.length) matches.forEach(c => { const n = compNums(c, dungeonId); t += n.t; d += n.d; if (n.mk > mk) mk = n.mk; });
+      const runs = t + d;
+      if (!runs) {
+        fitStats.innerHTML = '';
+        return;
       }
-      renderSelectedComp();
-      writeUrlParams();
-      updateSuggestions();
+      const pct = Math.round((t / runs) * 100);
+      const scope = selected.length === 5 ? 'this exact comp' : 'comps that include your picks';
+      fitStats.innerHTML = `<span class="fit-kv" title="Runs by ${scope}"><span>Runs</span><b>${fmtInt(runs)}</b></span>
+        <span class="fit-kv" title="Share of those runs that were timed"><span>Success</span><b class="${pctClass(pct)}">${pct}%</b></span>
+        <span class="fit-kv" title="Highest key timed by ${scope}"><span>Max key</span><b>+${mk}</b></span>`;
     }
+
+    function fillerRow(f, metaPath) {
+      const s = specInfoOf(f.id);
+      const isMetaSpec = metaPath && META_COMP_SPECS.includes(f.id);
+      const low = f.runs < LOW_SAMPLE_RUNS;
+      const gains = buffGainForSpec(f.id, selected).map(b =>
+        whBuffLink(b, `<img src="${buffIconSrc(b)}" alt="" class="${CRITICAL_BUFF_IDS.has(b.id) ? 'fit-gain-critical' : ''}" loading="lazy">`)).join('');
+      return `<div class="fit-row${isMetaSpec ? ' meta-comp' : ''}${low ? ' fit-row-low' : ''}" onclick="addSuggestedSpec(${f.id})"${low ? ' title="Few runs: read this success rate with care"' : ''}>
+          <img class="fit-row-icon" src="/data/icons/${s.icon}.jpg" alt="">
+          <div class="fit-row-main">
+            <div class="fit-row-name"><a href="/classes/${s.roleName}/${s.specName}_${s.className}" onclick="event.stopPropagation();" class="font-weight-bolder class-${s.cleanClass}-text">${s.name}</a><span class="fit-row-class">${s.className}</span>${isMetaSpec ? META_BADGE : ''}${low ? '<span class="fit-low-tag">few runs</span>' : ''}</div>
+            <div class="fit-row-meta"><span><b>${fmtInt(f.runs)}</b> run${f.runs === 1 ? '' : 's'}</span><span>max <b>+${f.mk}</b></span>${gains ? `<span class="fit-row-gains">${gains}</span>` : ''}</div>
+          </div>
+          <div class="fit-row-stat"><span class="${pctClass(f.pct)}">${f.pct}%</span><span class="fit-bar"><span style="width:${f.pct}%"></span></span></div>
+          <button type="button" class="fit-row-add" onclick="event.stopPropagation(); addSuggestedSpec(${f.id})" aria-label="Add ${s.name} ${s.className}"><i class="material-symbols-rounded">add</i></button>
+        </div>`;
+    }
+
+    // Open slots grouped by expected role, in board order.
+    function openRoleGroups(openRoles) {
+      const groups = [];
+      openRoles.forEach(r => {
+        const last = groups[groups.length - 1];
+        if (last && last.role === r) last.n++; else groups.push({ role: r, n: 1 });
+      });
+      return groups;
+    }
+
+    function renderCompleteComp(matches, dungeonId) {
+      if (matches.length === 0) {
+        // No aggregate stats for this exact team, but routes may still exist.
+        fitResults.innerHTML = `<div class="col-12 col-lg-8 mx-auto">
+            <div class="alert alert-secondary text-sm"><i class="material-symbols-rounded align-middle me-2">info</i>We don't have enough top-tier data matching this exact 5-man team.</div>
+            ${routesLinkHtml(selSortedKey(), false)}</div>`;
+        return;
+      }
+      const comp = matches[0];
+      const n = compNums(comp, 'all');
+      const totalRuns = n.t + n.d;
+      let topDungeon = '';
+      if (dungeonId === 'all' && comp.bd && comp.bdr > 0 && dungeonLookup[comp.bd] && totalRuns > 0) {
+        const usagePercent = Math.round((comp.bdr / totalRuns) * 100);
+        topDungeon = `<p class="text-sm mb-3"><span class="text-secondary" title="Dungeon where this comp is played the most">Played most in </span>
+            <b>${dungeonLookup[comp.bd]}</b> <span class="badge bg-secondary font-weight-normal ms-1 p-1" title="${usagePercent}% of this comp's total runs were played here">${usagePercent}% of runs</span></p>`;
+      }
+      fitResults.innerHTML = `<div class="col-12 col-lg-8 mx-auto text-center">
+          <h6 class="text-body-emphasis mb-2">Your group is complete${isMetaComp(comp.c) ? META_BADGE : ''}</h6>
+          ${topDungeon}
+          ${routesLinkHtml(comp.c, false)}</div>`;
+    }
+
+    function renderRoleLists(matches, openRoles, dungeonId) {
+      if (selected.length === 0) {
+        fitResults.innerHTML = `<div class="col-12 fit-empty"><i class="material-symbols-rounded">group_add</i>
+            Pick any spec you already have to see what fits best with it.</div>`;
+        return;
+      }
+      if (selected.length === 5) {
+        renderCompleteComp(matches, dungeonId);
+        return;
+      }
+      if (matches.length === 0) {
+        fitResults.innerHTML = '<div class="col-12"><p class="text-sm text-warning mb-0">No viable top-tier data for this combo.</p></div>';
+        return;
+      }
+      const fillers = aggregateFillers(matches, dungeonId);
+      const metaPath = onMetaPath(selected);
+      const groups = openRoleGroups(openRoles);
+      const col = groups.length === 1 ? 'col-12' : groups.length === 2 ? 'col-12 col-lg-6' : 'col-12 col-lg-4';
+      fitResults.innerHTML = groups.map(g => {
+        const rows = fillers.filter(f => g.role < 0 || specRole(f.id) === g.role).slice(0, 6);
+        return `<div class="${col}">
+            <div class="fit-list-head"><i class="material-symbols-rounded">${ROLE_SYMBOL[g.role]}</i>
+              <h6 class="text-uppercase text-body-emphasis text-xs font-weight-bolder mb-0">Best ${ROLE_LABEL[g.role]} fits</h6>
+              <span class="text-xs text-secondary ms-auto">${g.n} open slot${g.n > 1 ? 's' : ''}</span></div>
+            ${rows.map(f => fillerRow(f, metaPath)).join('') || '<p class="text-sm text-secondary mb-0">No data for this role yet.</p>'}
+          </div>`;
+      }).join('');
+    }
+
+    // --- Picker popover (bottom sheet on phones, see comps.css) ---
+    let pickerSlot = null;
+    function openPicker(btn) {
+      const k = Number(btn.dataset.fitOpen);
+      if (pickerSlot === k && !fitPicker.hidden) { closePicker(); return; }
+      pickerSlot = k;
+      const role = Number(btn.dataset.role);
+      fitPicker.querySelectorAll('.fit-picker-role').forEach(sec => {
+        sec.style.order = Number(sec.dataset.role) === role ? 0 : 1;
+      });
+      fitPicker.querySelectorAll('.fit-pick').forEach(p => {
+        const n = selCount(p.dataset.spec);
+        p.classList.toggle('fit-pick-in', n > 0);
+        if (n > 0) p.dataset.count = '×' + n; else delete p.dataset.count;
+      });
+      fitPicker.hidden = false;
+      const wrap = fitPicker.parentElement.getBoundingClientRect();
+      const b = btn.getBoundingClientRect();
+      const left = b.left + b.width / 2 - wrap.left - fitPicker.offsetWidth / 2;
+      fitPicker.style.left = Math.max(0, Math.min(left, wrap.width - fitPicker.offsetWidth)) + 'px';
+      fitPicker.style.top = (b.bottom - wrap.top + 8) + 'px';
+      const first = fitPicker.querySelector('.fit-picker-role[style*="order: 0"] .fit-pick') || fitPicker.querySelector('.fit-pick');
+      if (first) first.focus({ preventScroll: true });
+    }
+    function closePicker() {
+      if (fitPicker.hidden) return;
+      fitPicker.hidden = true;
+      pickerSlot = null;
+    }
+
+    fitBoard.addEventListener('click', e => {
+      const open = e.target.closest('[data-fit-open]');
+      if (open) { e.stopPropagation(); openPicker(open); return; }
+      const rm = e.target.closest('[data-fit-remove]');
+      if (rm) { selected.splice(Number(rm.dataset.fitRemove), 1); onSelectionChange(); }
+    });
+    fitPicker.addEventListener('click', e => {
+      if (e.target.closest('[data-fit-close]')) { closePicker(); return; }
+      const pick = e.target.closest('.fit-pick');
+      if (pick) { closePicker(); addSuggestedSpec(Number(pick.dataset.spec)); }
+    });
+    fitUtil.addEventListener('click', e => {
+      const raid = e.target.closest('[data-fit-raid]');
+      if (!raid) return;
+      const open = raid.getAttribute('aria-expanded') !== 'true';
+      raid.setAttribute('aria-expanded', String(open));
+      raid.parentElement.classList.toggle('fit-pop-open', open);
+    });
+    document.addEventListener('click', e => {
+      if (!fitPicker.hidden && !e.target.closest('#fit-picker')) closePicker();
+      if (!e.target.closest('.fit-pill-wrap')) {
+        fitUtil.querySelectorAll('.fit-pop-open').forEach(w => {
+          w.classList.remove('fit-pop-open');
+          w.querySelector('[data-fit-raid]').setAttribute('aria-expanded', 'false');
+        });
+      }
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePicker(); });
 
     const dungeonFilter = document.getElementById('dungeonFilter');
     dungeonFilter.addEventListener('change', () => {
       writeUrlParams();
-      updateSuggestions();
+      updateFit();
     });
 
-    function updateSuggestions() {
-      renderBuffCoverage();
-      const headerTitle = document.querySelector('.card-header h6');
-      if (selected.length === 0) {
-        suggestionsContainer.innerHTML = '<p class="text-sm text-secondary">Select 1 to 5 specs to see suggestions.</p>';
-        if (headerTitle) headerTitle.innerText = 'The Perfect Fit';
-        return;
-      }
+    function updateFit() {
+      closePicker();
+      const dungeonId = dungeonFilter.value;
+      const matches = selected.length ? matchingComps(dungeonId) : [];
+      const openRoles = expectedOpenRoles(matches, dungeonId);
+      renderBoard(boardSlots(openRoles));
+      renderUtility();
+      renderStats(matches, dungeonId);
+      renderRoleLists(matches, openRoles, dungeonId);
+      refreshWowheadLinks();
+    }
+    updateFit();
 
-      const selectedDungeonId = dungeonFilter.value; // 'all' or dungeon ID as string
-
-      // Keep comps that contain the selection as a SUB-MULTISET (a spec picked
-      // twice needs two copies in the comp), and drop comps with 0 runs in the
-      // selected dungeon when a specific dungeon is chosen.
-      const selCounts = countMapOf(selected);
-      const possibleComps = compsData.filter(comp => {
-        const compCounts = countMapOf(comp.c);
-        for (const [s, c] of selCounts) if ((compCounts.get(s) || 0) < c) return false;
-
-        if (selectedDungeonId !== 'all') {
-          const did = parseInt(selectedDungeonId);
-          if (!comp.dungeons || !comp.dungeons[did] || (comp.dungeons[did].t + comp.dungeons[did].d) === 0) {
-            return false;
-          }
-        }
-        return true;
-      });
-
-      // We need to re-sort them based on the weight for the selected dungeon if 'all' is not selected
-      if (selectedDungeonId !== 'all') {
-        const did = parseInt(selectedDungeonId);
-        possibleComps.sort((a, b) => b.dungeons[did].w - a.dungeons[did].w);
-      } else {
-        // Fall back to total weight
-        possibleComps.sort((a, b) => b.w - a.w);
-      }
-
-      if (selected.length === 5) {
-        if (headerTitle) headerTitle.innerText = 'Composition Analysis';
-        if (possibleComps.length === 0) {
-          // No aggregate stats for this exact team, but routes may still exist.
-          suggestionsContainer.innerHTML = '<div class="alert alert-secondary text-sm"><i class="material-symbols-rounded align-middle me-2">info</i>We don\'t have enough top-tier data matching this exact 5-man team.</div>'
-            + routesLinkHtml(selSortedKey(), false);
-        } else {
-          const comp = possibleComps[0];
-
-          let cTimed = comp.t;
-          let cDepleted = comp.d;
-          let cMaxKey = comp.mk;
-
-          if (selectedDungeonId !== 'all') {
-            const did = parseInt(selectedDungeonId);
-            if (comp.dungeons && comp.dungeons[did]) {
-              cTimed = comp.dungeons[did].t || 0;
-              cDepleted = comp.dungeons[did].d || 0;
-              cMaxKey = comp.dungeons[did].mk || 0;
-            } else {
-              cTimed = 0;
-              cDepleted = 0;
-              cMaxKey = 0;
-            }
-          }
-
-          const totalRuns = cTimed + cDepleted;
-          const winRate = totalRuns > 0 ? Math.round((cTimed / totalRuns) * 100) : 0;
-
-          let dungeonStat = "";
-          if (selectedDungeonId === 'all') {
-            if (comp.bd && comp.bdr > 0 && dungeonLookup[comp.bd]) {
-              const usagePercent = Math.round((comp.bdr / totalRuns) * 100);
-              dungeonStat = `
-                  <div class="d-flex justify-content-between mb-2">
-                    <span class="text-sm text-secondary" title="Dungeon where this comp is played the most">Top Dungeon:</span>
-                    <span class="text-sm text-body-emphasis font-weight-bold text-end">${dungeonLookup[comp.bd]} <span class="badge bg-secondary font-weight-normal ms-1 p-1" title="${usagePercent}% of this comp's total runs were played here">${usagePercent}% of runs</span></span>
-                  </div>
-              `;
-            }
-          }
-
-          suggestionsContainer.innerHTML = `
-            <div class="card border border-secondary mb-3 mt-2${isMetaComp(comp.c) ? ' meta-comp' : ''}">
-              <div class="card-body p-3">
-                <h6 class="text-body-emphasis mb-3">Stats for Selected Comp${isMetaComp(comp.c) ? META_BADGE : ''}</h6>
-                <div class="d-flex justify-content-between mb-2">
-                  <span class="text-sm text-secondary">Max Key Timed:</span>
-                  <span class="text-sm text-body-emphasis font-weight-bold">${cMaxKey}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                  <span class="text-sm text-secondary">Total Runs:</span>
-                  <span class="text-sm text-body-emphasis font-weight-bold">${totalRuns}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                  <span class="text-sm text-secondary">Success Rate:</span>
-                  <span class="text-sm ${winRate >= 70 ? 'text-success' : 'text-warning'} font-weight-bold">${winRate}%</span>
-                </div>
-                ${dungeonStat}
-              </div>
-            </div>
-            ${routesLinkHtml(comp.c, false)}
-            <button class="btn btn-outline-primary w-100" onclick="clearSelection()">Start Over</button>
-          `;
-        }
-        return;
-      }
-
-      if (headerTitle) headerTitle.innerText = 'Suggested Additions';
-
-      if (possibleComps.length === 0) {
-        suggestionsContainer.innerHTML = '<p class="text-sm text-warning">No viable top-tier data for this combo.</p>';
-        return;
-      }
-
-      // Aggregate stats of remaining potential specs
-      const specStats = {};
-      possibleComps.forEach(comp => {
-        let compWt = comp.w;
-        let compT = comp.t;
-        let compD = comp.d;
-        let compMK = comp.mk;
-
-        if (selectedDungeonId !== 'all') {
-          const did = parseInt(selectedDungeonId);
-          if (comp.dungeons && comp.dungeons[did]) {
-            compWt = comp.dungeons[did].w || 0;
-            compT = comp.dungeons[did].t || 0;
-            compD = comp.dungeons[did].d || 0;
-            compMK = comp.dungeons[did].mk || 0;
-          } else {
-            compWt = 0; compT = 0; compD = 0; compMK = 0;
-          }
-        }
-
-        if (compWt > 0) {
-          // Suggest each distinct spec the comp still has headroom for: a spec
-          // already picked once is still suggestable if the comp uses it twice.
-          const compCounts = countMapOf(comp.c);
-          for (const [s, cCount] of compCounts) {
-            if (selCount(s) >= cCount) continue;
-            if (!specStats[s]) {
-              specStats[s] = { t: 0, d: 0, mk: 0, w: 0 };
-            }
-            specStats[s].t += compT;
-            specStats[s].d += compD;
-            specStats[s].w += compWt;
-            if (compMK > specStats[s].mk) {
-              specStats[s].mk = compMK;
-            }
-          }
-        }
-      });
-
-      const sortedSuggestions = Object.entries(specStats)
-        .sort((a, b) => b[1].w - a[1].w)
-        .slice(0, 10);
-
-      // Suggestions that complete the meta comp (only when still on its path)
-      const metaPath = onMetaPath(selected);
-
-      let html = '<div class="w-100"><ul class="list-group mb-0">';
-      sortedSuggestions.forEach(([specId, stats]) => {
-        const specInfo = specLookup[specId] || { name: "Unknown", icon: "inv_misc_questionmark", specName: "Unknown", className: "Unknown", cleanClass: "Unknown", roleName: "Dps" };
-        const total = stats.t + stats.d;
-        const winRate = total > 0 ? Math.round((stats.t / total) * 100) : 0;
-        const isMetaSpec = metaPath && META_COMP_SPECS.includes(Number(specId));
-
-        // Buffs this suggestion would newly bring to the current group.
-        const buffGains = buffGainForSpec(specId, selected);
-        const buffGainBadges = buffGains.map(b => {
-          const critical = CRITICAL_BUFF_IDS.has(b.id);
-          return `<span class="buff-gain-badge${critical ? ' buff-gain-badge--critical' : ''}" title="Adds ${b.name}">+${b.name}</span>`;
-        }).join('');
-
-        html += `
-          <li class="list-group-item border-0 d-flex justify-content-between px-3 mb-2 border-radius-lg cursor-pointer flex-column flex-md-row${isMetaSpec ? ' meta-comp' : ''}" onclick="addSuggestedSpec(${specId})">
-            <div class="d-flex align-items-center">
-              <img src="/data/icons/${specInfo.icon}.jpg" class="avatar avatar-sm me-3 border-radius-sm">
-              <div class="d-flex flex-column">
-                <a href="/classes/${specInfo.roleName}/${specInfo.specName}_${specInfo.className}" onclick="event.stopPropagation();" class="mb-1 text-sm font-weight-bolder class-${specInfo.cleanClass}-text">${specInfo.name}${isMetaSpec ? META_BADGE : ''}</a>
-                <span class="text-xs text-secondary mt-1">
-                  Runs: <span class="text-body-emphasis pe-2">${total}</span>
-                  Success %: <span class="${winRate >= 70 ? 'text-success' : 'text-warning'} pe-2">${winRate}%</span>
-                  Max Key: <span class="text-body-emphasis">${stats.mk}</span>
-                </span>
-                ${buffGainBadges ? `<span class="buff-gain-row mt-1">${buffGainBadges}</span>` : ''}
-              </div>
-            </div>
-            <div class="mt-3 mt-md-0 w-100 w-md-auto d-flex">
-               <button class="btn btn-sm btn-outline-primary mb-0 d-flex align-items-center px-3 py-2 add-spec-btn" onclick="event.stopPropagation(); addSuggestedSpec(${specId})">
-                 <i class="material-symbols-rounded text-sm me-1">add</i> 
-                 <span>Add Spec</span>
-               </button>
-            </div>
-          </li>
-        `;
-      });
-      html += '</ul></div>';
-      suggestionsContainer.innerHTML = html;
+    function onSelectionChange() {
+      writeUrlParams();
+      updateFit();
     }
 
     function addSuggestedSpec(specId) {
       if (selected.length >= 5) return;
       selected.push(Number(specId));
-      renderSelectedComp();
-      writeUrlParams();
-      updateSuggestions();
+      onSelectionChange();
     }
 
     function clearSelection() {
       selected = [];
-      renderSelectedComp();
-      writeUrlParams();
-      updateSuggestions();
+      onSelectionChange();
     }
 
     // --- Top lists rendering (Most Popular & Best High-Key) ---
