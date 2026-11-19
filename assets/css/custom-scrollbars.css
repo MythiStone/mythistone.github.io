@@ -82,6 +82,21 @@ code,
   .card-scroll { min-height: calc-size(max-content, min(size, var(--card-scroll-min, 470px))); }
 }
 
+/* "Show all" lists (assets/js/show-all.js): while the card is stacked, the list grows the
+   card instead of scrolling inside it, shows 5 items and a button for the rest. Side by
+   side, the fill-the-row scroll box above stays. */
+.show-all-btn { display: none; }
+@media (max-width: 991.98px) {
+  .card-scroll.show-all-lg, .card-scroll:has(.show-all-lg) { flex: none; height: auto; min-height: 0; overflow: visible; }
+  .show-all-lg:not(.is-expanded) > .show-all-extra { display: none !important; }
+  .show-all-btn-lg:not([hidden]) { display: block; }
+}
+@media (max-width: 1399.98px) {
+  .card-scroll.show-all-xxl, .card-scroll:has(.show-all-xxl) { flex: none; height: auto; min-height: 0; overflow: visible; }
+  .show-all-xxl:not(.is-expanded) > .show-all-extra { display: none !important; }
+  .show-all-btn-xxl:not([hidden]) { display: block; }
+}
+
 /* Smooth-Scrollbar JS Plugin Overrides (Used on Sidebar) */
 .scrollbar-track {
   background: var(--mythi-scrollbar-track) !important;

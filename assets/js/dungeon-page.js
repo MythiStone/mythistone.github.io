@@ -178,15 +178,6 @@ document.addEventListener('keydown', function (e) {
     // Route embeds load on first open, gated on Klaro consent (see consent.js).
     MythiConsent.wireAccordionEmbeds('#routeDungeonAccordion');
 
-// --- Narrow curated tables: "Show all" toggle (CSS shows the button and hides rows 6+) ---
-document.addEventListener('click', function (e) {
-    var btn = e.target.closest('.tbl-more');
-    if (!btn) return;
-    var open = btn.closest('.dungeon-table-wrap').classList.toggle('is-expanded');
-    btn.textContent = open ? 'Show fewer' : btn.dataset.more;
-    btn.setAttribute('aria-expanded', String(open));
-});
-
 // --- Runs-by-keylevel bar chart ---
         document.addEventListener("DOMContentLoaded", function () {
             // Disable chart pan/zoom on small screens so it doesn't hijack page scrolling.

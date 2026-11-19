@@ -134,7 +134,7 @@
             </div>
             <div class="card-body px-0 pb-2 card-scroll-body">
               <p class="text-sm px-3 mb-2" id="most-popular-sub">Most-played team comps across all dungeons.</p>
-              <div id="most-popular-list" class="list-group list-group-flush px-3 py-2 card-scroll custom-scrollbar">
+              <div id="most-popular-list" class="list-group list-group-flush px-3 py-2 card-scroll custom-scrollbar show-all-lg" data-show-all="comps">
                 {% for arch in archetypes_all.popular %}{{ arch_row(arch, 'popular') }}{% endfor %}
               </div>
             </div>
@@ -150,7 +150,7 @@
             </div>
             <div class="card-body px-0 pb-2 card-scroll-body">
               <p class="text-sm px-3 mb-2" id="best-highkey-sub">Team comps performing best in {{ archetypes_all.hk_label }} across all dungeons.</p>
-              <div id="best-highkey-list" class="list-group list-group-flush px-3 py-2 card-scroll custom-scrollbar">
+              <div id="best-highkey-list" class="list-group list-group-flush px-3 py-2 card-scroll custom-scrollbar show-all-lg" data-show-all="comps">
                 {% for arch in archetypes_all.highkey %}{{ arch_row(arch, 'highkey') }}{% endfor %}
               </div>
             </div>
@@ -169,7 +169,7 @@
             </div>
             <div class="card-body px-0 pb-2 card-scroll-body">
               <p class="text-sm px-3 mb-2" id="hidden-gems-sub">Niche team comps with strong success in {{ archetypes_all.gem_label }} across all dungeons.</p>
-              <div id="hidden-gems-list" class="list-group list-group-flush px-3 py-2 card-scroll custom-scrollbar">
+              <div id="hidden-gems-list" class="list-group list-group-flush px-3 py-2 card-scroll custom-scrollbar show-all-lg" data-show-all="comps">
                 {% for arch in archetypes_all.gems %}{{ arch_row(arch, 'gems') }}{% else %}
                 <p class="text-sm text-secondary px-2">No hidden gems for this dungeon.</p>
                 {% endfor %}
@@ -191,7 +191,7 @@
                 dungeons, ranked by how well they perform in the highest keys.</p>
               <div class="p-0 custom-scrollbar card-scroll">
                 {% set role_map = {'0': 'Tank', '1': 'Healer', '2': 'Dps'} %}
-                <div id="best-pairs-list" class="list-group list-group-flush px-3 py-2">
+                <div id="best-pairs-list" class="list-group list-group-flush px-3 py-2 show-all-lg" data-show-all="pairs">
                   {% if best_spec_pairs %}
                   {% for pair in best_spec_pairs %}
                   {% set sa = spec_lookup[pair.spec_a|string] %}

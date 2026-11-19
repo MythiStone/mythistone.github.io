@@ -299,6 +299,3 @@
     <i class="bi {% if vod.video_type == 'twitch' %}bi-twitch{% elif vod.video_type == 'youtube' %}bi-youtube{% else %}bi-play-btn-fill{% endif %}{{ ' me-1' if mode != 'icon' }}"></i>{{ {'text': 'View Example VOD', 'short': 'VOD'}.get(mode, '') }}</a>
 {% endif %}
 {% endmacro %}
-
-{#- Narrow cards show the first 5 rows; dungeon-page.js toggles the rest. -#}
-{% macro show_all(count, noun) %}{% if count > 5 %}<button type="button" class="btn btn-sm btn-outline-secondary mx-3 my-2 tbl-more" aria-expanded="false" data-more="Show all {{ count }} {{ noun }}">Show all {{ count }} {{ noun }}</button>{% endif %}{% endmacro %}

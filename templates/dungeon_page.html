@@ -406,7 +406,7 @@
                         <div class="card-body px-0 pb-2 card-scroll-body dungeon-table-wrap">
                             <div class="p-0 custom-scrollbar card-scroll" style="--card-scroll-min: 435px;">
                                 {% if lust_timeline %}
-                                <table id="lust-table" class="table align-items-center mb-0 w-100 dungeon-table tbl-stack tbl-collapsible">
+                                <table id="lust-table" class="table align-items-center mb-0 w-100 dungeon-table tbl-stack">
                                     <thead class="dungeon-table-sticky">
                                         <tr>
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">
@@ -423,7 +423,7 @@
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody data-show-all="pulls" class="show-all-xxl">
                                         {% for pull in lust_timeline if pull.lust_percentage > 0 %}
                                         {% set pull_npcs = [] %}
                                         {% for entry in (pull.top_npcs.split(',') if pull.top_npcs else []) %}
@@ -496,7 +496,6 @@
                                         {% endfor %}
                                     </tbody>
                                 </table>
-                                {{ dm.show_all(lust_timeline | selectattr('lust_percentage', 'gt', 0) | list | length, 'pulls') }}
                                 {% else %}
                                 <p class="text-center text-sm text-secondary p-3 mb-0">No lust data available.</p>
                                 {% endif %}
@@ -906,7 +905,7 @@
                         <div class="card-body px-0 pb-2 card-scroll-body dungeon-table-wrap">
                             <div class="p-0 custom-scrollbar card-scroll" style="--card-scroll-min: 400px;">
                                 {% if skip_rates %}
-                                <table id="skip-npcs-table" class="table align-items-center mb-0 w-100 dungeon-table tbl-stack tbl-collapsible">
+                                <table id="skip-npcs-table" class="table align-items-center mb-0 w-100 dungeon-table tbl-stack">
                                     <thead class="dungeon-table-sticky">
                                         <tr>
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
@@ -923,7 +922,7 @@
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody data-show-all="NPCs" class="show-all-xxl">
                                         {% for skip in skip_rates[:15] %}
                                         {% set npc = {'id': skip.npc_id|string, 'name': npcs.get('en_US', {}).get(skip.npc_id|string, 'Unknown NPC'), 'boss': skip.npc_id|int in bosses} %}
                                         {% set skipped_pct = 100.0 - skip.inclusion_percentage|float %}
@@ -970,7 +969,6 @@
                                         {% endfor %}
                                     </tbody>
                                 </table>
-                                {{ dm.show_all(skip_rates[:15] | length, 'NPCs') }}
                                 {% else %}
                                 <p class="text-center text-sm text-secondary p-3 mb-0">No skip data yet.</p>
                                 {% endif %}

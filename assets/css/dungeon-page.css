@@ -440,7 +440,7 @@ summary.route-row:hover, .route-row[data-modal]:hover { background: var(--mythi-
 .npc-portrait { flex-shrink: 0; width: var(--npc-size, 30px); height: var(--npc-size, 30px); object-fit: contain; }
 .skip-row { --npc-size: 44px; }
 .skip-main { min-width: 0; white-space: normal; }
-.tbl-narrow, .tbl-more { display: none; }
+.tbl-narrow { display: none; }
 .btn.tbl-btn { --bs-btn-color: var(--bs-body-color); --bs-btn-padding-y: 0.2rem; --bs-btn-padding-x: 0.5rem; --bs-btn-font-size: 0.75rem; --bs-btn-line-height: 1rem; }
 @container dungeon-table (max-width: 519.98px) {
   .dungeon-table thead { display: none; }
@@ -507,13 +507,4 @@ summary.route-row:hover, .route-row[data-modal]:hover { background: var(--mythi-
   #best-loot-table thead th:nth-child(2), #best-loot-table thead th:nth-child(4) { display: none; }
   #best-loot-table thead th:first-child { flex: 1 1 auto; }
   #best-loot-table thead th:nth-child(3) { flex: none; width: 5.5rem; text-align: center; }
-}
-/* Stacked cards only: the long lists grow the card and collapse to 5 rows. Side by side (xxl)
-   they keep the fill-the-card scroll region so both cards stay level. */
-@media (max-width: 1399.98px) {
-  @container dungeon-table (max-width: 519.98px) {
-    .dungeon-table-wrap > .card-scroll { flex: none; height: auto; min-height: 0; overflow: visible; }
-    .dungeon-table-wrap:not(.is-expanded) .tbl-collapsible > tbody > tr:nth-child(n+6) { display: none; }
-    .tbl-more { display: block; }
-  }
 }

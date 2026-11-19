@@ -2,10 +2,11 @@
 <script src="/assets/js/core/popper.min.js"></script>
 <script src="/assets/js/core/jquery.min.js"></script>
 <script src="/assets/js/core/bootstrap.min.js"></script>
-<!-- Klaro consent helpers (MythiConsent). Needed by any page that sets an
-     embed's src itself, because Klaro only manages elements that existed when
-     it initialised. Must load before the pages that use it. -->
+<!-- Klaro consent helpers (MythiConsent). Every third-party embed loads through
+     MythiConsent.loadEmbed when its panel opens. Must load before the pages that use it. -->
 <script src="/assets/js/consent.js"></script>
+<!-- "Show all" toggle for long in-card lists on stacked cards (data-show-all). -->
+<script src="/assets/js/show-all.js"></script>
 <!-- Deep links: opens the modal/accordion/tab a #fragment points at, keeps the
      hash in sync, injects the copy-link buttons. Needs Bootstrap's Modal /
      Collapse / Tab APIs, so it has to come after bootstrap.min.js; pages register
