@@ -6895,6 +6895,11 @@ SELECT report_code, fight_id FROM Mythistone.wcl_processed_runs
 WHERE (report_code, fight_id) IN ({placeholders})
 """
 
+FETCH_WCL_QUEUED_RUNS_SQL = """
+SELECT report_code, fight_id FROM Mythistone.wcl_fight_queue
+WHERE (report_code, fight_id) IN ({placeholders})
+"""
+
 FETCH_WCL_PROCESSED_FINGERPRINTS_SQL = """
 SELECT run_fingerprint FROM Mythistone.wcl_processed_runs
 WHERE run_fingerprint IN ({placeholders})
@@ -7042,14 +7047,23 @@ def delete_wcl_fight_queue(cursor, report_code, fight_id):
     cursor.execute(DELETE_WCL_FIGHT_QUEUE_SQL, (report_code, fight_id))
 
 
-def fetch_wcl_processed_runs(connection, cursor, keys):
-    """The (report_code, fight_id) pairs of ``keys`` that are already processed, as a set."""
+def _fetch_wcl_run_keys(connection, cursor, sql, keys):
     keys = list(keys)
     if not keys:
         return set()
-    sql = FETCH_WCL_PROCESSED_RUNS_SQL.format(placeholders=", ".join(["(%s, %s)"] * len(keys)))
+    sql = sql.format(placeholders=", ".join(["(%s, %s)"] * len(keys)))
     rows = fetch_with_retry(connection, cursor, sql, [v for k in keys for v in k])
     return {(code, int(fight)) for code, fight in rows}
+
+
+def fetch_wcl_processed_runs(connection, cursor, keys):
+    """The (report_code, fight_id) pairs of ``keys`` that are already processed, as a set."""
+    return _fetch_wcl_run_keys(connection, cursor, FETCH_WCL_PROCESSED_RUNS_SQL, keys)
+
+
+def fetch_wcl_queued_runs(connection, cursor, keys):
+    """The (report_code, fight_id) pairs of ``keys`` that are already in the fight queue, as a set."""
+    return _fetch_wcl_run_keys(connection, cursor, FETCH_WCL_QUEUED_RUNS_SQL, keys)
 
 
 def fetch_wcl_processed_fingerprints(connection, cursor, fingerprints):

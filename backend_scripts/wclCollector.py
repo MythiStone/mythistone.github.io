@@ -394,8 +394,10 @@ def _write_run(code, fight_id, fingerprint, cm, run_start_ms, status, writes=(),
 
 
 def _queue_fresh(conn, cursor, fights, cm, spec_id):
-    done = db.fetch_wcl_processed_runs(conn, cursor, [f[:2] for f in fights])
-    fresh = [f for f in fights if f[:2] not in done]
+    """Queues the fights neither processed nor already queued, and returns them."""
+    keys = [f[:2] for f in fights]
+    known = db.fetch_wcl_processed_runs(conn, cursor, keys) | db.fetch_wcl_queued_runs(conn, cursor, keys)
+    fresh = [f for f in fights if f[:2] not in known]
     db.upsert_wcl_fight_queue(conn, cursor, fresh)
     db.update_wcl_crawl_state(conn, cursor, cm, spec_id, len(fresh))
     return fresh
