@@ -178,22 +178,14 @@ document.addEventListener('keydown', function (e) {
     // Route embeds load on first open, gated on Klaro consent (see consent.js).
     MythiConsent.wireAccordionEmbeds('#routeDungeonAccordion');
 
-// --- Curated tables: DataTables responsive column collapsing ---
-        // Curated, pre-ranked tables: enable Responsive column collapsing on small
-        // screens while keeping their server-side order (ordering disabled).
-        $(function () {
-            var common = { responsive: true, ordering: false, paging: false, searching: false, info: false };
-            var tables = {
-                'lust-table': [{ targets: 0, responsivePriority: 1 }, { targets: 1, responsivePriority: 2 }, { targets: 3, responsivePriority: 4 }, { targets: 2, responsivePriority: 5 }],
-                'popular-comps-table': [{ targets: 0, responsivePriority: 1 }, { targets: 1, responsivePriority: 2 }, { targets: 3, responsivePriority: 3 }, { targets: 2, responsivePriority: 4 }],
-                'best-loot-table': [{ targets: 0, responsivePriority: 1 }, { targets: 2, responsivePriority: 2 }, { targets: 3, responsivePriority: 3 }, { targets: 1, responsivePriority: 5 }],
-                'skip-npcs-table': [{ targets: 0, responsivePriority: 1 }, { targets: 1, responsivePriority: 2 }, { targets: 3, responsivePriority: 4 }, { targets: 2, responsivePriority: 5 }]
-            };
-            Object.keys(tables).forEach(function (id) {
-                var el = document.getElementById(id);
-                if (el) $(el).DataTable(Object.assign({ columnDefs: tables[id] }, common));
-            });
-        });
+// --- Narrow curated tables: "Show all" toggle (CSS shows the button and hides rows 6+) ---
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.tbl-more');
+    if (!btn) return;
+    var open = btn.closest('.dungeon-table-wrap').classList.toggle('is-expanded');
+    btn.textContent = open ? 'Show fewer' : btn.dataset.more;
+    btn.setAttribute('aria-expanded', String(open));
+});
 
 // --- Runs-by-keylevel bar chart ---
         document.addEventListener("DOMContentLoaded", function () {

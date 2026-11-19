@@ -269,3 +269,36 @@
 </div>
 <p class="text-xxs text-secondary mb-3">From {{ w.n }} lusts in top ranked logged runs on {{ wcl_credit() }}.</p>
 {% endmacro %}
+
+{#- Curated-table pieces shared by the wide cells and the narrow-card rows (dungeon-page.css). -#}
+{% macro npc_portrait(npc, cls='') %}{% if npc.id in npc_icons %}<img src="/data/icons/npc_{{ npc.id }}.png" alt="{{ npc.name }}" class="npc-portrait {{ cls }}" {% if npc.boss %}data-wowhead="npc={{ npc.id }}"{% else %}data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right" data-bs-title="<img src='/data/icons/npc_{{ npc.id }}.png' width='150'>"{% endif %}>{% endif %}{% endmacro %}
+
+{% macro npc_link(npc, cls='') %}<a href="https://www.wowhead.com/npc={{ npc.id }}" class="{{ 'text-warning font-weight-bolder' if npc.boss else 'text-body-emphasis' }} {{ cls }}" target="_blank" data-wowhead="npc={{ npc.id }}">{{ npc.name }}</a>{% endmacro %}
+
+{% macro rate_bar(pct) %}<div class="progress"><div class="progress-bar bg-gradient-success opacity-8" role="progressbar" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ pct }}%;"></div></div>{% endmacro %}
+
+{% macro key_badges(hi, lo, hi_tip, lo_tip) -%}
+<span class="badge badge-sm bg-gradient-success me-1" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ hi_tip }}">{{ ("+" ~ hi) if hi else "-" }}</span>
+<span class="badge badge-sm bg-gradient-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ lo_tip }}">{{ ("+" ~ lo) if lo else "-" }}</span>
+{%- endmacro %}
+
+{#- mode: 'text' (wide cell links), 'short' (small labelled buttons) or 'icon' (icon-only buttons).
+    The example route prefers one with a POV VOD, so the first video with a watch_url is linked. #}
+{% macro route_links(route, title, mode='text') %}
+{% set vod = (route.videos | selectattr('watch_url') | first) if route.videos else none %}
+{% set btn = 'btn btn-sm btn-outline-secondary mb-0 tbl-btn' %}
+<a href="https://keystone.guru/route/{{ dungeon.slug }}/{{ route.route_key }}/{{ dungeon.slug }}" target="_blank"
+    class="{{ 'text-body-emphasis text-sm font-weight-bold' if mode == 'text' else btn }}"
+    data-bs-toggle="tooltip" data-bs-placement="top" title="{{ title }}"{% if mode == 'icon' %} aria-label="Example route on Keystone.guru"{% endif %}>
+    <i class="bi bi-box-arrow-up-right{{ ' me-1' if mode != 'icon' }}"></i>{{ {'text': 'View Example Route', 'short': 'Route'}.get(mode, '') }}</a>
+{% if vod %}
+<a href="{{ vod.watch_url }}" target="_blank" rel="noopener"
+    class="{{ 'text-body-emphasis text-sm font-weight-bold d-block mt-1' if mode == 'text' else btn }}"
+    data-bs-toggle="tooltip" data-bs-placement="top"
+    title="Watch a POV VOD of this route{% if vod.pov_character_name %} ({{ vod.pov_character_name }}){% endif %}."{% if mode == 'icon' %} aria-label="Watch an example VOD"{% endif %}>
+    <i class="bi {% if vod.video_type == 'twitch' %}bi-twitch{% elif vod.video_type == 'youtube' %}bi-youtube{% else %}bi-play-btn-fill{% endif %}{{ ' me-1' if mode != 'icon' }}"></i>{{ {'text': 'View Example VOD', 'short': 'VOD'}.get(mode, '') }}</a>
+{% endif %}
+{% endmacro %}
+
+{#- Narrow cards show the first 5 rows; dungeon-page.js toggles the rest. -#}
+{% macro show_all(count, noun) %}{% if count > 5 %}<button type="button" class="btn btn-sm btn-outline-secondary mx-3 my-2 tbl-more" aria-expanded="false" data-more="Show all {{ count }} {{ noun }}">Show all {{ count }} {{ noun }}</button>{% endif %}{% endmacro %}

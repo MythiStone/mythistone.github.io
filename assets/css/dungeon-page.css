@@ -403,7 +403,7 @@ summary.route-row:hover, .route-row[data-modal]:hover { background: var(--mythi-
   border-radius: var(--bs-border-radius-lg);
 }
 /* height: 0 keeps the list from setting the row's height, so it fills what Route Breakdown leaves. */
-@media (min-width: 992px) {
+@media (min-width: 1400px) {
   #dungeon-deadliest-npcs .card-body { display: flex; flex-direction: column; min-height: 0; }
   .npc-deaths { flex: 1 1 0; height: 0; min-height: 24rem; max-height: none; }
 }
@@ -431,4 +431,89 @@ summary.route-row:hover, .route-row[data-modal]:hover { background: var(--mythi-
   .route-row > .detail-row-chevron { grid-column: 2; grid-row: 1; }
   .route-pull-actions { margin-left: 0; flex-basis: 100%; }
   .route-pull-npcs { grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); }
+}
+
+/* Curated tables. Below ~520px of card width each row restacks: popular comps as labelled values,
+   the tbl-stack tables as one compact block in the first cell (.tbl-narrow) with the other cells hidden. */
+.dungeon-table-sticky th { position: sticky; top: 0; z-index: 2; background-color: var(--mythi-surface-raised); }
+.dungeon-table-wrap { container: dungeon-table / inline-size; }
+.npc-portrait { flex-shrink: 0; width: var(--npc-size, 30px); height: var(--npc-size, 30px); object-fit: contain; }
+.skip-row { --npc-size: 44px; }
+.skip-main { min-width: 0; white-space: normal; }
+.tbl-narrow, .tbl-more { display: none; }
+.btn.tbl-btn { --bs-btn-color: var(--bs-body-color); --bs-btn-padding-y: 0.2rem; --bs-btn-padding-x: 0.5rem; --bs-btn-font-size: 0.75rem; --bs-btn-line-height: 1rem; }
+@container dungeon-table (max-width: 519.98px) {
+  .dungeon-table thead { display: none; }
+  .dungeon-table, .dungeon-table tbody { display: block; }
+  .dungeon-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem 1rem;
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid var(--mythi-border-subtle);
+  }
+  .dungeon-table > tbody > tr > td { display: block; padding: 0 !important; border-bottom-width: 0; text-align: left !important; white-space: normal; }
+  .dungeon-table td [class*="px-"] { padding-left: 0 !important; padding-right: 0 !important; }
+  .dungeon-table td:first-child { flex: 1 0 100%; min-width: 0; }
+  .dungeon-table td[data-label] { flex: 1 1 auto; min-width: 5rem; }
+  .dungeon-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+  }
+
+  .tbl-stack > tbody > tr > td:not(:first-child), .tbl-stack .tbl-wide { display: none !important; }
+  .tbl-stack .tbl-narrow { display: block; }
+  /* Material Dashboard draws a 3px bar on a light track; make the fill cover the whole track. */
+  .tbl-stack.table td .tbl-narrow .progress { width: 100%; height: 4px; margin: 0.35rem 0 0; overflow: hidden; background-color: var(--mythi-border-subtle); }
+  .tbl-stack.table td .tbl-narrow .progress-bar { height: 100%; }
+  .tbl-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.4rem; margin-top: 0.35rem; font-size: 0.75rem; color: var(--bs-secondary-color); }
+  .tbl-meta .badge { margin: 0 !important; }
+  .tbl-stack .tbl-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin-top: 0.4rem; }
+
+  .lust-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+  .lust-strip { --npc-size: 24px; display: flex; flex-wrap: wrap; gap: 3px; min-width: 0; }
+  .lust-rate { font-size: 1.125rem; font-weight: 700; color: var(--bs-emphasis-color); }
+  .lust-names {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0.3rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.3;
+  }
+
+  .skip-row { --npc-size: 36px; align-items: flex-start !important; gap: 0.6rem; }
+  .skip-row > .npc-portrait { margin: 0 !important; }
+  .skip-main { flex: 1 1 auto; }
+  .tbl-stack .skip-side { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; flex: none; }
+  .skip-side .tbl-actions { margin-top: 0 !important; }
+
+  .loot-main { flex: 1 1 auto; min-width: 0; }
+  .loot-main .avatar { margin-right: 0.75rem !important; }
+  .tbl-stack .loot-spec { flex: none; width: 5.5rem; text-align: center; }
+  .loot-spec a { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+  .loot-spec span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Loot keeps a slim header (Item / Most Used By) so the spec column is labelled. */
+  #best-loot-table thead { display: block; }
+  #best-loot-table thead tr { flex-wrap: nowrap; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+  #best-loot-table thead th { padding: 0 !important; border-bottom-width: 0; }
+  #best-loot-table thead th:nth-child(2), #best-loot-table thead th:nth-child(4) { display: none; }
+  #best-loot-table thead th:first-child { flex: 1 1 auto; }
+  #best-loot-table thead th:nth-child(3) { flex: none; width: 5.5rem; text-align: center; }
+}
+/* Stacked cards only: the long lists grow the card and collapse to 5 rows. Side by side (xxl)
+   they keep the fill-the-card scroll region so both cards stay level. */
+@media (max-width: 1399.98px) {
+  @container dungeon-table (max-width: 519.98px) {
+    .dungeon-table-wrap > .card-scroll { flex: none; height: auto; min-height: 0; overflow: visible; }
+    .dungeon-table-wrap:not(.is-expanded) .tbl-collapsible > tbody > tr:nth-child(n+6) { display: none; }
+    .tbl-more { display: block; }
+  }
 }

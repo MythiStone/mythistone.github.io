@@ -65,15 +65,21 @@ code,
 
 .card-scroll-body {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
 }
+/* height: 0 + min-height: the list adds only its floor to the row height and grows into a taller card. */
 .card-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: var(--card-scroll-max, 470px);
+  flex: 1 1 0;
+  height: 0;
+  min-height: var(--card-scroll-min, 470px);
   overflow-y: auto;
   overflow-x: hidden;
+}
+/* A list shorter than the floor shrinks to its content where calc-size() exists. */
+@supports (min-height: calc-size(max-content, size)) {
+  .card-scroll { min-height: calc-size(max-content, min(size, var(--card-scroll-min, 470px))); }
 }
 
 /* Smooth-Scrollbar JS Plugin Overrides (Used on Sidebar) */

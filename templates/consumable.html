@@ -167,7 +167,7 @@
                 </p>
               </div>
               <div class="card-body pt-3 card-scroll-body">
-                <div class="card-scroll custom-scrollbar" style="--card-scroll-max: 520px;">
+                <div class="card-scroll custom-scrollbar" style="--card-scroll-min: 520px;">
                   {% for s in consumable.specs %}
                   {% set runs_text = '{:,}'.format(s.runs) ~ (' run' if s.runs == 1 else ' runs') %}
                   {{ usage_row(s.spec_id, s.share, (s.share ~ '% · ' ~ runs_text) if s.share is not none else runs_text) }}

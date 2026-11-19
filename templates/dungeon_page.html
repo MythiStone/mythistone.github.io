@@ -115,7 +115,6 @@
   "dateModified": "{{ generated_at|iso_ts }}"
 }
     </script>
-    <link rel="stylesheet" href="/assets/css/datatables.min.css">
 
 </head>
 
@@ -338,7 +337,7 @@
             {% endif %}
             <div class="row mb-4">
                 <!-- Top Routes -->
-                <div class="col-lg-6 col-md-12 mb-4">
+                <div class="col-xxl-6 col-12 mb-4">
                     {# data-share: deep-link.js puts a copy-link button on the title bar. #}
                     <div class="card h-100" id="dungeon-top-routes" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
@@ -386,7 +385,7 @@
                 </div>
                 {% import "_dungeon_detail_macros.html" as dm with context %}
                 <!-- Most Lusted Pulls -->
-                <div class="col-lg-6 col-md-12 mb-4">
+                <div class="col-xxl-6 col-12 mb-4">
                     <div class="card h-100" id="dungeon-lusted-pulls" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                             <div data-share-anchor
@@ -404,102 +403,80 @@
                                     Details</a>
                             </div>
                         </div>
-                        <div class="card-body px-0 pb-2 card-scroll-body">
-                            <div class="p-0 custom-scrollbar card-scroll" style="--card-scroll-max: 435px;">
+                        <div class="card-body px-0 pb-2 card-scroll-body dungeon-table-wrap">
+                            <div class="p-0 custom-scrollbar card-scroll" style="--card-scroll-min: 435px;">
                                 {% if lust_timeline %}
-                                <table id="lust-table" class="table align-items-center mb-0 w-100">
-                                    <thead class="sticky-top"
-                                        style="z-index: 10; background-color: var(--mythi-surface-raised);">
+                                <table id="lust-table" class="table align-items-center mb-0 w-100 dungeon-table tbl-stack tbl-collapsible">
+                                    <thead class="dungeon-table-sticky">
                                         <tr>
-                                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">
                                                 Pull
                                                 Composition</th>
-                                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
                                                 Lust Rate
                                             </th>
-                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                                 Max Key<br><span class="text-success">Lusted</span> / Not Lusted
                                             </th>
-                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                                 Details
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for pull in lust_timeline if pull.lust_percentage > 0 %}
+                                        {% set pull_npcs = [] %}
+                                        {% for entry in (pull.top_npcs.split(',') if pull.top_npcs else []) %}
+                                        {% set parts = entry.split(':') %}
+                                        {% set cnt = parts[1]|int if parts|length > 1 else 1 %}
+                                        {% set base_name = npcs.get('en_US', {}).get(parts[0], parts[0]) %}
+                                        {% set _ = pull_npcs.append({'id': parts[0], 'name': (cnt ~ 'x ' ~ base_name) if cnt > 1 else base_name, 'boss': parts[0]|int in bosses}) %}
+                                        {% endfor %}
+                                        {% set route_title = ('View Level ' ~ pull.example_route.keystone_level ~ ' route on Keystone.guru. The exact pull in this route is Pull #' ~ pull.example_route.pull_number ~ '.') if pull.example_route else '' %}
                                         <tr>
                                             <td class="text-sm text-wrap px-3 pb-0">
-                                                {% if pull.top_npcs %}
-                                                <ul class="list-unstyled mb-0" style="line-height:1.2;">
-                                                    {% for entry in pull.top_npcs.split(',') %}
-                                                    {% set parts = entry.split(':') %}
-                                                    {% set n = parts[0] %}
-                                                    {% set cnt = parts[1]|int if parts|length > 1 else 1 %}
-                                                    {% set base_name = npcs.get('en_US', {}).get(n, n) %}
-                                                    {% set name = (cnt ~ 'x ' ~ base_name) if cnt > 1 else base_name %}
-                                                    {% set is_boss = n|int in bosses %}
-                                                    <li class="mb-1 d-flex align-items-center">
-                                                        {% if n in npc_icons %}
-                                                        <img src="/data/icons/npc_{{ n }}.png" alt="{{ name }}"
-                                                            class="me-1 flex-shrink-0 align-middle"
-                                                            style="width:30px;height:30px;object-fit:contain;" {% if
-                                                            is_boss %}data-wowhead="npc={{ n }}" {% else
-                                                            %}data-bs-toggle="tooltip" data-bs-html="true"
-                                                            data-bs-placement="right"
-                                                            data-bs-title="<img src='/data/icons/npc_{{ n }}.png' width='150'>"
-                                                            {% endif %}>
-                                                        {% endif %}
-                                                        {% if is_boss %}
-                                                        <a href="https://www.wowhead.com/npc={{ n }}"
-                                                            class="text-warning font-weight-bolder align-middle"
-                                                            target="_blank" data-wowhead="npc={{ n }}">{{ name }}</a>
-                                                        {% else %}
-                                                        <a href="https://www.wowhead.com/npc={{ n }}"
-                                                            class="text-body-emphasis align-middle" target="_blank"
-                                                            data-wowhead="npc={{ n }}">{{ name }}</a>
-                                                        {% endif %}
-                                                    </li>
+                                                {% if pull_npcs %}
+                                                <ul class="list-unstyled mb-0 tbl-wide" style="line-height:1.2;">
+                                                    {% for npc in pull_npcs %}
+                                                    <li class="mb-1 d-flex align-items-center">{{ dm.npc_portrait(npc, 'me-1') }}{{ dm.npc_link(npc, 'align-middle') }}</li>
                                                     {% endfor %}
                                                 </ul>
                                                 {% else %}
-                                                <span class="text-muted">Unknown Pull</span>
+                                                <span class="text-muted tbl-wide">Unknown Pull</span>
                                                 {% endif %}
+                                                <div class="tbl-narrow">
+                                                    <div class="lust-head">
+                                                        <div class="lust-strip">{% for npc in pull_npcs %}{{ dm.npc_portrait(npc) }}{% endfor %}</div>
+                                                        <span class="lust-rate">{{ "%.1f"|format(pull.lust_percentage) }}%</span>
+                                                    </div>
+                                                    <p class="lust-names">{% for npc in pull_npcs %}{{ dm.npc_link(npc) }}{{ ', ' if not loop.last }}{% else %}<span class="text-muted">Unknown Pull</span>{% endfor %}</p>
+                                                    {{ dm.rate_bar(pull.lust_percentage) }}
+                                                    <div class="tbl-meta">{{ pull.lust_count }} / {{ pull.total_pulls_at_index }} pulls · max key {{ dm.key_badges(pull.max_key_lusted, pull.max_key_not_lusted, 'Highest key where this pull was lusted', 'Highest key where this pull was NOT lusted') }}</div>
+                                                    <div class="tbl-actions">
+                                                        {% if pull.top_npcs %}
+                                                        <a href="#pull-{{ loop.index }}" data-bs-toggle="modal" data-bs-target="#pull-{{ loop.index }}"
+                                                            class="btn btn-sm btn-outline-secondary mb-0 tbl-btn"><i class="bi bi-info-circle me-1"></i>Abilities</a>
+                                                        {% endif %}
+                                                        {% if pull.example_route %}
+                                                        {{ dm.route_links(pull.example_route, route_title, 'short') }}
+                                                        <span class="ms-auto text-xs text-secondary">Pull {{ pull.example_route.pull_number }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td class="align-middle">
                                                 <div class="progress-wrapper w-100">
                                                     <div class="progress-info">
                                                         <div class="progress-percentage">
-                                                            <span class="text-sm font-weight-bold me-2">{{
-                                                                "%.1f"|format(pull.lust_percentage) }}%</span>
+                                                            <span class="text-sm font-weight-bold me-2">{{ "%.1f"|format(pull.lust_percentage) }}%</span>
                                                         </div>
                                                     </div>
-                                                    <div class="progress">
-                                                        <div class="progress-bar bg-gradient-success opacity-8"
-                                                            role="progressbar"
-                                                            aria-valuenow="{{ pull.lust_percentage }}" aria-valuemin="0"
-                                                            aria-valuemax="100"
-                                                            style="width: {{ pull.lust_percentage }}%;"></div>
-                                                    </div>
+                                                    {{ dm.rate_bar(pull.lust_percentage) }}
                                                 </div>
-                                                <p class="text-xs text-secondary mt-1 mb-0">{{ pull.lust_count }} / {{
-                                                    pull.total_pulls_at_index }} Pulls</p>
+                                                <p class="text-xs text-secondary mt-1 mb-0">{{ pull.lust_count }} / {{ pull.total_pulls_at_index }} Pulls</p>
                                             </td>
                                             <td class="align-middle text-center">
-                                                <span class="badge badge-sm bg-gradient-success me-1"
-                                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                                    title="Highest key where this pull was lusted">
-                                                    {{ ("+"~pull.max_key_lusted) if pull.max_key_lusted else "-" }}
-                                                </span>
-                                                <span class="badge badge-sm bg-gradient-secondary"
-                                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                                    title="Highest key where this pull was NOT lusted">
-                                                    {{ ("+"~pull.max_key_not_lusted) if pull.max_key_not_lusted else "-"
-                                                    }}
-                                                </span>
+                                                {{ dm.key_badges(pull.max_key_lusted, pull.max_key_not_lusted, 'Highest key where this pull was lusted', 'Highest key where this pull was NOT lusted') }}
                                             </td>
                                             <td class="align-middle text-center">
                                                 {% if pull.top_npcs %}
@@ -509,24 +486,8 @@
                                                 </a>
                                                 {% endif %}
                                                 {% if pull.example_route %}
-                                                <a href="https://keystone.guru/route/{{ dungeon.slug }}/{{ pull.example_route.route_key }}/{{ dungeon.slug }}"
-                                                    class="text-body-emphasis text-sm font-weight-bold" target="_blank"
-                                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                                    title="View Level {{ pull.example_route.keystone_level }} route on Keystone.guru. The exact pull in this route is Pull #{{ pull.example_route.pull_number }}.">
-                                                    <i class="bi bi-box-arrow-up-right me-1"></i>View Example Route
-                                                </a>
-                                                {# The example route now prefers one with a POV VOD; link the first video that resolved a watch_url. #}
-                                                {% set ex_vod = (pull.example_route.videos | selectattr('watch_url') | first) if pull.example_route.videos else none %}
-                                                {% if ex_vod %}
-                                                <a href="{{ ex_vod.watch_url }}" target="_blank" rel="noopener"
-                                                    class="text-body-emphasis text-sm font-weight-bold d-block mt-1"
-                                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                                    title="Watch a POV VOD of this route{% if ex_vod.pov_character_name %} ({{ ex_vod.pov_character_name }}){% endif %}.">
-                                                    <i class="bi {% if ex_vod.video_type == 'twitch' %}bi-twitch{% elif ex_vod.video_type == 'youtube' %}bi-youtube{% else %}bi-play-btn-fill{% endif %} me-1"></i>View Example VOD
-                                                </a>
-                                                {% endif %}
-                                                <span class="text-muted text-xs d-block mt-1">Pull: {{
-                                                    pull.example_route.pull_number }}</span>
+                                                {{ dm.route_links(pull.example_route, route_title) }}
+                                                <span class="text-muted text-xs d-block mt-1">Pull: {{ pull.example_route.pull_number }}</span>
                                                 {% elif not pull.top_npcs %}
                                                 <span class="text-secondary text-sm">N/A</span>
                                                 {% endif %}
@@ -535,6 +496,7 @@
                                         {% endfor %}
                                     </tbody>
                                 </table>
+                                {{ dm.show_all(lust_timeline | selectattr('lust_percentage', 'gt', 0) | list | length, 'pulls') }}
                                 {% else %}
                                 <p class="text-center text-sm text-secondary p-3 mb-0">No lust data available.</p>
                                 {% endif %}
@@ -670,7 +632,7 @@
             <div class="row mb-4">
                 {% if boss_pacing.buckets %}
                 <!-- Route Breakdown -->
-                <div class="{{ 'col-lg-6' if wcl.deadliest_npcs else 'col-12' }} mb-4">
+                <div class="{{ 'col-xxl-6' if wcl.deadliest_npcs else 'col-12' }} mb-4">
                     <div class="card h-100" id="dungeon-trash-sections" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                             <div data-share-anchor
@@ -726,7 +688,7 @@
 
                 {% if wcl.deadliest_npcs %}
                 <!-- Deadliest NPCs -->
-                <div class="{{ 'col-lg-6' if boss_pacing.buckets else 'col-12' }} mb-4">
+                <div class="{{ 'col-xxl-6' if boss_pacing.buckets else 'col-12' }} mb-4">
                     <div class="card h-100" id="dungeon-deadliest-npcs" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                             <div data-share-anchor
@@ -770,7 +732,7 @@
 
             <div class="row mb-4">
                 <!-- Popular Team Comps -->
-                <div class="col-lg-6 col-md-12 mb-4">
+                <div class="col-xxl-6 col-12 mb-4">
                     <div class="card h-100" id="dungeon-team-comps" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                             <div data-share-anchor
@@ -787,9 +749,9 @@
                                 slot lists more than one spec it is flexible, so you can usually bring a similar spec
                                 without hurting the comp.
                             </p>
-                            <div class="p-0">
+                            <div class="p-0 dungeon-table-wrap">
                                 {% if team_comp_families %}
-                                <table id="popular-comps-table" class="table align-items-center mb-0 w-100">
+                                <table id="popular-comps-table" class="table align-items-center mb-0 w-100 dungeon-table">
                                     <thead>
                                         <tr>
                                             <th
@@ -814,13 +776,13 @@
                                                 <div class="d-flex px-3 py-1 align-items-center">{{ tc.comp_slots(fam)
                                                     }}</div>
                                             </td>
-                                            <td class="align-middle text-center text-sm">
+                                            <td class="align-middle text-center text-sm" data-label="Highest key">
                                                 <span class="badge badge-sm bg-gradient-success">+{{ fam.mk }}</span>
                                             </td>
-                                            <td class="align-middle text-center text-sm">
+                                            <td class="align-middle text-center text-sm" data-label="Timed">
                                                 <span class="text-xs font-weight-bold">{{ fam.success }}%</span>
                                             </td>
-                                            <td class="align-middle text-center">
+                                            <td class="align-middle text-center" data-label="Runs">
                                                 <span class="text-secondary text-xs font-weight-bold">{{
                                                     "{:,}".format(fam.runs) }}</span>
                                             </td>
@@ -836,7 +798,7 @@
                     </div>
                 </div>
                 <!-- Best Loot From This Dungeon -->
-                <div class="col-lg-6 col-md-12 mb-4">
+                <div class="col-xxl-6 col-12 mb-4">
                     <div class="card h-100" id="dungeon-best-loot" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                             <div data-share-anchor
@@ -857,9 +819,9 @@
                                 The gear that drops in {{ dungeon.name.en_US }}, ordered by how often the current meta
                                 equips each piece. A quick read on whether this dungeon is worth farming for your spec.
                             </p>
-                            <div class="p-0">
+                            <div class="p-0 dungeon-table-wrap">
                                 {% if top_loot %}
-                                <table id="best-loot-table" class="table align-items-center mb-0 w-100">
+                                <table id="best-loot-table" class="table align-items-center mb-0 w-100 dungeon-table tbl-stack">
                                     <thead>
                                         <tr>
                                             <th
@@ -879,29 +841,39 @@
                                     </thead>
                                     <tbody>
                                         {% for l in top_loot %}
+                                        {% set spec_href = '/classes/' ~ role_lookup.get(l.top_spec_role, 'Other') ~ '/' ~ l.top_spec_name ~ '_' ~ l.top_class_name %}
+                                        {% set class_text = 'class-' ~ (l.top_class_name or '')|replace(' ', '') ~ '-text' %}
                                         <tr>
-                                            <td>{{ dm.loot_item(l) }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center loot-row">
+                                                    <div class="loot-main">{% call dm.loot_item(l) %}<span class="tbl-narrow text-xs text-secondary">{{ l.slot }} · {{ "{:,}".format(l.runs) }} runs</span>{% endcall %}</div>
+                                                    <div class="tbl-narrow loot-spec">
+                                                        {% if l.top_spec_name %}
+                                                        <a href="{{ spec_href }}" class="text-decoration-none" title="{{ l.top_spec_name }} {{ l.top_class_name }}">
+                                                            <img src="/data/icons/{{ l.top_spec_icon }}.jpg" class="avatar avatar-xs border border-dark border-1" alt="{{ l.top_spec_name }}">
+                                                            <span class="text-xxs font-weight-bold {{ class_text }}">{{ l.top_spec_name }}</span>
+                                                        </a>
+                                                        {% else %}
+                                                        <span class="text-xxs text-secondary">Not tracked</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
                                             <td class="align-middle text-center text-sm">
                                                 <span class="text-xs font-weight-bold">{{ l.slot }}</span>
                                             </td>
                                             <td class="align-middle">
                                                 {% if l.top_spec_name %}
-                                                <a href="/classes/{{ role_lookup.get(l.top_spec_role, 'Other') }}/{{ l.top_spec_name }}_{{ l.top_class_name }}"
-                                                    class="text-decoration-none d-flex align-items-center px-2">
-                                                    <img src="/data/icons/{{ l.top_spec_icon }}.jpg"
-                                                        class="avatar avatar-xs me-2 border border-dark border-1"
-                                                        alt="{{ l.top_spec_name }}">
-                                                    <span
-                                                        class="text-xs font-weight-bold class-{{ l.top_class_name|replace(' ', '') }}-text">{{
-                                                        l.top_spec_name }} {{ l.top_class_name }}</span>
+                                                <a href="{{ spec_href }}" class="text-decoration-none d-flex align-items-center px-2">
+                                                    <img src="/data/icons/{{ l.top_spec_icon }}.jpg" class="avatar avatar-xs me-2 border border-dark border-1" alt="{{ l.top_spec_name }}">
+                                                    <span class="text-xs font-weight-bold {{ class_text }}">{{ l.top_spec_name }} {{ l.top_class_name }}</span>
                                                 </a>
                                                 {% else %}
                                                 <span class="text-xs text-secondary px-2">Not tracked</span>
                                                 {% endif %}
                                             </td>
                                             <td class="align-middle text-center">
-                                                <span class="text-secondary text-xs font-weight-bold">{{
-                                                    "{:,}".format(l.runs) }}</span>
+                                                <span class="text-secondary text-xs font-weight-bold">{{ "{:,}".format(l.runs) }}</span>
                                             </td>
                                         </tr>
                                         {% endfor %}
@@ -920,7 +892,7 @@
             <!-- Analytics Row -->
             <div class="row mb-4">
                 <!-- Skipped NPCs -->
-                <div class="col-lg-6 col-md-12 mb-4">
+                <div class="col-xxl-6 col-12 mb-4">
                     <div class="card h-100" id="dungeon-skipped-npcs" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                             <div data-share-anchor
@@ -931,108 +903,65 @@
                                     Killed NPC's</h6>
                             </div>
                         </div>
-                        <div class="card-body px-0 pb-2" style="position: relative; min-height: 320px;">
-                            <div class="p-0 custom-scrollbar"
-                                style="position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;">
+                        <div class="card-body px-0 pb-2 card-scroll-body dungeon-table-wrap">
+                            <div class="p-0 custom-scrollbar card-scroll" style="--card-scroll-min: 400px;">
                                 {% if skip_rates %}
-                                <table id="skip-npcs-table" class="table align-items-center mb-0 w-100">
-                                    <thead class="sticky-top"
-                                        style="z-index: 10; background-color: var(--mythi-surface-raised);">
+                                <table id="skip-npcs-table" class="table align-items-center mb-0 w-100 dungeon-table tbl-stack tbl-collapsible">
+                                    <thead class="dungeon-table-sticky">
                                         <tr>
-                                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                                 NPC / Trash
                                             </th>
-                                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
                                                 Skip Rate
                                             </th>
-                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                                 Max Key<br><span class="text-success">Skipped</span> / Played
                                             </th>
-                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
-                                                style="position: sticky; top: 0; background-color: var(--mythi-surface-raised);">
+                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                                 Example Route
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for skip in skip_rates[:15] %}
+                                        {% set npc = {'id': skip.npc_id|string, 'name': npcs.get('en_US', {}).get(skip.npc_id|string, 'Unknown NPC'), 'boss': skip.npc_id|int in bosses} %}
+                                        {% set skipped_pct = 100.0 - skip.inclusion_percentage|float %}
+                                        {% set route_title = ('View Level ' ~ skip.example_route.keystone_level ~ ' route on Keystone.guru') if skip.example_route else '' %}
                                         <tr>
                                             <td>
-                                                {% set npc_name = npcs.get('en_US', {}).get(skip.npc_id|string,
-                                                'Unknown NPC') %}
-                                                <div class="d-flex px-2 py-1 align-items-center">
-                                                    {% if skip.npc_id|string in npc_icons %}
-                                                    {% set skip_is_boss = skip.npc_id|int in bosses %}
-                                                    <img src="/data/icons/npc_{{ skip.npc_id }}.png"
-                                                        alt="{{ npc_name }}" class="me-2 img-fluid"
-                                                        style="width:44px;height:44px;object-fit:contain;" {% if
-                                                        skip_is_boss %}data-wowhead="npc={{ skip.npc_id }}" {% else
-                                                        %}data-bs-toggle="tooltip" data-bs-html="true"
-                                                        data-bs-placement="right"
-                                                        data-bs-title="<img src='/data/icons/npc_{{ skip.npc_id }}.png' width='150'>"
-                                                        {% endif %}>
-                                                    {% endif %}
-                                                    <div>
-                                                        <h6 class="mb-0 text-sm"><a
-                                                                href="https://www.wowhead.com/npc={{ skip.npc_id }}"
-                                                                class="text-body-emphasis" target="_blank"
-                                                                data-wowhead="npc={{ skip.npc_id }}">{{ npc_name }}</a>
-                                                        </h6>
+                                                <div class="d-flex px-2 py-1 align-items-center skip-row">
+                                                    {{ dm.npc_portrait(npc, 'me-2') }}
+                                                    <div class="skip-main">
+                                                        <h6 class="mb-0 text-sm"><a href="https://www.wowhead.com/npc={{ npc.id }}" class="text-body-emphasis" target="_blank" data-wowhead="npc={{ npc.id }}">{{ npc.name }}</a></h6>
+                                                        <div class="tbl-narrow">
+                                                            {{ dm.rate_bar(skipped_pct) }}
+                                                            <div class="tbl-meta">{{ "%.1f"|format(skipped_pct) }}% skipped · {{ skip.total_routes - skip.total_encounters }}/{{ skip.total_routes }}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="tbl-narrow skip-side">
+                                                        <div>{{ dm.key_badges(skip.max_key_skipped, skip.max_key_played, 'Highest key where this NPC was skipped', 'Highest key where this NPC was played') }}</div>
+                                                        {% if skip.example_route %}<div class="tbl-actions">{{ dm.route_links(skip.example_route, route_title, 'icon') }}</div>{% endif %}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td class="align-middle">
-                                                {% set skipped_pct = 100.0 - skip.inclusion_percentage|float %}
                                                 <div class="progress-wrapper w-100">
                                                     <div class="progress-info">
                                                         <div class="progress-percentage">
-                                                            <span class="text-sm font-weight-bold me-2">{{
-                                                                "%.1f"|format(skipped_pct) }}%</span>
+                                                            <span class="text-sm font-weight-bold me-2">{{ "%.1f"|format(skipped_pct) }}%</span>
                                                         </div>
                                                     </div>
-                                                    <div class="progress">
-                                                        <div class="progress-bar bg-gradient-success opacity-8"
-                                                            role="progressbar" aria-valuenow="{{ skipped_pct }}"
-                                                            aria-valuemin="0" aria-valuemax="100"
-                                                            style="width: {{ skipped_pct }}%;"></div>
-                                                    </div>
+                                                    {{ dm.rate_bar(skipped_pct) }}
                                                 </div>
-                                                <p class="text-xs text-secondary mt-1 mb-0">{{ skip.total_routes -
-                                                    skip.total_encounters }} / {{ skip.total_routes }} Skips</p>
+                                                <p class="text-xs text-secondary mt-1 mb-0">{{ skip.total_routes - skip.total_encounters }} / {{ skip.total_routes }} Skips</p>
                                             </td>
                                             <td class="align-middle text-center">
-                                                <span class="badge badge-sm bg-gradient-success me-1"
-                                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                                    title="Highest key where this NPC was skipped">
-                                                    {{ ("+"~skip.max_key_skipped) if skip.max_key_skipped else "-" }}
-                                                </span>
-                                                <span class="badge badge-sm bg-gradient-secondary"
-                                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                                    title="Highest key where this NPC was played">
-                                                    {{ ("+"~skip.max_key_played) if skip.max_key_played else "-" }}
-                                                </span>
+                                                {{ dm.key_badges(skip.max_key_skipped, skip.max_key_played, 'Highest key where this NPC was skipped', 'Highest key where this NPC was played') }}
                                             </td>
                                             <td class="align-middle text-center">
                                                 {% if skip.example_route %}
-                                                <a href="https://keystone.guru/route/{{ dungeon.slug }}/{{ skip.example_route.route_key }}/{{ dungeon.slug }}"
-                                                    class="text-body-emphasis text-sm font-weight-bold" target="_blank"
-                                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                                    title="View Level {{ skip.example_route.keystone_level }} route on Keystone.guru">
-                                                    <i class="bi bi-box-arrow-up-right me-1"></i>View Example Route
-                                                </a>
-                                                {# The example route now prefers one with a POV VOD; link the first video that resolved a watch_url. #}
-                                                {% set ex_vod = (skip.example_route.videos | selectattr('watch_url') | first) if skip.example_route.videos else none %}
-                                                {% if ex_vod %}
-                                                <a href="{{ ex_vod.watch_url }}" target="_blank" rel="noopener"
-                                                    class="text-body-emphasis text-sm font-weight-bold d-block mt-1"
-                                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                                    title="Watch a POV VOD of this route{% if ex_vod.pov_character_name %} ({{ ex_vod.pov_character_name }}){% endif %}.">
-                                                    <i class="bi {% if ex_vod.video_type == 'twitch' %}bi-twitch{% elif ex_vod.video_type == 'youtube' %}bi-youtube{% else %}bi-play-btn-fill{% endif %} me-1"></i>View Example VOD
-                                                </a>
-                                                {% endif %}
+                                                {{ dm.route_links(skip.example_route, route_title) }}
                                                 {% else %}
                                                 <span class="text-secondary text-sm">N/A</span>
                                                 {% endif %}
@@ -1041,6 +970,7 @@
                                         {% endfor %}
                                     </tbody>
                                 </table>
+                                {{ dm.show_all(skip_rates[:15] | length, 'NPCs') }}
                                 {% else %}
                                 <p class="text-center text-sm text-secondary p-3 mb-0">No skip data yet.</p>
                                 {% endif %}
@@ -1050,7 +980,7 @@
                 </div>
 
                 <!-- Keystone Success Rates Chart -->
-                <div class="col-lg-6 col-md-12 mb-4">
+                <div class="col-xxl-6 col-12 mb-4">
                     <div class="card h-100" id="dungeon-success-rate" data-share>
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                             <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3">
@@ -1259,8 +1189,6 @@
     {% include "right_aside.html" %}
     {% include "fixed_plugin.html" %}
     {% include "javascript_imports.html" %}
-    <!-- DataTables (responsive tables) -->
-    <script src="/assets/js/plugins/dataTables.min.js"></script>
     <script src="/assets/js/plugins/hammer.min.js"></script>
     <script src="/assets/js/plugins/chartjs.min.js"></script>
     <script src="/assets/js/plugins/chartjs-plugin-zoom.min.js"></script>
