@@ -2436,5 +2436,16 @@
         "persona": "deadpan_raid_leader",
         "judge_score": 33.0,
         "timestamp": 1794963246196
+    },
+    "data/social/highest_run_mplus_586_25_1876924_1794489193000.png": {
+        "title": "Highest Run: +25 Den of Nalorakk",
+        "post_type": "highest_run",
+        "link": "https://mythistone.com/pages/dashboard",
+        "social": "Timer says 32 minutes. Clock quits with 0 to spare. Den of Nalorakk just got folded by a group that refused to blink. Somebody check the tank, he aged years on that final pull. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "blog": "The highest Mythic+ key MythiStone has tracked this season is a +25 Den of Nalorakk, timed in 31:16.924 on the EU region.\n\nCredit the group that ran it: Guardian Druid, Holy Paladin, Arms Warrior, Subtlety Rogue, Elemental Shaman. That was 6 days ago. Every record here keeps moving as new keys get pushed.",
+        "post": "Timer says 32 minutes. Clock quits with 0 to spare. Den of Nalorakk just got folded by a group that refused to blink. Somebody check the tank, he aged years on that final pull. #WoW #MythicPlus https://mythistone.com/pages/dashboard",
+        "persona": "hype_caster",
+        "judge_score": 31.0,
+        "timestamp": 1795047307647
     }
 }
