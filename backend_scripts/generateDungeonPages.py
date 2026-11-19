@@ -57,6 +57,9 @@ TRASH_NPC_MAX = 8
 # Warcraft Logs rows on the Boss Pacing card, boss Timeline tabs, timing chips and lust modals.
 WCL_TRASH_FAMILY_MIN_PULLS = 20
 WCL_SECTION_TOP_PULLS = 4
+# Route Breakdown risk label: a pull's shrunk deaths per pull against the dungeon's trash mean.
+WCL_RISK_HIGH = 1.5
+WCL_RISK_LOW = 0.75
 WCL_KILLER_MIN_DEATHS = 3
 WCL_KILLER_MIN_FAMILY_SHARE = 0.05
 WCL_TOP_NPCS = 10
@@ -593,7 +596,7 @@ def attach_boss_log(boss, timeline, dungeon_spells):
 
 
 def build_trash_list(boss_pacing, trash_sections):
-    """Trash Sections card: the whole dungeon in order, trash and boss rows alternating. Every row
+    """Route Breakdown card: the whole dungeon in order, trash and boss rows alternating. Every row
     carries its route numbers once per Minimum key bucket, and its logged pulls once."""
     buckets = boss_pacing['buckets']
     if not buckets:
@@ -661,6 +664,13 @@ def build_wcl_dungeon(data, dungeon_bosses, route_pull_rows, boss_pacing, dungeo
             return None
         return wcl_example_url(family, max(rows, key=lambda x: x['keystone_level']))
 
+    def pull_example_url(f):
+        """A trash pull's log, only from a pull of exactly this composition that no other pull
+        overlapped, since WCL opens it as a time window that would show every enemy alive in it."""
+        rows = [r for r in examples.get(f['family'], ())
+                if not r['spell_id'] and r['pull_key'] == f['sig'] and r['isolated']]
+        return wcl_example_url(f['family'], max(rows, key=lambda x: x['keystone_level'])) if rows else None
+
     def family_killers(family):
         rows = deaths_by_family.get(family, [])
         total = sum(int(r['deaths']) for r in rows)
@@ -678,19 +688,22 @@ def build_wcl_dungeon(data, dungeon_bosses, route_pull_rows, boss_pacing, dungeo
         f['with_death'] += int(r['pulls_with_death'])
         f['lusts'] += int(r['lusts'])
 
-    def pull_row(f, modal):
+    def pull_row(f, modal, mean_deaths):
         killers = family_killers(f['family'])
-        return {"npcs": [{"id": n, "count": c} for n, c in wcl_pull_npcs(f['sig'])], "pulls": f['pulls'],
+        ratio = wcl_deadly_score(f['deaths'], f['pulls'], mean_deaths) / mean_deaths if mean_deaths else 0
+        npcs = sorted(wcl_pull_npcs(f['sig']), key=lambda x: -x[1])
+        return {"npcs": [{"id": n, "count": c} for n, c in npcs], "pulls": f['pulls'],
                 "deaths_per_pull": f['deaths'] / f['pulls'], "death_pct": f['with_death'] / f['pulls'] * 100,
                 "lust_pct": min(100.0, f['lusts'] / f['pulls'] * 100), "killer": killers[0] if killers else None,
-                "example_url": example_url(f['family']), "modal": modal}
+                "risk": "high" if ratio >= WCL_RISK_HIGH else "low" if ratio <= WCL_RISK_LOW else "medium",
+                "example_url": pull_example_url(f), "modal": modal}
 
     # Encounter to journal boss, by the boss npcs in the encounter's pull signatures.
     boss_index_of = {str(n): i for i, b in enumerate(dungeon_bosses) for n in b['npc_ids']}
     boss_family = {idx: families[f"b:{e['encounter']}"] for idx, e in wcl_boss_encounters(data['pulls'], dungeon_bosses).items()
                    if f"b:{e['encounter']}" in families}
 
-    # Trash compositions per section, deadliest first.
+    # Trash compositions per section, most pulled first.
     trash = [f for f in families.values() if not f['encounter']]
     trash_pulls = sum(f['pulls'] for f in trash)
     mean_deaths = sum(f['deaths'] for f in trash) / trash_pulls if trash_pulls else 0
@@ -707,12 +720,11 @@ def build_wcl_dungeon(data, dungeon_bosses, route_pull_rows, boss_pacing, dungeo
     listed_keys = {str(b['index']) for b in buckets[0]['bosses'] if b['index'] is not None} | {'end'} if buckets else set()
     trash_sections, coverage = {}, Counter()
     for key in listed_keys & by_section.keys():
-        ranked = sorted(by_section[key], reverse=True,
-                        key=lambda f: wcl_deadly_score(f['deaths'], f['pulls'], mean_deaths))
+        ranked = sorted(by_section[key], key=lambda f: f['pulls'], reverse=True)
         coverage['listed'] += sum(f['pulls'] for f in ranked)
         coverage['shown'] += sum(f['pulls'] for f in ranked[:WCL_SECTION_TOP_PULLS])
         trash_sections[key] = {"total": sum(f['pulls'] for f in ranked),
-                               "rows": [pull_row(f, f"logged-pull-{key}-{i}")
+                               "rows": [pull_row(f, f"logged-pull-{key}-{i}", mean_deaths)
                                         for i, f in enumerate(ranked[:WCL_SECTION_TOP_PULLS])]}
 
     logged_runs = data['logged_runs']

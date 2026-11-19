@@ -352,20 +352,30 @@ def delta_rows(d, day, cm):
 
 
 def example_rows(run, specs, cm, code, fight_id, keystone_level, run_start_ms, dungeon_pulls):
-    """One wcl_example_logs row per (pull key, spec, spell) of this run, at its first pull: the pull
-    itself (spec 0, spell 0), lust (spec 0, the lust spell) and each spec's cooldown casts."""
+    """One wcl_example_logs row per (pull key, spec, spell) of this run: the pull itself (spec 0,
+    spell 0) at its first pull no other pull overlaps, else its first pull, lust (spec 0, the lust
+    spell) and each spec's cooldown casts. A trash example opens as a time window on WCL, so only an
+    isolated pull shows nothing but its own enemies."""
     pulls = {p.index: p for p in run["pulls"]}
+
+    def end(p):
+        return p.end or run["fight_end"]
+
+    isolated = {p.index: not any(o is not p and o.start < end(p) and end(o) > p.start for o in run["pulls"])
+                for p in run["pulls"]}
     first = {}
     for p in run["pulls"]:
-        first.setdefault((p.key(), 0, 0), p)
+        k = (p.key(), 0, 0)
+        if k not in first or (isolated[p.index] and not isolated[first[k].index]):
+            first[k] = p
     for lust in run["lusts"]:
         if lust["pull"] is not None:
             first.setdefault((pulls[lust["pull"]].key(), 0, lust["spell"]), pulls[lust["pull"]])
     for c in run["player_cds"]:
         if specs.get(c["player"]) is not None:
             first.setdefault((pulls[c["pull"]].key(), specs[c["player"]], c["spell"]), pulls[c["pull"]])
-    return [(cm, key, spec, spell, code, fight_id, p.start, p.end or run["fight_end"], keystone_level, run_start_ms,
-             pb.wcl_pull_id(p, dungeon_pulls, run["fight_end"]))
+    return [(cm, key, spec, spell, code, fight_id, p.start, end(p), keystone_level, run_start_ms,
+             pb.wcl_pull_id(p, dungeon_pulls, run["fight_end"]), int(isolated[p.index]))
             for (key, spec, spell), p in first.items()]
 
 

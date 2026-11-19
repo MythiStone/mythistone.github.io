@@ -6859,14 +6859,15 @@ ON DUPLICATE KEY UPDATE deaths = deaths + VALUES(deaths)
 UPSERT_WCL_EXAMPLE_LOG_SQL = """
 INSERT INTO Mythistone.wcl_example_logs
   (dungeon_id, pull_key, spec_id, spell_id, report_code, fight_id,
-   pull_start_ms, pull_end_ms, keystone_level, run_start_ms, wcl_pull_id)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+   pull_start_ms, pull_end_ms, keystone_level, run_start_ms, wcl_pull_id, isolated)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON DUPLICATE KEY UPDATE
   pull_start_ms = VALUES(pull_start_ms),
   pull_end_ms = VALUES(pull_end_ms),
   keystone_level = VALUES(keystone_level),
   run_start_ms = VALUES(run_start_ms),
-  wcl_pull_id = VALUES(wcl_pull_id)
+  wcl_pull_id = VALUES(wcl_pull_id),
+  isolated = VALUES(isolated)
 """
 
 # The window function keeps the derived table materialized, so it may read the table the
@@ -6875,7 +6876,7 @@ TRIM_WCL_EXAMPLE_LOGS_SQL = """
 DELETE e FROM Mythistone.wcl_example_logs e
 JOIN (
   SELECT report_code, fight_id,
-         ROW_NUMBER() OVER (ORDER BY keystone_level DESC, run_start_ms DESC,
+         ROW_NUMBER() OVER (ORDER BY isolated DESC, keystone_level DESC, run_start_ms DESC,
                                      report_code, fight_id) AS rn
   FROM Mythistone.wcl_example_logs
   WHERE dungeon_id = %s AND pull_key = %s AND spec_id = %s AND spell_id = %s
@@ -7028,9 +7029,10 @@ def upsert_wcl_player_death_daily(cursor, rows):
 
 def upsert_wcl_example_logs(cursor, rows):
     """rows: (dungeon_id, pull_key, spec_id, spell_id, report_code, fight_id, pull_start_ms,
-    pull_end_ms, keystone_level, run_start_ms, wcl_pull_id). wcl_pull_id is None when no WCL pull
-    matched. Then keeps the 3 highest keys of every (dungeon_id, pull_key, spec_id, spell_id) the
-    rows touched."""
+    pull_end_ms, keystone_level, run_start_ms, wcl_pull_id, isolated). wcl_pull_id is None when no
+    WCL pull matched, isolated is 1 when no other pull of the run overlapped this one. Then keeps the
+    3 best rows (isolated first, then highest key) of every (dungeon_id, pull_key, spec_id, spell_id)
+    the rows touched."""
     _executemany_in_txn(cursor, UPSERT_WCL_EXAMPLE_LOG_SQL, rows)
     groups = sorted({tuple(r[:4]) for r in rows})
     _executemany_in_txn(cursor, TRIM_WCL_EXAMPLE_LOGS_SQL, [g + g for g in groups])
@@ -7155,10 +7157,11 @@ ORDER BY npc_id
 """
 
 FETCH_WCL_DUNGEON_EXAMPLES_SQL = """
-SELECT family_key, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level, wcl_pull_id
+SELECT family_key, pull_key, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level,
+       wcl_pull_id, isolated
 FROM Mythistone.aggregated_wcl_example_log
 WHERE dungeon_id = %s AND spec_id = 0
-ORDER BY family_key, spell_id
+ORDER BY family_key, pull_key, spell_id
 """
 
 FETCH_WCL_SPEC_COOLDOWNS_SQL = """
@@ -7267,9 +7270,10 @@ def fetch_wcl_dungeon_npcs(connection, cursor, dungeon_id):
 
 
 def fetch_wcl_dungeon_examples(connection, cursor, dungeon_id):
-    """The spec-less example logs: [(family_key, spell_id, report_code, fight_id, pull_start_ms,
-    pull_end_ms, keystone_level, wcl_pull_id)]. spell_id 0 is the pull itself, otherwise the lust
-    spell. wcl_pull_id None means a row collected before the id was stored."""
+    """The spec-less example logs, one per exact composition: [(family_key, pull_key, spell_id,
+    report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level, wcl_pull_id, isolated)].
+    spell_id 0 is the pull itself, otherwise the lust spell. wcl_pull_id None means a row collected
+    before the id was stored. isolated 1 means no other pull overlapped it."""
     return fetch_with_retry(connection, cursor, FETCH_WCL_DUNGEON_EXAMPLES_SQL, (dungeon_id,))
 
 

@@ -1501,6 +1501,7 @@ CREATE TABLE `wcl_example_logs` (
   `keystone_level` smallint unsigned NOT NULL,
   `run_start_ms` bigint unsigned NOT NULL,
   `wcl_pull_id` int unsigned DEFAULT NULL,
+  `isolated` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`dungeon_id`,`pull_key`,`spec_id`,`spell_id`,`report_code`,`fight_id`),
   KEY `wcl_example_logs_run_start` (`run_start_ms`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -1717,6 +1718,7 @@ CREATE TABLE `aggregated_wcl_spec_cd_target` (
 
 CREATE TABLE `aggregated_wcl_example_log` (
   `dungeon_id` varchar(100) NOT NULL,
+  `pull_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   `family_key` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   `spec_id` int NOT NULL,
   `spell_id` int unsigned NOT NULL,
@@ -1726,7 +1728,8 @@ CREATE TABLE `aggregated_wcl_example_log` (
   `pull_end_ms` bigint unsigned NOT NULL,
   `keystone_level` smallint unsigned NOT NULL,
   `wcl_pull_id` int unsigned DEFAULT NULL,
-  PRIMARY KEY (`dungeon_id`,`family_key`,`spec_id`,`spell_id`),
+  `isolated` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`dungeon_id`,`pull_key`,`spec_id`,`spell_id`),
   KEY `aggregated_wcl_example_log_spec` (`spec_id`,`dungeon_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -4000,14 +4003,18 @@ BEGIN
   WHERE t.bucket_date >= v_from
   GROUP BY t.spec_id, t.dungeon_id, f.family_key, t.spell_id, t.target_npc_id;
 
+  -- One example per exact composition, a pull no other pull overlapped first: WCL opens a trash
+  -- example as a time window, which would also show the enemies of a chained pull.
   INSERT INTO Mythistone.aggregated_wcl_example_log_new
-    (dungeon_id, family_key, spec_id, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level, wcl_pull_id)
-  SELECT dungeon_id, family_key, spec_id, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms, keystone_level, wcl_pull_id
+    (dungeon_id, pull_key, family_key, spec_id, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms,
+     keystone_level, wcl_pull_id, isolated)
+  SELECT dungeon_id, pull_key, family_key, spec_id, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms,
+         keystone_level, wcl_pull_id, isolated
   FROM (
-    SELECT e.dungeon_id, f.family_key, e.spec_id, e.spell_id, e.report_code, e.fight_id,
-           e.pull_start_ms, e.pull_end_ms, e.keystone_level, e.wcl_pull_id,
-           ROW_NUMBER() OVER (PARTITION BY e.dungeon_id, f.family_key, e.spec_id, e.spell_id
-                              ORDER BY e.keystone_level DESC, e.run_start_ms DESC,
+    SELECT e.dungeon_id, e.pull_key, f.family_key, e.spec_id, e.spell_id, e.report_code, e.fight_id,
+           e.pull_start_ms, e.pull_end_ms, e.keystone_level, e.wcl_pull_id, e.isolated,
+           ROW_NUMBER() OVER (PARTITION BY e.dungeon_id, e.pull_key, e.spec_id, e.spell_id
+                              ORDER BY e.isolated DESC, e.keystone_level DESC, e.run_start_ms DESC,
                                        e.report_code, e.fight_id, e.pull_start_ms) AS rn
     FROM Mythistone.wcl_example_logs e
     JOIN tmp_wcl_family f ON f.dungeon_id = e.dungeon_id AND f.pull_key = e.pull_key

@@ -1210,6 +1210,8 @@ def seed_wcl(conn, cursor, static, rng):
 
     # Every fifth example has no pull id, like a row collected before the id was stored.
     d["example"] = [row + (None if i % 5 == 0 else 7000 + i,) for i, row in enumerate(d["example"])]
+    # Every fourth example overlapped another pull, so its trash link stays hidden.
+    d["example"] = [row + (int(i % 4 != 0),) for i, row in enumerate(d["example"])]
     _seed_wcl_page_cases(d, days, enemy_spells, boss_encounters)
 
     # Evenly spread over the window, the deaths per run denominator counts only the 'done' ones.
