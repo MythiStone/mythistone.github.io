@@ -125,7 +125,8 @@ def build_gear_view(slots, spec_id, ctx):
             aux.append(dict(ctx["gems"].get(int(gem), {"ref": f"item={gem}"}), label="Gem"))
         return {
             "label": slot.replace("_", " "), "id": item["id"], "name": item.get("name"),
-            "icon": item.get("icon") or QUESTION_ICON, "quality": item.get("quality"),
+            "icon": ctx["item_icons"].get(int(item["id"])) or item.get("icon") or QUESTION_ICON,
+            "quality": item.get("quality"),
             "href": href, "external": not slug, "wowhead": f"item={item['id']}{params}", "aux": aux,
         }
 
@@ -432,6 +433,10 @@ def main(template_path, output_dir, limit, streamers_dir):
         "tiers": load_score_tiers(LOOKUP_DIR),
         "bonus_quality": load_json(os.path.join(LOOKUP_DIR, "bonus_quality_map.json")),
         "item_pages": load_item_pages(),
+        # raider.io icon names do not always match the files downloadItemIcons.py
+        # saves from this catalog, so resolve by item id like the spec page does.
+        "item_icons": {int(it["id"]): it["icon"] for it in load_json(
+            os.path.join(LOOKUP_DIR, "equippable-items.json")) if it.get("icon")},
         "gems": gems,
         "enchants": enchants,
         "trees": {},
