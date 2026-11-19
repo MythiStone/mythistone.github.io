@@ -27,12 +27,11 @@
 
     Uses its own #vodDungeonAccordion parent and vod- id namespace so it coexists
     with a route accordion on the same page. Embed src is built by the `vod_embed`
-    filter (commonUtils.build_vod_embed_src); the iframe's data-name matches the Klaro
-    service ('twitch'/'youtube') so MythiConsent gates it per embed.
+    filter (commonUtils.build_vod_embed_src); the iframe's data-embed-service matches the
+    Klaro service ('twitch'/'youtube') so MythiConsent gates it when its panel opens.
 
     KEEP IN SYNC: assets/js/vods-finder.js renderVodItem() builds this SAME markup
-    client-side and mirrors build_vod_embed_src in JS (Klaro never sees client-added
-    iframes, so consent is handled per-iframe via MythiConsent.loadEmbed). -#}
+    client-side and mirrors build_vod_embed_src in JS. -#}
 {% macro vod_accordion_item(dungeon, vod, spec_lookup, season_slug, item_class='', link_streamer=true) %}
 {% set vodKey = dungeon.slug ~ '-' ~ vod.video_ref %}
 {% set run_url = 'https://raider.io/mythic-plus-runs/' ~ season_slug ~ '/' ~ vod.run_id %}
@@ -108,7 +107,7 @@
           <div class="iframe-spinner position-absolute top-50 start-50 translate-middle d-none">
             <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
           </div>
-          <iframe loading="lazy" allowfullscreen data-name="{{ vod.video_type }}"
+          <iframe loading="lazy" allowfullscreen data-embed-service="{{ vod.video_type }}"
             data-src="{{ vod.video_ref | vod_embed(vod.video_type, vod.start_seconds) }}"
             class="w-100 route-embed vod-embed"></iframe>
         </div>
@@ -119,7 +118,7 @@
           <div class="iframe-spinner position-absolute top-50 start-50 translate-middle d-none">
             <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
           </div>
-          <iframe loading="lazy" data-name="keystoneGuru" data-src="{{ route_url }}/embed" class="w-100 route-embed" style="border:none;width:100%;height:calc(80vh - 3rem);display:block;"></iframe>
+          <iframe loading="lazy" data-embed-service="keystoneGuru" data-src="{{ route_url }}/embed" class="w-100 route-embed" style="border:none;width:100%;height:calc(80vh - 3rem);display:block;"></iframe>
         </div>
       </div>
     </div>

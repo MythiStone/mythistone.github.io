@@ -234,6 +234,63 @@
   }
 }
 
+/* Best runs has 5 columns and needs ~520px, so narrower it restacks: dungeon on top,
+   key and labelled time / score / timed on one wrapping line below. */
+.streamer-best-wrap {
+  container: streamer-best / inline-size;
+}
+
+@container streamer-best (max-width: 519.98px) {
+  .streamer-best-table thead {
+    display: none;
+  }
+  .streamer-best-table,
+  .streamer-best-table tbody {
+    display: block;
+  }
+  /* Row 1: dungeon | key. The ::after line break pushes time, score and timed onto
+     row 2, which can still wrap on the narrowest phones. */
+  .streamer-best-table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.75rem;
+    height: auto;
+    padding: 0.45rem 0.4rem;
+    border-bottom: 1px solid var(--mythi-border-subtle);
+  }
+  .streamer-best-table tbody tr::after {
+    content: "";
+    flex-basis: 100%;
+    order: 3;
+  }
+  .table.streamer-best-table > tbody > tr > td {
+    display: block;
+    padding: 0;
+    border-bottom-width: 0;
+    text-align: left !important;
+  }
+  .streamer-best-table td:first-child {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .streamer-best-table td:nth-child(2) {
+    order: 2;
+  }
+  .streamer-best-table td:nth-child(n+3) {
+    order: 4;
+    margin-top: 0.2rem;
+  }
+  .streamer-best-table td:empty {
+    display: none;
+  }
+  .streamer-best-table td[data-label]::before {
+    content: attr(data-label) " ";
+    font-size: 0.7rem;
+    color: var(--bs-secondary-color);
+  }
+}
+
 @media (max-width: 359.98px) {
   .vod-view-btn {
     padding: 0.45rem 0.75rem;

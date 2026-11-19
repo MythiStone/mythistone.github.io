@@ -127,7 +127,7 @@
           <div class="iframe-spinner position-absolute top-50 start-50 translate-middle d-none">
             <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
           </div>
-          <iframe loading="lazy" allowfullscreen data-name="${v.video_type}" data-src="${embedSrc}" class="w-100 route-embed vod-embed"></iframe>
+          <iframe loading="lazy" allowfullscreen data-embed-service="${v.video_type}" data-src="${embedSrc}" class="w-100 route-embed vod-embed"></iframe>
         </div>
         <div class="px-3 pt-3 pb-2 text-sm font-weight-bold d-flex align-items-center gap-2">
           <i class="material-symbols-rounded text-primary text-sm">route</i>Route used in this run
@@ -136,7 +136,7 @@
           <div class="iframe-spinner position-absolute top-50 start-50 translate-middle d-none">
             <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
           </div>
-          <iframe loading="lazy" data-name="keystoneGuru" data-src="${routeUrl}/embed" class="w-100 route-embed" style="border:none;width:100%;height:calc(80vh - 3rem);display:block;"></iframe>
+          <iframe loading="lazy" data-embed-service="keystoneGuru" data-src="${routeUrl}/embed" class="w-100 route-embed" style="border:none;width:100%;height:calc(80vh - 3rem);display:block;"></iframe>
         </div>
       </div>
     </div>

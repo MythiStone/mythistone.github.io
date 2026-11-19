@@ -1,17 +1,10 @@
-/* Klaro consent helpers, shared by every page that loads a third-party embed
- * itself instead of letting Klaro do it.
+/* Klaro consent helpers for every third-party embed (keystone.guru, Twitch, YouTube).
  *
- * Klaro swaps data-src -> src on elements that exist when it initialises. It
- * does NOT pick up elements added later: applyConsents() leaves a freshly
- * inserted iframe untouched even when consent is granted (verified). So pages
- * that render embeds client-side — the route search results, the spec page's
- * lazily loaded route panels — have to set src themselves, and therefore have
- * to check consent themselves. Without that check the embed loads regardless of
- * what the visitor chose, which is exactly what the consent banner promises
- * won't happen.
- *
- * Server-rendered embeds (the dungeon page) need none of this: Klaro sees them
- * at init and manages them on its own.
+ * Embeds name their Klaro service in data-embed-service, NOT data-name, so Klaro never
+ * manages them: Klaro swaps data-src -> src on every data-name element at init, which
+ * loaded every hidden embed on the page at once (332 on a busy streamer page, enough
+ * to crash the tab). Instead each embed loads through loadEmbed when its panel opens,
+ * which also checks consent, so nothing loads against the visitor's choice.
  */
 (function () {
   "use strict";
@@ -100,10 +93,9 @@
     return name;
   }
 
-  // Klaro renders its own "do you want to load external content" notice for the
-  // embeds it knows about. It can't for client-rendered ones, and an embed that
-  // silently stays blank just reads as broken — so stand in with an equivalent
-  // notice, and only when Klaro hasn't already provided one.
+  // Klaro doesn't manage these embeds, so it renders no "load external content"
+  // notice for them, and an embed that silently stays blank just reads as broken.
+  // Stand in with an equivalent notice.
   //
   // Positioned with the same utilities as .iframe-spinner so it centres in the
   // container without needing its own stylesheet.
@@ -138,60 +130,13 @@
     if (own) own.remove();
   }
 
-  // Klaro stamps every embed it processed at init with data-modified-by-klaro and
-  // inserts a data-type="placeholder" sibling holding the contextual notice.
-  function klaroManages(el) {
-    if (el.hasAttribute("data-modified-by-klaro")) return true;
-    var prev = el.previousElementSibling;
-    return !!(prev && prev.getAttribute("data-type") === "placeholder");
-  }
-
-  // For embeds Klaro owns, drive the spinner and NOTHING else.
-  //
-  // Klaro re-enables an embed by building a fresh clone and swapping it in —
-  // that clone is where it restores `display` from data-original-display. Its
-  // updateServiceElements bails early on `consent && element.src === data-src`,
-  // so if we set src ourselves first, the swap never happens and the embed loads
-  // while staying display:none. That is what made the notice's "Yes" button look
-  // broken: the request went out, the iframe just stayed invisible.
-  //
-  // Because Klaro replaces the node, listeners have to be re-attached to
-  // whichever iframe is currently in the container, hence the observer.
-  function followKlaro(container, spin) {
-    function sync() {
-      var el = container.querySelector("iframe[data-src]");
-      if (!el) return;
-      if (!el.getAttribute("src")) { spin(false); return; }
-      // Repair Klaro's accept-once path. Klaro re-enables an embed by swapping in
-      // a clone whose display it restores from data-original-display, but for the
-      // embed the visitor actually clicked "Yes" on, only the src comes back — the
-      // display:none it applied while consent was missing stays. The embed then
-      // loads at zero height and the button looks broken. (Every *other* embed on
-      // the page, enabled by the same consent pass, comes back correctly.)
-      // src is Klaro's decision and we never touch it; this only fixes visibility
-      // of something Klaro has already chosen to load.
-      if (el.style.display === "none") {
-        el.style.display = el.getAttribute("data-original-display") || "block";
-      }
-      if (el.getAttribute("data-mythi-spinner")) return;
-      el.setAttribute("data-mythi-spinner", "1");
-      spin(true);
-      el.addEventListener("load", function () { spin(false); }, { once: true });
-      el.addEventListener("error", function () { spin(false); }, { once: true });
-    }
-    sync();
-    new MutationObserver(sync).observe(container, {
-      childList: true, subtree: true, attributes: true, attributeFilter: ["src"]
-    });
-  }
-
   // Set an embed's src from its data-src, but only with consent, and own the
   // loading spinner while doing it.
   //
   // The spinner sits in the same .iframe-container as the embed on every page
   // that uses one. It has to stay hidden until a load is actually in flight:
-  // without consent nothing loads, Klaro puts its "enable external content"
-  // notice where the embed would be, and a spinner left running sits on top of
+  // without consent nothing loads, ensureNotice puts the "blocked until you allow
+  // it" notice where the embed would be, and a spinner left running sits on top of
   // that notice.
   //
   // Reads the src ATTRIBUTE, never the property — the property resolves src=""
@@ -203,12 +148,6 @@
     var spinner = container && container.querySelector(".iframe-spinner");
     function spin(on) {
       if (spinner) spinner.classList.toggle("d-none", !on);
-    }
-
-    // Server-rendered embeds: hands off the src, Klaro has it.
-    if (klaroManages(el)) {
-      followKlaro(container, spin);
-      return;
     }
 
     function finish() {
@@ -223,7 +162,7 @@
     }
 
     spin(false);
-    var service = el.getAttribute("data-name") || "";
+    var service = el.getAttribute("data-embed-service") || "";
     function apply() {
       clearNotice(container);
       if (el.getAttribute("src")) return;
@@ -238,9 +177,9 @@
   }
 
   // Wire the standard "load the route embed the first time its accordion panel is
-  // opened" behaviour, shared verbatim by the spec, dungeon and route-search
-  // pages. loadEmbed owns the consent check, deferral, src and spinner, so the
-  // three pages can never drift apart on it.
+  // opened" behaviour, shared verbatim by the spec, dungeon and streamer pages.
+  // loadEmbed owns the consent check, deferral, src and spinner, so the pages can
+  // never drift apart on it.
   function wireAccordionEmbeds(accordionSelector) {
     document.querySelectorAll(accordionSelector + " .accordion-collapse").forEach(function (panel) {
       panel.addEventListener("shown.bs.collapse", function () {

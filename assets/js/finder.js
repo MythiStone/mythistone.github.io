@@ -661,6 +661,8 @@
       if (form) form.addEventListener("submit", (e) => e.preventDefault());
 
       const accordion = document.getElementById(accordionId);
+      // Server-rendered items load their embeds on open too (Klaro doesn't manage them).
+      if (accordion) Array.from(accordion.children).forEach(wirePanelConsent);
       if (skeletonWhenEmpty && accordion) {
         skeletonNodes = Array.from(accordion.children);
         showingSkeleton = true;

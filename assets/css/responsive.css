@@ -124,6 +124,19 @@
   background-color: inherit;
 }
 
+/* ---------- Card title bars: a button that doesn't fit drops below the title ---------- */
+/* Neither the title nor the button breaks mid-word; ms-3 lines a wrapped button up with
+   the title's ps-3 and is just a gap when they share a line. */
+[data-share-anchor] {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+}
+[data-share-anchor] > .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  margin-left: 1rem;
+}
+
 /* ---------- Run cards: long key/dungeon/region headline overflow ---------- */
 @media (max-width: 575.98px) {
   .card-header .h4,
@@ -462,7 +475,7 @@ main.main-content > .container-fluid {
   max-height: calc(80vh - 3rem);
 }
 /* keystone.guru maps are sized by a vh height; keep them usable on a landscape phone. */
-.route-embed[data-name="keystoneGuru"] {
+.route-embed[data-embed-service="keystoneGuru"] {
   min-height: 18rem;
 }
 

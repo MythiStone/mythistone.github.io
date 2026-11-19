@@ -153,8 +153,8 @@
 <div class="row g-4 streamer-run-tables">
   <div class="col-12 col-xxl-7">
     <h6 class="mb-2">Best runs this season</h6>
-    <div class="table-responsive">
-      <table class="table table-sm align-middle mb-0 streamer-runs">
+    <div class="table-responsive streamer-best-wrap">
+      <table class="table table-sm align-middle mb-0 streamer-runs streamer-best-table">
         <thead>
           <tr>
             <th>Dungeon</th><th class="text-center">Best key</th><th class="text-end">Time</th>
@@ -172,12 +172,12 @@
             </td>
             {% if b %}
             <td class="text-center"><a href="{{ b.url }}" target="_blank" rel="noopener" class="font-weight-bold {{ b.key_css }}">{{ b.key_text }}</a></td>
-            <td class="text-end text-sm">{{ b.clear_ms | duration }}</td>
-            <td class="text-end text-sm">{{ '%.1f' | format(b.score) if b.score is not none }}</td>
+            <td class="text-end text-sm" data-label="Time">{{ b.clear_ms | duration }}</td>
+            <td class="text-end text-sm" data-label="Score">{% if b.score is not none %}{{ '%.1f' | format(b.score) }}{% endif %}</td>
             {% else %}
             <td class="text-center text-secondary">-</td><td></td><td></td>
             {% endif %}
-            <td class="text-end text-sm">{{ row.timed }} / {{ row.total }}</td>
+            <td class="text-end text-sm" data-label="Timed">{{ row.timed }} / {{ row.total }}</td>
           </tr>
           {% endfor %}
         </tbody>
