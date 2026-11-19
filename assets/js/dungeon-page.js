@@ -121,17 +121,54 @@ document.addEventListener('click', function (e) {
 });
 
 // --- Boss Pacing bars open their boss modal (a bar's tooltip rules out data-bs-toggle="modal") ---
+// Route Breakdown portraits are Wowhead links: a plain click opens the pull modal at that enemy instead.
 document.addEventListener('click', function (e) {
     var bar = e.target.closest('[data-modal]');
     if (!bar) return;
+    if (bar.tagName === 'A') {
+        if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+        e.preventDefault();
+    }
     var tip = bootstrap.Tooltip.getInstance(bar);
     if (tip) tip.hide();
-    bootstrap.Modal.getOrCreateInstance(document.getElementById(bar.dataset.modal)).show();
+    var modal = document.getElementById(bar.dataset.modal);
+    if (bar.dataset.npc) modal.dataset.focusNpc = bar.dataset.npc;
+    bootstrap.Modal.getOrCreateInstance(modal).show();
 });
 
-// The boss rows of the Trash Sections card open the same modal from the keyboard.
+// A pull modal opened from a portrait scrolls to and highlights that enemy, one at a time.
+function focusNpcCard(modal) {
+    modal.querySelectorAll('.detail-card-flash').forEach(function (c) { c.classList.remove('detail-card-flash'); });
+    var npc = modal.dataset.focusNpc;
+    var card = npc && modal.querySelector('.detail-card[data-npc="' + npc + '"]');
+    if (!card) return;
+    card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    card.classList.add('detail-card-flash');
+}
+document.addEventListener('shown.bs.modal', function (e) { focusNpcCard(e.target); });
+document.addEventListener('hidden.bs.modal', function (e) {
+    delete e.target.dataset.focusNpc;
+    focusNpcCard(e.target);
+});
+// The highlighted enemy rides in the share link as "&npc=<id>" (deep-link.js).
+if (window.MythiLink) {
+    MythiLink.registerState('npc', {
+        read: function () {
+            var modal = document.querySelector('.modal.show[data-focus-npc]');
+            return modal ? modal.dataset.focusNpc : null;
+        },
+        apply: function (npc) {
+            var modal = document.querySelector('.modal.show');
+            if (!modal || !npc) return;
+            modal.dataset.focusNpc = npc;
+            focusNpcCard(modal);
+        }
+    });
+}
+
+// The boss rows of the Route Breakdown card open the same modal from the keyboard.
 document.addEventListener('keydown', function (e) {
-    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.trash-row-head[data-modal]')) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.route-row[data-modal]')) {
         e.preventDefault();
         e.target.click();
     }

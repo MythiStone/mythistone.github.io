@@ -100,7 +100,7 @@
 {% macro npc_card(npc_id, note='') %}
 {% set info = npc_details[npc_id] %}
 <div class="col">
-    <div class="detail-card h-100">
+    <div class="detail-card h-100" data-npc="{{ npc_id }}">
         <div class="detail-card-head">
             {% if npc_id in npc_icons %}<img src="/data/icons/npc_{{ npc_id }}.png" class="detail-npc-icon" alt="">{% endif %}
             <div class="me-auto">
@@ -161,47 +161,37 @@
 </span>
 {% endmacro %}
 
-{#- The logged pulls of one Boss Pacing section. On phones each row stacks into labelled cells. #}
-{% macro wcl_pull_table(section) %}
-<table class="table align-items-center mb-0 wcl-table">
-    <thead>
-        <tr>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Composition</th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Logged pulls</th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Deaths per pull</th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Pulls with a death</th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Lust rate</th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Top killing spell</th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 pe-2">Details</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in section.rows %}
-        <tr>
-            <td class="ps-2 wcl-cell-wide" data-label="Composition">
-                <div class="wcl-comp">
-                    {% for n in row.npcs %}
-                    <span class="wcl-npc">{% if n.id in npc_icons %}<img src="/data/icons/npc_{{ n.id }}.png" alt="">{% endif %}<span>{% if n.count > 1 %}<b>{{ n.count }}x</b> {% endif %}{{ npcs.en_US[n.id] }}</span></span>
-                    {% endfor %}
-                </div>
-            </td>
-            <td class="text-sm" data-label="Logged pulls">{{ row.pulls }}</td>
-            <td class="text-sm font-weight-bold" data-label="Deaths per pull">{{ "%.2f"|format(row.deaths_per_pull) }}</td>
-            <td class="text-sm" data-label="Pulls with a death">{{ "%.0f"|format(row.death_pct) }}%</td>
-            <td class="text-sm" data-label="Lust rate">{{ "%.0f"|format(row.lust_pct) }}%</td>
-            <td class="text-sm wcl-cell-wide" data-label="Top killing spell">
-                {% if row.killer %}{{ wcl_spell(row.killer.spell) }}<span class="text-xxs text-secondary d-block">{{ row.killer.deaths }} deaths</span>{% else %}<span class="text-secondary">-</span>{% endif %}
-            </td>
-            <td class="pe-2 wcl-cell-wide" data-label="Details">
-                <div class="d-flex flex-column gap-1 align-items-start">
-                    {{ modal_link(row.modal, 'View Abilities', 'text-xs font-weight-bold') }}
-                    {{ wcl_example(row.example_url) }}
-                </div>
-            </td>
-        </tr>
+{#- The logged pulls of one Route Breakdown stretch, most pulled first. A portrait opens the pull's
+    modal at that enemy (dungeon-page.js), a modified click goes to Wowhead. #}
+{% set PULL_RISK = {'high': 'High risk', 'medium': 'Medium risk', 'low': 'Low risk'} %}
+{% macro wcl_pull_cards(section) %}
+{% for row in section.rows %}
+<div class="route-pull" data-risk="{{ row.risk }}">
+    <div class="route-pull-head">
+        <span class="route-risk">{{ PULL_RISK[row.risk] }}</span>
+        <span class="route-chip{% if row.risk == 'high' %} route-chip-danger{% endif %}" data-bs-toggle="tooltip" title="Share of these logged pulls where at least one player died"><span class="material-symbols-rounded" aria-hidden="true">skull</span><b>{{ "%.0f"|format(row.death_pct) }}%</b> of pulls had a death</span>
+        <span class="route-chip{% if row.lust_pct >= lust_min_pct %} route-chip-lust{% endif %}" data-bs-toggle="tooltip" title="Share of these logged pulls where the group used Bloodlust"><img src="/data/icons/{{ bloodlust_icon }}" alt="">Lusted <b>{{ "%.0f"|format(row.lust_pct) }}%</b></span>
+        <span class="route-pull-actions">
+            <button type="button" class="route-btn" data-bs-toggle="modal" data-bs-target="#{{ row.modal }}"><span class="material-symbols-rounded" aria-hidden="true">menu_book</span>Pull abilities</button>
+            {% if row.example_url %}<a href="{{ row.example_url }}" target="_blank" rel="noopener nofollow" class="route-btn route-btn-icon" title="View an example log on Warcraft Logs" aria-label="View an example log on Warcraft Logs"><i class="bi bi-box-arrow-up-right"></i></a>{% endif %}
+        </span>
+    </div>
+    <div class="route-pull-npcs">
+        {% for n in row.npcs %}
+        <a href="https://www.wowhead.com/npc={{ n.id }}" target="_blank" data-wowhead="npc={{ n.id }}" data-modal="{{ row.modal }}" data-npc="{{ n.id }}" class="route-npc">
+            <span class="route-portrait">{% if n.id in npc_icons %}<img src="/data/icons/npc_{{ n.id }}.png" alt="">{% else %}<span class="material-symbols-rounded" aria-hidden="true">person</span>{% endif %}{% if n.count > 1 %}<span class="route-count">{{ n.count }}</span>{% endif %}</span>
+            <span class="route-npc-name">{{ npcs.en_US[n.id] }}</span>
+        </a>
         {% endfor %}
-    </tbody>
-</table>
+    </div>
+    <div class="route-pull-foot">
+        {% if row.killer %}<span>Most deaths from</span>{{ wcl_spell(row.killer.spell) }}<span>({{ row.killer.deaths }})</span>
+        {% elif row.death_pct %}<span>No spell stands out</span>
+        {% else %}<span>No deaths logged</span>{% endif %}
+        <span class="route-pull-total"><b>{{ "%.2f"|format(row.deaths_per_pull) }}</b> deaths per pull · {{ row.pulls }} pulls</span>
+    </div>
+</div>
+{% endfor %}
 {% endmacro %}
 
 {#- Logged timing of one boss ability, shown on its row in the Abilities tab. #}

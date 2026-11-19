@@ -102,10 +102,6 @@
   white-space: nowrap;
   color: var(--bs-emphasis-color);
 }
-.wcl-table th, .wcl-table td { padding-inline: 0.4rem; white-space: normal; }
-.wcl-table td { padding-top: 0.55rem; padding-bottom: 0.55rem; }
-.wcl-table a.text-nowrap { white-space: normal !important; }
-.wcl-comp { display: flex; flex-wrap: wrap; gap: 0.2rem 0.75rem; }
 .wcl-npc { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; color: var(--bs-emphasis-color); }
 .wcl-npc img { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; }
 .wcl-spell { display: inline-flex; align-items: center; gap: 0.4rem; min-width: 0; vertical-align: middle; }
