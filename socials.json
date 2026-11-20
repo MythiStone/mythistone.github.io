@@ -2447,5 +2447,16 @@
         "persona": "hype_caster",
         "judge_score": 31.0,
         "timestamp": 1795047307647
+    },
+    "data/social/spec_overview_70_2026-11.png": {
+        "title": "Retribution Paladin Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Dps/Retribution_Paladin",
+        "social": "Notes for tonight: Ret sits C tier. 2.1 M runs and 88% timed but nobody rerolls. Pull. #WoW #MythicPlus https://mythistone.com/classes/Dps/Retribution_Paladin",
+        "blog": "Retribution Paladin has 2.1 M Mythic+ runs tracked this season. The Herald of the Sun hero tree leads at 96% of builds, with Templar (4%) trailing.\n\nGroups time keys with the spec 88% of the time and three-chest 7% of them. The stat priority skews toward Mastery > Crit > Haste > Versatility. Its top run this season is +24 Den of Nalorakk in 30:02.654.",
+        "post": "Notes for tonight: Ret sits C tier. 2.1 M runs and 88% timed but nobody rerolls. Pull. #WoW #MythicPlus https://mythistone.com/classes/Dps/Retribution_Paladin",
+        "persona": "deadpan_raid_leader",
+        "judge_score": 35.0,
+        "timestamp": 1795134912357
     }
 }
