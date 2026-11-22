@@ -2480,5 +2480,16 @@
         "persona": "lore_nerd",
         "judge_score": 37.0,
         "timestamp": 1795302437101
+    },
+    "data/social/dungeon_overview_585_2026-11.png": {
+        "title": "Voidscar Arena Dungeon Overview",
+        "post_type": "dungeon_overview",
+        "link": "https://mythistone.com/dungeons/voidscar-arena",
+        "social": "Voidscar Arena is D tier, and the group finder is still acting like nobody has ever seen a key. You know the tank will pull before the healer finishes their drink, and somehow you still queue again. #WoW #MythicPlus https://mythistone.com/dungeons/voidscar-arena",
+        "blog": "This overview of Voidscar Arena draws on 2.6 M tracked Mythic+ runs.\n\nGroups most often bring Blood Death Knight, Holy Paladin, Arcane Mage, Arms Warrior, Elemental Shaman. Most players follow the keystone.guru/5G4YWTw route.",
+        "post": "Voidscar Arena is D tier, and the group finder is still acting like nobody has ever seen a key. You know the tank will pull before the healer finishes their drink, and somehow you still queue again. #WoW #MythicPlus https://mythistone.com/dungeons/voidscar-arena",
+        "persona": "pug_veteran",
+        "judge_score": 36.0,
+        "timestamp": 1795390418387
     }
 }
