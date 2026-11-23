@@ -3941,6 +3941,9 @@ CREATE DEFINER=`Test`@`%` PROCEDURE `Mythistone`.`sp_agg_wcl_cooldowns`()
 BEGIN
   DECLARE v_from    DATE;
   DECLARE v_from_ms BIGINT;
+  DECLARE v_day     DATE;
+  DECLARE v_next    DATE;
+  DECLARE v_dungeon VARCHAR(100) DEFAULT NULL;
 
   CALL sp_agg_session_setup();
 
@@ -3962,65 +3965,99 @@ BEGIN
   CREATE TABLE Mythistone.aggregated_wcl_spec_cd_target_new LIKE Mythistone.aggregated_wcl_spec_cd_target;
   CREATE TABLE Mythistone.aggregated_wcl_example_log_new LIKE Mythistone.aggregated_wcl_example_log;
 
-  INSERT INTO Mythistone.aggregated_wcl_spec_pull_new (spec_id, dungeon_id, family_key, player_pulls)
-  SELECT s.spec_id, s.dungeon_id, f.family_key, SUM(s.player_pulls)
-  FROM Mythistone.wcl_spec_pull_daily s
-  JOIN Mythistone.wcl_pull_families f ON f.family_id = s.family_id
-  WHERE s.bucket_date >= v_from
-  GROUP BY s.spec_id, s.dungeon_id, f.family_key;
+  -- One day bucket per pass, summed into the shadow tables: a single 14-day GROUP BY outgrew the
+  -- buffer pool and took the server down mid-step.
+  SET v_day = v_from;
+  WHILE v_day <= UTC_DATE() DO
+    -- the last pass is open-ended, so a bucket dated after UTC_DATE() still counts
+    SET v_next = IF(v_day = UTC_DATE(), '9999-12-31', v_day + INTERVAL 1 DAY);
 
-  INSERT INTO Mythistone.aggregated_wcl_spec_cd_new
-    (spec_id, dungeon_id, family_key, spell_id, casts, players_casting)
-  SELECT c.spec_id, c.dungeon_id, f.family_key, c.spell_id, SUM(c.casts), SUM(c.players_casting)
-  FROM Mythistone.wcl_player_cd_daily c
-  JOIN Mythistone.wcl_pull_families f ON f.family_id = c.family_id
-  WHERE c.bucket_date >= v_from
-  GROUP BY c.spec_id, c.dungeon_id, f.family_key, c.spell_id;
+    INSERT INTO Mythistone.aggregated_wcl_spec_pull_new (spec_id, dungeon_id, family_key, player_pulls)
+    SELECT s.spec_id, s.dungeon_id, f.family_key, SUM(s.player_pulls)
+    FROM Mythistone.wcl_spec_pull_daily s
+    JOIN Mythistone.wcl_pull_families f ON f.family_id = s.family_id
+    WHERE s.bucket_date >= v_day AND s.bucket_date < v_next
+    GROUP BY s.spec_id, s.dungeon_id, f.family_key
+    ON DUPLICATE KEY UPDATE
+      player_pulls = Mythistone.aggregated_wcl_spec_pull_new.player_pulls + VALUES(player_pulls);
 
-  INSERT INTO Mythistone.aggregated_wcl_spec_cd_relation_new
-    (spec_id, dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, n, offset_s_sum, abs_offset_s_sum)
-  SELECT r.spec_id, r.dungeon_id, f.family_key, r.spell_id, r.enemy_spell_id, r.enemy_npc_id, SUM(r.n),
-         SUM(r.offset_s_sum), SUM(r.abs_offset_s_sum)
-  FROM Mythistone.wcl_player_cd_relation_daily r
-  JOIN Mythistone.wcl_pull_families f ON f.family_id = r.family_id
-  WHERE r.bucket_date >= v_from
-  GROUP BY r.spec_id, r.dungeon_id, f.family_key, r.spell_id, r.enemy_spell_id, r.enemy_npc_id;
+    INSERT INTO Mythistone.aggregated_wcl_spec_cd_new
+      (spec_id, dungeon_id, family_key, spell_id, casts, players_casting)
+    SELECT c.spec_id, c.dungeon_id, f.family_key, c.spell_id, SUM(c.casts), SUM(c.players_casting)
+    FROM Mythistone.wcl_player_cd_daily c
+    JOIN Mythistone.wcl_pull_families f ON f.family_id = c.family_id
+    WHERE c.bucket_date >= v_day AND c.bucket_date < v_next
+    GROUP BY c.spec_id, c.dungeon_id, f.family_key, c.spell_id
+    ON DUPLICATE KEY UPDATE
+      casts           = Mythistone.aggregated_wcl_spec_cd_new.casts + VALUES(casts),
+      players_casting = Mythistone.aggregated_wcl_spec_cd_new.players_casting + VALUES(players_casting);
 
-  INSERT INTO Mythistone.aggregated_wcl_spec_cd_usage_new
-    (spec_id, dungeon_id, family_key, spell_id, players_casting, casts_sum, possible_sum, first_use_s_sum)
-  SELECT u.spec_id, u.dungeon_id, f.family_key, u.spell_id, SUM(u.players_casting), SUM(u.casts_sum),
-         SUM(u.possible_sum), SUM(u.first_use_s_sum)
-  FROM Mythistone.wcl_player_cd_usage_daily u
-  JOIN Mythistone.wcl_pull_families f ON f.family_id = u.family_id
-  WHERE u.bucket_date >= v_from
-  GROUP BY u.spec_id, u.dungeon_id, f.family_key, u.spell_id;
+    INSERT INTO Mythistone.aggregated_wcl_spec_cd_relation_new
+      (spec_id, dungeon_id, family_key, spell_id, enemy_spell_id, enemy_npc_id, n, offset_s_sum, abs_offset_s_sum)
+    SELECT r.spec_id, r.dungeon_id, f.family_key, r.spell_id, r.enemy_spell_id, r.enemy_npc_id, SUM(r.n),
+           SUM(r.offset_s_sum), SUM(r.abs_offset_s_sum)
+    FROM Mythistone.wcl_player_cd_relation_daily r
+    JOIN Mythistone.wcl_pull_families f ON f.family_id = r.family_id
+    WHERE r.bucket_date >= v_day AND r.bucket_date < v_next
+    GROUP BY r.spec_id, r.dungeon_id, f.family_key, r.spell_id, r.enemy_spell_id, r.enemy_npc_id
+    ON DUPLICATE KEY UPDATE
+      n                = Mythistone.aggregated_wcl_spec_cd_relation_new.n + VALUES(n),
+      offset_s_sum     = Mythistone.aggregated_wcl_spec_cd_relation_new.offset_s_sum + VALUES(offset_s_sum),
+      abs_offset_s_sum = Mythistone.aggregated_wcl_spec_cd_relation_new.abs_offset_s_sum + VALUES(abs_offset_s_sum);
 
-  INSERT INTO Mythistone.aggregated_wcl_spec_cd_target_new
-    (spec_id, dungeon_id, family_key, spell_id, target_npc_id, n)
-  SELECT t.spec_id, t.dungeon_id, f.family_key, t.spell_id, t.target_npc_id, SUM(t.n)
-  FROM Mythistone.wcl_player_cd_target_daily t
-  JOIN Mythistone.wcl_pull_families f ON f.family_id = t.family_id
-  WHERE t.bucket_date >= v_from
-  GROUP BY t.spec_id, t.dungeon_id, f.family_key, t.spell_id, t.target_npc_id;
+    INSERT INTO Mythistone.aggregated_wcl_spec_cd_usage_new
+      (spec_id, dungeon_id, family_key, spell_id, players_casting, casts_sum, possible_sum, first_use_s_sum)
+    SELECT u.spec_id, u.dungeon_id, f.family_key, u.spell_id, SUM(u.players_casting), SUM(u.casts_sum),
+           SUM(u.possible_sum), SUM(u.first_use_s_sum)
+    FROM Mythistone.wcl_player_cd_usage_daily u
+    JOIN Mythistone.wcl_pull_families f ON f.family_id = u.family_id
+    WHERE u.bucket_date >= v_day AND u.bucket_date < v_next
+    GROUP BY u.spec_id, u.dungeon_id, f.family_key, u.spell_id
+    ON DUPLICATE KEY UPDATE
+      players_casting = Mythistone.aggregated_wcl_spec_cd_usage_new.players_casting + VALUES(players_casting),
+      casts_sum       = Mythistone.aggregated_wcl_spec_cd_usage_new.casts_sum + VALUES(casts_sum),
+      possible_sum    = Mythistone.aggregated_wcl_spec_cd_usage_new.possible_sum + VALUES(possible_sum),
+      first_use_s_sum = Mythistone.aggregated_wcl_spec_cd_usage_new.first_use_s_sum + VALUES(first_use_s_sum);
+
+    INSERT INTO Mythistone.aggregated_wcl_spec_cd_target_new
+      (spec_id, dungeon_id, family_key, spell_id, target_npc_id, n)
+    SELECT t.spec_id, t.dungeon_id, f.family_key, t.spell_id, t.target_npc_id, SUM(t.n)
+    FROM Mythistone.wcl_player_cd_target_daily t
+    JOIN Mythistone.wcl_pull_families f ON f.family_id = t.family_id
+    WHERE t.bucket_date >= v_day AND t.bucket_date < v_next
+    GROUP BY t.spec_id, t.dungeon_id, f.family_key, t.spell_id, t.target_npc_id
+    ON DUPLICATE KEY UPDATE
+      n = Mythistone.aggregated_wcl_spec_cd_target_new.n + VALUES(n);
+
+    SET v_day = v_day + INTERVAL 1 DAY;
+  END WHILE;
 
   -- One example per exact composition, a pull no other pull overlapped first: WCL opens a trash
   -- example as a time window, which would also show the enemies of a chained pull.
-  INSERT INTO Mythistone.aggregated_wcl_example_log_new
-    (dungeon_id, pull_key, family_key, spec_id, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms,
-     keystone_level, wcl_pull_id, isolated)
-  SELECT dungeon_id, pull_key, family_key, spec_id, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms,
-         keystone_level, wcl_pull_id, isolated
-  FROM (
-    SELECT e.dungeon_id, e.pull_key, f.family_key, e.spec_id, e.spell_id, e.report_code, e.fight_id,
-           e.pull_start_ms, e.pull_end_ms, e.keystone_level, e.wcl_pull_id, e.isolated,
-           ROW_NUMBER() OVER (PARTITION BY e.dungeon_id, e.pull_key, e.spec_id, e.spell_id
-                              ORDER BY e.isolated DESC, e.keystone_level DESC, e.run_start_ms DESC,
-                                       e.report_code, e.fight_id, e.pull_start_ms) AS rn
-    FROM Mythistone.wcl_example_logs e
-    JOIN tmp_wcl_family f ON f.dungeon_id = e.dungeon_id AND f.pull_key = e.pull_key
-    WHERE e.run_start_ms >= v_from_ms
-  ) ranked
-  WHERE rn = 1;
+  -- One dungeon per pass keeps the ranking sort small. The family key joins after the ranking,
+  -- which drops whole partitions only, because pull_key is part of the partition.
+  SELECT MIN(dungeon_id) INTO v_dungeon FROM tmp_wcl_family;
+  WHILE v_dungeon IS NOT NULL DO
+    INSERT INTO Mythistone.aggregated_wcl_example_log_new
+      (dungeon_id, pull_key, family_key, spec_id, spell_id, report_code, fight_id, pull_start_ms, pull_end_ms,
+       keystone_level, wcl_pull_id, isolated)
+    SELECT r.dungeon_id, r.pull_key, f.family_key, r.spec_id, r.spell_id, r.report_code, r.fight_id,
+           r.pull_start_ms, r.pull_end_ms, r.keystone_level, r.wcl_pull_id, r.isolated
+    FROM (
+      SELECT e.dungeon_id, e.pull_key, e.spec_id, e.spell_id, e.report_code, e.fight_id,
+             e.pull_start_ms, e.pull_end_ms, e.keystone_level, e.wcl_pull_id, e.isolated,
+             ROW_NUMBER() OVER (PARTITION BY e.dungeon_id, e.pull_key, e.spec_id, e.spell_id
+                                ORDER BY e.isolated DESC, e.keystone_level DESC, e.run_start_ms DESC,
+                                         e.report_code, e.fight_id, e.pull_start_ms) AS rn
+      FROM Mythistone.wcl_example_logs e
+      WHERE e.dungeon_id = v_dungeon
+        AND e.run_start_ms >= v_from_ms
+    ) r
+    JOIN tmp_wcl_family f ON f.dungeon_id = r.dungeon_id AND f.pull_key = r.pull_key
+    WHERE r.rn = 1;
+
+    SELECT MIN(dungeon_id) INTO v_dungeon FROM tmp_wcl_family WHERE dungeon_id > v_dungeon;
+  END WHILE;
 
   DROP TEMPORARY TABLE IF EXISTS tmp_wcl_family;
 
