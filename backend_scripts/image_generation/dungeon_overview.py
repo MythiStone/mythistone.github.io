@@ -40,12 +40,13 @@ THUMBNAIL_POLL_INTERVAL = 10  # seconds between status polls
 # the end of keystone.guru's shared queue), so this only guards against a hung queue.
 THUMBNAIL_TIMEOUT = 2 * 60 * 60  # seconds
 # keystone.guru validates these snake_case keys and silently drops any others.
+# Zoom 1 on a 768x512 viewport (its own defaults) shows the whole floor, higher zooms crop to the centre.
 THUMBNAIL_PAYLOAD = {
-    "viewport_width": 900,
-    "viewport_height": 600,
-    "image_width": 900,
-    "image_height": 600,
-    "zoom_level": 2.2,
+    "viewport_width": 768,
+    "viewport_height": 512,
+    "image_width": 768,
+    "image_height": 512,
+    "zoom_level": 1,
     "quality": 90,
 }
 
