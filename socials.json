@@ -2491,5 +2491,16 @@
         "persona": "pug_veteran",
         "judge_score": 36.0,
         "timestamp": 1795390418387
+    },
+    "data/social/weekly_mover_dungeon_250_2026-11-24.png": {
+        "title": "Weekly Mover: Temple of Sethraliss",
+        "post_type": "weekly_mover",
+        "link": "https://mythistone.com/dungeons/temple-of-sethraliss",
+        "social": "Temple of Sethraliss slid from A to B in a week. Just another Tuesday, pull your key and hope the timer cooperates. #WoW #MythicPlus https://mythistone.com/dungeons/temple-of-sethraliss",
+        "blog": "Temple of Sethraliss had the biggest move of the week: tier from A to B.\n\nMost of the ladder barely shifts week to week this deep into a season, so a jump like this stands out.",
+        "post": "Temple of Sethraliss slid from A to B in a week. Just another Tuesday, pull your key and hope the timer cooperates. #WoW #MythicPlus https://mythistone.com/dungeons/temple-of-sethraliss",
+        "persona": "deadpan_raid_leader",
+        "judge_score": 33.0,
+        "timestamp": 1795492628037
     }
 }
