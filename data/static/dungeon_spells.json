@@ -29,6 +29,16 @@
     "aoe": false,
     "schools": []
   },
+  "6940": {
+    "name": "Blessing of Sacrifice",
+    "icon": "spell_holy_sealofsacrifice",
+    "description": null,
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
+  },
   "32409": {
     "name": "Shadow Word: Death",
     "icon": "spell_shadow_demonicfortitude",
@@ -45,6 +55,16 @@
     "name": "Enrage",
     "icon": "spell_shadow_unholyfrenzy",
     "description": "Become furious.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
+  },
+  "87023": {
+    "name": "Cauterize",
+    "icon": "spell_fire_rune",
+    "description": "Fatal damage instead brings you to 35% health and then burns you for 28% of your maximum health over 6 sec. While burning, movement slowing effects are suppressed and your movement speed is increased by 150%. This effect cannot occur more than once every 6 min.",
     "damage": null,
     "periodic_damage": null,
     "tick_damage": null,
@@ -515,6 +535,26 @@
     "aoe": false,
     "schools": []
   },
+  "268587": {
+    "name": "Blade Combo",
+    "icon": "ability_ironmaidens_bladerush",
+    "description": "A series of deadly melee strikes that deal increasing damage to their target.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
+  },
+  "268589": {
+    "name": "Blade Combo",
+    "icon": "ability_ironmaidens_bladerush",
+    "description": "A series of deadly melee strikes that deal increasing damage to their target.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
+  },
   "268590": {
     "name": "Blade Combo",
     "icon": "ability_ironmaidens_bladerush",
@@ -805,6 +845,18 @@
     "aoe": false,
     "schools": []
   },
+  "270891": {
+    "name": "Overload",
+    "icon": "spell_nature_callstorm",
+    "description": "Inflicts 101,831 Nature damage to players within 10 yards.",
+    "damage": 101831,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Nature"
+    ]
+  },
   "270901": {
     "name": "Unholy Mending",
     "icon": "spell_nature_regenerate",
@@ -847,6 +899,18 @@
     "aoe": true,
     "schools": [
       "Physical"
+    ]
+  },
+  "270931": {
+    "name": "Shadow Volley",
+    "icon": "ability_hunter_chimerashot2",
+    "description": "Unleashes a volley of shadow arrows every 1 sec for 2 sec. Each volley lasts for 10 sec, inflicting 67,888 Shadow damage every 1 sec to enemies within.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": 67888,
+    "aoe": true,
+    "schools": [
+      "Shadow"
     ]
   },
   "271290": {
@@ -1045,6 +1109,19 @@
       "Fire"
     ]
   },
+  "372088": {
+    "name": "Blazing Rush",
+    "icon": "spell_deathknight_butcher2",
+    "description": "Rushes to an enemy target in a whirl of steel, inflicting 387,929 Fire damage to all enemies in the path of this ability. Enemies damaged by this ability bleed for 38,793 Physical damage every 1 sec for 10 sec.",
+    "damage": 387929,
+    "periodic_damage": 387929,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical",
+      "Fire"
+    ]
+  },
   "372107": {
     "name": "Molten Boulder",
     "icon": "spell_mage_flameorb",
@@ -1090,6 +1167,32 @@
     "aoe": false,
     "schools": []
   },
+  "372794": {
+    "name": "Steel Barrage",
+    "icon": "inv_axe_1h_deathwingraiddw_d_01",
+    "description": "A flurry of strikes inflicts 242,456 Physical damage to the current enemy target every 0.5 sec for 3 sec. Each strike causes a flaming nova that inflicts 24,246 Fire damage to players within 60 yards and creates a Molten Steel fragment.",
+    "damage": 242456,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Physical",
+      "Fire"
+    ]
+  },
+  "372796": {
+    "name": "Blazing Rush",
+    "icon": "spell_deathknight_butcher2",
+    "description": "Rushes to an enemy target in a whirl of steel, inflicting 387,929 Fire damage to all enemies in the path of this ability. Enemies damaged by this ability bleed for 38,793 Physical damage every 1 sec for 10 sec.",
+    "damage": 387929,
+    "periodic_damage": 387929,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical",
+      "Fire"
+    ]
+  },
   "372808": {
     "name": "Frigid Shard",
     "icon": "spell_frost_iceshard",
@@ -1103,6 +1206,18 @@
     ]
   },
   "372811": {
+    "name": "Molten Boulder",
+    "icon": "spell_mage_flameorb",
+    "description": "Kokia slams a molten boulder into the ground in front of her, inflicting 290,947 Fire damage to players within 6 yards. Any player it touches takes 290,947 Fire damage and gets knocked back. The boulder rolls forward up to 40 yards and then explodes, inflicting 581,894 damage to players within 12 yards and leaving behind Scorched Earth.",
+    "damage": 581894,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Fire"
+    ]
+  },
+  "372819": {
     "name": "Molten Boulder",
     "icon": "spell_mage_flameorb",
     "description": "Kokia slams a molten boulder into the ground in front of her, inflicting 290,947 Fire damage to players within 6 yards. Any player it touches takes 290,947 Fire damage and gets knocked back. The boulder rolls forward up to 40 yards and then explodes, inflicting 581,894 damage to players within 12 yards and leaving behind Scorched Earth.",
@@ -1139,6 +1254,16 @@
     ]
   },
   "372858": {
+    "name": "Searing Blows",
+    "icon": "ability_shaman_lavalash",
+    "description": "Kokia strikes her target 4 times over 3 sec, inflicting 150% weapon damage and applying Searing Wounds with each strike.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
+  },
+  "372859": {
     "name": "Searing Blows",
     "icon": "ability_shaman_lavalash",
     "description": "Kokia strikes her target 4 times over 3 sec, inflicting 150% weapon damage and applying Searing Wounds with each strike.",
@@ -1318,6 +1443,18 @@
       "Fire"
     ]
   },
+  "373973": {
+    "name": "Blaze of Glory",
+    "icon": "inv_ember",
+    "description": "The creature becomes a whirlwind of flame before dying, inflicting 96,982 Fire damage to players within 5 yards and launching a volley of embers every 3 sec for 15 sec that inflict 290,947 Fire damage to any players hit.",
+    "damage": 290947,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Fire"
+    ]
+  },
   "373977": {
     "name": "Blaze of Glory",
     "icon": "inv_ember",
@@ -1330,7 +1467,32 @@
       "Fire"
     ]
   },
+  "374927": {
+    "name": "Wall of Flames",
+    "icon": "inv_misc_volatilefire",
+    "description": "Inflicts 145,473 Fire damage every 1 sec.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": 145473,
+    "aoe": false,
+    "schools": [
+      "Fire"
+    ]
+  },
   "381512": {
+    "name": "Stormslam",
+    "icon": "ability_shaman_stormstrike",
+    "description": "Erkhart delivers a massive blow to a player, inflicting 387,929 Physical damage and 193,965 Nature damage, and additionally increasing Nature damage taken by 100% for 30 sec. This effect stacks.",
+    "damage": 387929,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical",
+      "Nature"
+    ]
+  },
+  "381513": {
     "name": "Stormslam",
     "icon": "ability_shaman_stormstrike",
     "description": "Erkhart delivers a massive blow to a player, inflicting 387,929 Physical damage and 193,965 Nature damage, and additionally increasing Nature damage taken by 100% for 30 sec. This effect stacks.",
@@ -1393,6 +1555,18 @@
     ]
   },
   "381525": {
+    "name": "Roaring Firebreath",
+    "icon": "ability_warlock_inferno",
+    "description": "Kyrakka forges flames in a frontal direction, tempering targets for 290,947 Fire damage every 1 sec for 4 sec.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": 290947,
+    "aoe": false,
+    "schools": [
+      "Fire"
+    ]
+  },
+  "381526": {
     "name": "Roaring Firebreath",
     "icon": "ability_warlock_inferno",
     "description": "Kyrakka forges flames in a frontal direction, tempering targets for 290,947 Fire damage every 1 sec for 4 sec.",
@@ -1498,6 +1672,18 @@
       "Fire"
     ]
   },
+  "384197": {
+    "name": "Cinderbolt",
+    "icon": "spell_fire_firebolt",
+    "description": "The creature inflicts 116,379 Fire damage to a player.",
+    "damage": 116379,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Fire"
+    ]
+  },
   "384773": {
     "name": "Flaming Embers",
     "icon": "spell_fire_felflamering_red",
@@ -1590,6 +1776,30 @@
       "Nature"
     ]
   },
+  "385314": {
+    "name": "Lightning Rod",
+    "icon": "spell_nature_unrelentingstorm",
+    "description": "The caster causes a player to be struck by lightning, inflicting 58,189 Nature damage every 1.5 sec. Upon expiration, a massive strike inflicts 96,982 Nature damage.",
+    "damage": 96982,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Nature"
+    ]
+  },
+  "385316": {
+    "name": "Lightning Rod",
+    "icon": "spell_nature_unrelentingstorm",
+    "description": "The caster causes a player to be struck by lightning, inflicting 58,189 Nature damage every 1.5 sec. Upon expiration, a massive strike inflicts 96,982 Nature damage.",
+    "damage": 96982,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Nature"
+    ]
+  },
   "385536": {
     "name": "Flaming Barrage",
     "icon": "ability_warlock_burningembers",
@@ -1627,6 +1837,18 @@
     "schools": []
   },
   "391723": {
+    "name": "Flame Breath",
+    "icon": "ability_mage_firestarter",
+    "description": "Flamegullet breathes flames towards a player, inflicting 96,982 Fire damage to players in a frontal cone every 0.5 sec for 3 sec.",
+    "damage": 96982,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Fire"
+    ]
+  },
+  "391724": {
     "name": "Flame Breath",
     "icon": "ability_mage_firestarter",
     "description": "Flamegullet breathes flames towards a player, inflicting 96,982 Fire damage to players in a frontal cone every 0.5 sec for 3 sec.",
@@ -1748,6 +1970,54 @@
       "Nature"
     ]
   },
+  "392641": {
+    "name": "Rolling Thunder",
+    "icon": "spell_nature_lightningoverload",
+    "description": "Thunderhead electrocutes players, inflicting 31,519 Nature damage every 1 sec for 45 sec. This effect stacks. Upon removal of this affliction, Electrical Discharge surges into players.",
+    "damage": null,
+    "periodic_damage": 1449886,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Nature"
+    ]
+  },
+  "395029": {
+    "name": "Storm Infusion",
+    "icon": "spell_shaman_crashlightning",
+    "description": "Channeling storm energy.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
+  },
+  "395292": {
+    "name": "Fire Maw",
+    "icon": "ability_warrior_dragonroar",
+    "description": "Flamegullet tears into his current target with fiery fangs, inflicting 581,894 Physical damage and 96,982 Fire damage, plus an additional 77,586 Fire damage every 1 sec for 6 sec.",
+    "damage": 581894,
+    "periodic_damage": 465515,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical",
+      "Fire"
+    ]
+  },
+  "395303": {
+    "name": "Thunder Jaw",
+    "icon": "inv_misc_stormdragonpale",
+    "description": "Thunderhead tears into the target with thundering fangs, inflicting 581,894 Physical damage, plus 145,473 Nature damage and knocking them back.",
+    "damage": 581894,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical",
+      "Nature"
+    ]
+  },
   "396044": {
     "name": "Hailburst",
     "icon": "spell_frost_frostshock",
@@ -1770,6 +2040,28 @@
     "aoe": true,
     "schools": [
       "Frost"
+    ]
+  },
+  "413984": {
+    "name": "Shifting Sands",
+    "icon": "ability_evoker_masterytimewalker",
+    "description": "Casting an empower spell grants Shifting Sands to 1 ally, preferring damage dealers, increasing their Versatility by 0.0% for 10 sec. The durations of Shifting Sands, Breath of Eons, and your other helpful auras are increased by 0.0%.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
+  },
+  "453286": {
+    "name": "Set Fire to the Pain",
+    "icon": "spell_fire_felhellfire",
+    "description": null,
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Fire"
     ]
   },
   "473898": {
@@ -2336,6 +2628,18 @@
       "Nature"
     ]
   },
+  "1216590": {
+    "name": "Heartstop Poison",
+    "icon": "ability_boss_kilrogg_heartseeker",
+    "description": "The caster coats their weapons with a lethal venom for 8 sec that causes each strike to poison the enemy for 193,965 Nature damage over 8 sec and reduce their maximum health by 5%. This effect stacks.",
+    "damage": null,
+    "periodic_damage": 193965,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Nature"
+    ]
+  },
   "1216945": {
     "name": "Searing Fel Flame",
     "icon": "spell_fire_felfirenova",
@@ -2598,6 +2902,26 @@
     "name": "Enchanted Party Mask",
     "icon": "inv_helm_mask_fittedalpha_b_01_nightborne_01",
     "description": "Incognito.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
+  },
+  "1219523": {
+    "name": "Ritual of Summoning",
+    "icon": "inv_doomguardpet_orange",
+    "description": "Summons a powerful demon.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
+  },
+  "1220899": {
+    "name": "Summon Infernal",
+    "icon": "spell_shadow_summoninfernal",
+    "description": "Summons a slow but powerful Infernal that fixates onto players.",
     "damage": null,
     "periodic_damage": null,
     "tick_damage": null,
@@ -2874,6 +3198,18 @@
       "Shadow"
     ]
   },
+  "1228126": {
+    "name": "Macestorm",
+    "icon": "ability_paladin_enlightenedjudgements",
+    "description": "Charges to a random enemy and inflicts 77,586 Physical damage to enemies within 8 yards every 1 sec. for 6 sec.",
+    "damage": 77586,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Physical"
+    ]
+  },
   "1228176": {
     "name": "Lava Bolt",
     "icon": "spell_shaman_lavaburst",
@@ -3105,6 +3441,19 @@
       "Nature"
     ]
   },
+  "1234773": {
+    "name": "Bedrock Slam",
+    "icon": "spell_nature_earthquake",
+    "description": "Meittik strikes their primary target with immense force, inflicting 193,965 Nature damage and 484,912 Physical damage. The force of the impact ruptures nearby topsoil, creating patches of Fertile Loam.",
+    "damage": 484912,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical",
+      "Nature"
+    ]
+  },
   "1234782": {
     "name": "Fertile Loam",
     "icon": "spell_shaman_earthquake",
@@ -3311,6 +3660,18 @@
       "Frost"
     ]
   },
+  "1235549": {
+    "name": "Glacial Torment",
+    "icon": "inv12_apextalent_mage_handoffrost",
+    "description": "The Sentinel of Winter assaults players with freezing temperatures, inflicting 67,888 Frost damage every 2 sec for 16 sec.",
+    "damage": null,
+    "periodic_damage": 610989,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Frost"
+    ]
+  },
   "1235564": {
     "name": "Lightblossom Beam",
     "icon": "ability_paladin_infusionoflight",
@@ -3468,6 +3829,18 @@
     ]
   },
   "1235783": {
+    "name": "Shattering Frostspike",
+    "icon": "ability_deathknight_pillaroffrost",
+    "description": "The Sentinel of Winter slams the ice, forming 2 icicles which splinter, inflicting 387,929 Frost damage to players within 4 yards of targeted locations, revealing a Fractured Shivercore.",
+    "damage": 387929,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Physical"
+    ]
+  },
+  "1235795": {
     "name": "Shattering Frostspike",
     "icon": "ability_deathknight_pillaroffrost",
     "description": "The Sentinel of Winter slams the ice, forming 2 icicles which splinter, inflicting 387,929 Frost damage to players within 4 yards of targeted locations, revealing a Fractured Shivercore.",
@@ -3867,6 +4240,30 @@
     "periodic_damage": null,
     "tick_damage": null,
     "aoe": false,
+    "schools": [
+      "Nature"
+    ]
+  },
+  "1238588": {
+    "name": "Spiny Shield",
+    "icon": "inv_beetleprimal_purple",
+    "description": "The caster's prickly exoskeleton absorbs 500,089 damage and inflicts 4,849 Nature damage back on attackers.",
+    "damage": 4849,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Nature"
+    ]
+  },
+  "1238638": {
+    "name": "Bullet Seeds",
+    "icon": "spell_shaman_convection",
+    "description": "The caster pelts explosive seeds that inflict 339,438 Nature damage to players within the effect.",
+    "damage": 339438,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
     "schools": [
       "Nature"
     ]
@@ -4501,6 +4898,18 @@
       "Nature"
     ]
   },
+  "1246751": {
+    "name": "Concentrated Lightbeam",
+    "icon": "ability_priest_flashoflight",
+    "description": "Ziekket releases a powerful beam of Light energy, inflicting 48,491 Holy damage every 0.5 sec to players within the effect. Any Dormant Lightspawn Lashers hit by the beam are instantly liquified into puddles of Lightsap.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": 48491,
+    "aoe": false,
+    "schools": [
+      "Holy"
+    ]
+  },
   "1246753": {
     "name": "Lightsap",
     "icon": "inv_misc_food_legion_goochocovanilla_pool",
@@ -4754,6 +5163,19 @@
       "Holy"
     ]
   },
+  "1247746": {
+    "name": "Thornspike",
+    "icon": "inv_misc_herb_goldthorn_bramble",
+    "description": "Ziekket impales the player with his spiked branch, inflicting 193,965 Holy damage and knocking them back. The puncture wound causes the player to bleed an additional 58,189 Physical damage every 1 sec for 10 sec.",
+    "damage": 193965,
+    "periodic_damage": 581894,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical",
+      "Holy"
+    ]
+  },
   "1248112": {
     "name": "Unstable Singularity",
     "icon": "inv_ability_voidweaverpriest_entropicrift",
@@ -4833,6 +5255,16 @@
     "schools": [
       "Nature"
     ]
+  },
+  "1249737": {
+    "name": "Feast of Misery",
+    "icon": "spell_shadow_lifedrain02_purple",
+    "description": null,
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
   },
   "1250021": {
     "name": "Shell Guard",
@@ -4998,6 +5430,18 @@
     "aoe": false,
     "schools": []
   },
+  "1251345": {
+    "name": "Blight Resin",
+    "icon": "inv_ability_holyfire_groundstate",
+    "description": "Congealed light energy spreads across the ground, inflicting 96,982 Holy damage every 1 sec to players within the effect.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": 96982,
+    "aoe": false,
+    "schools": [
+      "Holy"
+    ]
+  },
   "1252406": {
     "name": "Dreadbellow",
     "icon": "spell_shadow_ragingscream",
@@ -5084,6 +5528,19 @@
     "aoe": false,
     "schools": [
       "Fire"
+    ]
+  },
+  "1254339": {
+    "name": "Unstable Felheart Crystal",
+    "icon": "tooltip_crystallizedfel",
+    "description": null,
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Fire",
+      "Shadow"
     ]
   },
   "1254622": {
@@ -5192,6 +5649,18 @@
     "aoe": false,
     "schools": []
   },
+  "1258420": {
+    "name": "Doom Bolt",
+    "icon": "spell_shadow_shadowbolt",
+    "description": null,
+    "damage": 87284,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Shadow"
+    ]
+  },
   "1258431": {
     "name": "Shadow Bolt",
     "icon": "spell_shadow_shadowbolt",
@@ -5227,6 +5696,18 @@
     ]
   },
   "1261011": {
+    "name": "Fan Of Thorns",
+    "icon": "inv_misc_herb_04",
+    "description": "Lekshi unleashes a flurry of thorns, inflicting 193,965 Nature damage to players within 15 yards of their location every 1 sec for 3 sec.",
+    "damage": 193965,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Nature"
+    ]
+  },
+  "1261013": {
     "name": "Fan Of Thorns",
     "icon": "inv_misc_herb_04",
     "description": "Lekshi unleashes a flurry of thorns, inflicting 193,965 Nature damage to players within 15 yards of their location every 1 sec for 3 sec.",
@@ -5412,6 +5893,18 @@
       "Fire"
     ]
   },
+  "1264110": {
+    "name": "Felstorm",
+    "icon": "spell_fire_felcano",
+    "description": "Kystia creates copies of herself nearby, each of which cast Felstorm.",
+    "damage": 9698,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Fire"
+    ]
+  },
   "1264188": {
     "name": "Unstable Singularity",
     "icon": "inv_cosmicvoid_groundstate",
@@ -5568,6 +6061,18 @@
     "name": "Void Tentacles",
     "icon": "inv12_ability_priest_tentacleslam",
     "description": "Attacks inflict 4,849 Shadow damage to the enemy.",
+    "damage": 4849,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Shadow"
+    ]
+  },
+  "1269878": {
+    "name": "Void Tentacles",
+    "icon": "inv12_ability_priest_tentacleslam",
+    "description": null,
     "damage": 4849,
     "periodic_damage": null,
     "tick_damage": null,
@@ -6014,6 +6519,18 @@
       "Physical"
     ]
   },
+  "1291598": {
+    "name": "Lightning Spire",
+    "icon": "ability_thunderking_rockfalllow",
+    "description": "Galvazzt coalesces electric energy at locations within his chamber, causing lightning strikes that inflict 290,947 Nature damage to players within 5 yards and knock them back. A Lightning Spire forms from each strike that attempts to Energize Galvazzt. Players standing between the spire and Galvazzt become Galvanized.",
+    "damage": 290947,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Nature"
+    ]
+  },
   "1291618": {
     "name": "Lightning Spire",
     "icon": "ability_thunderking_rockfalllow",
@@ -6071,6 +6588,18 @@
     "tick_damage": null,
     "aoe": false,
     "schools": []
+  },
+  "1292299": {
+    "name": "Seriously Sharp Seashell",
+    "icon": "inv_misc_food_legion_seashelld2",
+    "description": "Bleed for 0 damage over 12 sec. The pain sharpens your focus, increasing your Critical Strike by 0 every sec.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical"
+    ]
   },
   "1292585": {
     "name": "Sandburst Arrow",
@@ -7165,6 +7694,16 @@
       "Nature"
     ]
   },
+  "1298548": {
+    "name": "Wrath of Nalorakk",
+    "icon": "inv_10_fishing_fishdragon_black",
+    "description": "Nalorakk is displeased with the player's act of cowardice, summoning a creature from the deep to instantly devour the player.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
+  },
   "1298683": {
     "name": "Hydrastrike",
     "icon": "trade_archaeology_whitehydrafigurine",
@@ -7241,6 +7780,18 @@
       "Physical"
     ]
   },
+  "1298917": {
+    "name": "Champion's Spear",
+    "icon": "inv_ability_warrior_championsspear",
+    "description": "Caster summons a spear that chains all players, inflicting 19,396 Physical every 1 sec and pulling them in until the spear is destroyed.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": 19396,
+    "aoe": false,
+    "schools": [
+      "Physical"
+    ]
+  },
   "1298922": {
     "name": "Savage Smash",
     "icon": "ability_smash",
@@ -7261,6 +7812,18 @@
     "aoe": false,
     "schools": []
   },
+  "1298933": {
+    "name": "Savage Smash",
+    "icon": "ability_smash",
+    "description": null,
+    "damage": 116379,
+    "periodic_damage": 174568,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Physical"
+    ]
+  },
   "1298949": {
     "name": "Tail Scythe",
     "icon": "inv_knife_1h_felfireraid_d_04",
@@ -7274,6 +7837,18 @@
     ]
   },
   "1299053": {
+    "name": "Death Rattle",
+    "icon": "inv_sonic_debuff",
+    "description": "The Writhing Coil unleashes a relentless rattle, inflicting 9,698 Physical damage every 1 sec. This effect stacks, and increases its applications every 1 sec until the Writhing Coil is pulled apart.",
+    "damage": null,
+    "periodic_damage": 581894,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Physical"
+    ]
+  },
+  "1299080": {
     "name": "Death Rattle",
     "icon": "inv_sonic_debuff",
     "description": "The Writhing Coil unleashes a relentless rattle, inflicting 9,698 Physical damage every 1 sec. This effect stacks, and increases its applications every 1 sec until the Writhing Coil is pulled apart.",
@@ -7400,6 +7975,18 @@
     "tick_damage": null,
     "aoe": false,
     "schools": []
+  },
+  "1299273": {
+    "name": "Thundering Storm",
+    "icon": "spell_shaman_thunderstorm",
+    "description": null,
+    "damage": 77586,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Nature"
+    ]
   },
   "1299902": {
     "name": "Venom Jet",
@@ -7587,6 +8174,18 @@
       "Shadow"
     ]
   },
+  "1300351": {
+    "name": "Poison Splash",
+    "icon": "spell_nature_corrosivebreath",
+    "description": "Atroxus splashes poison around itself, inflicting 38,793 Nature damage to all enemies every 1 sec. The poison glob inflicts 193,965 Nature damage and an additional 58,189 Nature damage every 1 sec for 5 sec to players struck. Each impact creates a poison pool for 1 min.",
+    "damage": 193965,
+    "periodic_damage": 290947,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Nature"
+    ]
+  },
   "1300372": {
     "name": "Cosmic Crash",
     "icon": "inv_cosmicvoid_groundsate",
@@ -7764,6 +8363,18 @@
       "Nature"
     ]
   },
+  "1300892": {
+    "name": "Fang Empowered",
+    "icon": "inv_knife_1h_ulatekfang_d_01_poison",
+    "description": "The Fang of Ula'tek pulses with strength, inflicting 93,103 Nature damage to all players every 1 sec. This effect stacks.",
+    "damage": 93103,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Nature"
+    ]
+  },
   "1300894": {
     "name": "Ritual Venom",
     "icon": "inv_ability_poison_beam",
@@ -7859,6 +8470,18 @@
     ]
   },
   "1301350": {
+    "name": "Chop Down",
+    "icon": "ability_criticalstrike",
+    "description": "Zul'jan hacks twice at his current target, inflicting 484,912 Physical damage with each strike.",
+    "damage": 484912,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical"
+    ]
+  },
+  "1301353": {
     "name": "Chop Down",
     "icon": "ability_criticalstrike",
     "description": "Zul'jan hacks twice at his current target, inflicting 484,912 Physical damage with each strike.",
@@ -8066,6 +8689,18 @@
       "Physical"
     ]
   },
+  "1303039": {
+    "name": "Hunting Leap",
+    "icon": "ability_druid_ravage",
+    "description": "Reban jumps towards a targeted player, inflicting 67,888 Physical damage and additional 38,793 Physical damage every 1 sec for 4 sec. Reban then follows up with a series of gutripping attacks, inflicting 145,473 Physical to players in a cone with each attack.",
+    "damage": 145473,
+    "periodic_damage": 155172,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Physical"
+    ]
+  },
   "1303105": {
     "name": "Aerial Smash",
     "icon": "ability_heroicleap",
@@ -8185,6 +8820,19 @@
     "schools": [
       "Physical",
       "Nature"
+    ]
+  },
+  "1303446": {
+    "name": "Tainted Strike",
+    "icon": "ability_ironmaidens_convulsiveshadows",
+    "description": "The Corrupted Guardian attacks their current target with a brutal slash, inflicting 484,912 Physical damage and an additional 29,095 Shadow damage every 1 sec for 25 sec. This effect stacks.",
+    "damage": 484912,
+    "periodic_damage": 727367,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical",
+      "Shadow"
     ]
   },
   "1303452": {
@@ -8450,6 +9098,18 @@
       "Nature"
     ]
   },
+  "1306235": {
+    "name": "Septic Spatter",
+    "icon": "ability_deathknight_roilingblood",
+    "description": "The leech pops, splashing poisoned blood that inflicts 290,947 Nature damage on impact and 65,948 Nature damage every 1.5 sec to players within the pools.",
+    "damage": 290947,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": true,
+    "schools": [
+      "Nature"
+    ]
+  },
   "1306308": {
     "name": "Ravenous",
     "icon": "ability_evoker_dragonrage2",
@@ -8537,6 +9197,18 @@
     "schools": []
   },
   "1306517": {
+    "name": "Blood Sacrifice",
+    "icon": "ability_warrior_bloodfrenzy",
+    "description": "The Ritual Chieftain invokes spirits of the altar to gut players, inflicting 87,284 Physical damage and causing the next 28.5 healing to be absorbed.",
+    "damage": 87284,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical"
+    ]
+  },
+  "1306641": {
     "name": "Blood Sacrifice",
     "icon": "ability_warrior_bloodfrenzy",
     "description": "The Ritual Chieftain invokes spirits of the altar to gut players, inflicting 87,284 Physical damage and causing the next 28.5 healing to be absorbed.",
@@ -8972,6 +9644,19 @@
       "Nature"
     ]
   },
+  "1308546": {
+    "name": "Venomous Slash",
+    "icon": "ability_rogue_disembowel",
+    "description": "The creature strikes its current target, inflicting 581,894 Physical damage and an additional 58,189 Nature damage every 1 sec for 10 sec. Venom Shrapnel rains outward from the strike.",
+    "damage": 581894,
+    "periodic_damage": 581894,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Physical",
+      "Nature"
+    ]
+  },
   "1308864": {
     "name": "Infest",
     "icon": "ability_hunter_snaketrap",
@@ -9132,6 +9817,18 @@
     "tick_damage": null,
     "aoe": false,
     "schools": []
+  },
+  "1309964": {
+    "name": "Harsh Winter",
+    "icon": "spell_frost_arcticwinds",
+    "description": null,
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": 38793,
+    "aoe": false,
+    "schools": [
+      "Frost"
+    ]
   },
   "1310025": {
     "name": "Gravitic Orbs",
@@ -9553,6 +10250,18 @@
     "aoe": false,
     "schools": []
   },
+  "1311981": {
+    "name": "Latent Hex",
+    "icon": "inv_shoulder_armor_hextroll_d_01",
+    "description": null,
+    "damage": null,
+    "periodic_damage": 157596,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": [
+      "Shadow"
+    ]
+  },
   "1311987": {
     "name": "Serpentine Gust",
     "icon": "ability_skyreach_four_wind",
@@ -9720,5 +10429,15 @@
     "schools": [
       "Physical"
     ]
+  },
+  "1317558": {
+    "name": "Melee",
+    "icon": "ability_meleedamage",
+    "description": "Attack for Physical damage.",
+    "damage": null,
+    "periodic_damage": null,
+    "tick_damage": null,
+    "aoe": false,
+    "schools": []
   }
 }

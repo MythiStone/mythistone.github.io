@@ -3127302,7 +3127302,7 @@
   {
     "id": 282273,
     "name": "Ice Walker's Frost Fetish",
-    "icon": "unknown_8246091",
+    "icon": "inv_offhand_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 4,
     "itemSubClass": 0,
@@ -3127321,7 +3127321,7 @@
   {
     "id": 282275,
     "name": "Embered Frost Fetish",
-    "icon": "unknown_8246091",
+    "icon": "inv_offhand_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 4,
     "itemSubClass": 0,
@@ -3127340,7 +3127340,7 @@
   {
     "id": 282276,
     "name": "Frost Revenant's Frost Fetish",
-    "icon": "unknown_8246091",
+    "icon": "inv_offhand_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 4,
     "itemSubClass": 0,
@@ -3127359,7 +3127359,7 @@
   {
     "id": 282277,
     "name": "Wood Haunter's Frost Fetish",
-    "icon": "unknown_8246091",
+    "icon": "inv_offhand_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 4,
     "itemSubClass": 0,
@@ -3127437,7 +3127437,7 @@
   {
     "id": 282563,
     "name": "Ice Walker's Bell-Scythe",
-    "icon": "unknown_8261021",
+    "icon": "inv_polearm_2h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 6,
@@ -3127450,7 +3127450,7 @@
   {
     "id": 282564,
     "name": "Embered Bell-Scythe",
-    "icon": "unknown_8261021",
+    "icon": "inv_polearm_2h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 6,
@@ -3127463,7 +3127463,7 @@
   {
     "id": 282565,
     "name": "Frost Revenant's Bell-Scythe",
-    "icon": "unknown_8261021",
+    "icon": "inv_polearm_2h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 6,
@@ -3127476,7 +3127476,7 @@
   {
     "id": 282566,
     "name": "Wood Haunter's Bell-Scythe",
-    "icon": "unknown_8261021",
+    "icon": "inv_polearm_2h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 6,
@@ -3127489,7 +3127489,7 @@
   {
     "id": 282567,
     "name": "Wood Haunter's Frost Scepter",
-    "icon": "unknown_8246091",
+    "icon": "inv_offhand_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 4,
@@ -3127502,7 +3127502,7 @@
   {
     "id": 282569,
     "name": "Frost Revenant's Frost Scepter",
-    "icon": "unknown_8246091",
+    "icon": "inv_offhand_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 4,
@@ -3127515,7 +3127515,7 @@
   {
     "id": 282570,
     "name": "Embered Frost Scepter",
-    "icon": "unknown_8246091",
+    "icon": "inv_offhand_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 4,
@@ -3127528,7 +3127528,7 @@
   {
     "id": 282571,
     "name": "Ice Walker's Frost Scepter",
-    "icon": "unknown_8246091",
+    "icon": "inv_offhand_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 4,
@@ -3127541,7 +3127541,7 @@
   {
     "id": 282641,
     "name": "Ice Walker's Hide Piercer",
-    "icon": "unknown_8246169",
+    "icon": "inv_bow_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 2,
@@ -3127560,7 +3127560,7 @@
   {
     "id": 282643,
     "name": "Embered Hide Piercer",
-    "icon": "unknown_8246169",
+    "icon": "inv_bow_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 2,
@@ -3127579,7 +3127579,7 @@
   {
     "id": 282644,
     "name": "Frost Revenant's Hide Piercer",
-    "icon": "unknown_8246169",
+    "icon": "inv_bow_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 2,
@@ -3127598,7 +3127598,7 @@
   {
     "id": 282645,
     "name": "Wood Haunter's Hide Piercer",
-    "icon": "unknown_8246169",
+    "icon": "inv_bow_1h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 2,
@@ -3127836,7 +3127836,7 @@
   {
     "id": 283999,
     "name": "Wood Haunter's Belt",
-    "icon": "unknown_8263317",
+    "icon": "inv_belt_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127849,7 +3127849,7 @@
   {
     "id": 284000,
     "name": "Wood Haunter's Helm",
-    "icon": "ensemblefrostrevenantsguiseofthewight_8263314",
+    "icon": "inv_helm__armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127862,7 +3127862,7 @@
   {
     "id": 284001,
     "name": "Wood Haunter's Pauldrons",
-    "icon": "unknown_8263316",
+    "icon": "inv_shoulder_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127875,7 +3127875,7 @@
   {
     "id": 284002,
     "name": "Wood Haunter's Hauberk",
-    "icon": "unknown_8263312",
+    "icon": "inv_chest__armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127888,7 +3127888,7 @@
   {
     "id": 284003,
     "name": "Wood Haunter's Leggings",
-    "icon": "unknown_8263315",
+    "icon": "inv_pants_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127901,7 +3127901,7 @@
   {
     "id": 284004,
     "name": "Wood Haunter's Boots",
-    "icon": "unknown_8263309",
+    "icon": "inv_boot_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127914,7 +3127914,7 @@
   {
     "id": 284005,
     "name": "Wood Haunter's Gloves",
-    "icon": "unknown_8263313",
+    "icon": "inv_glove_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127927,7 +3127927,7 @@
   {
     "id": 284006,
     "name": "Wood Haunter's Cloak",
-    "icon": "unknown_8263311",
+    "icon": "inv_cape_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127940,7 +3127940,7 @@
   {
     "id": 284008,
     "name": "Ice-Walker's Belt",
-    "icon": "unknown_8263317",
+    "icon": "inv_belt_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127953,7 +3127953,7 @@
   {
     "id": 284009,
     "name": "Ice-Walker's Helm",
-    "icon": "ensemblefrostrevenantsguiseofthewight_8263314",
+    "icon": "inv_helm__armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127966,7 +3127966,7 @@
   {
     "id": 284010,
     "name": "Ice-Walker's Pauldrons",
-    "icon": "unknown_8263316",
+    "icon": "inv_shoulder_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127979,7 +3127979,7 @@
   {
     "id": 284011,
     "name": "Ice-Walker's Hauberk",
-    "icon": "unknown_8263312",
+    "icon": "inv_chest__armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3127992,7 +3127992,7 @@
   {
     "id": 284012,
     "name": "Ice-Walker's Leggings",
-    "icon": "unknown_8263315",
+    "icon": "inv_pants_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128005,7 +3128005,7 @@
   {
     "id": 284013,
     "name": "Ice-Walker's Boots",
-    "icon": "unknown_8263309",
+    "icon": "inv_boot_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128018,7 +3128018,7 @@
   {
     "id": 284014,
     "name": "Ice-Walker's Gloves",
-    "icon": "unknown_8263313",
+    "icon": "inv_glove_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128031,7 +3128031,7 @@
   {
     "id": 284015,
     "name": "Ice-Walker's Cloak",
-    "icon": "unknown_8263311",
+    "icon": "inv_cape_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128044,7 +3128044,7 @@
   {
     "id": 284017,
     "name": "Embered Belt",
-    "icon": "unknown_8263317",
+    "icon": "inv_belt_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128057,7 +3128057,7 @@
   {
     "id": 284018,
     "name": "Embered Helm",
-    "icon": "ensemblefrostrevenantsguiseofthewight_8263314",
+    "icon": "inv_helm__armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128070,7 +3128070,7 @@
   {
     "id": 284019,
     "name": "Embered Pauldrons",
-    "icon": "unknown_8263316",
+    "icon": "inv_shoulder_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128083,7 +3128083,7 @@
   {
     "id": 284020,
     "name": "Embered Hauberk",
-    "icon": "unknown_8263312",
+    "icon": "inv_chest__armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128096,7 +3128096,7 @@
   {
     "id": 284021,
     "name": "Embered Leggings",
-    "icon": "unknown_8263315",
+    "icon": "inv_pants_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128109,7 +3128109,7 @@
   {
     "id": 284022,
     "name": "Embered Boots",
-    "icon": "unknown_8263309",
+    "icon": "inv_boot_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128122,7 +3128122,7 @@
   {
     "id": 284023,
     "name": "Embered Gloves",
-    "icon": "unknown_8263313",
+    "icon": "inv_glove_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128135,7 +3128135,7 @@
   {
     "id": 284024,
     "name": "Embered Cloak",
-    "icon": "unknown_8263311",
+    "icon": "inv_cape_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128148,7 +3128148,7 @@
   {
     "id": 284026,
     "name": "Frost Revenant's Belt",
-    "icon": "unknown_8263317",
+    "icon": "inv_belt_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128161,7 +3128161,7 @@
   {
     "id": 284027,
     "name": "Frost Revenant's Helm",
-    "icon": "ensemblefrostrevenantsguiseofthewight_8263314",
+    "icon": "inv_helm__armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128174,7 +3128174,7 @@
   {
     "id": 284028,
     "name": "Frost Revenant's Pauldrons",
-    "icon": "unknown_8263316",
+    "icon": "inv_shoulder_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128187,7 +3128187,7 @@
   {
     "id": 284029,
     "name": "Frost Revenant's Hauberk",
-    "icon": "unknown_8263312",
+    "icon": "inv_chest__armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128200,7 +3128200,7 @@
   {
     "id": 284030,
     "name": "Frost Revenant's Leggings",
-    "icon": "unknown_8263315",
+    "icon": "inv_pants_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128213,7 +3128213,7 @@
   {
     "id": 284031,
     "name": "Frost Revenant's Boots",
-    "icon": "unknown_8263309",
+    "icon": "inv_boot_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128226,7 +3128226,7 @@
   {
     "id": 284032,
     "name": "Frost Revenant's Gloves",
-    "icon": "unknown_8263313",
+    "icon": "inv_glove_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128239,7 +3128239,7 @@
   {
     "id": 284033,
     "name": "Frost Revenant's Cloak",
-    "icon": "unknown_8263311",
+    "icon": "inv_cape_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128504,7 +3128504,7 @@
   {
     "id": 284862,
     "name": "Varian's Azure Dragon Pauldron",
-    "icon": "unknown_7802582",
+    "icon": "inv_shoulder_armor_varian_d_01",
     "quality": 4,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128582,7 +3128582,7 @@
   {
     "id": 285333,
     "name": "Frost Revenant's Reversed Pauldrons",
-    "icon": "unknown_8263316",
+    "icon": "inv_shoulder_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128595,7 +3128595,7 @@
   {
     "id": 285334,
     "name": "Embered Reversed Pauldrons",
-    "icon": "unknown_8263316",
+    "icon": "inv_shoulder_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128608,7 +3128608,7 @@
   {
     "id": 285335,
     "name": "Ice-Walker's Reversed Pauldrons",
-    "icon": "unknown_8263316",
+    "icon": "inv_shoulder_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128621,7 +3128621,7 @@
   {
     "id": 285336,
     "name": "Wood Haunter's Reversed Pauldrons",
-    "icon": "unknown_8263316",
+    "icon": "inv_shoulder_armor_krampus_d_01",
     "quality": 3,
     "itemClass": 4,
     "itemSubClass": 5,
@@ -3128634,7 +3128634,7 @@
   {
     "id": 285956,
     "name": "Ice Walker's Bell-Crook",
-    "icon": "unknown_8261021",
+    "icon": "inv_polearm_2h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 10,
@@ -3128647,7 +3128647,7 @@
   {
     "id": 285957,
     "name": "Wood Haunter's Bell-Crook",
-    "icon": "unknown_8261021",
+    "icon": "inv_polearm_2h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 10,
@@ -3128660,7 +3128660,7 @@
   {
     "id": 285958,
     "name": "Frost Revenant's Bell-Crook",
-    "icon": "unknown_8261021",
+    "icon": "inv_polearm_2h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 10,
@@ -3128673,7 +3128673,7 @@
   {
     "id": 285959,
     "name": "Embered Bell-Crook",
-    "icon": "unknown_8261021",
+    "icon": "inv_polearm_2h_krampus_c_01",
     "quality": 2,
     "itemClass": 2,
     "itemSubClass": 10,
