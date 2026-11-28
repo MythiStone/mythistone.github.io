@@ -2535,5 +2535,16 @@
         "persona": "lore_nerd",
         "judge_score": 35.0,
         "timestamp": 1795743688769
+    },
+    "data/social/spec_overview_73_2026-11.png": {
+        "title": "Protection Warrior Mythic+ Overview",
+        "post_type": "spec_overview",
+        "link": "https://mythistone.com/classes/Tank/Protection_Warrior",
+        "social": "Prot War D tier apparently. Funny how 89% of keys still time when I'm tanking. #WoW #MythicPlus https://mythistone.com/classes/Tank/Protection_Warrior",
+        "blog": "Protection Warrior has 855.1 K Mythic+ runs tracked this season. The Mountain Thane hero tree leads at 98% of builds, with Colossus (2%) trailing.\n\n89% of tracked runs beat the timer, and 9% earn all three chests. The stat priority skews toward Haste > Crit > Mastery > Versatility. Its top run this season is +23 Murder Row in 31:52.643.",
+        "post": "Prot War D tier apparently. Funny how 89% of keys still time when I'm tanking. #WoW #MythicPlus https://mythistone.com/classes/Tank/Protection_Warrior",
+        "persona": "pug_veteran",
+        "judge_score": 28.0,
+        "timestamp": 1795829076548
     }
 }
